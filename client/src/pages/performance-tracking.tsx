@@ -49,7 +49,10 @@ interface MonthlyPerformance {
 }
 
 export default function PerformanceTracking() {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  // Get today's date in local timezone to avoid date picker offset issues
+  const today = new Date();
+  const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
+  const [selectedDate, setSelectedDate] = useState(localDate.toISOString().split('T')[0]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 

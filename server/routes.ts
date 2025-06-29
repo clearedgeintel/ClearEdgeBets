@@ -403,6 +403,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get CFL games with odds
   app.get("/api/cfl/games", async (req, res) => {
     try {
+      const { date } = req.query;
+      const targetDate = date ? String(date) : new Date().toISOString().split('T')[0];
+      
       const cflGames = await fetchCFLGames();
       
       // Transform CFL games to match expected format
@@ -452,7 +455,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ].filter(Boolean) // Remove null entries
       }));
 
-      res.json(formattedGames);
+      // Filter games by target date
+      const filteredGames = formattedGames.filter(game => {
+        // Parse the game time to check if it matches the target date
+        const gameDate = new Date(game.gameTime).toISOString().split('T')[0];
+        return gameDate === targetDate;
+      });
+
+      res.json(filteredGames);
     } catch (error) {
       console.error("Error fetching CFL games:", error);
       res.status(500).json({ error: "Failed to fetch CFL games" });

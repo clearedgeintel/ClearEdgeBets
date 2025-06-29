@@ -35,102 +35,70 @@ const CFL_TEAMS = {
 function generateCFLSchedule() {
   const games: CFLGame[] = [];
   const today = new Date();
-  const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
-
-  // CFL season runs June-October, but for demo purposes, show some upcoming games
-  const upcomingGames = [
-    // Week 1 - Season opener and key matchups
-    {
-      gameId: 'cfl_2025_w1_g1',
-      awayTeam: 'Ottawa REDBLACKS',
-      homeTeam: 'Saskatchewan Roughriders',
-      awayTeamCode: 'OTT',
-      homeTeamCode: 'SSK',
-      gameTime: 'June 5, 2025 at 9:00 PM ET',
-      venue: 'Mosaic Stadium',
-      week: 1,
-      season: '2025'
-    },
-    {
-      gameId: 'cfl_2025_w1_g2',
-      awayTeam: 'Toronto Argonauts',
-      homeTeam: 'Montreal Alouettes',
-      awayTeamCode: 'TOR',
-      homeTeamCode: 'MTL',
-      gameTime: 'June 6, 2025 at 7:30 PM ET',
-      venue: 'Percival Molson Memorial Stadium',
-      week: 1,
-      season: '2025'
-    },
-    {
-      gameId: 'cfl_2025_w1_g3',
-      awayTeam: 'Hamilton Tiger-Cats',
-      homeTeam: 'Calgary Stampeders',
-      awayTeamCode: 'HAM',
-      homeTeamCode: 'CGY',
-      gameTime: 'June 7, 2025 at 7:00 PM MT',
-      venue: 'McMahon Stadium',
-      week: 1,
-      season: '2025'
-    },
-    {
-      gameId: 'cfl_2025_w1_g4',
-      awayTeam: 'Edmonton Elks',
-      homeTeam: 'BC Lions',
-      awayTeamCode: 'EDM',
-      homeTeamCode: 'BC',
-      gameTime: 'June 7, 2025 at 10:00 PM ET',
-      venue: 'BC Place',
-      week: 1,
-      season: '2025'
-    },
-    // Week 2 games
-    {
-      gameId: 'cfl_2025_w2_g1',
-      awayTeam: 'BC Lions',
-      homeTeam: 'Winnipeg Blue Bombers',
-      awayTeamCode: 'BC',
-      homeTeamCode: 'WPG',
-      gameTime: 'June 12, 2025 at 8:30 PM ET',
-      venue: 'Princess Auto Stadium',
-      week: 2,
-      season: '2025'
-    },
-    {
-      gameId: 'cfl_2025_w2_g2',
-      awayTeam: 'Montreal Alouettes',
-      homeTeam: 'Ottawa REDBLACKS',
-      awayTeamCode: 'MTL',
-      homeTeamCode: 'OTT',
-      gameTime: 'June 13, 2025 at 7:30 PM ET',
-      venue: 'TD Place Stadium',
-      week: 2,
-      season: '2025'
-    },
-    {
-      gameId: 'cfl_2025_w2_g3',
-      awayTeam: 'Calgary Stampeders',
-      homeTeam: 'Toronto Argonauts',
-      awayTeamCode: 'CGY',
-      homeTeamCode: 'TOR',
-      gameTime: 'June 14, 2025 at 4:00 PM ET',
-      venue: 'BMO Field',
-      week: 2,
-      season: '2025'
-    },
-    {
-      gameId: 'cfl_2025_w2_g4',
-      awayTeam: 'Saskatchewan Roughriders',
-      homeTeam: 'Hamilton Tiger-Cats',
-      awayTeamCode: 'SSK',
-      homeTeamCode: 'HAM',
-      gameTime: 'June 14, 2025 at 7:00 PM ET',
-      venue: 'Tim Hortons Field',
-      week: 2,
-      season: '2025'
+  
+  // Generate games for the next 7 days to demonstrate date filtering
+  const gameSchedule = [];
+  
+  for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+    const gameDate = new Date(today);
+    gameDate.setDate(today.getDate() + dayOffset);
+    const dateStr = gameDate.toISOString();
+    
+    // Add 1-2 games per day
+    if (dayOffset === 0) { // Today - multiple games
+      gameSchedule.push(
+        {
+          gameId: `cfl_${currentYear}_today_g1`,
+          awayTeam: 'Ottawa REDBLACKS',
+          homeTeam: 'Saskatchewan Roughriders',
+          awayTeamCode: 'OTT',
+          homeTeamCode: 'SSK',
+          gameTime: dateStr,
+          venue: 'Mosaic Stadium',
+          week: 1,
+          season: currentYear.toString()
+        },
+        {
+          gameId: `cfl_${currentYear}_today_g2`,
+          awayTeam: 'Toronto Argonauts',
+          homeTeam: 'Montreal Alouettes',
+          awayTeamCode: 'TOR',
+          homeTeamCode: 'MTL',
+          gameTime: dateStr,
+          venue: 'Percival Molson Memorial Stadium',
+          week: 1,
+          season: currentYear.toString()
+        }
+      );
+    } else if (dayOffset === 1) { // Tomorrow
+      gameSchedule.push({
+        gameId: `cfl_${currentYear}_d${dayOffset}_g1`,
+        awayTeam: 'Hamilton Tiger-Cats',
+        homeTeam: 'Calgary Stampeders',
+        awayTeamCode: 'HAM',
+        homeTeamCode: 'CGY',
+        gameTime: dateStr,
+        venue: 'McMahon Stadium',
+        week: 1,
+        season: currentYear.toString()
+      });
+    } else if (dayOffset === 2) { // Day after tomorrow
+      gameSchedule.push({
+        gameId: `cfl_${currentYear}_d${dayOffset}_g1`,
+        awayTeam: 'Edmonton Elks',
+        homeTeam: 'BC Lions',
+        awayTeamCode: 'EDM',
+        homeTeamCode: 'BC',
+        gameTime: dateStr,
+        venue: 'BC Place',
+        week: 1,
+        season: currentYear.toString()
+      });
     }
-  ];
+  }
+
+  const upcomingGames = gameSchedule;
 
   // Add realistic odds to each game
   upcomingGames.forEach((game, index) => {
