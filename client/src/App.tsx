@@ -11,7 +11,7 @@ import Home from "@/pages/home-new";
 import TodaysGames from "@/pages/todays-games";
 import MyBets from "@/pages/my-bets";
 import DailyPicks from "@/pages/daily-picks";
-import AdminDashboard from "@/pages/admin";
+import AdminPanel from "@/pages/admin";
 import Subscribe from "@/pages/subscribe";
 import CFLHub from "@/pages/cfl-hub";
 import CFLGames from "@/pages/cfl-games";
@@ -29,7 +29,7 @@ function Router() {
         <Route path="/my-bets" component={MyBets} />
         <Route path="/daily-picks" component={DailyPicks} />
         <Route path="/subscribe" component={Subscribe} />
-        <Route path="/admin" component={AdminDashboard} />
+        <Route path="/admin" component={AdminPanel} />
         <Route path="/cfl" component={CFLHub} />
         <Route path="/cfl/games" component={CFLGames} />
         <Route path="/cfl/picks" component={CFLPicks} />

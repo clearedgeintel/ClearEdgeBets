@@ -99,6 +99,80 @@ export class MemStorage implements IStorage {
     this.currentPropId = 1;
     this.currentPickId = 1;
     this.currentConsensusId = 1;
+
+    // Add sample users for admin testing
+    this.addSampleUsers();
+  }
+
+  private addSampleUsers() {
+    const sampleUsers = [
+      {
+        id: 1,
+        username: "admin_user",
+        email: "admin@clearedgebets.com",
+        password: "hashedpassword",
+        subscriptionTier: "elite",
+        subscriptionStatus: "active",
+        subscriptionEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        stripeCustomerId: "cus_admin123",
+        stripeSubscriptionId: "sub_admin123",
+        createdAt: new Date("2024-01-15")
+      },
+      {
+        id: 2,
+        username: "pro_bettor",
+        email: "probettor@example.com",
+        password: "hashedpassword",
+        subscriptionTier: "pro",
+        subscriptionStatus: "active",
+        subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        stripeCustomerId: "cus_pro456",
+        stripeSubscriptionId: "sub_pro456",
+        createdAt: new Date("2024-06-01")
+      },
+      {
+        id: 3,
+        username: "casual_user",
+        email: "casual@example.com",
+        password: "hashedpassword",
+        subscriptionTier: "free",
+        subscriptionStatus: null,
+        subscriptionEndDate: null,
+        stripeCustomerId: null,
+        stripeSubscriptionId: null,
+        createdAt: new Date("2025-06-15")
+      },
+      {
+        id: 4,
+        username: "former_pro",
+        email: "former@example.com",
+        password: "hashedpassword",
+        subscriptionTier: "pro",
+        subscriptionStatus: "canceled",
+        subscriptionEndDate: new Date("2025-06-20"),
+        stripeCustomerId: "cus_former789",
+        stripeSubscriptionId: "sub_former789",
+        createdAt: new Date("2024-12-01")
+      },
+      {
+        id: 5,
+        username: "elite_trader",
+        email: "elite@example.com",
+        password: "hashedpassword",
+        subscriptionTier: "elite",
+        subscriptionStatus: "active",
+        subscriptionEndDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+        stripeCustomerId: "cus_elite101",
+        stripeSubscriptionId: "sub_elite101",
+        createdAt: new Date("2025-01-01")
+      }
+    ];
+
+    sampleUsers.forEach(user => {
+      this.users.set(user.id, user as User);
+    });
+    
+    this.currentUserId = 6; // Next available ID
   }
 
   async getUser(id: number): Promise<User | undefined> {

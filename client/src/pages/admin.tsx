@@ -1,354 +1,350 @@
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/contexts/auth-context";
-import { useLocation } from "wouter";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
 import { 
+  Shield, 
   Users, 
-  TrendingUp, 
-  Target, 
-  DollarSign, 
-  Activity,
+  Crown, 
+  Star,
+  Settings,
+  Search,
+  UserCog,
   Calendar,
-  BarChart3,
-  PieChart
+  CreditCard,
+  AlertCircle,
+  CheckCircle,
+  XCircle
 } from "lucide-react";
+import Header from "@/components/header";
+import { apiRequest } from "@/lib/queryClient";
+import { format } from "date-fns";
 
-interface AdminStats {
-  totalUsers: number;
-  activeUsers: number;
-  subscriptions: {
-    free: number;
-    pro: number;
-    elite: number;
-  };
-  revenue: {
-    monthly: number;
-    total: number;
-  };
-  aiAnalysis: {
-    totalGenerated: number;
-    accuracy: number;
-    avgConfidence: number;
-  };
-  bettingActivity: {
-    totalBets: number;
-    avgBetSize: number;
-    winRate: number;
-  };
-}
-
-interface UserActivity {
+interface User {
   id: number;
   username: string;
   email: string;
   subscriptionTier: string;
-  lastActive: string;
-  totalBets: number;
-  subscriptionStatus: string;
-  joinedDate: string;
+  subscriptionStatus: string | null;
+  subscriptionEndDate: Date | null;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  createdAt: Date | null;
 }
 
-interface SystemActivity {
-  id: number;
-  action: string;
-  userId?: number;
-  username?: string;
-  details: string;
-  timestamp: string;
-  type: "user" | "subscription" | "bet" | "analysis";
+interface AdminStats {
+  totalUsers: number;
+  freeUsers: number;
+  proUsers: number;
+  eliteUsers: number;
+  activeSubscriptions: number;
+  totalRevenue: number;
 }
 
-export default function AdminDashboard() {
-  const { user, hasAccess } = useAuth();
-  const [, setLocation] = useLocation();
+function UserCard({ user, onUpdateTier }: { user: User; onUpdateTier: (userId: number, tier: string) => void }) {
+  const [selectedTier, setSelectedTier] = useState(user.subscriptionTier);
 
-  // Only allow elite users to access admin dashboard
-  if (!user || !hasAccess("elite")) {
-    setLocation("/");
-    return null;
-  }
+  const getTierColor = (tier: string) => {
+    switch (tier) {
+      case 'elite': return 'bg-purple-500/10 text-purple-600 border-purple-500/20';
+      case 'pro': return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+      default: return 'bg-gray-500/10 text-gray-600 border-gray-500/20';
+    }
+  };
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ["/api/admin/stats"],
+  const getStatusColor = (status: string | null) => {
+    switch (status) {
+      case 'active': return 'text-green-600';
+      case 'canceled': return 'text-orange-600';
+      case 'past_due': return 'text-red-600';
+      default: return 'text-gray-600';
+    }
+  };
+
+  const getStatusIcon = (status: string | null) => {
+    switch (status) {
+      case 'active': return <CheckCircle className="h-4 w-4" />;
+      case 'canceled': return <XCircle className="h-4 w-4" />;
+      case 'past_due': return <AlertCircle className="h-4 w-4" />;
+      default: return <XCircle className="h-4 w-4" />;
+    }
+  };
+
+  return (
+    <Card className="hover:shadow-lg transition-shadow">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <h3 className="font-semibold text-foreground">{user.username}</h3>
+            <p className="text-sm text-muted-foreground">{user.email}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              ID: {user.id} • Joined {user.createdAt ? format(new Date(user.createdAt), 'MMM d, yyyy') : 'Unknown'}
+            </p>
+          </div>
+          
+          <div className="text-right">
+            <Badge variant="outline" className={getTierColor(user.subscriptionTier)}>
+              {user.subscriptionTier.charAt(0).toUpperCase() + user.subscriptionTier.slice(1)}
+            </Badge>
+            
+            {user.subscriptionStatus && (
+              <div className={`flex items-center gap-1 text-sm mt-2 ${getStatusColor(user.subscriptionStatus)}`}>
+                {getStatusIcon(user.subscriptionStatus)}
+                {user.subscriptionStatus.charAt(0).toUpperCase() + user.subscriptionStatus.slice(1)}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {user.subscriptionEndDate && (
+            <div className="text-sm text-muted-foreground">
+              <span className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Ends: {format(new Date(user.subscriptionEndDate), 'MMM d, yyyy')}
+              </span>
+            </div>
+          )}
+
+          {user.stripeCustomerId && (
+            <div className="text-sm text-muted-foreground">
+              <span className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Customer: {user.stripeCustomerId.slice(0, 20)}...
+              </span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 pt-2">
+            <Select value={selectedTier} onValueChange={setSelectedTier}>
+              <SelectTrigger className="flex-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="free">Free</SelectItem>
+                <SelectItem value="pro">Pro</SelectItem>
+                <SelectItem value="elite">Elite</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Button 
+              size="sm"
+              onClick={() => onUpdateTier(user.id, selectedTier)}
+              disabled={selectedTier === user.subscriptionTier}
+              variant={selectedTier !== user.subscriptionTier ? "default" : "outline"}
+            >
+              Update
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function AdminPanel() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterBy, setFilterBy] = useState("all");
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // Fetch admin stats
+  const { data: stats } = useQuery<AdminStats>({
+    queryKey: ['/api/admin/stats'],
+    enabled: true
   });
 
-  const { data: userActivity, isLoading: usersLoading } = useQuery({
-    queryKey: ["/api/admin/users"],
+  // Fetch all users
+  const { data: users = [], isLoading } = useQuery<User[]>({
+    queryKey: ['/api/admin/users'],
+    enabled: true
   });
 
-  const { data: systemActivity, isLoading: activityLoading } = useQuery({
-    queryKey: ["/api/admin/activity"],
+  // Update user tier mutation
+  const updateTierMutation = useMutation({
+    mutationFn: ({ userId, tier }: { userId: number; tier: string }) =>
+      apiRequest('POST', '/api/admin/update-tier', { userId, tier }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+      toast({
+        title: "Tier Updated",
+        description: "User subscription tier has been updated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Update Failed",
+        description: "Failed to update user tier. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
-  const { data: performance, isLoading: performanceLoading } = useQuery({
-    queryKey: ["/api/admin/performance"],
+  const handleUpdateTier = (userId: number, tier: string) => {
+    updateTierMutation.mutate({ userId, tier });
+  };
+
+  // Filter users based on search and filter criteria
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = !searchTerm || 
+      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.id.toString().includes(searchTerm);
+
+    const matchesFilter = filterBy === "all" || user.subscriptionTier === filterBy;
+
+    return matchesSearch && matchesFilter;
   });
 
-  if (statsLoading) {
+  if (isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground">System overview and analytics</p>
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      {/* Page Header */}
+      <div className="bg-background border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-foreground flex items-center space-x-3">
+                <Shield className="h-8 w-8 text-primary" />
+                <span>Admin Panel</span>
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Manage users, subscriptions, and system settings
+              </p>
+            </div>
+          </div>
         </div>
-        <Badge variant="secondary" className="text-yellow-600 bg-yellow-100">
-          Elite Access
-        </Badge>
       </div>
 
-      {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats?.activeUsers || 0} active this month
-            </p>
-          </CardContent>
-        </Card>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Admin Stats */}
+        {stats && (
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Users className="h-8 w-8 text-primary mx-auto mb-2" />
+                <div className="text-2xl font-bold text-foreground">{stats.totalUsers}</div>
+                <div className="text-sm text-muted-foreground">Total Users</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-gray-600">{stats.freeUsers}</div>
+                <div className="text-sm text-muted-foreground">Free</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Star className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-blue-600">{stats.proUsers}</div>
+                <div className="text-sm text-muted-foreground">Pro</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Crown className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-purple-600">{stats.eliteUsers}</div>
+                <div className="text-sm text-muted-foreground">Elite</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-green-600">{stats.activeSubscriptions}</div>
+                <div className="text-sm text-muted-foreground">Active</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <CreditCard className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-emerald-600">${stats.totalRevenue}</div>
+                <div className="text-sm text-muted-foreground">Revenue</div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${stats?.revenue?.monthly?.toLocaleString() || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              ${stats?.revenue?.total?.toLocaleString() || 0} total
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">AI Accuracy</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats?.aiAnalysis?.accuracy?.toFixed(1) || 0}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {stats?.aiAnalysis?.totalGenerated || 0} analyses generated
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Betting Win Rate</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats?.bettingActivity?.winRate?.toFixed(1) || 0}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {stats?.bettingActivity?.totalBets || 0} total bets
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="users" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="users">User Management</TabsTrigger>
-          <TabsTrigger value="activity">System Activity</TabsTrigger>
-          <TabsTrigger value="performance">AI Performance</TabsTrigger>
-          <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="users" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>User Activity</CardTitle>
-              <CardDescription>Recent user registrations and activity</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {usersLoading ? (
-                <div className="flex justify-center p-8">
-                  <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {userActivity?.map((user: UserActivity) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{user.username}</span>
-                          <Badge 
-                            variant={user.subscriptionTier === "elite" ? "default" : user.subscriptionTier === "pro" ? "secondary" : "outline"}
-                          >
-                            {user.subscriptionTier}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Joined: {new Date(user.joinedDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium">{user.totalBets} bets</p>
-                        <p className="text-xs text-muted-foreground">
-                          Last active: {new Date(user.lastActive).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="activity" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Activity Log</CardTitle>
-              <CardDescription>Recent system events and user actions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {activityLoading ? (
-                <div className="flex justify-center p-8">
-                  <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {systemActivity?.map((activity: SystemActivity) => (
-                    <div key={activity.id} className="flex items-start gap-3 p-3 border rounded-lg">
-                      <div className="p-2 rounded-full bg-primary/10">
-                        {activity.type === "user" && <Users className="h-4 w-4" />}
-                        {activity.type === "subscription" && <DollarSign className="h-4 w-4" />}
-                        {activity.type === "bet" && <Target className="h-4 w-4" />}
-                        {activity.type === "analysis" && <BarChart3 className="h-4 w-4" />}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{activity.action}</span>
-                          {activity.username && (
-                            <Badge variant="outline">{activity.username}</Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">{activity.details}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(activity.timestamp).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="performance" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>AI Performance Analytics</CardTitle>
-              <CardDescription>Detailed breakdown of AI prediction accuracy</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {performanceLoading ? (
-                <div className="flex justify-center p-8">
-                  <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium">Pitching Analysis</h4>
-                      <p className="text-2xl font-bold text-green-600">
-                        {performance?.pitchingAccuracy?.toFixed(1) || 0}%
-                      </p>
-                      <p className="text-sm text-muted-foreground">Accuracy Rate</p>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium">Spread Predictions</h4>
-                      <p className="text-2xl font-bold text-blue-600">
-                        {performance?.spreadAccuracy?.toFixed(1) || 0}%
-                      </p>
-                      <p className="text-sm text-muted-foreground">Accuracy Rate</p>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium">Total Predictions</h4>
-                      <p className="text-2xl font-bold text-purple-600">
-                        {performance?.totalAccuracy?.toFixed(1) || 0}%
-                      </p>
-                      <p className="text-sm text-muted-foreground">Overall Accuracy</p>
-                    </div>
-                  </div>
-                  
-                  {performance?.monthlyBreakdown && (
-                    <div>
-                      <h4 className="font-medium mb-3">Monthly Performance</h4>
-                      <div className="space-y-2">
-                        {performance.monthlyBreakdown.map((month: any) => (
-                          <div key={month.month} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <span className="font-medium">{month.month}</span>
-                            <div className="text-right">
-                              <span className="text-lg font-bold">{month.accuracy.toFixed(1)}%</span>
-                              <p className="text-sm text-muted-foreground">{month.games} games</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="subscriptions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Subscription Overview</CardTitle>
-              <CardDescription>Breakdown of subscription tiers and revenue</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-medium text-gray-600">Free Users</h4>
-                  <p className="text-3xl font-bold">{stats?.subscriptions?.free || 0}</p>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-medium text-blue-600">Pro Subscribers</h4>
-                  <p className="text-3xl font-bold">{stats?.subscriptions?.pro || 0}</p>
-                  <p className="text-sm text-muted-foreground">
-                    ${((stats?.subscriptions?.pro || 0) * 9.99).toLocaleString()}/mo
-                  </p>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-medium text-yellow-600">Elite Subscribers</h4>
-                  <p className="text-3xl font-bold">{stats?.subscriptions?.elite || 0}</p>
-                  <p className="text-sm text-muted-foreground">
-                    ${((stats?.subscriptions?.elite || 0) * 19.99).toLocaleString()}/mo
-                  </p>
-                </div>
+        {/* Search and Filters */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by username, email, or ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
+              
+              <div className="flex gap-2">
+                <Select value={filterBy} onValueChange={setFilterBy}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Tiers</SelectItem>
+                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="pro">Pro</SelectItem>
+                    <SelectItem value="elite">Elite</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Users Grid */}
+        {filteredUsers.length === 0 ? (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <UserCog className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No users found</h3>
+              <p className="text-muted-foreground">
+                {searchTerm || filterBy !== "all" 
+                  ? "Try adjusting your search or filters" 
+                  : "No users in the system"}
+              </p>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredUsers.map((user) => (
+              <UserCard 
+                key={user.id} 
+                user={user} 
+                onUpdateTier={handleUpdateTier}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

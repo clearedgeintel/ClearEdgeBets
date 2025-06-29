@@ -125,6 +125,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 29, 2025: Built comprehensive admin backend system for user management and tier assignment
+  - Created complete Admin Panel (`/admin`) with user management interface showing subscription tiers, status, and Stripe data
+  - Implemented admin-only navigation in sidebar (visible for elite users only)
+  - Added admin API endpoints: `/api/admin/stats`, `/api/admin/users`, `/api/admin/update-tier`
+  - Built user management with search/filter capabilities and individual tier assignment controls
+  - Added admin dashboard with user statistics (total users, tier breakdown, active subscriptions, revenue tracking)
+  - Created user cards showing subscription status, end dates, Stripe customer data, and management controls
+  - Populated system with sample users across all tiers for testing admin functionality
+  - Enhanced result management on both Baseball and CFL picks pages with manual result setting and bulk operations
 - June 29, 2025: Enhanced Games pages with date navigation and renamed to reflect expanded functionality
   - Added date navigation controls (Previous/Next/Today buttons) to both Baseball and CFL Games pages
   - Users can now view games from any date, not just today's games

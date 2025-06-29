@@ -1271,6 +1271,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin stats endpoint
+  app.get("/api/admin/stats", async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      
+      const totalUsers = users.length;
+      const freeUsers = users.filter(u => u.subscriptionTier === 'free').length;
+      const proUsers = users.filter(u => u.subscriptionTier === 'pro').length;
+      const eliteUsers = users.filter(u => u.subscriptionTier === 'elite').length;
+      const activeSubscriptions = users.filter(u => u.subscriptionStatus === 'active').length;
+      
+      // Mock revenue calculation (in real app, would fetch from Stripe)
+      const totalRevenue = (proUsers * 9.99) + (eliteUsers * 19.99);
+
+      const stats = {
+        totalUsers,
+        freeUsers,
+        proUsers,
+        eliteUsers,
+        activeSubscriptions,
+        totalRevenue: Math.round(totalRevenue)
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Admin stats error:", error);
+      res.status(500).json({ error: "Failed to fetch admin stats" });
+    }
+  });
+
+  // Admin users endpoint
+  app.get("/api/admin/users", async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      
+      // Return user data without passwords
+      const safeUsers = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        subscriptionTier: user.subscriptionTier,
+        subscriptionStatus: user.subscriptionStatus,
+        subscriptionEndDate: user.subscriptionEndDate,
+        stripeCustomerId: user.stripeCustomerId,
+        stripeSubscriptionId: user.stripeSubscriptionId,
+        createdAt: user.createdAt
+      }));
+
+      res.json(safeUsers);
+    } catch (error) {
+      console.error("Admin users error:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // Admin update tier endpoint
+  app.post("/api/admin/update-tier", async (req, res) => {
+    try {
+      const { userId, tier } = req.body;
+
+      if (!userId || !tier) {
+        return res.status(400).json({ error: "User ID and tier are required" });
+      }
+
+      if (!['free', 'pro', 'elite'].includes(tier)) {
+        return res.status(400).json({ error: "Invalid tier specified" });
+      }
+
+      const updatedUser = await storage.updateUserSubscription(userId, {
+        tier,
+        status: tier === 'free' ? null : 'active',
+        endDate: tier === 'free' ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+      });
+
+      res.json({
+        message: "User tier updated successfully",
+        user: {
+          id: updatedUser.id,
+          username: updatedUser.username,
+          subscriptionTier: updatedUser.subscriptionTier,
+          subscriptionStatus: updatedUser.subscriptionStatus
+        }
+      });
+    } catch (error) {
+      console.error("Admin update tier error:", error);
+      res.status(500).json({ error: "Failed to update user tier" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
