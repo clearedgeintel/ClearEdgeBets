@@ -25,24 +25,24 @@ export default function Header() {
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-8">
             <Link href="/" className="flex items-center space-x-2">
               <div className="flex items-center">
                 <span className="text-2xl font-black text-primary">CLEAR</span>
                 <span className="text-2xl font-black text-secondary">EDGE</span>
-                <span className="text-lg font-bold text-gray-700 ml-1">BETS</span>
+                <span className="text-xl font-bold text-gray-700 ml-1">BETS</span>
               </div>
             </Link>
-            <nav className="hidden md:flex space-x-6">
+            <nav className="hidden md:flex space-x-8">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
                   className={`${
                     item.current
-                      ? "text-primary font-medium border-b-2 border-primary pb-1"
-                      : "text-gray-600 hover:text-gray-900"
-                  } transition-colors`}
+                      ? "text-primary font-semibold"
+                      : "text-gray-600 hover:text-primary font-medium"
+                  } transition-colors text-sm`}
                 >
                   {item.name}
                 </Link>
@@ -50,47 +50,33 @@ export default function Header() {
             </nav>
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             {/* Subscription Status */}
-            {user && (
-              <div className="hidden sm:flex items-center space-x-2">
-                {user.subscriptionTier === "free" && (
-                  <Link href="/subscribe">
-                    <Button variant="outline" size="sm">
-                      <Crown className="h-4 w-4 mr-2" />
-                      Upgrade
-                    </Button>
-                  </Link>
-                )}
-                {user.subscriptionTier !== "free" && (
-                  <Badge 
-                    className={`${
-                      user.subscriptionTier === "pro" 
-                        ? "bg-blue-100 text-blue-800" 
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    <Crown className="h-3 w-3 mr-1" />
-                    {user.subscriptionTier?.toUpperCase()}
-                  </Badge>
-                )}
-              </div>
+            {user && user.subscriptionTier === "free" && (
+              <Link href="/subscribe">
+                <Button size="sm" className="hidden sm:inline-flex">
+                  Upgrade Pro
+                </Button>
+              </Link>
             )}
             
-            <div className="hidden sm:flex items-center space-x-2 bg-secondary/10 px-3 py-1 rounded-full">
-              <div className="w-2 h-2 bg-secondary rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-secondary">Live Odds</span>
-            </div>
+            {user && user.subscriptionTier !== "free" && (
+              <Badge 
+                variant="outline"
+                className={`hidden sm:inline-flex ${
+                  user.subscriptionTier === "pro" 
+                    ? "border-primary text-primary" 
+                    : "border-secondary text-secondary"
+                }`}
+              >
+                {user.subscriptionTier?.toUpperCase()}
+              </Badge>
+            )}
             
-            <Button className="bg-primary text-white hover:bg-blue-700 hidden sm:inline-flex">
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Betting Slip
-              {bets.length > 0 && (
-                <Badge variant="secondary" className="ml-2 bg-white text-primary">
-                  {bets.length}
-                </Badge>
-              )}
-            </Button>
+            <div className="hidden sm:flex items-center space-x-2 bg-green-50 px-3 py-1 rounded-full">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-green-700">Live</span>
+            </div>
 
             {/* Mobile Menu */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>

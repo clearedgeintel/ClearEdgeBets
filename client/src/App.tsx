@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/auth-context";
 import Layout from "@/components/layout";
 import NotFound from "@/pages/not-found";
-import Home from "@/pages/home";
+import Home from "@/pages/home-new";
 import MyBets from "@/pages/my-bets";
 import DailyDigest from "@/pages/daily-digest";
 import DailyPicks from "@/pages/daily-picks";

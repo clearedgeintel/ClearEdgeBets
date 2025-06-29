@@ -125,13 +125,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
-- June 29, 2025: Complete rebranding to ClearEdge Bets with new visual identity
-  - Implemented ClearEdge Bets branding with custom logo integration
-  - Updated color scheme to match logo: bright green (hsl(82, 100%, 50%)), cyan blue (hsl(195, 100%, 50%)), and dark gray
-  - Redesigned all UI elements to reflect sporty, dynamic brand aesthetic
-  - Enhanced subscription system with comprehensive onboarding flow
-  - Added professional welcome banners and upgrade prompts for new users
-  - Updated page titles, headers, and all branding touchpoints
+- June 29, 2025: Complete platform rebrand and redesign with ClearEdge Bets
+  - Built entirely new home page with modern hero section, stats dashboard, and game cards
+  - Replaced old layout with clean header/footer structure and improved navigation
+  - Implemented professional color scheme: dark green (hsl(142, 76%, 36%)) and cyan blue (hsl(195, 84%, 45%))
+  - Created stylized text logo with "CLEAR" in green, "EDGE" in blue, "BETS" in gray
+  - Removed all gradients for cleaner, more professional appearance
+  - Added comprehensive footer with branding, navigation, and legal information
+  - Enhanced search and filtering capabilities on main dashboard
+  - Redesigned game cards with improved AI analysis display and betting options
 - June 29, 2025: Implementing subscription-based betting intelligence platform
   - Added user authentication system with email/password login
   - Implemented tiered subscription model (Free, Pro $9.99/mo, Elite $19.99/mo)
