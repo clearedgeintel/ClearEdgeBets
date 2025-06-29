@@ -5,7 +5,14 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  subscriptionTier: text("subscription_tier").notNull().default("free"), // free, pro, elite
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  subscriptionStatus: text("subscription_status").default("inactive"), // active, canceled, past_due
+  subscriptionEndDate: timestamp("subscription_end_date"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const games = pgTable("games", {

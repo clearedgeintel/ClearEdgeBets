@@ -3,10 +3,210 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { fetchTodaysGames } from "./services/odds";
 import { generateGameAnalysis, generateDailyDigest, type GameAnalysisData } from "./services/openai";
-import { insertBetSchema, insertGameSchema, insertOddsSchema } from "@shared/schema";
+import { insertBetSchema, insertGameSchema, insertOddsSchema, insertUserSchema } from "@shared/schema";
+import Stripe from "stripe";
+import bcrypt from "bcrypt";
+
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2025-05-28.basil",
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Authentication Routes
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(userData.email);
+      if (existingUser) {
+        return res.status(400).json({ error: "User already exists" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      
+      const user = await storage.createUser({
+        ...userData,
+        password: hashedPassword,
+        subscriptionTier: "free"
+      });
+
+      res.json({ 
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          email: user.email,
+          subscriptionTier: user.subscriptionTier 
+        } 
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ error: "Registration failed" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      // Set session
+      (req.session as any).userId = user.id;
+
+      res.json({ 
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          email: user.email,
+          subscriptionTier: user.subscriptionTier,
+          subscriptionStatus: user.subscriptionStatus
+        } 
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Logout failed" });
+      }
+      res.clearCookie('connect.sid');
+      res.json({ success: true });
+    });
+  });
+
+  app.get("/api/auth/me", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      res.json({ 
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          email: user.email,
+          subscriptionTier: user.subscriptionTier,
+          subscriptionStatus: user.subscriptionStatus
+        } 
+      });
+    } catch (error) {
+      console.error("Auth check error:", error);
+      res.status(500).json({ error: "Authentication check failed" });
+    }
+  });
+
+  // Subscription Routes
+  app.post("/api/subscription/create", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { tier } = req.body; // 'pro' or 'elite'
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Create or get Stripe customer
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: user.username,
+        });
+        customerId = customer.id;
+      }
+
+      // Define pricing (you'll need to create these in Stripe Dashboard)
+      const priceIds = {
+        pro: process.env.STRIPE_PRO_PRICE_ID || "price_pro_monthly", 
+        elite: process.env.STRIPE_ELITE_PRICE_ID || "price_elite_monthly"
+      };
+
+      const subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{ price: priceIds[tier as keyof typeof priceIds] }],
+        payment_behavior: 'default_incomplete',
+        expand: ['latest_invoice.payment_intent'],
+      });
+
+      // Update user with subscription info
+      await storage.updateUserSubscription(userId, {
+        tier,
+        stripeCustomerId: customerId,
+        stripeSubscriptionId: subscription.id,
+        status: 'pending'
+      });
+
+      res.json({
+        subscriptionId: subscription.id,
+        clientSecret: (subscription.latest_invoice as any)?.payment_intent?.client_secret,
+      });
+    } catch (error) {
+      console.error("Subscription creation error:", error);
+      res.status(500).json({ error: "Failed to create subscription" });
+    }
+  });
+
+  // Stripe webhook for subscription updates
+  app.post("/api/webhook/stripe", async (req, res) => {
+    try {
+      const sig = req.headers['stripe-signature'];
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      
+      if (!sig || !webhookSecret) {
+        return res.status(400).json({ error: "Invalid webhook signature" });
+      }
+
+      const event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+
+      switch (event.type) {
+        case 'customer.subscription.updated':
+        case 'customer.subscription.created':
+          const subscription = event.data.object as Stripe.Subscription;
+          // Update user subscription status in database
+          // This would need proper implementation based on your needs
+          break;
+        
+        case 'customer.subscription.deleted':
+          // Handle subscription cancellation
+          break;
+      }
+
+      res.json({ received: true });
+    } catch (error) {
+      console.error("Webhook error:", error);
+      res.status(400).json({ error: "Webhook processing failed" });
+    }
+  });
+
   // Get today's games with odds and AI analysis
   app.get("/api/games", async (req, res) => {
     try {

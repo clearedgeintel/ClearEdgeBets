@@ -10,11 +10,19 @@ import {
   History,
   TrendingUp,
   Menu,
-  X
+  X,
+  Crown,
+  Star,
+  User,
+  LogOut,
+  LogIn,
+  Settings
 } from "lucide-react";
 import { useBettingSlip } from "@/hooks/use-betting-slip";
+import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import LoginForm from "@/components/auth/login-form";
 
 export default function Sidebar() {
   const [location] = useLocation();

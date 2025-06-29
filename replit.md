@@ -125,6 +125,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 29, 2025: Implementing subscription-based betting intelligence platform
+  - Added user authentication system with email/password login
+  - Implemented tiered subscription model (Free, Pro $9.99/mo, Elite $19.99/mo)
+  - Integrated Stripe payment processing for subscription management
+  - Updated user schema with subscription fields and Stripe customer data
+  - Building tiered content access control system
+  - Enhanced AI analysis to prioritize pitching statistics (70% weight) over team performance (30%)
 - June 29, 2025: Added PostgreSQL database integration
   - Migrated from in-memory storage to persistent PostgreSQL database
   - Created DatabaseStorage class implementing full CRUD operations

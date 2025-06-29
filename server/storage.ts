@@ -6,7 +6,15 @@ export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserSubscription(userId: number, subscriptionData: {
+    tier: string;
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
+    status?: string;
+    endDate?: Date;
+  }): Promise<User>;
 
   // Game methods
   getAllTodaysGames(): Promise<Game[]>;
@@ -336,10 +344,36 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async updateUserSubscription(userId: number, subscriptionData: {
+    tier: string;
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
+    status?: string;
+    endDate?: Date;
+  }): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        subscriptionTier: subscriptionData.tier,
+        stripeCustomerId: subscriptionData.stripeCustomerId,
+        stripeSubscriptionId: subscriptionData.stripeSubscriptionId,
+        subscriptionStatus: subscriptionData.status,
+        subscriptionEndDate: subscriptionData.endDate,
+      })
+      .where(eq(users.id, userId))
       .returning();
     return user;
   }
