@@ -122,16 +122,16 @@ export default function Subscribe() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-16">
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Choose Your Betting Edge
+            Get Your ClearEdge Advantage
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Unlock professional-grade MLB betting insights powered by AI. 
-            Join thousands of successful bettors who trust our analytics.
+            Join thousands of successful bettors who trust ClearEdge Bets analytics.
           </p>
         </div>
 

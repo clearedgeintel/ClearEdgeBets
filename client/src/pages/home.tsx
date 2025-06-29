@@ -143,10 +143,10 @@ export default function Home() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-center">
-              Welcome to MLB Betting Intelligence! 🎯
+              Welcome to ClearEdge Bets! 🎯
             </DialogTitle>
             <DialogDescription className="text-center text-lg mt-4">
-              Get the edge you need with AI-powered betting insights
+              Get the ClearEdge advantage with AI-powered betting insights
             </DialogDescription>
           </DialogHeader>
           
@@ -177,12 +177,12 @@ export default function Home() {
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white text-center">
+            <div className="bg-primary rounded-lg p-6 text-white text-center">
               <h3 className="text-xl font-bold mb-2">Ready to Start Winning?</h3>
               <p className="opacity-90 mb-4">Upgrade to Pro for unlimited AI picks and advanced features</p>
               <div className="flex gap-3 justify-center">
                 <Link href="/subscribe">
-                  <Button className="bg-white text-blue-600 hover:bg-gray-100">
+                  <Button className="bg-white text-primary hover:bg-gray-100">
                     View Plans <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </Link>
@@ -202,7 +202,7 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Welcome Banner for New Users */}
         {isNewUser && (
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-6 text-white mb-6">
+          <div className="bg-primary rounded-xl shadow-lg p-6 text-white mb-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold mb-2">Welcome, {user?.username}! 👋</h2>
@@ -245,7 +245,7 @@ export default function Home() {
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">MLB Betting Dashboard</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">ClearEdge MLB Dashboard</h2>
                     <p className="text-gray-600 mt-1">
                       Today's MLB Games • <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     </p>
@@ -272,7 +272,7 @@ export default function Home() {
 
             {/* Top AI Picks */}
             {topPicks.length > 0 && (
-              <div className="bg-gradient-to-r from-primary to-blue-600 rounded-xl shadow-lg p-6 text-white">
+              <div className="bg-primary rounded-xl shadow-lg p-6 text-white">
                 <div className="flex items-center space-x-3 mb-4">
                   <Star className="h-5 w-5 text-yellow-300" />
                   <h3 className="text-xl font-bold">Today's Top AI Picks</h3>
