@@ -13,6 +13,7 @@ import DailyDigest from "@/pages/daily-digest";
 import DailyPicks from "@/pages/daily-picks";
 import AdminDashboard from "@/pages/admin";
 import Subscribe from "@/pages/subscribe";
+import CFLHub from "@/pages/cfl-hub";
 
 function Router() {
   return (
@@ -24,6 +25,8 @@ function Router() {
         <Route path="/daily-picks" component={DailyPicks} />
         <Route path="/subscribe" component={Subscribe} />
         <Route path="/admin" component={AdminDashboard} />
+        <Route path="/cfl" component={CFLHub} />
+        <Route path="/cfl/:section" component={CFLHub} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

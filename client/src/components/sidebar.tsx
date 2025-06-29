@@ -16,7 +16,12 @@ import {
   User,
   LogOut,
   LogIn,
-  Settings
+  Settings,
+  ChevronDown,
+  ChevronRight,
+  Zap,
+  Trophy,
+  Calendar
 } from "lucide-react";
 import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -31,47 +36,91 @@ export default function Sidebar() {
   const { bets } = useBettingSlip();
   const { user, hasAccess } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [baseballExpanded, setBaseballExpanded] = useState(true);
+  const [footballExpanded, setFootballExpanded] = useState(false);
 
   // Debug logging
   console.log("Sidebar bets:", bets);
 
-  const navigation = [
-    { 
-      name: "Today's Games", 
-      href: "/", 
-      icon: Home,
-      current: location === "/",
-      description: "Live MLB games and odds"
+  const sportsNavigation = [
+    {
+      sport: "Baseball",
+      icon: Baseball,
+      expanded: baseballExpanded,
+      setExpanded: setBaseballExpanded,
+      active: location === "/" || location.startsWith("/baseball") || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets",
+      subItems: [
+        { 
+          name: "Today's Games", 
+          href: "/", 
+          icon: Home,
+          current: location === "/",
+          description: "Live MLB games and odds"
+        },
+        { 
+          name: "Daily Picks", 
+          href: "/daily-picks", 
+          icon: Target,
+          current: location === "/daily-picks",
+          description: "AI-powered betting recommendations"
+        },
+        { 
+          name: "Daily Digest", 
+          href: "/daily-digest", 
+          icon: FileText,
+          current: location === "/daily-digest",
+          description: "Expert analysis and insights"
+        },
+        { 
+          name: "My Bets", 
+          href: "/my-bets", 
+          icon: History,
+          current: location === "/my-bets",
+          description: "Your MLB betting history"
+        }
+      ]
     },
-    { 
-      name: "Daily Picks", 
-      href: "/daily-picks", 
-      icon: Target,
-      current: location === "/daily-picks",
-      description: "AI-powered betting recommendations"
-    },
-    { 
-      name: "Daily Digest", 
-      href: "/daily-digest", 
-      icon: FileText,
-      current: location === "/daily-digest",
-      description: "Market overview and analysis"
-    },
-    { 
-      name: "My Bets", 
-      href: "/my-bets", 
-      icon: History,
-      current: location === "/my-bets",
-      description: "Betting history and tracking"
-    },
-    ...(user && hasAccess("elite") ? [{ 
-      name: "Admin Dashboard", 
-      href: "/admin", 
-      icon: Settings,
-      current: location === "/admin",
-      description: "System analytics and management"
-    }] : []),
+    {
+      sport: "Football",
+      icon: Zap,
+      expanded: footballExpanded,
+      setExpanded: setFootballExpanded,
+      active: location.startsWith("/football") || location.startsWith("/cfl"),
+      subItems: [
+        { 
+          name: "CFL Hub", 
+          href: "/cfl", 
+          icon: Trophy,
+          current: location === "/cfl" || location.startsWith("/cfl"),
+          description: "Canadian Football League central",
+          featured: true
+        },
+        { 
+          name: "CFL Schedule", 
+          href: "/cfl/schedule", 
+          icon: Calendar,
+          current: location === "/cfl/schedule",
+          description: "Upcoming CFL games and odds"
+        },
+        { 
+          name: "NFL", 
+          href: "/nfl", 
+          icon: Star,
+          current: location === "/nfl",
+          description: "Coming Soon",
+          disabled: true
+        }
+      ]
+    }
   ];
+
+  const adminNavigation = user && hasAccess("elite") ? [{ 
+    name: "Admin Dashboard", 
+    href: "/admin", 
+    icon: Settings,
+    current: location === "/admin",
+    description: "System analytics and management"
+  }] : [];
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-gray-900 text-white">
@@ -98,17 +147,80 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Navigation */}
+      {/* Sports Navigation */}
       <nav className="flex-1 px-4 space-y-2">
-        {navigation.map((item) => {
+        {sportsNavigation.map((sport) => {
+          const SportIcon = sport.icon;
+          return (
+            <div key={sport.sport} className="space-y-1">
+              <button
+                onClick={() => sport.setExpanded(!sport.expanded)}
+                className={`w-full flex items-center justify-between px-3 py-3 rounded-lg transition-colors group ${
+                  sport.active
+                    ? "bg-primary text-white"
+                    : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <SportIcon className={`h-5 w-5 ${sport.active ? "text-white" : "text-gray-400 group-hover:text-white"}`} />
+                  <span className="font-semibold">{sport.sport}</span>
+                </div>
+                {sport.expanded ? 
+                  <ChevronDown className="h-4 w-4" /> : 
+                  <ChevronRight className="h-4 w-4" />
+                }
+              </button>
+              
+              {sport.expanded && (
+                <div className="ml-6 space-y-1">
+                  {sport.subItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors group ${
+                          item.current
+                            ? "bg-secondary text-white"
+                            : item.disabled
+                            ? "text-gray-500 cursor-not-allowed"
+                            : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                        }`}
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        <Icon className={`h-4 w-4 ${
+                          item.current ? "text-white" : 
+                          item.disabled ? "text-gray-500" :
+                          "text-gray-400 group-hover:text-white"
+                        }`} />
+                        <div className="flex-1">
+                          <div className={`text-sm font-medium ${item.featured ? "flex items-center" : ""}`}>
+                            {item.name}
+                            {item.featured && <Star className="h-3 w-3 ml-1 text-accent" />}
+                          </div>
+                          <div className="text-xs text-gray-400 group-hover:text-gray-300">
+                            {item.description}
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        
+        {/* Admin Navigation */}
+        {adminNavigation.map((item) => {
           const Icon = item.icon;
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors group ${
+              className={`flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors group border-t border-gray-700 mt-4 pt-4 ${
                 item.current
-                  ? "bg-blue-600 text-white"
+                  ? "bg-accent text-white"
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
               }`}
               onClick={() => setMobileOpen(false)}

@@ -125,6 +125,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 29, 2025: Major platform overhaul - Dark theme and hierarchical multi-sport structure
+  - Implemented dark theme by default for premium sports betting aesthetic
+  - Restructured sidebar navigation with hierarchical sports organization:
+    - Baseball as primary sport with existing MLB features as sub-items
+    - Football category with CFL as featured offering and NFL "Coming Soon"
+  - Created comprehensive CFL Hub as centerpiece for Canadian Football League coverage
+  - Updated color scheme to dark background with green/blue/orange accent colors
+  - Added expandable/collapsible sports categories with chevron indicators
+  - Enhanced branding throughout with actual ClearEdge Bets logo integration
+  - Built foundation for ultimate CFL betting intelligence platform
 - June 29, 2025: Complete platform rebrand and redesign with ClearEdge Bets
   - Built entirely new home page with modern hero section, stats dashboard, and game cards
   - Replaced old layout with clean header/footer structure and improved navigation
