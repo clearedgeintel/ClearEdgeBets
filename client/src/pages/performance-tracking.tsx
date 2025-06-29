@@ -442,18 +442,40 @@ export default function PerformanceTracking() {
                                             // Try exact gameId match (e.g., "PHI@ATL" === "PHI@ATL")
                                             if (pick.gameId === game.gameId) return true;
                                             
-                                            // Try team code matching (e.g., "Phillies@Braves" contains PHI and ATL)
                                             const gameTeams = pick.gameId.toLowerCase();
-                                            const awayCode = game.awayTeamCode.toLowerCase();
-                                            const homeCode = game.homeTeamCode.toLowerCase();
-                                            if (gameTeams.includes(awayCode) && gameTeams.includes(homeCode)) return true;
+                                            const awayTeam = game.awayTeam.toLowerCase();
+                                            const homeTeam = game.homeTeam.toLowerCase();
                                             
-                                            // Try full team name matching
-                                            if (pick.game && game.awayTeam === pick.game.awayTeam && game.homeTeam === pick.game.homeTeam) return true;
+                                            // Create comprehensive team name mappings
+                                            const teamMappings: { [key: string]: string[] } = {
+                                              'dodgers': ['los angeles dodgers', 'lad'],
+                                              'royals': ['kansas city royals', 'kc'],
+                                              'bluejays': ['toronto blue jays', 'tor'], 
+                                              'redsox': ['boston red sox', 'bos'],
+                                              'mariners': ['seattle mariners', 'sea'],
+                                              'rangers': ['texas rangers', 'tex'],
+                                              'rockies': ['colorado rockies', 'col'],
+                                              'brewers': ['milwaukee brewers', 'mil'],
+                                              'phillies': ['philadelphia phillies', 'phi'],
+                                              'braves': ['atlanta braves', 'atl']
+                                            };
                                             
-                                            // Try partial team name matching (e.g., "Phillies" matches "Philadelphia Phillies")
-                                            if (gameTeams.includes('phillies') && gameTeams.includes('braves') && 
-                                                game.awayTeam.toLowerCase().includes('phillies') && game.homeTeam.toLowerCase().includes('braves')) return true;
+                                            // Extract team names from gameId (e.g., "Dodgers@Royals")
+                                            const gameParts = gameTeams.split('@');
+                                            if (gameParts.length === 2) {
+                                              const awayName = gameParts[0].trim();
+                                              const homeName = gameParts[1].trim();
+                                              
+                                              // Check if both teams match
+                                              const awayMatches = teamMappings[awayName]?.some(mapping => 
+                                                awayTeam.includes(mapping) || game.awayTeamCode.toLowerCase() === mapping
+                                              );
+                                              const homeMatches = teamMappings[homeName]?.some(mapping => 
+                                                homeTeam.includes(mapping) || game.homeTeamCode.toLowerCase() === mapping
+                                              );
+                                              
+                                              if (awayMatches && homeMatches) return true;
+                                            }
                                             
                                             return false;
                                           });
