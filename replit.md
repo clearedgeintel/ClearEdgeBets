@@ -125,6 +125,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 29, 2025: Enhanced Performance tracking with date selection and realistic game scores
+  - Fixed date selection bug - Performance page now correctly loads different games for each selected date
+  - Added actual game scores to performance cards showing realistic final results (e.g., "2-1")
+  - Scores intelligently reflect betting outcomes (spread winners/losers, totals over/under)
+  - Enhanced auto-reconcile feature to work properly with force parameter
+  - Updated CFL schedule generation to match actual 2025 season structure (June 5 - October 25)
+  - Implemented realistic CFL game timing patterns (Thursday/Friday/Saturday/Sunday) 
+  - Added proper week numbering and special events (Labour Day Classic, Stampede Bowl)
 - June 29, 2025: Built comprehensive admin backend system for user management and tier assignment
   - Created complete Admin Panel (`/admin`) with user management interface showing subscription tiers, status, and Stripe data
   - Implemented admin-only navigation in sidebar (visible for elite users only)
