@@ -169,6 +169,10 @@ export const insertAiSummarySchema = createInsertSchema(aiSummaries).omit({
 export const insertBetSchema = createInsertSchema(bets).omit({
   id: true,
   placedAt: true,
+}).extend({
+  stake: z.union([z.string(), z.number()]).transform(val => val.toString()),
+  potentialWin: z.union([z.string(), z.number()]).transform(val => val.toString()),
+  actualWin: z.union([z.string(), z.number(), z.null()]).transform(val => val === null ? null : val?.toString()).optional(),
 });
 
 export const insertPropSchema = createInsertSchema(props).omit({
