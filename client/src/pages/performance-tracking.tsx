@@ -436,7 +436,7 @@ export default function PerformanceTracking() {
                                     </div>
                                     <div className="text-sm text-muted-foreground font-mono">
                                       {(() => {
-                                        // First try to get real MLB score data
+                                        // Only show real MLB score data when available
                                         if (mlbData && mlbData.length > 0) {
                                           const mlbGame = mlbData.find(game => {
                                             // Try exact gameId match (e.g., "PHI@ATL" === "PHI@ATL")
@@ -463,103 +463,8 @@ export default function PerformanceTracking() {
                                           }
                                         }
                                         
-                                        // Fallback to generated realistic scores based on team matchup and actual result
-                                        const gameId = pick.gameId;
-                                        const seed = gameId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-                                        let awayScore, homeScore;
-                                        
-                                        if (pick.pickType === 'moneyline') {
-                                          const baseRuns = 2 + (seed % 4);
-                                          const winMargin = 1 + (seed % 3);
-                                          const teamWon = pick.selection;
-                                          const gameTeams = pick.game ? `${pick.game.awayTeam} @ ${pick.game.homeTeam}` : pick.gameId;
-                                          
-                                          if (pick.result === 'win') {
-                                            if (gameTeams.toLowerCase().includes(teamWon.toLowerCase().split(' ')[0])) {
-                                              if (teamWon.toLowerCase().includes('braves') || gameTeams.includes('@')) {
-                                                homeScore = baseRuns + winMargin;
-                                                awayScore = baseRuns;
-                                              } else {
-                                                awayScore = baseRuns + winMargin;
-                                                homeScore = baseRuns;
-                                              }
-                                            }
-                                          } else {
-                                            if (teamWon.toLowerCase().includes('braves') || gameTeams.includes('@')) {
-                                              awayScore = baseRuns + winMargin;
-                                              homeScore = baseRuns;
-                                            } else {
-                                              homeScore = baseRuns + winMargin;
-                                              awayScore = baseRuns;
-                                            }
-                                          }
-                                        } else if (pick.pickType === 'spread') {
-                                          const spreadMatch = pick.selection.match(/(.*)\s+([-+])\s*(\d+\.?\d*)/);
-                                          if (spreadMatch) {
-                                            const baseRuns = 3 + (seed % 3);
-                                            
-                                            // Special handling for known games like Phillies@Braves
-                                            if (pick.gameId.includes('Phillies') && pick.gameId.includes('Braves')) {
-                                              if (pick.result === 'loss') {
-                                                // Braves didn't cover -1.5 (Phillies won 2-1)
-                                                awayScore = 2;
-                                                homeScore = 1;
-                                              } else {
-                                                homeScore = baseRuns + 2;
-                                                awayScore = baseRuns;
-                                              }
-                                            } else {
-                                              const spreadValue = parseFloat(spreadMatch[3]);
-                                              if (pick.result === 'win') {
-                                                homeScore = baseRuns + Math.ceil(spreadValue) + 1;
-                                                awayScore = baseRuns;
-                                              } else {
-                                                homeScore = baseRuns + Math.floor(spreadValue) - 1;
-                                                awayScore = baseRuns;
-                                              }
-                                            }
-                                          }
-                                        } else if (pick.pickType === 'total') {
-                                          const totalMatch = pick.selection.match(/(\d+\.?\d*)/);
-                                          const totalValue = totalMatch ? parseFloat(totalMatch[1]) : 8.5;
-                                          
-                                          if (pick.selection.toLowerCase().includes('over')) {
-                                            if (pick.result === 'win') {
-                                              const totalRuns = Math.ceil(totalValue) + 1 + (seed % 3);
-                                              // Ensure no ties by adding randomness to score distribution
-                                              awayScore = Math.floor(totalRuns / 2) + (seed % 2);
-                                              homeScore = totalRuns - awayScore;
-                                            } else {
-                                              const totalRuns = Math.floor(totalValue) - 1;
-                                              awayScore = Math.floor(totalRuns / 2) + (seed % 2);
-                                              homeScore = totalRuns - awayScore;
-                                            }
-                                          } else {
-                                            if (pick.result === 'win') {
-                                              const totalRuns = Math.floor(totalValue) - 1;
-                                              awayScore = Math.floor(totalRuns / 2) + (seed % 2);
-                                              homeScore = totalRuns - awayScore;
-                                            } else {
-                                              const totalRuns = Math.ceil(totalValue) + 1 + (seed % 2);
-                                              awayScore = Math.floor(totalRuns / 2) + (seed % 2);
-                                              homeScore = totalRuns - awayScore;
-                                            }
-                                          }
-                                        }
-                                        
-                                        awayScore = Math.max(0, awayScore || 0);
-                                        homeScore = Math.max(0, homeScore || 0);
-                                        
-                                        // Baseball cannot end in ties - ensure one team always wins
-                                        if (awayScore === homeScore) {
-                                          if (seed % 2 === 0) {
-                                            homeScore += 1;
-                                          } else {
-                                            awayScore += 1;
-                                          }
-                                        }
-                                        
-                                        return `${awayScore}-${homeScore}`;
+                                        // Show unavailable when real score data is not found
+                                        return "Score unavailable";
                                       })()}
                                     </div>
                                   </div>
