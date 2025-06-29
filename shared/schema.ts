@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, decimal, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, decimal, timestamp, jsonb, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -105,6 +105,41 @@ export const props = pgTable("props", {
   description: text("description"),
 });
 
+export const performanceTracking = pgTable("performance_tracking", {
+  id: serial("id").primaryKey(),
+  gameId: text("game_id").notNull(),
+  gameDate: text("game_date").notNull(),
+  awayTeam: text("away_team").notNull(),
+  homeTeam: text("home_team").notNull(),
+  
+  // AI Predictions
+  aiConfidence: integer("ai_confidence"),
+  predictedWinner: text("predicted_winner"),
+  predictedTotal: decimal("predicted_total", { precision: 4, scale: 1 }),
+  predictedSpread: decimal("predicted_spread", { precision: 4, scale: 1 }),
+  aiValuePlays: jsonb("ai_value_plays"),
+  
+  // Actual Results
+  actualWinner: text("actual_winner"),
+  actualTotal: decimal("actual_total", { precision: 4, scale: 1 }),
+  actualSpread: decimal("actual_spread", { precision: 4, scale: 1 }),
+  finalScore: text("final_score"),
+  
+  // Performance Metrics
+  winnerCorrect: boolean("winner_correct"),
+  totalCorrect: boolean("total_correct"),
+  spreadCorrect: boolean("spread_correct"),
+  confidenceAccuracy: decimal("confidence_accuracy", { precision: 5, scale: 2 }),
+  
+  // Pitcher Performance vs Prediction
+  awayPitcherActual: jsonb("away_pitcher_actual"),
+  homePitcherActual: jsonb("home_pitcher_actual"),
+  pitchingPredictionAccuracy: decimal("pitching_prediction_accuracy", { precision: 5, scale: 2 }),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
 });
@@ -143,6 +178,12 @@ export const insertConsensusDataSchema = createInsertSchema(consensusData).omit(
   updatedAt: true,
 });
 
+export const insertPerformanceTrackingSchema = createInsertSchema(performanceTracking).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertGame = z.infer<typeof insertGameSchema>;
@@ -159,3 +200,5 @@ export type InsertDailyPick = z.infer<typeof insertDailyPickSchema>;
 export type DailyPick = typeof dailyPicks.$inferSelect;
 export type InsertConsensusData = z.infer<typeof insertConsensusDataSchema>;
 export type ConsensusData = typeof consensusData.$inferSelect;
+export type InsertPerformanceTracking = z.infer<typeof insertPerformanceTrackingSchema>;
+export type PerformanceTracking = typeof performanceTracking.$inferSelect;

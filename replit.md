@@ -21,8 +21,8 @@ This is a full-stack web application built for providing daily MLB betting insig
 - **External APIs**: Integration with sports odds APIs and OpenAI
 
 ### Data Storage Solutions
-- **Primary Storage**: In-memory storage implementation (MemStorage class)
-- **Database Schema**: Drizzle ORM with PostgreSQL schema definitions
+- **Primary Storage**: PostgreSQL database with Drizzle ORM (DatabaseStorage class)
+- **Database Schema**: Full PostgreSQL implementation with all tables created
 - **Session Management**: Express sessions with PostgreSQL session store (connect-pg-simple)
 - **Migration Support**: Drizzle-kit for database migrations
 
@@ -125,5 +125,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
-Changelog:
-- June 29, 2025. Initial setup
+- June 29, 2025: Added PostgreSQL database integration
+  - Migrated from in-memory storage to persistent PostgreSQL database
+  - Created DatabaseStorage class implementing full CRUD operations
+  - Successfully migrated all data models with Drizzle ORM
+  - Enhanced data persistence for games, odds, AI summaries, bets, and consensus data
+- June 29, 2025: Implemented left sidebar navigation and automatic AI analysis
+  - Built comprehensive left sidebar with betting slip summary and live odds status
+  - Automatic AI-powered game analysis generation for all MLB games by default
+  - Enhanced betting insights with public sentiment tracking and consensus data
+- June 29, 2025: Initial setup

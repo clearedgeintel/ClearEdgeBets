@@ -1,4 +1,6 @@
-import { users, games, odds, aiSummaries, bets, props, dailyPicks, consensusData, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type ConsensusData, type InsertConsensusData } from "@shared/schema";
+import { users, games, odds, aiSummaries, bets, props, dailyPicks, consensusData, performanceTracking, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking } from "@shared/schema";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -39,6 +41,24 @@ export interface IStorage {
   getConsensusData(gameId: string): Promise<ConsensusData[]>;
   createConsensusData(data: InsertConsensusData): Promise<ConsensusData>;
   updateConsensusData(gameId: string, market: string, updates: Partial<ConsensusData>): Promise<ConsensusData>;
+
+  // Performance Tracking methods
+  getPerformanceTracking(dateRange?: { start: string; end: string }): Promise<PerformanceTracking[]>;
+  createPerformanceTracking(data: InsertPerformanceTracking): Promise<PerformanceTracking>;
+  updatePerformanceTracking(gameId: string, updates: Partial<PerformanceTracking>): Promise<PerformanceTracking>;
+  getPerformanceStats(dateRange?: { start: string; end: string }): Promise<{
+    totalGames: number;
+    winnerAccuracy: number;
+    totalAccuracy: number;
+    spreadAccuracy: number;
+    avgConfidence: number;
+    pitchingAccuracy: number;
+    monthlyBreakdown: Array<{
+      month: string;
+      games: number;
+      accuracy: number;
+    }>;
+  }>;
 }
 
 export class MemStorage implements IStorage {
@@ -305,4 +325,244 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async getAllTodaysGames(): Promise<Game[]> {
+    return await db.select().from(games);
+  }
+
+  async getGame(gameId: string): Promise<Game | undefined> {
+    const [game] = await db.select().from(games).where(eq(games.gameId, gameId));
+    return game || undefined;
+  }
+
+  async createGame(insertGame: InsertGame): Promise<Game> {
+    const [game] = await db
+      .insert(games)
+      .values(insertGame)
+      .returning();
+    return game;
+  }
+
+  async updateGame(gameId: string, updates: Partial<Game>): Promise<Game> {
+    const [game] = await db
+      .update(games)
+      .set(updates)
+      .where(eq(games.gameId, gameId))
+      .returning();
+    return game;
+  }
+
+  async getOddsByGameId(gameId: string): Promise<Odds[]> {
+    return await db.select().from(odds).where(eq(odds.gameId, gameId));
+  }
+
+  async createOdds(insertOdds: InsertOdds): Promise<Odds> {
+    const [oddsRecord] = await db
+      .insert(odds)
+      .values(insertOdds)
+      .returning();
+    return oddsRecord;
+  }
+
+  async updateOdds(gameId: string, bookmaker: string, updates: Partial<Odds>): Promise<Odds> {
+    const [oddsRecord] = await db
+      .update(odds)
+      .set(updates)
+      .where(and(eq(odds.gameId, gameId), eq(odds.bookmaker, bookmaker)))
+      .returning();
+    return oddsRecord;
+  }
+
+  async getAiSummary(gameId: string): Promise<AiSummary | undefined> {
+    const [summary] = await db.select().from(aiSummaries).where(eq(aiSummaries.gameId, gameId));
+    return summary || undefined;
+  }
+
+  async createAiSummary(insertSummary: InsertAiSummary): Promise<AiSummary> {
+    const [summary] = await db
+      .insert(aiSummaries)
+      .values(insertSummary)
+      .returning();
+    return summary;
+  }
+
+  async getUserBets(userId?: number): Promise<Bet[]> {
+    if (userId) {
+      return await db.select().from(bets).where(eq(bets.userId, userId));
+    }
+    return await db.select().from(bets);
+  }
+
+  async createBet(insertBet: InsertBet): Promise<Bet> {
+    const [bet] = await db
+      .insert(bets)
+      .values(insertBet)
+      .returning();
+    return bet;
+  }
+
+  async updateBetResult(betId: number, result: string, actualWin?: number): Promise<Bet> {
+    const [bet] = await db
+      .update(bets)
+      .set({
+        result,
+        actualWin: actualWin?.toString() || null,
+        status: "settled"
+      })
+      .where(eq(bets.id, betId))
+      .returning();
+    return bet;
+  }
+
+  async getPropsByGameId(gameId: string): Promise<Prop[]> {
+    return await db.select().from(props).where(eq(props.gameId, gameId));
+  }
+
+  async createProp(insertProp: InsertProp): Promise<Prop> {
+    const [prop] = await db
+      .insert(props)
+      .values(insertProp)
+      .returning();
+    return prop;
+  }
+
+  async getDailyPicks(date: string): Promise<DailyPick[]> {
+    return await db.select().from(dailyPicks).where(eq(dailyPicks.date, date));
+  }
+
+  async createDailyPick(insertPick: InsertDailyPick): Promise<DailyPick> {
+    const [pick] = await db
+      .insert(dailyPicks)
+      .values(insertPick)
+      .returning();
+    return pick;
+  }
+
+  async updateDailyPickResult(pickId: number, result: string): Promise<DailyPick> {
+    const [pick] = await db
+      .update(dailyPicks)
+      .set({ result })
+      .where(eq(dailyPicks.id, pickId))
+      .returning();
+    return pick;
+  }
+
+  async getConsensusData(gameId: string): Promise<ConsensusData[]> {
+    return await db.select().from(consensusData).where(eq(consensusData.gameId, gameId));
+  }
+
+  async createConsensusData(insertData: InsertConsensusData): Promise<ConsensusData> {
+    const [data] = await db
+      .insert(consensusData)
+      .values(insertData)
+      .returning();
+    return data;
+  }
+
+  async updateConsensusData(gameId: string, market: string, updates: Partial<ConsensusData>): Promise<ConsensusData> {
+    const [data] = await db
+      .update(consensusData)
+      .set(updates)
+      .where(and(eq(consensusData.gameId, gameId), eq(consensusData.market, market)))
+      .returning();
+    return data;
+  }
+
+  async getPerformanceTracking(dateRange?: { start: string; end: string }): Promise<PerformanceTracking[]> {
+    if (dateRange) {
+      return await db.select().from(performanceTracking)
+        .where(and(
+          eq(performanceTracking.gameDate, dateRange.start), // This would need proper date range logic
+          eq(performanceTracking.gameDate, dateRange.end)
+        ));
+    }
+    return await db.select().from(performanceTracking);
+  }
+
+  async createPerformanceTracking(data: InsertPerformanceTracking): Promise<PerformanceTracking> {
+    const [tracking] = await db
+      .insert(performanceTracking)
+      .values(data)
+      .returning();
+    return tracking;
+  }
+
+  async updatePerformanceTracking(gameId: string, updates: Partial<PerformanceTracking>): Promise<PerformanceTracking> {
+    const [tracking] = await db
+      .update(performanceTracking)
+      .set(updates)
+      .where(eq(performanceTracking.gameId, gameId))
+      .returning();
+    return tracking;
+  }
+
+  async getPerformanceStats(dateRange?: { start: string; end: string }): Promise<{
+    totalGames: number;
+    winnerAccuracy: number;
+    totalAccuracy: number;
+    spreadAccuracy: number;
+    avgConfidence: number;
+    pitchingAccuracy: number;
+    monthlyBreakdown: Array<{
+      month: string;
+      games: number;
+      accuracy: number;
+    }>;
+  }> {
+    const records = await this.getPerformanceTracking(dateRange);
+    
+    const totalGames = records.length;
+    const winnerCorrect = records.filter(r => r.winnerCorrect).length;
+    const totalCorrect = records.filter(r => r.totalCorrect).length;
+    const spreadCorrect = records.filter(r => r.spreadCorrect).length;
+    
+    const avgConfidence = records.reduce((sum, r) => sum + (r.aiConfidence || 0), 0) / totalGames;
+    const avgPitchingAccuracy = records.reduce((sum, r) => sum + parseFloat(r.pitchingPredictionAccuracy || '0'), 0) / totalGames;
+
+    // Group by month for breakdown
+    const monthlyStats = new Map<string, { games: number; correct: number }>();
+    records.forEach(record => {
+      const month = record.gameDate.substring(0, 7); // YYYY-MM format
+      const current = monthlyStats.get(month) || { games: 0, correct: 0 };
+      current.games++;
+      if (record.winnerCorrect) current.correct++;
+      monthlyStats.set(month, current);
+    });
+
+    const monthlyBreakdown = Array.from(monthlyStats.entries()).map(([month, stats]) => ({
+      month,
+      games: stats.games,
+      accuracy: stats.games > 0 ? (stats.correct / stats.games) * 100 : 0
+    }));
+
+    return {
+      totalGames,
+      winnerAccuracy: totalGames > 0 ? (winnerCorrect / totalGames) * 100 : 0,
+      totalAccuracy: totalGames > 0 ? (totalCorrect / totalGames) * 100 : 0,
+      spreadAccuracy: totalGames > 0 ? (spreadCorrect / totalGames) * 100 : 0,
+      avgConfidence,
+      pitchingAccuracy: avgPitchingAccuracy,
+      monthlyBreakdown
+    };
+  }
+}
+
+export const storage = new DatabaseStorage();

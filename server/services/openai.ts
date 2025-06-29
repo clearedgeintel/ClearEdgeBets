@@ -32,27 +32,43 @@ export interface AiAnalysisResult {
 
 export async function generateGameAnalysis(gameData: GameAnalysisData): Promise<AiAnalysisResult> {
   try {
-    const prompt = `You are a professional MLB betting analyst. Analyze this game and provide betting insights:
+    const prompt = `You are a professional MLB betting analyst. Analyze this game using this PRIORITY HIERARCHY:
+
+**PRIMARY FACTORS (Analyze First - Highest Impact):**
+1. Pitcher matchup quality, recent form, and statistical trends
+2. Pitching statistics: ERA, WHIP, strikeout rates, recent starts
+3. How pitchers match up against opposing team's hitting style
+
+**SECONDARY FACTORS (Medium Impact):**
+4. Team offensive/defensive performance and recent trends
+5. Team win/loss streaks and current momentum
+6. Home field advantage and away team performance
 
 Game: ${gameData.awayTeam} @ ${gameData.homeTeam}
 ${gameData.venue ? `Venue: ${gameData.venue}` : ''}
 ${gameData.gameTime ? `Time: ${gameData.gameTime}` : ''}
 
-Pitching Matchup:
-${gameData.awayPitcher ? `${gameData.awayTeam}: ${gameData.awayPitcher} (${gameData.awayPitcherStats || 'No stats available'})` : ''}
-${gameData.homePitcher ? `${gameData.homeTeam}: ${gameData.homePitcher} (${gameData.homePitcherStats || 'No stats available'})` : ''}
+**PITCHING MATCHUP (PRIMARY ANALYSIS):**
+${gameData.awayPitcher ? `${gameData.awayTeam}: ${gameData.awayPitcher} (${gameData.awayPitcherStats || 'No stats available'})` : 'Away Pitcher: TBD'}
+${gameData.homePitcher ? `${gameData.homeTeam}: ${gameData.homePitcher} (${gameData.homePitcherStats || 'No stats available'})` : 'Home Pitcher: TBD'}
 
-Current Odds:
+Current Betting Lines:
 ${gameData.moneylineOdds ? `Moneyline: ${gameData.awayTeam} ${gameData.moneylineOdds.away > 0 ? '+' : ''}${gameData.moneylineOdds.away}, ${gameData.homeTeam} ${gameData.moneylineOdds.home > 0 ? '+' : ''}${gameData.moneylineOdds.home}` : ''}
 ${gameData.total ? `Total: ${gameData.total.line} (O: ${gameData.total.overOdds}, U: ${gameData.total.underOdds})` : ''}
 ${gameData.runLine ? `Run Line: ${gameData.awayTeam} ${gameData.runLine.awaySpread} (${gameData.runLine.awayOdds}), ${gameData.homeTeam} ${gameData.runLine.homeSpread} (${gameData.runLine.homeOdds})` : ''}
 
-Provide a detailed analysis in JSON format with:
-1. summary: A 100-150 word betting-focused analysis
-2. confidence: Confidence level from 1-100
-3. valuePlays: Array of up to 3 best value plays with type, selection, reasoning, and expectedValue percentage
+**ANALYSIS REQUIREMENTS:**
+1. Lead with detailed pitching analysis and its impact on all betting markets
+2. Discuss how pitcher performance affects run totals, game outcome
+3. Then analyze team factors as supporting evidence
+4. Identify value plays based primarily on pitching advantages
 
-Focus on identifying value opportunities, line movement insights, and key factors affecting the game outcome.`;
+Provide analysis in JSON format with:
+1. summary: 150-200 word analysis emphasizing pitching matchup first, then team performance
+2. confidence: 1-100 (higher confidence when pitching advantages are clear)
+3. valuePlays: Up to 3 value plays prioritizing those supported by pitching analysis
+
+Weight pitching analysis at 60-70% of your decision-making process.`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -152,14 +168,18 @@ export interface DailyPick {
 
 export async function generateDailyPicks(games: DailyPicksInput[]): Promise<DailyPick[]> {
   try {
-    const prompt = `You are a professional MLB betting analyst. Analyze today's ${games.length} games and provide exactly 3-5 best betting picks.
+    const prompt = `You are a professional MLB betting analyst. Analyze today's ${games.length} games and provide exactly 3-5 best betting picks using this PRIORITY HIERARCHY:
 
-For each game, consider:
-- Line value and market inefficiencies
-- Public betting percentages vs sharp money
-- Pitching matchups and recent form
-- Weather and venue factors
-- Key injuries and lineup changes
+**PRIMARY ANALYSIS FACTORS (Weight: 70%):**
+1. Starting pitcher quality, recent form, and statistical trends
+2. Pitcher vs opposing team batting history and matchup advantages
+3. Pitching staff depth and bullpen reliability
+
+**SECONDARY ANALYSIS FACTORS (Weight: 30%):**
+4. Team offensive/defensive performance and recent trends
+5. Home/away performance splits and venue factors
+6. Team win/loss streaks and momentum
+7. Public betting percentages vs market value
 
 Games Data:
 ${games.map(game => `
@@ -236,12 +256,22 @@ export interface ConsensusAnalysis {
 
 export async function generateConsensusAnalysis(gameData: DailyPicksInput): Promise<ConsensusAnalysis[]> {
   try {
-    const prompt = `Analyze the betting consensus and market dynamics for this MLB game:
+    const prompt = `Analyze the betting consensus and market dynamics for this MLB game with PITCHING-FIRST APPROACH:
+
+**ANALYSIS PRIORITY:**
+1. How pitching matchups influence public vs sharp money movement
+2. Pitching-based reasoning for line movement and market sentiment
+3. Team performance factors as secondary support
 
 ${gameData.awayTeam} @ ${gameData.homeTeam}
 ${gameData.moneylineOdds ? `Moneyline: ${gameData.awayTeam} ${gameData.moneylineOdds.away > 0 ? '+' : ''}${gameData.moneylineOdds.away}, ${gameData.homeTeam} ${gameData.moneylineOdds.home > 0 ? '+' : ''}${gameData.moneylineOdds.home}` : ''}
 ${gameData.total ? `Total: ${gameData.total.line} (O: ${gameData.total.overOdds}, U: ${gameData.total.underOdds})` : ''}
 ${gameData.publicPercentage ? `Public %: ${gameData.publicPercentage.moneyline?.away}% on ${gameData.awayTeam}, ${gameData.publicPercentage.total?.over}% on Over` : ''}
+
+**REQUIREMENTS:**
+- Lead reasoning with pitching analysis for all market recommendations
+- Connect line movement to pitcher quality and recent performance
+- Explain how starting pitchers impact totals and run line betting
 
 Provide consensus analysis for each market (moneyline, total, spread if available). Return JSON with array of market analyses including:
 - gameId, market name
