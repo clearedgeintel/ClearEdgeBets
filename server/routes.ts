@@ -695,12 +695,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
 
       const aiPicks = await generateDailyPicks(gameData);
-      const today = new Date().toISOString().split('T')[0];
+      // Use the same date calculation as the frontend to avoid timezone issues
+      const today = new Date();
+      const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
+      const todayString = localDate.toISOString().split('T')[0];
 
       // Store picks in database
       const storedPicks = await Promise.all(aiPicks.map(pick => 
         storage.createDailyPick({
-          date: today,
+          date: todayString,
           gameId: pick.gameId,
           pickType: pick.pickType,
           selection: pick.selection,
@@ -988,7 +991,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/performance/daily", async (req, res) => {
     try {
       const { date } = req.query;
-      const targetDate = date ? String(date) : new Date().toISOString().split('T')[0];
+      let targetDate = date ? String(date) : '';
+      if (!targetDate) {
+        // Use the same date calculation as elsewhere to avoid timezone issues
+        const today = new Date();
+        const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
+        targetDate = localDate.toISOString().split('T')[0];
+      }
       
       // Get daily picks for the date
       const dailyPicks = await storage.getDailyPicks(targetDate);
@@ -1074,7 +1083,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/performance/auto-reconcile", async (req, res) => {
     try {
       const { date } = req.body;
-      const targetDate = date || new Date().toISOString().split('T')[0];
+      let targetDate = date;
+      if (!targetDate) {
+        // Use the same date calculation as elsewhere to avoid timezone issues
+        const today = new Date();
+        const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
+        targetDate = localDate.toISOString().split('T')[0];
+      }
       
       const dailyPicks = await storage.getDailyPicks(targetDate);
       const games = await storage.getAllTodaysGames();
