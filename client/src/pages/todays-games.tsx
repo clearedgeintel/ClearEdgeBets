@@ -8,8 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Calendar, BarChart3, TrendingUp, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Filter, Calendar, BarChart3, TrendingUp, Clock, ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
 import { format, addDays, subDays, isSameDay } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface Game {
   id: number;
@@ -156,12 +159,28 @@ export default function TodaysGames() {
                   <span>Previous</span>
                 </Button>
                 
-                <div className="flex items-center space-x-2 px-4 py-2 bg-muted rounded-lg">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium text-foreground">
-                    {format(selectedDate, "EEEE, MMMM d, yyyy")}
-                  </span>
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-[280px] justify-start text-left font-normal",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(date) => date && setSelectedDate(date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
                 
                 <Button
                   variant="outline"
