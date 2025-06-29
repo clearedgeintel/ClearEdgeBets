@@ -13,7 +13,7 @@ const plans = [
     price: 0,
     period: "forever",
     icon: Target,
-    description: "Get started with basic MLB insights",
+    description: "Get started with basic ClearEdge analysis",
     features: [
       "Basic game odds",
       "Limited AI analysis",

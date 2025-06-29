@@ -75,7 +75,11 @@ export default function Sidebar() {
         <div className="flex items-center space-x-3">
           <Baseball className="h-8 w-8 text-blue-400" />
           <div>
-            <h1 className="text-xl font-bold">MLB Insights</h1>
+            <img 
+              src="/clearedge-logo.png" 
+              alt="ClearEdge Bets" 
+              className="h-8 w-auto"
+            />
             <p className="text-sm text-gray-400">Betting Platform</p>
           </div>
         </div>

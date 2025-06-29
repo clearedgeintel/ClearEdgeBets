@@ -129,11 +129,14 @@ Preferred communication style: Simple, everyday language.
   - Built entirely new home page with modern hero section, stats dashboard, and game cards
   - Replaced old layout with clean header/footer structure and improved navigation
   - Implemented professional color scheme: dark green (hsl(142, 76%, 36%)) and cyan blue (hsl(195, 84%, 45%))
-  - Created stylized text logo with "CLEAR" in green, "EDGE" in blue, "BETS" in gray
+  - Integrated actual ClearEdge Bets logo throughout platform (header, footer, hero, sidebar)
   - Removed all gradients for cleaner, more professional appearance
   - Added comprehensive footer with branding, navigation, and legal information
   - Enhanced search and filtering capabilities on main dashboard
   - Redesigned game cards with improved AI analysis display and betting options
+  - Returned to sidebar layout with multi-sport navigation structure (Baseball primary, other sports coming soon)
+  - Added blurred AI analysis content with signup prompts for non-authenticated users
+  - Complete site-wide rebranding from "MLB Insights" to "ClearEdge Bets"
 - June 29, 2025: Implementing subscription-based betting intelligence platform
   - Added user authentication system with email/password login
   - Implemented tiered subscription model (Free, Pro $9.99/mo, Elite $19.99/mo)

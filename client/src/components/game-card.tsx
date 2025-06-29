@@ -4,9 +4,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronUp, Brain, Users, Plus } from "lucide-react";
+import { ChevronDown, ChevronUp, Brain, Users, Plus, Lock } from "lucide-react";
 import { useBettingSlip } from "@/hooks/use-betting-slip";
+import { useAuth } from "@/contexts/auth-context";
 import { apiRequest } from "@/lib/queryClient";
+import { Link } from "wouter";
 
 interface Game {
   id: number;
@@ -60,6 +62,7 @@ export default function GameCard({ game }: GameCardProps) {
   const [aiSummaryOpen, setAiSummaryOpen] = useState(false);
   const [propsOpen, setPropsOpen] = useState(false);
   const { addBet } = useBettingSlip();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const generateAnalysisMutation = useMutation({
@@ -323,7 +326,13 @@ export default function GameCard({ game }: GameCardProps) {
               <div className="flex items-center space-x-2">
                 <Brain className="h-4 w-4 text-primary" />
                 <span className="font-medium text-gray-900">AI Game Analysis</span>
-                {game.aiSummary && (
+                {!user && (
+                  <Badge variant="outline" className="border-orange-200 text-orange-600">
+                    <Lock className="h-3 w-3 mr-1" />
+                    Premium
+                  </Badge>
+                )}
+                {user && game.aiSummary && (
                   <Badge variant="secondary" className="bg-secondary text-white">
                     {game.aiSummary.confidence > 75 ? "High Value" : "Moderate"}
                   </Badge>
@@ -337,7 +346,48 @@ export default function GameCard({ game }: GameCardProps) {
             </CollapsibleTrigger>
             
             <CollapsibleContent className="mt-3">
-              {game.aiSummary ? (
+              {!user ? (
+                <div className="relative bg-gray-50 rounded-lg p-4">
+                  <div className="blur-sm select-none pointer-events-none">
+                    <p className="text-gray-700 text-sm leading-relaxed mb-3">
+                      This matchup features strong pitching on both sides with the home starter showing excellent command in recent outings. The visiting team's recent offensive struggles against similar pitching styles suggest value on the under. Key factors include weather conditions favoring pitchers and both bullpens well-rested.
+                    </p>
+                    <div className="pt-3 border-t border-gray-200">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-500">Confidence Level</span>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-16 bg-gray-200 rounded-full h-1.5">
+                            <div className="bg-secondary h-1.5 rounded-full" style={{ width: '78%' }}></div>
+                          </div>
+                          <span className="font-medium text-secondary">78%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="absolute inset-0 bg-white/90 flex items-center justify-center rounded-lg">
+                    <div className="text-center p-4">
+                      <Lock className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+                      <h3 className="font-semibold text-gray-900 mb-2">Premium AI Analysis</h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Get detailed game breakdowns, value plays, and confidence ratings
+                      </p>
+                      <div className="space-y-2">
+                        <Link href="/subscribe">
+                          <Button className="w-full bg-primary hover:bg-primary/90">
+                            Sign Up for Free
+                          </Button>
+                        </Link>
+                        <Link href="/subscribe">
+                          <Button variant="outline" size="sm" className="w-full">
+                            Learn More
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : game.aiSummary ? (
                 <div className="bg-gray-50 rounded-lg p-4">
                   <p className="text-gray-700 text-sm leading-relaxed mb-3">
                     {game.aiSummary.summary}
@@ -433,7 +483,7 @@ export default function GameCard({ game }: GameCardProps) {
                     key={index}
                     variant="outline"
                     className="bg-gray-50 hover:bg-primary hover:text-white p-3 h-auto justify-between"
-                    onClick={() => handleAddBet("prop", `${prop.player} ${prop.line}`, prop.opts)}
+                    onClick={() => handleAddBet("prop", `${prop.player} ${prop.line}`, prop.odds)}
                   >
                     <div className="text-left">
                       <p className="font-medium text-sm">{prop.player} {prop.line}</p>
