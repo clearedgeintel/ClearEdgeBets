@@ -57,8 +57,8 @@ export default function MyBets() {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">My Bets</h1>
-          <p className="text-gray-600 mt-1">Track your betting history and performance</p>
+          <h1 className="text-3xl font-bold text-foreground">My Bets</h1>
+          <p className="text-muted-foreground mt-1">Track your betting history and performance</p>
         </div>
 
         {/* Stats Overview */}
@@ -67,8 +67,8 @@ export default function MyBets() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Win Rate</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.winRate}%</p>
+                  <p className="text-sm text-muted-foreground">Win Rate</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.winRate}%</p>
                 </div>
                 <div className="p-3 bg-primary/10 rounded-full">
                   <BarChart3 className="h-6 w-6 text-primary" />
@@ -81,7 +81,7 @@ export default function MyBets() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Profit</p>
+                  <p className="text-sm text-muted-foreground">Total Profit</p>
                   <p className={`text-2xl font-bold ${stats.totalProfit >= 0 ? 'text-secondary' : 'text-red-600'}`}>
                     {formatCurrency(stats.totalProfit)}
                   </p>
@@ -101,10 +101,10 @@ export default function MyBets() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Bets</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalBets}</p>
+                  <p className="text-sm text-muted-foreground">Total Bets</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.totalBets}</p>
                 </div>
-                <div className="p-3 bg-blue-100 rounded-full">
+                <div className="p-3 bg-blue-500/10 rounded-full">
                   <Calendar className="h-6 w-6 text-blue-600" />
                 </div>
               </div>
@@ -115,8 +115,8 @@ export default function MyBets() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Pending Bets</p>
-                  <p className="text-2xl font-bold text-gray-900">{pendingBets.length}</p>
+                  <p className="text-sm text-muted-foreground">Pending Bets</p>
+                  <p className="text-2xl font-bold text-foreground">{pendingBets.length}</p>
                 </div>
                 <div className="p-3 bg-warning/10 rounded-full">
                   <TrendingUp className="h-6 w-6 text-warning" />
@@ -137,9 +137,9 @@ export default function MyBets() {
             {pendingBets.length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
-                  <div className="text-gray-500">
+                  <div className="text-muted-foreground">
                     <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-medium mb-2">No pending bets</h3>
+                    <h3 className="text-lg font-medium mb-2 text-foreground">No pending bets</h3>
                     <p className="text-sm">Your active bets will appear here once placed.</p>
                   </div>
                 </CardContent>
@@ -151,22 +151,22 @@ export default function MyBets() {
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="font-semibold text-gray-900">{bet.selection}</h3>
+                          <h3 className="font-semibold text-foreground">{bet.selection}</h3>
                           <Badge variant="outline">{bet.betType}</Badge>
                           <Badge variant="secondary">{formatOdds(bet.odds)}</Badge>
                         </div>
-                        <p className="text-sm text-gray-600 mb-2">Game ID: {bet.gameId}</p>
+                        <p className="text-sm text-muted-foreground mb-2">Game ID: {bet.gameId}</p>
                         <div className="flex items-center space-x-4 text-sm">
-                          <span className="text-gray-600">
-                            Stake: <span className="font-medium">{formatCurrency(bet.stake)}</span>
+                          <span className="text-muted-foreground">
+                            Stake: <span className="font-medium text-foreground">{formatCurrency(bet.stake)}</span>
                           </span>
-                          <span className="text-gray-600">
+                          <span className="text-muted-foreground">
                             To Win: <span className="font-medium text-secondary">{formatCurrency(bet.potentialWin)}</span>
                           </span>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-200">
+                        <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20">
                           Pending
                         </Badge>
                         <Button
@@ -203,24 +203,24 @@ export default function MyBets() {
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="font-semibold text-gray-900">{bet.selection}</h3>
+                          <h3 className="font-semibold text-foreground">{bet.selection}</h3>
                           <Badge variant="outline">{bet.betType}</Badge>
                           <Badge variant="secondary">{formatOdds(bet.odds)}</Badge>
                         </div>
-                        <p className="text-sm text-gray-600 mb-2">Game ID: {bet.gameId}</p>
+                        <p className="text-sm text-muted-foreground mb-2">Game ID: {bet.gameId}</p>
                         <div className="flex items-center space-x-4 text-sm">
-                          <span className="text-gray-600">
-                            Stake: <span className="font-medium">{formatCurrency(bet.stake)}</span>
+                          <span className="text-muted-foreground">
+                            Stake: <span className="font-medium text-foreground">{formatCurrency(bet.stake)}</span>
                           </span>
                           {bet.actualWin !== undefined && (
-                            <span className="text-gray-600">
+                            <span className="text-muted-foreground">
                               Result: <span className={`font-medium ${bet.actualWin > 0 ? 'text-secondary' : 'text-red-600'}`}>
                                 {formatCurrency(bet.actualWin)}
                               </span>
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-500 mt-2">
+                        <p className="text-xs text-muted-foreground mt-2">
                           Placed: {new Date(bet.placedAt).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'short',
