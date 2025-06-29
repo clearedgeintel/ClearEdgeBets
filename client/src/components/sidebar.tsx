@@ -22,7 +22,9 @@ import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import LoginForm from "@/components/auth/login-form";
+import BettingSlip from "@/components/betting-slip";
 
 export default function Sidebar() {
   const [location] = useLocation();
@@ -143,10 +145,20 @@ export default function Sidebar() {
               <div className="text-sm text-gray-400">
                 Potential Win: ${bets.reduce((sum, bet) => sum + bet.potentialWin, 0).toFixed(2)}
               </div>
-              <Button size="sm" className="w-full">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                View Slip
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="w-full">
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    View Slip
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Betting Slip</DialogTitle>
+                  </DialogHeader>
+                  <BettingSlip />
+                </DialogContent>
+              </Dialog>
             </div>
           ) : (
             <p className="text-sm text-gray-400">No active bets</p>

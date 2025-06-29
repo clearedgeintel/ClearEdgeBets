@@ -51,6 +51,7 @@ export default function BettingSlip() {
   };
 
   const handleStakeChange = (gameId: string, betType: string, selection: string, stake: number) => {
+    console.log("Stake change:", { gameId, betType, selection, stake });
     const bet = bets.find(b => b.gameId === gameId && b.betType === betType && b.selection === selection);
     if (bet) {
       const potentialWin = calculatePotentialWin(stake, bet.odds);
@@ -59,6 +60,7 @@ export default function BettingSlip() {
   };
 
   const handleOddsChange = (gameId: string, betType: string, selection: string, odds: number) => {
+    console.log("Odds change:", { gameId, betType, selection, odds });
     const bet = bets.find(b => b.gameId === gameId && b.betType === betType && b.selection === selection);
     if (bet) {
       const potentialWin = calculatePotentialWin(bet.stake, odds);
