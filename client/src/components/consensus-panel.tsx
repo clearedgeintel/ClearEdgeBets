@@ -51,11 +51,17 @@ export default function ConsensusPanel({ gameId }: ConsensusPanelProps) {
     error,
   } = useQuery({
     queryKey: ["/api/consensus", gameId],
-    queryFn: () => apiRequest(`/api/consensus/${gameId}`),
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/consensus/${gameId}`);
+      return res.json();
+    },
   });
 
   const generateConsensusMutation = useMutation({
-    mutationFn: () => apiRequest(`/api/consensus/${gameId}/generate`, { method: "POST" }),
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/consensus/${gameId}/generate`);
+      return res.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/consensus", gameId] });
       toast({
@@ -111,7 +117,7 @@ export default function ConsensusPanel({ gameId }: ConsensusPanelProps) {
     );
   }
 
-  if (error || !consensus || consensus.length === 0) {
+  if (error || !consensus || !Array.isArray(consensus) || consensus.length === 0) {
     return (
       <Card>
         <CardHeader>

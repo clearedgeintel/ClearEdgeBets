@@ -209,7 +209,7 @@ export class MemStorage implements IStorage {
     if (!existingBet) {
       throw new Error(`Bet with ID ${betId} not found`);
     }
-    const updatedBet = { ...existingBet, result, actualWin, status: "settled" };
+    const updatedBet = { ...existingBet, result, actualWin: actualWin?.toString() || null, status: "settled" };
     this.bets.set(betId, updatedBet);
     return updatedBet;
   }

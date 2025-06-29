@@ -1,7 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import Header from "@/components/header";
-import MobileNav from "@/components/mobile-nav";
 import GameCard from "@/components/game-card";
 import BettingSlip from "@/components/betting-slip";
 import KellyCalculator from "@/components/kelly-calculator";
@@ -93,7 +91,6 @@ export default function Home() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <main className="lg:col-span-3">
@@ -129,7 +126,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -260,8 +256,6 @@ export default function Home() {
           </aside>
         </div>
       </div>
-
-      <MobileNav />
     </div>
   );
 }

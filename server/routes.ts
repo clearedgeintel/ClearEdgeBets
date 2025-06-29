@@ -73,7 +73,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const gamesWithData = await Promise.all(
         games.map(async (game) => {
           const odds = await storage.getOddsByGameId(game.gameId);
-          const aiSummary = await storage.getAiSummary(game.gameId);
+          let aiSummary = await storage.getAiSummary(game.gameId);
+          
+          // Auto-generate AI analysis if it doesn't exist
+          if (!aiSummary) {
+            try {
+              const analysisData: GameAnalysisData = {
+                awayTeam: game.awayTeam,
+                homeTeam: game.homeTeam,
+                awayPitcher: game.awayPitcher ?? undefined,
+                homePitcher: game.homePitcher ?? undefined,
+                awayPitcherStats: game.awayPitcherStats ?? undefined,
+                homePitcherStats: game.homePitcherStats ?? undefined,
+                venue: game.venue,
+                gameTime: game.gameTime
+              };
+
+              // Add odds data
+              const moneylineOdds = odds.find(o => o.market === "moneyline");
+              if (moneylineOdds) {
+                analysisData.moneylineOdds = {
+                  away: moneylineOdds.awayOdds || 0,
+                  home: moneylineOdds.homeOdds || 0
+                };
+              }
+
+              const totalOdds = odds.find(o => o.market === "totals");
+              if (totalOdds) {
+                analysisData.total = {
+                  line: parseFloat(totalOdds.total || "8.5"),
+                  overOdds: totalOdds.overOdds || 0,
+                  underOdds: totalOdds.underOdds || 0
+                };
+              }
+
+              const spreadOdds = odds.find(o => o.market === "spreads");
+              if (spreadOdds) {
+                analysisData.runLine = {
+                  awaySpread: parseFloat(spreadOdds.awaySpread || "1.5"),
+                  homeSpread: parseFloat(spreadOdds.homeSpread || "-1.5"),
+                  awayOdds: spreadOdds.awaySpreadOdds || 0,
+                  homeOdds: spreadOdds.homeSpreadOdds || 0
+                };
+              }
+
+              const analysis = await generateGameAnalysis(analysisData);
+              
+              aiSummary = await storage.createAiSummary({
+                gameId: game.gameId,
+                summary: analysis.summary,
+                confidence: analysis.confidence,
+                valuePlays: JSON.stringify(analysis.valuePlays)
+              });
+            } catch (error) {
+              console.log(`AI analysis failed for game ${game.gameId}:`, error);
+            }
+          }
           
           return {
             ...game,
