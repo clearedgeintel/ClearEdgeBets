@@ -740,6 +740,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reset all results for a date to allow re-reconciliation
+  app.post("/api/performance/reset-results", async (req, res) => {
+    try {
+      const { date } = req.body;
+      let targetDate = date;
+      if (!targetDate) {
+        const today = new Date();
+        const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
+        targetDate = localDate.toISOString().split('T')[0];
+      }
+      
+      const dailyPicks = await storage.getDailyPicks(targetDate);
+      let resetCount = 0;
+      
+      for (const pick of dailyPicks) {
+        if (pick.result !== null) {
+          await storage.updateDailyPickResult(pick.id, null);
+          resetCount++;
+        }
+      }
+      
+      res.json({ 
+        message: `Reset ${resetCount} pick results for ${targetDate}`,
+        resetCount 
+      });
+    } catch (error) {
+      console.error("Reset results error:", error);
+      res.status(500).json({ error: "Failed to reset results" });
+    }
+  });
+
   // Generate historical results for demonstration
   app.post("/api/performance/generate-historical", async (req, res) => {
     try {
@@ -1184,7 +1215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auto-reconcile picks based on mock game results
   app.post("/api/performance/auto-reconcile", async (req, res) => {
     try {
-      const { date } = req.body;
+      const { date, force = false } = req.body;
       let targetDate = date;
       if (!targetDate) {
         // Use the same date calculation as elsewhere to avoid timezone issues
@@ -1198,7 +1229,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let reconciledCount = 0;
       
       for (const pick of dailyPicks) {
-        if (pick.result !== null) continue; // Already reconciled
+        // Skip already reconciled picks unless force is true
+        if (pick.result !== null && !force) continue;
         
         // Generate mock results based on pick confidence and type
         // Higher confidence picks have better chance of winning

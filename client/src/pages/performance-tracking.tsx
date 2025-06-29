@@ -120,6 +120,25 @@ export default function PerformanceTracking() {
     },
   });
 
+  const resetResultsMutation = useMutation({
+    mutationFn: (date: string) => 
+      apiRequest('POST', '/api/performance/reset-results', { date }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/performance/daily'] });
+      toast({
+        title: "Results Reset",
+        description: "All pick results have been cleared and can now be re-reconciled.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Reset Failed",
+        description: "Failed to reset results. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const formatDate = (dateString: string) => {
     // Parse as local date to avoid timezone shifting issues
     const [year, month, day] = dateString.split('-').map(Number);
@@ -282,6 +301,65 @@ export default function PerformanceTracking() {
                 <p className="text-muted-foreground">
                   Review and reconcile today's AI-generated betting picks with actual game results.
                 </p>
+                
+                {/* Action Buttons */}
+                <div className="flex justify-center space-x-4 pt-4">
+                  <Button
+                    onClick={() => autoReconcileMutation.mutate({ date: selectedDate })}
+                    disabled={autoReconcileMutation.isPending}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    {autoReconcileMutation.isPending ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Auto Reconciling...
+                      </>
+                    ) : (
+                      <>
+                        <Target className="mr-2 h-4 w-4" />
+                        Auto Reconcile
+                      </>
+                    )}
+                  </Button>
+                  
+                  <Button
+                    onClick={() => resetResultsMutation.mutate(selectedDate)}
+                    disabled={resetResultsMutation.isPending}
+                    variant="outline"
+                    className="border-red-500/20 text-red-600 hover:bg-red-500/10"
+                  >
+                    {resetResultsMutation.isPending ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Resetting...
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="mr-2 h-4 w-4" />
+                        Reset Results
+                      </>
+                    )}
+                  </Button>
+                  
+                  <Button
+                    onClick={() => generateHistoricalMutation.mutate()}
+                    disabled={generateHistoricalMutation.isPending}
+                    variant="outline"
+                    className="border-secondary/20 text-secondary hover:bg-secondary/10"
+                  >
+                    {generateHistoricalMutation.isPending ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Calendar className="mr-2 h-4 w-4" />
+                        Generate Sample Data
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -336,37 +414,35 @@ export default function PerformanceTracking() {
                             </div>
                           </Badge>
 
-                          {!pick.result && (
-                            <div className="flex space-x-1">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-green-600 border-green-500/20 hover:bg-green-500/10"
-                                onClick={() => manualReconcileMutation.mutate({ pickId: pick.id, result: 'win' })}
-                                disabled={manualReconcileMutation.isPending}
-                              >
-                                Win
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-red-600 border-red-500/20 hover:bg-red-500/10"
-                                onClick={() => manualReconcileMutation.mutate({ pickId: pick.id, result: 'loss' })}
-                                disabled={manualReconcileMutation.isPending}
-                              >
-                                Loss
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-yellow-600 border-yellow-500/20 hover:bg-yellow-500/10"
-                                onClick={() => manualReconcileMutation.mutate({ pickId: pick.id, result: 'push' })}
-                                disabled={manualReconcileMutation.isPending}
-                              >
-                                Push
-                              </Button>
-                            </div>
-                          )}
+                          <div className="flex space-x-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-green-600 border-green-500/20 hover:bg-green-500/10"
+                              onClick={() => manualReconcileMutation.mutate({ pickId: pick.id, result: 'win' })}
+                              disabled={manualReconcileMutation.isPending}
+                            >
+                              Win
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 border-red-500/20 hover:bg-red-500/10"
+                              onClick={() => manualReconcileMutation.mutate({ pickId: pick.id, result: 'loss' })}
+                              disabled={manualReconcileMutation.isPending}
+                            >
+                              Loss
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-yellow-600 border-yellow-500/20 hover:bg-yellow-500/10"
+                              onClick={() => manualReconcileMutation.mutate({ pickId: pick.id, result: 'push' })}
+                              disabled={manualReconcileMutation.isPending}
+                            >
+                              Push
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </CardContent>

@@ -44,7 +44,7 @@ export interface IStorage {
   // Daily Pick methods
   getDailyPicks(date: string): Promise<DailyPick[]>;
   createDailyPick(pick: InsertDailyPick): Promise<DailyPick>;
-  updateDailyPickResult(pickId: number, result: string): Promise<DailyPick>;
+  updateDailyPickResult(pickId: number, result: string | null): Promise<DailyPick>;
 
   // Consensus Data methods
   getConsensusData(gameId: string): Promise<ConsensusData[]>;
@@ -283,11 +283,12 @@ export class MemStorage implements IStorage {
     return pick;
   }
 
-  async updateDailyPickResult(pickId: number, result: string): Promise<DailyPick> {
+  async updateDailyPickResult(pickId: number, result: string | null): Promise<DailyPick> {
     for (const [date, picks] of Array.from(this.dailyPicks.entries())) {
       const pickIndex = picks.findIndex((p: any) => p.id === pickId);
       if (pickIndex >= 0) {
-        const updatedPick = { ...picks[pickIndex], result, status: "settled" };
+        const status = result === null ? "active" : "settled";
+        const updatedPick = { ...picks[pickIndex], result, status };
         picks[pickIndex] = updatedPick;
         this.dailyPicks.set(date, picks);
         return updatedPick;
@@ -495,10 +496,11 @@ export class DatabaseStorage implements IStorage {
     return pick;
   }
 
-  async updateDailyPickResult(pickId: number, result: string): Promise<DailyPick> {
+  async updateDailyPickResult(pickId: number, result: string | null): Promise<DailyPick> {
+    const status = result === null ? "active" : "settled";
     const [pick] = await db
       .update(dailyPicks)
-      .set({ result })
+      .set({ result, status })
       .where(eq(dailyPicks.id, pickId))
       .returning();
     return pick;

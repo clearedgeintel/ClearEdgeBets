@@ -1,10 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { apiRequest } from "@/lib/queryClient";
 import { 
   Calendar, 
   TrendingUp, 
@@ -18,7 +19,10 @@ import {
   Bell,
   Search,
   Filter,
-  Plus
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import { useBettingSlip } from "@/contexts/betting-slip-context";
@@ -42,9 +46,10 @@ interface CFLPick {
   homeTeamCode: string;
   gameTime: string;
   status: "pending" | "won" | "lost";
+  result?: string | null;
 }
 
-function CFLPickCard({ pick }: { pick: CFLPick }) {
+function CFLPickCard({ pick, onUpdateResult }: { pick: CFLPick; onUpdateResult: (pickId: number, result: string) => void }) {
   const { addBet } = useBettingSlip();
   const { toast } = useToast();
 
@@ -62,6 +67,15 @@ function CFLPickCard({ pick }: { pick: CFLPick }) {
     if (confidence >= 80) return "bg-green-500/10 border-green-500/20";
     if (confidence >= 60) return "bg-yellow-500/10 border-yellow-500/20";
     return "bg-red-500/10 border-red-500/20";
+  };
+
+  const getResultColor = (result: string | null) => {
+    switch (result) {
+      case 'win': return 'bg-green-500/10 text-green-600 border-green-500/20';
+      case 'loss': return 'bg-red-500/10 text-red-600 border-red-500/20';
+      case 'push': return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20';
+      default: return 'bg-gray-500/10 text-gray-600 border-gray-500/20';
+    }
   };
 
   const handleAddToBettingSlip = () => {
@@ -191,14 +205,52 @@ function CFLPickCard({ pick }: { pick: CFLPick }) {
               </span>
             </div>
             
-            <Button 
-              onClick={handleAddToBettingSlip}
-              className="w-full bg-primary hover:bg-primary/90"
-              size="lg"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add to Betting Slip
-            </Button>
+            <div className="space-y-3">
+              {/* Result Display and Management */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-foreground">Result:</span>
+                <Badge variant="outline" className={pick.result ? getResultColor(pick.result) : 'bg-gray-500/10 text-gray-600 border-gray-500/20'}>
+                  {pick.result || 'Pending'}
+                </Badge>
+              </div>
+              
+              {/* Result Management Buttons */}
+              <div className="flex space-x-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 text-green-600 border-green-500/20 hover:bg-green-500/10"
+                  onClick={() => onUpdateResult(pick.id, 'win')}
+                >
+                  Win
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 text-red-600 border-red-500/20 hover:bg-red-500/10"
+                  onClick={() => onUpdateResult(pick.id, 'loss')}
+                >
+                  Loss
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 text-yellow-600 border-yellow-500/20 hover:bg-yellow-500/10"
+                  onClick={() => onUpdateResult(pick.id, 'push')}
+                >
+                  Push
+                </Button>
+              </div>
+              
+              <Button 
+                onClick={handleAddToBettingSlip}
+                className="w-full bg-primary hover:bg-primary/90"
+                size="lg"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add to Betting Slip
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>
@@ -211,12 +263,87 @@ export default function CFLPicks() {
   const [filterBy, setFilterBy] = useState("all");
   const [sortBy, setSortBy] = useState("confidence");
   const today = format(new Date(), "yyyy-MM-dd");
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Fetch real CFL picks data from API
   const { data: picks = [], isLoading } = useQuery<CFLPick[]>({
     queryKey: ['/api/cfl/daily-picks', today],
     enabled: true
   });
+
+  // Manual reconciliation mutation
+  const manualReconcileMutation = useMutation({
+    mutationFn: ({ pickId, result }: { pickId: number; result: string }) => 
+      apiRequest('POST', '/api/performance/reconcile', { pickId, result }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/cfl/daily-picks'] });
+      toast({
+        title: "Pick Updated",
+        description: "CFL pick result has been updated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Update Failed",
+        description: "Failed to update pick result. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Auto reconciliation mutation
+  const autoReconcileMutation = useMutation({
+    mutationFn: (date: string) => 
+      apiRequest('POST', '/api/performance/auto-reconcile', { date }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/cfl/daily-picks'] });
+      toast({
+        title: "Auto Reconcile Complete",
+        description: "CFL picks have been automatically reconciled with mock results.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Auto Reconcile Failed",
+        description: "Failed to auto reconcile picks. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reset results mutation
+  const resetResultsMutation = useMutation({
+    mutationFn: (date: string) => 
+      apiRequest('POST', '/api/performance/reset-results', { date }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/cfl/daily-picks'] });
+      toast({
+        title: "Results Reset",
+        description: "All CFL pick results have been cleared and can now be re-reconciled.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Reset Failed",
+        description: "Failed to reset results. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const getResultColor = (result: string | null) => {
+    switch (result) {
+      case 'win': return 'bg-green-500/10 text-green-600 border-green-500/20';
+      case 'loss': return 'bg-red-500/10 text-red-600 border-red-500/20';
+      case 'push': return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20';
+      default: return 'bg-gray-500/10 text-gray-600 border-gray-500/20';
+    }
+  };
+
+  const handleUpdateResult = (pickId: number, result: string) => {
+    manualReconcileMutation.mutate({ pickId, result });
+  };
 
   const highConfidencePicks = picks.filter(pick => pick.confidence >= 75);
   const avgConfidence = picks.length > 0 
@@ -376,6 +503,33 @@ export default function CFLPicks() {
           </CardContent>
         </Card>
 
+        {/* Action Buttons */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap gap-3">
+              <Button 
+                onClick={() => autoReconcileMutation.mutate(today)}
+                disabled={autoReconcileMutation.isPending}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${autoReconcileMutation.isPending ? 'animate-spin' : ''}`} />
+                Auto-Reconcile Picks
+              </Button>
+              
+              <Button 
+                onClick={() => resetResultsMutation.mutate(today)}
+                disabled={resetResultsMutation.isPending}
+                variant="outline"
+                className="flex items-center gap-2 text-orange-600 border-orange-500/20 hover:bg-orange-500/10"
+              >
+                <Trash2 className={`h-4 w-4 ${resetResultsMutation.isPending ? 'animate-spin' : ''}`} />
+                Reset All Results
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Picks Grid */}
         {filteredPicks.length === 0 ? (
           <Card>
@@ -392,7 +546,7 @@ export default function CFLPicks() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {filteredPicks.map((pick) => (
-              <CFLPickCard key={pick.id} pick={pick} />
+              <CFLPickCard key={pick.id} pick={pick} onUpdateResult={handleUpdateResult} />
             ))}
           </div>
         )}
