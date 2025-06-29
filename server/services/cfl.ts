@@ -37,64 +37,52 @@ function generateCFLSchedule() {
   const today = new Date();
   const currentYear = today.getFullYear();
   
-  // Generate games for the next 7 days to demonstrate date filtering
+  // Generate games for a 30-day period to demonstrate date filtering
   const gameSchedule = [];
   
-  for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+  // Define all CFL teams for rotation
+  const teams = [
+    { code: 'OTT', name: 'Ottawa REDBLACKS', venue: 'TD Place Stadium' },
+    { code: 'SSK', name: 'Saskatchewan Roughriders', venue: 'Mosaic Stadium' },
+    { code: 'TOR', name: 'Toronto Argonauts', venue: 'BMO Field' },
+    { code: 'MTL', name: 'Montreal Alouettes', venue: 'Percival Molson Memorial Stadium' },
+    { code: 'HAM', name: 'Hamilton Tiger-Cats', venue: 'Tim Hortons Field' },
+    { code: 'CGY', name: 'Calgary Stampeders', venue: 'McMahon Stadium' },
+    { code: 'EDM', name: 'Edmonton Elks', venue: 'The Brick Field at Commonwealth Stadium' },
+    { code: 'BC', name: 'BC Lions', venue: 'BC Place' },
+    { code: 'WPG', name: 'Winnipeg Blue Bombers', venue: 'Princess Auto Stadium' }
+  ];
+  
+  for (let dayOffset = 0; dayOffset < 30; dayOffset++) {
     const gameDate = new Date(today);
     gameDate.setDate(today.getDate() + dayOffset);
     const dateStr = gameDate.toISOString();
     
-    // Add 1-2 games per day
-    if (dayOffset === 0) { // Today - multiple games
-      gameSchedule.push(
-        {
-          gameId: `cfl_${currentYear}_today_g1`,
-          awayTeam: 'Ottawa REDBLACKS',
-          homeTeam: 'Saskatchewan Roughriders',
-          awayTeamCode: 'OTT',
-          homeTeamCode: 'SSK',
+    // Generate 1-3 games per day based on day of week (more on weekends)
+    const isWeekend = gameDate.getDay() === 0 || gameDate.getDay() === 6;
+    const numGames = isWeekend ? Math.floor(Math.random() * 2) + 2 : Math.floor(Math.random() * 2) + 1; // 2-3 on weekends, 1-2 on weekdays
+    
+    for (let gameNum = 0; gameNum < numGames; gameNum++) {
+      // Use day offset and game number to create unique team pairings
+      const awayIndex = (dayOffset * 2 + gameNum) % teams.length;
+      const homeIndex = (dayOffset * 2 + gameNum + 4) % teams.length;
+      
+      if (awayIndex !== homeIndex) { // Ensure teams don't play themselves
+        const awayTeam = teams[awayIndex];
+        const homeTeam = teams[homeIndex];
+        
+        gameSchedule.push({
+          gameId: `cfl_${currentYear}_d${dayOffset}_g${gameNum + 1}`,
+          awayTeam: awayTeam.name,
+          homeTeam: homeTeam.name,
+          awayTeamCode: awayTeam.code,
+          homeTeamCode: homeTeam.code,
           gameTime: dateStr,
-          venue: 'Mosaic Stadium',
-          week: 1,
+          venue: homeTeam.venue,
+          week: Math.floor(dayOffset / 7) + 1,
           season: currentYear.toString()
-        },
-        {
-          gameId: `cfl_${currentYear}_today_g2`,
-          awayTeam: 'Toronto Argonauts',
-          homeTeam: 'Montreal Alouettes',
-          awayTeamCode: 'TOR',
-          homeTeamCode: 'MTL',
-          gameTime: dateStr,
-          venue: 'Percival Molson Memorial Stadium',
-          week: 1,
-          season: currentYear.toString()
-        }
-      );
-    } else if (dayOffset === 1) { // Tomorrow
-      gameSchedule.push({
-        gameId: `cfl_${currentYear}_d${dayOffset}_g1`,
-        awayTeam: 'Hamilton Tiger-Cats',
-        homeTeam: 'Calgary Stampeders',
-        awayTeamCode: 'HAM',
-        homeTeamCode: 'CGY',
-        gameTime: dateStr,
-        venue: 'McMahon Stadium',
-        week: 1,
-        season: currentYear.toString()
-      });
-    } else if (dayOffset === 2) { // Day after tomorrow
-      gameSchedule.push({
-        gameId: `cfl_${currentYear}_d${dayOffset}_g1`,
-        awayTeam: 'Edmonton Elks',
-        homeTeam: 'BC Lions',
-        awayTeamCode: 'EDM',
-        homeTeamCode: 'BC',
-        gameTime: dateStr,
-        venue: 'BC Place',
-        week: 1,
-        season: currentYear.toString()
-      });
+        });
+      }
     }
   }
 
