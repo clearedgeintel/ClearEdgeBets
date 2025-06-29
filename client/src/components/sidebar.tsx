@@ -51,11 +51,11 @@ export default function Sidebar() {
       active: location === "/" || location.startsWith("/baseball") || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets",
       subItems: [
         { 
-          name: "Today's Games", 
+          name: "Games", 
           href: "/todays-games", 
           icon: Home,
           current: location === "/todays-games",
-          description: "Live MLB games and odds"
+          description: "MLB games and odds for any date"
         },
         { 
           name: "Daily Picks", 

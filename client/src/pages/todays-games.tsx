@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Calendar, BarChart3, TrendingUp, Clock } from "lucide-react";
+import { Search, Filter, Calendar, BarChart3, TrendingUp, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { format, addDays, subDays, isSameDay } from "date-fns";
 
 interface Game {
   id: number;
@@ -58,9 +59,10 @@ export default function TodaysGames() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("time");
   const [filterBy, setFilterBy] = useState("all");
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const { data: games = [], isLoading } = useQuery<Game[]>({
-    queryKey: ["/api/games"],
+    queryKey: ["/api/games", format(selectedDate, "yyyy-MM-dd")],
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
@@ -136,11 +138,50 @@ export default function TodaysGames() {
             <div className="flex-1">
               <h1 className="text-3xl font-bold text-foreground flex items-center space-x-3">
                 <Calendar className="h-8 w-8 text-primary" />
-                <span>Today's MLB Games</span>
+                <span>MLB Games</span>
               </h1>
               <p className="text-muted-foreground mt-2">
-                Live odds, AI analysis, and betting insights for today's matchups
+                Live odds, AI analysis, and betting insights for {isSameDay(selectedDate, new Date()) ? "today's" : format(selectedDate, "MMMM d")} matchups
               </p>
+
+              {/* Date Navigation */}
+              <div className="flex items-center space-x-4 mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedDate(subDays(selectedDate, 1))}
+                  className="flex items-center space-x-2"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span>Previous</span>
+                </Button>
+                
+                <div className="flex items-center space-x-2 px-4 py-2 bg-muted rounded-lg">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium text-foreground">
+                    {format(selectedDate, "EEEE, MMMM d, yyyy")}
+                  </span>
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+                  className="flex items-center space-x-2"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedDate(new Date())}
+                  className="text-primary"
+                >
+                  Today
+                </Button>
+              </div>
             </div>
             
             {/* Quick Stats */}
@@ -237,8 +278,17 @@ export default function TodaysGames() {
               <p className="text-muted-foreground">
                 {searchTerm || filterBy !== "all" 
                   ? "Try adjusting your search or filters" 
-                  : "Check back later for today's games"}
+                  : `No MLB games are scheduled for ${format(selectedDate, "MMMM d, yyyy")}`}
               </p>
+              {!isSameDay(selectedDate, new Date()) && (
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => setSelectedDate(new Date())}
+                >
+                  View Today's Games
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (

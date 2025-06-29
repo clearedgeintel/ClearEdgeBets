@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Filter, Search, Clock, MapPin, Users, Trophy } from "lucide-react";
-import { format } from "date-fns";
+import { Calendar, Filter, Search, Clock, MapPin, Users, Trophy, ChevronLeft, ChevronRight } from "lucide-react";
+import { format, addDays, subDays, isSameDay } from "date-fns";
 
 interface CFLGame {
   id: number;
@@ -195,6 +195,7 @@ export default function CFLGames() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedWeek, setSelectedWeek] = useState<string>("all");
   const [selectedDivision, setSelectedDivision] = useState<string>("all");
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   // Mock CFL games data - in production this would come from an API
   const { data: games = [], isLoading } = useQuery({
@@ -306,13 +307,48 @@ export default function CFLGames() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">CFL Games</h1>
-          <p className="text-muted-foreground">Today's Canadian Football League matchups with live odds</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
-            {format(new Date(), "EEEE, MMMM d, yyyy")}
-          </span>
+          <p className="text-muted-foreground">
+            Canadian Football League matchups for {isSameDay(selectedDate, new Date()) ? "today" : format(selectedDate, "MMMM d")}
+          </p>
+
+          {/* Date Navigation */}
+          <div className="flex items-center space-x-4 mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedDate(subDays(selectedDate, 1))}
+              className="flex items-center space-x-2"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span>Previous</span>
+            </Button>
+            
+            <div className="flex items-center space-x-2 px-4 py-2 bg-muted rounded-lg">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium text-foreground">
+                {format(selectedDate, "EEEE, MMMM d, yyyy")}
+              </span>
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+              className="flex items-center space-x-2"
+            >
+              <span>Next</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedDate(new Date())}
+              className="text-primary"
+            >
+              Today
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -367,8 +403,19 @@ export default function CFLGames() {
               <Users className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold text-foreground mb-2">No Games Found</h3>
               <p className="text-muted-foreground text-center">
-                No CFL games match your current filters. Try adjusting your search criteria.
+                {searchTerm || selectedWeek !== "all" || selectedDivision !== "all"
+                  ? "No CFL games match your current filters. Try adjusting your search criteria."
+                  : `No CFL games are scheduled for ${format(selectedDate, "MMMM d, yyyy")}`}
               </p>
+              {!isSameDay(selectedDate, new Date()) && (
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => setSelectedDate(new Date())}
+                >
+                  View Today's Games
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}

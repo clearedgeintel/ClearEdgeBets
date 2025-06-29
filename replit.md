@@ -125,6 +125,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 29, 2025: Enhanced Games pages with date navigation and renamed to reflect expanded functionality
+  - Added date navigation controls (Previous/Next/Today buttons) to both Baseball and CFL Games pages
+  - Users can now view games from any date, not just today's games
+  - Updated page titles from "Today's Games" to "Games" reflecting broader date range capability
+  - Enhanced empty state messages to show specific dates when no games are scheduled
+  - Improved query keys to include selected date for proper data fetching and caching
+  - Updated sidebar navigation label from "Today's Games" to "Games" with improved description
 - June 29, 2025: Removed Daily Digest pages from both Baseball and CFL sections
   - Eliminated `/daily-digest` and `/cfl/digest` routes due to slow rendering performance
   - Updated sidebar navigation to remove Daily Digest links from both sports
