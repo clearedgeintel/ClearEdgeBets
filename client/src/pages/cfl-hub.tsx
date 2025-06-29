@@ -10,28 +10,27 @@ export default function CFLHub() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-primary to-secondary text-white">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative max-w-7xl mx-auto px-4 py-16">
+      <div className="relative bg-primary text-white">
+        <div className="max-w-7xl mx-auto px-4 py-16">
           <div className="text-center space-y-4">
             <div className="flex items-center justify-center space-x-3 mb-6">
               <Trophy className="h-12 w-12 text-accent" />
               <h1 className="text-5xl font-bold">CFL Central</h1>
             </div>
-            <p className="text-xl text-gray-200 max-w-3xl mx-auto">
+            <p className="text-xl text-primary-foreground/80 max-w-3xl mx-auto">
               Your ultimate Canadian Football League destination. Expert analysis, betting intelligence, 
               and comprehensive coverage of all 9 CFL teams.
             </p>
             <div className="flex items-center justify-center space-x-6 pt-6">
-              <Badge variant="secondary" className="bg-white/20 text-white px-4 py-2">
+              <Badge variant="secondary" className="bg-primary-foreground/10 text-white border-primary-foreground/20 px-4 py-2">
                 <Calendar className="h-4 w-4 mr-2" />
                 2025 Season
               </Badge>
-              <Badge variant="secondary" className="bg-white/20 text-white px-4 py-2">
+              <Badge variant="secondary" className="bg-primary-foreground/10 text-white border-primary-foreground/20 px-4 py-2">
                 <Users className="h-4 w-4 mr-2" />
                 9 Teams
               </Badge>
-              <Badge variant="secondary" className="bg-white/20 text-white px-4 py-2">
+              <Badge variant="secondary" className="bg-primary-foreground/10 text-white border-primary-foreground/20 px-4 py-2">
                 <Zap className="h-4 w-4 mr-2" />
                 Live Odds
               </Badge>
