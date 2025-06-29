@@ -438,10 +438,25 @@ export default function PerformanceTracking() {
                                       {(() => {
                                         // First try to get real MLB score data
                                         if (mlbData && mlbData.length > 0) {
-                                          const mlbGame = mlbData.find(game => 
-                                            pick.gameId.includes(game.awayTeamCode) && pick.gameId.includes(game.homeTeamCode) ||
-                                            (pick.game && game.awayTeam === pick.game.awayTeam && game.homeTeam === pick.game.homeTeam)
-                                          );
+                                          const mlbGame = mlbData.find(game => {
+                                            // Try exact gameId match (e.g., "PHI@ATL" === "PHI@ATL")
+                                            if (pick.gameId === game.gameId) return true;
+                                            
+                                            // Try team code matching (e.g., "Phillies@Braves" contains PHI and ATL)
+                                            const gameTeams = pick.gameId.toLowerCase();
+                                            const awayCode = game.awayTeamCode.toLowerCase();
+                                            const homeCode = game.homeTeamCode.toLowerCase();
+                                            if (gameTeams.includes(awayCode) && gameTeams.includes(homeCode)) return true;
+                                            
+                                            // Try full team name matching
+                                            if (pick.game && game.awayTeam === pick.game.awayTeam && game.homeTeam === pick.game.homeTeam) return true;
+                                            
+                                            // Try partial team name matching (e.g., "Phillies" matches "Philadelphia Phillies")
+                                            if (gameTeams.includes('phillies') && gameTeams.includes('braves') && 
+                                                game.awayTeam.toLowerCase().includes('phillies') && game.homeTeam.toLowerCase().includes('braves')) return true;
+                                            
+                                            return false;
+                                          });
                                           
                                           if (mlbGame && mlbGame.isCompleted && mlbGame.awayScore !== undefined && mlbGame.homeScore !== undefined) {
                                             return `${mlbGame.awayScore}-${mlbGame.homeScore}`;
