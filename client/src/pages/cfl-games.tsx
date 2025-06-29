@@ -49,6 +49,16 @@ function CFLGameCard({ game }: { game: CFLGame }) {
     return odds > 0 ? `+${odds}` : `${odds}`;
   };
 
+  const formatGameTime = (gameTime: string) => {
+    const date = new Date(gameTime);
+    const time = date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      timeZoneName: 'short'
+    });
+    return time;
+  };
+
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader className="pb-3">
@@ -75,7 +85,7 @@ function CFLGameCard({ game }: { game: CFLGame }) {
           <div className="text-right">
             <div className="flex items-center gap-1 text-sm font-medium mb-1">
               <Clock className="h-3 w-3" />
-              {game.gameTime}
+              {formatGameTime(game.gameTime)}
             </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
               <MapPin className="h-3 w-3" />
