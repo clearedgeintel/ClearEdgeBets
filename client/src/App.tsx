@@ -8,6 +8,7 @@ import { BettingSlipProvider } from "@/contexts/betting-slip-context";
 import Layout from "@/components/layout";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home-new";
+import TodaysGames from "@/pages/todays-games";
 import MyBets from "@/pages/my-bets";
 import DailyDigest from "@/pages/daily-digest";
 import DailyPicks from "@/pages/daily-picks";
@@ -20,6 +21,7 @@ function Router() {
     <Layout>
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/todays-games" component={TodaysGames} />
         <Route path="/my-bets" component={MyBets} />
         <Route path="/daily-digest" component={DailyDigest} />
         <Route path="/daily-picks" component={DailyPicks} />

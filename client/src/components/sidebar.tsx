@@ -48,13 +48,13 @@ export default function Sidebar() {
       icon: Baseball,
       expanded: baseballExpanded,
       setExpanded: setBaseballExpanded,
-      active: location === "/" || location.startsWith("/baseball") || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets",
+      active: location === "/" || location.startsWith("/baseball") || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets",
       subItems: [
         { 
           name: "Today's Games", 
-          href: "/", 
+          href: "/todays-games", 
           icon: Home,
-          current: location === "/",
+          current: location === "/todays-games",
           description: "Live MLB games and odds"
         },
         { 

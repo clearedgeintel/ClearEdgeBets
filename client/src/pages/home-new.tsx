@@ -1,22 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { 
   TrendingUp, 
   BarChart3, 
   Target, 
-  Users, 
   Clock, 
-  DollarSign,
-  Zap,
-  Shield,
-  Search,
-  Filter,
-  ArrowRight,
-  Star
+  Star,
+  Calendar,
+  FileText,
+  Activity
 } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
@@ -63,8 +56,6 @@ interface Game {
 }
 
 export default function Home() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("all");
   const { user } = useAuth();
 
   const { data: games = [], isLoading } = useQuery<Game[]>({
@@ -82,19 +73,6 @@ export default function Home() {
     avgConfidence: games.reduce((acc, g) => acc + (g.aiSummary?.confidence || 0), 0) / games.length || 0,
     topPicks: dailyPicks.slice(0, 3)
   };
-
-  const filteredGames = games.filter(game => {
-    const matchesSearch = searchTerm === "" || 
-      game.awayTeam.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      game.homeTeam.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesFilter = selectedFilter === "all" || 
-      (selectedFilter === "analyzed" && game.aiSummary) ||
-      (selectedFilter === "early" && parseInt(game.gameTime.split(":")[0]) < 19) ||
-      (selectedFilter === "late" && parseInt(game.gameTime.split(":")[0]) >= 19);
-    
-    return matchesSearch && matchesFilter;
-  });
 
   if (isLoading) {
     return (
@@ -167,10 +145,10 @@ export default function Home() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-sm font-medium text-muted-foreground truncate">
                       Games Today
                     </dt>
-                    <dd className="text-lg font-medium text-gray-900">
+                    <dd className="text-lg font-medium text-foreground">
                       {stats.totalGames}
                     </dd>
                   </dl>
@@ -187,10 +165,10 @@ export default function Home() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-sm font-medium text-muted-foreground truncate">
                       AI Analyzed
                     </dt>
-                    <dd className="text-lg font-medium text-gray-900">
+                    <dd className="text-lg font-medium text-foreground">
                       {stats.aiAnalyzed}
                     </dd>
                   </dl>
@@ -207,10 +185,10 @@ export default function Home() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-sm font-medium text-muted-foreground truncate">
                       Avg Confidence
                     </dt>
-                    <dd className="text-lg font-medium text-gray-900">
+                    <dd className="text-lg font-medium text-foreground">
                       {Math.round(stats.avgConfidence)}%
                     </dd>
                   </dl>
@@ -227,10 +205,10 @@ export default function Home() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-sm font-medium text-muted-foreground truncate">
                       Live Updates
                     </dt>
-                    <dd className="text-lg font-medium text-gray-900">
+                    <dd className="text-lg font-medium text-foreground">
                       Real-time
                     </dd>
                   </dl>
@@ -239,37 +217,6 @@ export default function Home() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Search and Filters */}
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Search teams..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                {["all", "analyzed", "early", "late"].map((filter) => (
-                  <Button
-                    key={filter}
-                    variant={selectedFilter === filter ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedFilter(filter)}
-                  >
-                    {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Top Picks Section */}
         {stats.topPicks.length > 0 && (
@@ -284,17 +231,17 @@ export default function Home() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {stats.topPicks.map((pick: any, index: number) => (
-                  <div key={pick.id} className="bg-gray-50 rounded-lg p-4">
+                  <div key={pick.id} className="bg-muted rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
                       <Badge variant={index === 0 ? "default" : "outline"}>
                         {index === 0 ? "Best Value" : index === 1 ? "Sharp Play" : "Sleeper"}
                       </Badge>
-                      <span className="text-sm font-medium text-green-600">
+                      <span className="text-sm font-medium text-primary">
                         +{pick.expectedValue}% EV
                       </span>
                     </div>
-                    <p className="font-semibold text-sm">{pick.selection}</p>
-                    <p className="text-xs text-gray-600 mt-1">{pick.pickType}</p>
+                    <p className="font-semibold text-sm text-foreground">{pick.selection}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{pick.pickType}</p>
                   </div>
                 ))}
               </div>
@@ -302,38 +249,91 @@ export default function Home() {
           </Card>
         )}
 
-        {/* Games Grid */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Today's Games ({filteredGames.length})
-            </h2>
-            <Link href="/daily-picks">
-              <Button variant="outline" size="sm">
-                View All Picks
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-
-          {filteredGames.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No games found</h3>
-                <p className="text-gray-500">
-                  {searchTerm ? "Try adjusting your search terms" : "No games match the selected filter"}
-                </p>
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <Link href="/todays-games">
+            <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-primary/10 rounded-lg">
+                    <Calendar className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">Today's Games</h3>
+                    <p className="text-sm text-muted-foreground">View all {stats.totalGames} MLB games</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filteredGames.map((game) => (
-                <GameCard key={game.gameId} game={game} />
-              ))}
-            </div>
-          )}
+          </Link>
+
+          <Link href="/daily-picks">
+            <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-secondary/10 rounded-lg">
+                    <Target className="h-6 w-6 text-secondary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">Daily Picks</h3>
+                    <p className="text-sm text-muted-foreground">AI betting recommendations</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/daily-digest">
+            <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-accent/10 rounded-lg">
+                    <FileText className="h-6 w-6 text-accent" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">Daily Digest</h3>
+                    <p className="text-sm text-muted-foreground">Expert analysis & insights</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
+
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Recent Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between py-2 border-b">
+                <div>
+                  <p className="font-medium text-foreground">AI Analysis Updated</p>
+                  <p className="text-sm text-muted-foreground">Fresh insights for {stats.aiAnalyzed} games</p>
+                </div>
+                <Badge variant="secondary">5 min ago</Badge>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b">
+                <div>
+                  <p className="font-medium text-foreground">Daily Picks Generated</p>
+                  <p className="text-sm text-muted-foreground">Top value plays identified</p>
+                </div>
+                <Badge variant="secondary">12 min ago</Badge>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="font-medium text-foreground">Odds Updated</p>
+                  <p className="text-sm text-muted-foreground">Live market movements tracked</p>
+                </div>
+                <Badge variant="secondary">Real-time</Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
