@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { fetchTodaysGames } from "./services/odds";
 import { fetchCFLGames, generateMockCFLPublicPercentage, type CFLGame } from "./services/cfl";
+import { fetchMLBGamesForDate, getGameResult } from "./services/mlb-api";
 import { generateGameAnalysis, generateDailyDigest, type GameAnalysisData } from "./services/openai";
 import { insertBetSchema, insertGameSchema, insertOddsSchema, insertUserSchema } from "@shared/schema";
 import Stripe from "stripe";
@@ -1168,6 +1169,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Daily performance error:", error);
       res.status(500).json({ error: "Failed to fetch daily performance" });
+    }
+  });
+
+  // MLB Real Data endpoint
+  app.get("/api/mlb/games/:date", async (req, res) => {
+    try {
+      const { date } = req.params;
+      console.log("Fetching MLB games for date:", date);
+      
+      // Test the API key first
+      if (!process.env.RAPIDAPI_KEY) {
+        console.error("RAPIDAPI_KEY not found");
+        return res.status(500).json({ error: "API key not configured" });
+      }
+      
+      const mlbGames = await fetchMLBGamesForDate(date);
+      console.log("MLB games fetched:", mlbGames.length, "games");
+      res.json(mlbGames);
+    } catch (error: any) {
+      console.error("Error fetching MLB games:", error);
+      res.status(500).json({ error: "Failed to fetch MLB games", details: error.message });
     }
   });
 

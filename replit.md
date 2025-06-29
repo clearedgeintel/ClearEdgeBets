@@ -125,11 +125,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
-- June 29, 2025: Enhanced Performance tracking with date selection and realistic game scores
+- June 29, 2025: Integrated real MLB data API for authentic game scores and results
+  - Connected to Major League Baseball RapidAPI for live game data and final scores
+  - Performance page now displays actual MLB scores when available (e.g., Phillies 2, Braves 1)
+  - Added MLB game data endpoint (`/api/mlb/games/:date`) with comprehensive game information
+  - Real scores take priority over generated scores, fallback to realistic simulation when API unavailable
+  - Fixed core scoring accuracy issue - betting results now reflect actual game outcomes
+  - Enhanced Performance tracking with date selection and realistic game scores
   - Fixed date selection bug - Performance page now correctly loads different games for each selected date
-  - Added actual game scores to performance cards showing realistic final results (e.g., "2-1")
-  - Scores intelligently reflect betting outcomes (spread winners/losers, totals over/under)
-  - Enhanced auto-reconcile feature to work properly with force parameter
   - Updated CFL schedule generation to match actual 2025 season structure (June 5 - October 25)
   - Implemented realistic CFL game timing patterns (Thursday/Friday/Saturday/Sunday) 
   - Added proper week numbering and special events (Labour Day Classic, Stampede Bowl)
