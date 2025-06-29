@@ -283,10 +283,10 @@ export default function GameCard({ game }: GameCardProps) {
         </div>
 
         {/* Public Betting Info */}
-        <div className="bg-blue-50 rounded-lg p-3 mb-4">
+        <div className="bg-muted rounded-lg p-3 mb-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Public Betting</span>
-            <span className="text-xs text-gray-500">
+            <span className="text-sm font-medium text-foreground">Public Betting</span>
+            <span className="text-xs text-muted-foreground">
               <Users className="h-3 w-3 inline mr-1" />
               Updated 10 min ago
             </span>
@@ -294,10 +294,10 @@ export default function GameCard({ game }: GameCardProps) {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <div className="flex justify-between mb-1">
-                <span className="text-gray-600">Moneyline</span>
-                <span className="font-medium">{getPublicPercentage("moneyline", "away")}% {game.awayTeamCode}</span>
+                <span className="text-muted-foreground">Moneyline</span>
+                <span className="font-medium text-foreground">{getPublicPercentage("moneyline", "away")}% {game.awayTeamCode}</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-background rounded-full h-2">
                 <div 
                   className="bg-primary h-2 rounded-full" 
                   style={{ width: `${getPublicPercentage("moneyline", "away")}%` }}
@@ -306,10 +306,10 @@ export default function GameCard({ game }: GameCardProps) {
             </div>
             <div>
               <div className="flex justify-between mb-1">
-                <span className="text-gray-600">Total</span>
-                <span className="font-medium">{getPublicPercentage("totals", "over")}% Over</span>
+                <span className="text-muted-foreground">Total</span>
+                <span className="font-medium text-foreground">{getPublicPercentage("totals", "over")}% Over</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-background rounded-full h-2">
                 <div 
                   className="bg-secondary h-2 rounded-full" 
                   style={{ width: `${getPublicPercentage("totals", "over")}%` }}

@@ -44,18 +44,18 @@ export default function DailyDigest() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <Header />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="mb-6">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-2 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+            <div className="h-8 bg-muted rounded w-1/3 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-muted rounded w-1/2 animate-pulse"></div>
           </div>
           <Card>
             <CardContent className="p-8">
               <div className="space-y-4">
                 {[...Array(10)].map((_, i) => (
-                  <div key={i} className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div key={i} className="h-4 bg-muted rounded animate-pulse"></div>
                 ))}
               </div>
             </CardContent>
@@ -66,18 +66,18 @@ export default function DailyDigest() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header />
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-3">
+              <h1 className="text-3xl font-bold text-foreground flex items-center space-x-3">
                 <FileText className="h-8 w-8 text-primary" />
                 <span>Daily MLB Digest</span>
               </h1>
-              <p className="text-gray-600 mt-1">
+              <p className="text-muted-foreground mt-1">
                 AI-powered analysis and betting insights for today's games
               </p>
             </div>

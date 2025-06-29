@@ -6,14 +6,14 @@
   /* Dark theme by default for sports betting premium feel */
   --background: hsl(222, 22%, 8%);
   --foreground: hsl(0, 0%, 95%);
-  --muted: hsl(222, 15%, 12%);
-  --muted-foreground: hsl(0, 0%, 60%);
+  --muted: hsl(222, 15%, 15%);
+  --muted-foreground: hsl(0, 0%, 70%);
   --popover: hsl(222, 20%, 10%);
   --popover-foreground: hsl(0, 0%, 95%);
-  --card: hsl(222, 18%, 11%);
+  --card: hsl(222, 18%, 12%);
   --card-foreground: hsl(0, 0%, 95%);
-  --border: hsl(222, 15%, 18%);
-  --input: hsl(222, 15%, 15%);
+  --border: hsl(222, 15%, 20%);
+  --input: hsl(222, 15%, 18%);
   --primary: hsl(142, 76%, 36%);
   --primary-foreground: hsl(0, 0%, 98%);
   --secondary: hsl(195, 84%, 45%);
