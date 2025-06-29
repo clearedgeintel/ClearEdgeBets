@@ -113,21 +113,29 @@ export default function BettingSlip() {
                     </Button>
                   </div>
                   <p className="text-xs text-gray-600 mb-2">Game: {bet.gameId}</p>
-                  <div className="flex items-center justify-between space-x-2">
-                    <Input
-                      type="number"
-                      placeholder="Odds"
-                      value={bet.odds}
-                      onChange={(e) => handleOddsChange(bet.gameId, bet.betType, bet.selection, parseInt(e.target.value) || 0)}
-                      className="w-20 text-xs h-8"
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Stake"
-                      value={bet.stake || ""}
-                      onChange={(e) => handleStakeChange(bet.gameId, bet.betType, bet.selection, parseFloat(e.target.value) || 0)}
-                      className="w-20 text-xs h-8"
-                    />
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <label className="text-xs text-gray-500 w-12">Odds:</label>
+                      <Input
+                        type="number"
+                        placeholder="Odds"
+                        value={bet.odds}
+                        onChange={(e) => handleOddsChange(bet.gameId, bet.betType, bet.selection, parseInt(e.target.value) || 0)}
+                        className="flex-1 text-xs h-8"
+                        title="Adjust odds to match your actual betting ticket"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <label className="text-xs text-gray-500 w-12">Stake:</label>
+                      <Input
+                        type="number"
+                        placeholder="$0.00"
+                        value={bet.stake || ""}
+                        onChange={(e) => handleStakeChange(bet.gameId, bet.betType, bet.selection, parseFloat(e.target.value) || 0)}
+                        className="flex-1 text-xs h-8"
+                        title="Enter your bet amount"
+                      />
+                    </div>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
                     To win: ${bet.potentialWin.toFixed(2)}
