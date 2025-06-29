@@ -7,9 +7,11 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center mb-4">
-              <span className="text-2xl font-black text-primary">CLEAR</span>
-              <span className="text-2xl font-black text-secondary">EDGE</span>
-              <span className="text-xl font-bold text-gray-700 ml-1">BETS</span>
+              <img 
+                src="/clearedge-logo.png" 
+                alt="ClearEdge Bets" 
+                className="h-10 w-auto"
+              />
             </div>
             <p className="text-gray-600 text-sm max-w-md">
               Professional MLB betting intelligence powered by AI. Get your clear edge with real-time analysis, expert picks, and smart bankroll management.

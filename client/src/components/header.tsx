@@ -27,11 +27,11 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-8">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="flex items-center">
-                <span className="text-2xl font-black text-primary">CLEAR</span>
-                <span className="text-2xl font-black text-secondary">EDGE</span>
-                <span className="text-xl font-bold text-gray-700 ml-1">BETS</span>
-              </div>
+              <img 
+                src="/clearedge-logo.png" 
+                alt="ClearEdge Bets" 
+                className="h-8 w-auto"
+              />
             </Link>
             <nav className="hidden md:flex space-x-8">
               {navigation.map((item) => (
