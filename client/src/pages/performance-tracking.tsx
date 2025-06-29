@@ -4,9 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Trophy, TrendingUp, Target, CheckCircle, XCircle, Minus, RefreshCw, BarChart3 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Calendar as CalendarIcon, Trophy, TrendingUp, Target, CheckCircle, XCircle, Minus, RefreshCw, BarChart3, ChevronLeft, ChevronRight } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { format, addDays, subDays } from "date-fns";
 
 interface DailyPerformance {
   date: string;
@@ -51,13 +55,15 @@ interface MonthlyPerformance {
 export default function PerformanceTracking() {
   // Get today's date in local timezone to avoid date picker offset issues
   const today = new Date();
-  const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
-  const [selectedDate, setSelectedDate] = useState(localDate.toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(today);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Convert date to string for API calls
+  const dateString = format(selectedDate, 'yyyy-MM-dd');
+
   const { data: dailyPerformance, isLoading: dailyLoading } = useQuery<DailyPerformance>({
-    queryKey: ['/api/performance/daily', selectedDate],
+    queryKey: ['/api/performance/daily', dateString],
   });
 
   const { data: monthlyPerformance, isLoading: monthlyLoading } = useQuery<MonthlyPerformance>({
@@ -139,17 +145,7 @@ export default function PerformanceTracking() {
     },
   });
 
-  const formatDate = (dateString: string) => {
-    // Parse as local date to avoid timezone shifting issues
-    const [year, month, day] = dateString.split('-').map(Number);
-    const date = new Date(year, month - 1, day); // month is 0-indexed
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
+
 
   const getResultColor = (result: string | null) => {
     switch (result) {
@@ -209,20 +205,63 @@ export default function PerformanceTracking() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <Calendar className="h-5 w-5 text-primary" />
-                <div>
-                  <label className="text-sm font-medium text-foreground">Select Date</label>
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className="ml-3 px-3 py-1 border border-border rounded-md bg-background text-foreground"
-                  />
+                <CalendarIcon className="h-5 w-5 text-primary" />
+                <div className="flex items-center space-x-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedDate(subDays(selectedDate, 1))}
+                    className="flex items-center space-x-2"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span>Previous</span>
+                  </Button>
+                  
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-[280px] justify-start text-left font-normal",
+                          !selectedDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => date && setSelectedDate(date)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+                    className="flex items-center space-x-2"
+                  >
+                    <span>Next</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedDate(new Date())}
+                  >
+                    Today
+                  </Button>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
                 <Button 
-                  onClick={() => autoReconcileMutation.mutate(selectedDate)}
+                  onClick={() => autoReconcileMutation.mutate(dateString)}
                   disabled={autoReconcileMutation.isPending}
                   className="flex items-center space-x-2"
                 >
@@ -296,7 +335,7 @@ export default function PerformanceTracking() {
             <TabsContent value="daily" className="space-y-6">
               <div className="text-center space-y-4 mb-8">
                 <h2 className="text-3xl font-bold text-foreground">
-                  Daily Picks - {formatDate(selectedDate)}
+                  Daily Picks - {format(selectedDate, "MMMM d, yyyy")}
                 </h2>
                 <p className="text-muted-foreground">
                   Review and reconcile today's AI-generated betting picks with actual game results.
@@ -305,7 +344,7 @@ export default function PerformanceTracking() {
                 {/* Action Buttons */}
                 <div className="flex justify-center space-x-4 pt-4">
                   <Button
-                    onClick={() => autoReconcileMutation.mutate({ date: selectedDate })}
+                    onClick={() => autoReconcileMutation.mutate(dateString)}
                     disabled={autoReconcileMutation.isPending}
                     className="bg-primary hover:bg-primary/90"
                   >
@@ -323,7 +362,7 @@ export default function PerformanceTracking() {
                   </Button>
                   
                   <Button
-                    onClick={() => resetResultsMutation.mutate(selectedDate)}
+                    onClick={() => resetResultsMutation.mutate(dateString)}
                     disabled={resetResultsMutation.isPending}
                     variant="outline"
                     className="border-red-500/20 text-red-600 hover:bg-red-500/10"
@@ -354,7 +393,7 @@ export default function PerformanceTracking() {
                       </>
                     ) : (
                       <>
-                        <Calendar className="mr-2 h-4 w-4" />
+                        <BarChart3 className="mr-2 h-4 w-4" />
                         Generate Sample Data
                       </>
                     )}
@@ -455,7 +494,7 @@ export default function PerformanceTracking() {
                       <Target className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                       <h3 className="text-xl font-semibold text-foreground mb-2">No Picks for This Date</h3>
                       <p className="text-muted-foreground">
-                        No daily picks were generated for {formatDate(selectedDate)}.
+                        No daily picks were generated for {format(selectedDate, "MMMM d, yyyy")}.
                       </p>
                     </CardContent>
                   </Card>
