@@ -974,6 +974,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Performance Reconciliation API
+  app.get("/api/performance/daily", async (req, res) => {
+    try {
+      const { date } = req.query;
+      const targetDate = date ? String(date) : new Date().toISOString().split('T')[0];
+      
+      // Get daily picks for the date
+      const dailyPicks = await storage.getDailyPicks(targetDate);
+      
+      // Get games for that date to check results
+      const games = await storage.getAllTodaysGames();
+      
+      // Create performance summary
+      const performance = {
+        date: targetDate,
+        totalPicks: dailyPicks.length,
+        resolvedPicks: dailyPicks.filter(pick => pick.result !== null).length,
+        winningPicks: dailyPicks.filter(pick => pick.result === 'win').length,
+        losingPicks: dailyPicks.filter(pick => pick.result === 'loss').length,
+        accuracy: 0,
+        picks: dailyPicks.map(pick => {
+          // Find corresponding game
+          const game = games.find(g => g.gameId === pick.gameId);
+          return {
+            ...pick,
+            game: game ? {
+              awayTeam: game.awayTeam,
+              homeTeam: game.homeTeam,
+              gameTime: game.gameTime
+            } : null
+          };
+        })
+      };
+      
+      if (performance.resolvedPicks > 0) {
+        performance.accuracy = (performance.winningPicks / performance.resolvedPicks) * 100;
+      }
+      
+      res.json(performance);
+    } catch (error) {
+      console.error("Daily performance error:", error);
+      res.status(500).json({ error: "Failed to fetch daily performance" });
+    }
+  });
+
+  app.post("/api/performance/reconcile", async (req, res) => {
+    try {
+      const { pickId, result } = req.body;
+      
+      if (!pickId || !result || !['win', 'loss', 'push'].includes(result)) {
+        return res.status(400).json({ error: "Invalid pick ID or result" });
+      }
+      
+      const updatedPick = await storage.updateDailyPickResult(pickId, result);
+      
+      res.json(updatedPick);
+    } catch (error) {
+      console.error("Pick reconciliation error:", error);
+      res.status(500).json({ error: "Failed to update pick result" });
+    }
+  });
+
+  app.get("/api/performance/monthly", async (req, res) => {
+    try {
+      const { month, year } = req.query;
+      const currentDate = new Date();
+      const targetMonth = month ? parseInt(String(month)) : currentDate.getMonth() + 1;
+      const targetYear = year ? parseInt(String(year)) : currentDate.getFullYear();
+      
+      // Get performance stats for the month
+      const startDate = `${targetYear}-${targetMonth.toString().padStart(2, '0')}-01`;
+      const endDate = new Date(targetYear, targetMonth, 0).toISOString().split('T')[0];
+      
+      const performanceStats = await storage.getPerformanceStats({ start: startDate, end: endDate });
+      
+      res.json({
+        month: targetMonth,
+        year: targetYear,
+        ...performanceStats
+      });
+    } catch (error) {
+      console.error("Monthly performance error:", error);
+      res.status(500).json({ error: "Failed to fetch monthly performance" });
+    }
+  });
+
+  // Auto-reconcile picks based on mock game results
+  app.post("/api/performance/auto-reconcile", async (req, res) => {
+    try {
+      const { date } = req.body;
+      const targetDate = date || new Date().toISOString().split('T')[0];
+      
+      const dailyPicks = await storage.getDailyPicks(targetDate);
+      const games = await storage.getAllTodaysGames();
+      
+      let reconciledCount = 0;
+      
+      for (const pick of dailyPicks) {
+        if (pick.result !== null) continue; // Already reconciled
+        
+        const game = games.find(g => g.gameId === pick.gameId);
+        if (!game) continue;
+        
+        // Generate mock results based on pick confidence and type
+        let result: string;
+        const random = Math.random();
+        const winProbability = pick.confidence / 100;
+        
+        if (random < winProbability) {
+          result = 'win';
+        } else if (random < winProbability + 0.05) { // 5% chance of push
+          result = 'push';
+        } else {
+          result = 'loss';
+        }
+        
+        await storage.updateDailyPickResult(pick.id, result);
+        reconciledCount++;
+      }
+      
+      res.json({ 
+        message: `Reconciled ${reconciledCount} picks for ${targetDate}`,
+        reconciledCount 
+      });
+    } catch (error) {
+      console.error("Auto-reconcile error:", error);
+      res.status(500).json({ error: "Failed to auto-reconcile picks" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

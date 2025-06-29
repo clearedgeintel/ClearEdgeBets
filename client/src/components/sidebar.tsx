@@ -21,7 +21,9 @@ import {
   ChevronRight,
   Zap,
   Trophy,
-  Calendar
+  Calendar,
+  Flag,
+  BarChart3
 } from "lucide-react";
 import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -38,6 +40,7 @@ export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [baseballExpanded, setBaseballExpanded] = useState(true);
   const [footballExpanded, setFootballExpanded] = useState(false);
+  const [golfExpanded, setGolfExpanded] = useState(false);
 
   // Debug logging
   console.log("Sidebar bets:", bets);
@@ -71,6 +74,13 @@ export default function Sidebar() {
           icon: History,
           current: location === "/my-bets",
           description: "Your MLB betting history"
+        },
+        { 
+          name: "Performance", 
+          href: "/performance", 
+          icon: BarChart3,
+          current: location === "/performance",
+          description: "Daily picks tracking and results"
         }
       ]
     },
@@ -111,6 +121,37 @@ export default function Sidebar() {
           current: location === "/nfl",
           description: "Coming Soon",
           disabled: true
+        }
+      ]
+    },
+    {
+      sport: "Golf",
+      icon: Flag,
+      expanded: golfExpanded,
+      setExpanded: setGolfExpanded,
+      active: location.startsWith("/golf"),
+      subItems: [
+        { 
+          name: "Tournaments", 
+          href: "/golf/tournaments", 
+          icon: Trophy,
+          current: location === "/golf/tournaments",
+          description: "PGA Tour tournaments and odds",
+          featured: true
+        },
+        { 
+          name: "Leaderboards", 
+          href: "/golf/leaderboards", 
+          icon: TrendingUp,
+          current: location === "/golf/leaderboards",
+          description: "Live tournament leaderboards"
+        },
+        { 
+          name: "Futures", 
+          href: "/golf/futures", 
+          icon: Target,
+          current: location === "/golf/futures",
+          description: "Season-long betting markets"
         }
       ]
     }

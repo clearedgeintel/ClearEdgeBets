@@ -16,6 +16,8 @@ import Subscribe from "@/pages/subscribe";
 import CFLHub from "@/pages/cfl-hub";
 import CFLGames from "@/pages/cfl-games";
 import CFLPicks from "@/pages/cfl-picks";
+import PerformanceTracking from "@/pages/performance-tracking";
+import GolfTournaments from "@/pages/golf-tournaments";
 
 function Router() {
   return (
@@ -31,6 +33,8 @@ function Router() {
         <Route path="/cfl/games" component={CFLGames} />
         <Route path="/cfl/picks" component={CFLPicks} />
         <Route path="/cfl/:section" component={CFLHub} />
+        <Route path="/golf/tournaments" component={GolfTournaments} />
+        <Route path="/performance" component={PerformanceTracking} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

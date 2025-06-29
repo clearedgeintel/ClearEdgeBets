@@ -4,7 +4,227 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Target, TrendingUp, Calendar, Users, Star, Zap, BarChart3 } from "lucide-react";
+import { Trophy, Target, TrendingUp, Calendar, Users, Star, Zap, BarChart3, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+
+interface CFLGame {
+  gameId: string;
+  awayTeam: string;
+  homeTeam: string;
+  awayTeamCode: string;
+  homeTeamCode: string;
+  gameTime: string;
+  venue: string;
+  week: number;
+  season: string;
+  odds: {
+    moneyline?: { away: number; home: number };
+    spread?: { away: number; home: number; awayOdds: number; homeOdds: number };
+    total?: { line: number; over: number; under: number };
+  };
+}
+
+function CFLScheduleView() {
+  const [selectedWeek, setSelectedWeek] = useState(1);
+  
+  const { data: games, isLoading } = useQuery<CFLGame[]>({
+    queryKey: ['/api/cfl/games'],
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center space-y-4 mb-8">
+          <h2 className="text-3xl font-bold text-foreground">CFL Schedule</h2>
+          <p className="text-muted-foreground">Loading schedule...</p>
+        </div>
+        <div className="animate-pulse">
+          <div className="h-32 bg-muted rounded-lg"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Group games by week
+  const gamesByWeek = games?.reduce((acc, game) => {
+    if (!acc[game.week]) {
+      acc[game.week] = [];
+    }
+    acc[game.week].push(game);
+    return acc;
+  }, {} as Record<number, CFLGame[]>) || {};
+
+  const weeks = Object.keys(gamesByWeek).map(Number).sort((a, b) => a - b);
+  const currentWeekGames = gamesByWeek[selectedWeek] || [];
+
+  const formatGameTime = (gameTime: string) => {
+    const date = new Date(gameTime);
+    return {
+      date: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+      time: date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    };
+  };
+
+  const formatOdds = (odds: number) => {
+    return odds > 0 ? `+${odds}` : `${odds}`;
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center space-y-4 mb-8">
+        <h2 className="text-3xl font-bold text-foreground">CFL Schedule</h2>
+        <p className="text-muted-foreground">
+          2025 Canadian Football League season schedule with live odds and matchups.
+        </p>
+      </div>
+
+      {/* Week Navigation */}
+      <Card className="bg-card border-border">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedWeek(Math.max(1, selectedWeek - 1))}
+              disabled={selectedWeek <= 1}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+            
+            <div className="flex items-center space-x-4">
+              <h3 className="text-xl font-semibold text-foreground">Week {selectedWeek}</h3>
+              <Badge variant="secondary">{currentWeekGames.length} games</Badge>
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedWeek(Math.min(Math.max(...weeks), selectedWeek + 1))}
+              disabled={selectedWeek >= Math.max(...weeks)}
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Games Grid */}
+      {currentWeekGames.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {currentWeekGames.map((game) => {
+            const { date, time } = formatGameTime(game.gameTime);
+            return (
+              <Card key={game.gameId} className="bg-card border-border hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="outline" className="text-xs">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {date} • {time}
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs">Week {game.week}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Matchup */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="text-sm font-medium text-foreground">{game.awayTeam}</div>
+                        <Badge variant="outline" className="text-xs">@</Badge>
+                      </div>
+                      {game.odds.moneyline && (
+                        <div className="text-sm font-mono text-foreground">
+                          {formatOdds(game.odds.moneyline.away)}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium text-foreground">{game.homeTeam}</div>
+                      {game.odds.moneyline && (
+                        <div className="text-sm font-mono text-foreground">
+                          {formatOdds(game.odds.moneyline.home)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Venue */}
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-xs text-muted-foreground">{game.venue}</p>
+                  </div>
+
+                  {/* Additional Betting Lines */}
+                  {(game.odds.spread || game.odds.total) && (
+                    <div className="space-y-2 pt-2 border-t border-border">
+                      {game.odds.spread && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">Spread:</span>
+                          <span className="font-mono text-foreground">
+                            {game.odds.spread.away > 0 ? '+' : ''}{game.odds.spread.away} / {game.odds.spread.home > 0 ? '+' : ''}{game.odds.spread.home}
+                          </span>
+                        </div>
+                      )}
+                      {game.odds.total && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">Total:</span>
+                          <span className="font-mono text-foreground">
+                            O/U {game.odds.total.line}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <Card className="bg-card border-border">
+          <CardContent className="p-8 text-center">
+            <Calendar className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">No Games Scheduled</h3>
+            <p className="text-muted-foreground">
+              No games are scheduled for Week {selectedWeek}.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Week Overview */}
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="flex items-center text-foreground">
+            <BarChart3 className="h-5 w-5 mr-2 text-primary" />
+            Season Overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-foreground">{weeks.length}</div>
+              <div className="text-sm text-muted-foreground">Weeks</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-foreground">{games?.length || 0}</div>
+              <div className="text-sm text-muted-foreground">Total Games</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-foreground">9</div>
+              <div className="text-sm text-muted-foreground">Teams</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-foreground">2025</div>
+              <div className="text-sm text-muted-foreground">Season</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export default function CFLHub() {
   return (
@@ -177,23 +397,7 @@ export default function CFLHub() {
           </TabsContent>
 
           <TabsContent value="schedule" className="space-y-6">
-            <div className="text-center space-y-4 mb-8">
-              <h2 className="text-3xl font-bold text-foreground">CFL Schedule</h2>
-              <p className="text-muted-foreground">
-                Stay up to date with all CFL games, odds, and betting opportunities.
-              </p>
-            </div>
-            
-            <Card className="bg-card border-border">
-              <CardContent className="p-8 text-center">
-                <Calendar className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold text-foreground mb-2">2025 CFL Schedule</h3>
-                <p className="text-muted-foreground mb-6">
-                  Complete schedule with live odds and betting lines coming soon.
-                </p>
-                <Badge variant="secondary">Feature in Development</Badge>
-              </CardContent>
-            </Card>
+            <CFLScheduleView />
           </TabsContent>
 
           <TabsContent value="standings" className="space-y-6">
