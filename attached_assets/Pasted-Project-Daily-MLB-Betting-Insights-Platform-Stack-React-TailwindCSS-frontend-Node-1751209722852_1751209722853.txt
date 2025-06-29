@@ -1,0 +1,96 @@
+Project: Daily MLB Betting Insights Platform  
+Stack: React + TailwindCSS (frontend)  
+       Node.js or Next.js API routes (backend)  
+       Supabase or Firebase (optional for storing summaries/user data)  
+       External APIs: OddsAPI, TheOddsAPI, or Sportsdata.io for betting odds  
+       OpenAI API for AI-generated summaries  
+
+──────────────────────────────────────────────
+🎯 Core Features:
+
+1. ✅ Daily Game Feed  
+   - List all MLB games for today  
+   - Show: teams, start time (ET), location  
+   - Attach:
+     - Moneyline odds
+     - Over/Under total runs (with odds)
+     - Run line / spread odds
+     - Props (e.g., total strikeouts, home runs, etc.)
+
+2. 📄 AI Summary for Each Game  
+   - Automatically generate summary using OpenAI API based on:
+     - Starting pitchers, lineups, betting trends, line movement, and totals
+   - Show as collapsible game preview card:
+     > “Expect a low-scoring duel at Petco Park tonight, with [Pitcher A] and [Pitcher B] combining for a 3.1 ERA over the last 10…”
+
+3. 📊 Betting Insights Panel (per game)  
+   - Suggested value plays:
+     - “O/U Value: Over 8.5 (EV: +7%)”
+     - “Best prop: X Player 2+ hits (+225)”
+   - Show line movement or public % if API supports it
+
+4. 📅 Daily Digest Page  
+   - Auto-generate a “Today’s Betting Breakdown” blog-style post  
+   - Include top 3 bets of the day (over, spread, prop)
+   - Render as HTML + PDF export option
+
+5. 🧮 Optional: Kelly Criterion Calculator  
+   - Enter odds and win probability → get stake suggestion
+
+──────────────────────────────────────────────
+💻 Web App UI Requirements
+
+- Grid layout of games with team logos
+- Tabs or filter by:
+   - Game Time (Early, Late)
+   - Market Type (O/U, Spread, Props)
+- Game cards with:
+   - Teams
+   - Odds (ML, O/U, Spread)
+   - AI summary
+   - Expandable prop section
+
+──────────────────────────────────────────────
+🔑 Replit .env Setup (or Secrets)
+
+- OPENAI_API_KEY=
+- ODDS_API_KEY= or SPORTS_API_KEY=
+- (optional) SUPABASE_URL= / SUPABASE_KEY=
+
+──────────────────────────────────────────────
+📦 Suggested Folder Structure
+
+.
+├─ src/
+│  ├─ components/
+│  │   ├─ GameCard.jsx
+│  │   ├─ BettingSummary.jsx
+│  │   ├─ PropOddsPanel.jsx
+│  ├─ pages/
+│  │   ├─ index.jsx         // daily feed
+│  │   ├─ digest.jsx        // today’s breakdown
+│  └─ lib/
+│     ├─ fetchOdds.js       // fetches and formats all odds from external API
+│     ├─ aiSummary.js       // calls OpenAI for each game summary
+│     └─ utils.js           // odds formatting, implied prob, EV calc
+
+──────────────────────────────────────────────
+🚀 Bonus Features (Optional)
+
+- Auth system for users to favorite games or receive AI picks email
+- Leaderboard of past pick accuracy
+- Twitter/X autoposter for daily “Top 3 Bets” summary
+- Webhook-triggered daily refresh + content export (use n8n or cron job)
+
+──────────────────────────────────────────────
+📘 Daily AI Prompt Template (OpenAI)
+> You are a betting analyst. Given this data for an MLB game:
+> - Matchup: [TEAM A] vs [TEAM B]
+> - Pitchers: [PITCHER A] vs [PITCHER B]
+> - Over/Under: [total], ML Odds: [moneyline], Spread: [run line]
+> - Recent team form: [TEAM A: 5-1 in last 6, avg 6.2 runs/game]
+> - Line movement: O/U opened at 8.5, now 9
+>
+> Generate a brief betting summary (100–150 words) for a betting-focused audience. Mention value plays if clear.
+
+──────────────────────────────────────────────
