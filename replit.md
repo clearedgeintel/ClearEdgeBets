@@ -125,6 +125,11 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 29, 2025: Removed Daily Digest pages from both Baseball and CFL sections
+  - Eliminated `/daily-digest` and `/cfl/digest` routes due to slow rendering performance
+  - Updated sidebar navigation to remove Daily Digest links from both sports
+  - Cleaned up unused imports in App.tsx routing configuration
+  - Streamlined navigation structure focusing on Games and Picks for better user experience
 - June 29, 2025: Created complete CFL sub-pages matching Baseball structure
   - Built CFL Games page (`/cfl/games`) with live odds, team matchups, and betting options
   - Created CFL Daily Picks page (`/cfl/picks`) with AI-powered betting recommendations and confidence scoring

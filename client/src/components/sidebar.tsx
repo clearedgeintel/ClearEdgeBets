@@ -64,13 +64,7 @@ export default function Sidebar() {
           current: location === "/daily-picks",
           description: "AI-powered betting recommendations"
         },
-        { 
-          name: "Daily Digest", 
-          href: "/daily-digest", 
-          icon: FileText,
-          current: location === "/daily-digest",
-          description: "Expert analysis and insights"
-        },
+
         { 
           name: "My Bets", 
           href: "/my-bets", 
@@ -109,13 +103,7 @@ export default function Sidebar() {
           current: location === "/cfl/picks",
           description: "AI-powered CFL betting picks"
         },
-        { 
-          name: "Daily Digest", 
-          href: "/cfl/digest", 
-          icon: FileText,
-          current: location === "/cfl/digest",
-          description: "CFL analysis and insights"
-        },
+
         { 
           name: "NFL", 
           href: "/nfl", 
