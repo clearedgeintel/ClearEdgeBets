@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Menu, Crown } from "lucide-react";
-import logoPath from "@assets/ClearEdge Bets Logo - Sporty Aesthetic_1751220707907.png";
+// import logoPath from "/logo.png";
 import { useBettingSlip } from "@/hooks/use-betting-slip";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
@@ -26,9 +26,12 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
-            <Link href="/" className="flex items-center space-x-3">
-              <img src={logoPath} alt="ClearEdge Bets" className="h-10 w-auto" />
-              <h1 className="text-xl font-bold text-gray-900 hidden sm:block">ClearEdge Bets</h1>
+            <Link href="/" className="flex items-center space-x-2">
+              <div className="flex items-center">
+                <span className="text-2xl font-black text-primary">CLEAR</span>
+                <span className="text-2xl font-black text-secondary">EDGE</span>
+                <span className="text-lg font-bold text-gray-700 ml-1">BETS</span>
+              </div>
             </Link>
             <nav className="hidden md:flex space-x-6">
               {navigation.map((item) => (
