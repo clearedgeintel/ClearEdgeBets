@@ -177,9 +177,15 @@ export default function Home() {
                         </span>
                         <Badge 
                           variant="secondary" 
-                          className={`${index === 0 ? 'bg-secondary' : index === 1 ? 'bg-warning text-gray-900' : 'bg-accent'} border-0 font-bold`}
+                          className={`${
+                            index === 0 
+                              ? 'bg-green-500 text-white' 
+                              : index === 1 
+                                ? 'bg-yellow-500 text-gray-900' 
+                                : 'bg-orange-500 text-white'
+                          } border-0 font-bold`}
                         >
-                          {pick.expectedValue > 0 ? `+EV ${pick.expectedValue}%` : "Hot"}
+                          {pick.expectedValue > 0 ? `+EV ${pick.expectedValue.toFixed(1)}%` : "🔥 Hot"}
                         </Badge>
                       </div>
                       <p className="font-bold text-sm">{pick.game}</p>
