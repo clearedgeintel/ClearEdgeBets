@@ -17,6 +17,32 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Authentication Routes
+  // Test endpoint to create elite user for admin testing
+  app.post("/api/test/create-elite-user", async (req, res) => {
+    try {
+      const hashedPassword = await bcrypt.hash("admin123", 10);
+      
+      const user = await storage.createUser({
+        username: "admin",
+        email: "admin@test.com",
+        password: hashedPassword,
+        subscriptionTier: "elite"
+      });
+
+      res.json({ 
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          email: user.email,
+          subscriptionTier: user.subscriptionTier 
+        } 
+      });
+    } catch (error) {
+      console.error("Elite user creation error:", error);
+      res.status(500).json({ error: "Failed to create elite user" });
+    }
+  });
+
   app.post("/api/auth/register", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
@@ -619,7 +645,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin API routes
   app.get("/api/admin/stats", async (req, res) => {
     try {
-      if (!req.user || req.user.subscriptionTier !== "elite") {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || user.subscriptionTier !== "elite") {
         return res.status(403).json({ error: "Access denied" });
       }
 
@@ -678,7 +710,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/users", async (req, res) => {
     try {
-      if (!req.user || req.user.subscriptionTier !== "elite") {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || user.subscriptionTier !== "elite") {
         return res.status(403).json({ error: "Access denied" });
       }
 
@@ -708,7 +746,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/activity", async (req, res) => {
     try {
-      if (!req.user || req.user.subscriptionTier !== "elite") {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || user.subscriptionTier !== "elite") {
         return res.status(403).json({ error: "Access denied" });
       }
 
@@ -756,7 +800,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/performance", async (req, res) => {
     try {
-      if (!req.user || req.user.subscriptionTier !== "elite") {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || user.subscriptionTier !== "elite") {
         return res.status(403).json({ error: "Access denied" });
       }
 
