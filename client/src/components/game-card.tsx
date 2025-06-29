@@ -162,14 +162,14 @@ export default function GameCard({ game }: GameCardProps) {
                 <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs font-bold">{game.awayTeamCode}</span>
                 </div>
-                <span className="font-semibold text-gray-900">{game.awayTeam}</span>
+                <span className="font-semibold text-foreground">{game.awayTeam}</span>
               </div>
-              <span className="text-gray-400">@</span>
+              <span className="text-muted-foreground">@</span>
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs font-bold">{game.homeTeamCode}</span>
                 </div>
-                <span className="font-semibold text-gray-900">{game.homeTeam}</span>
+                <span className="font-semibold text-foreground">{game.homeTeam}</span>
               </div>
             </div>
           </div>

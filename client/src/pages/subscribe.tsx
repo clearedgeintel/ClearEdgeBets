@@ -122,14 +122,14 @@ export default function Subscribe() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-16">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-foreground mb-4">
             Get Your ClearEdge Advantage
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Unlock professional-grade MLB betting insights powered by AI. 
             Join thousands of successful bettors who trust ClearEdge Bets analytics.
           </p>
@@ -147,9 +147,9 @@ export default function Subscribe() {
                 key={plan.tier} 
                 className={`relative ${
                   plan.popular 
-                    ? "border-blue-500 shadow-lg scale-105" 
-                    : "border-gray-200"
-                } ${isCurrentPlan ? "bg-blue-50 border-blue-300" : ""}`}
+                    ? "border-primary shadow-lg scale-105" 
+                    : "border-border"
+                } ${isCurrentPlan ? "bg-primary/5 border-primary/50" : ""}`}
               >
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -178,17 +178,17 @@ export default function Subscribe() {
                     </div>
                   </div>
                   
-                  <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                  <CardDescription className="text-gray-600 mt-2">
+                  <CardTitle className="text-2xl font-bold text-foreground">{plan.name}</CardTitle>
+                  <CardDescription className="text-muted-foreground mt-2">
                     {plan.description}
                   </CardDescription>
                   
                   <div className="mt-6">
-                    <span className="text-4xl font-bold text-gray-900">
+                    <span className="text-4xl font-bold text-foreground">
                       ${plan.price}
                     </span>
                     {plan.price > 0 && (
-                      <span className="text-gray-600 ml-1">/{plan.period}</span>
+                      <span className="text-muted-foreground ml-1">/{plan.period}</span>
                     )}
                   </div>
                 </CardHeader>
@@ -199,20 +199,20 @@ export default function Subscribe() {
                     {plan.features.map((feature, index) => (
                       <div key={index} className="flex items-center gap-3">
                         <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                        <span className="text-sm text-gray-700">{feature}</span>
+                        <span className="text-sm text-foreground">{feature}</span>
                       </div>
                     ))}
                   </div>
 
                   {/* Limitations */}
                   {plan.limitations.length > 0 && (
-                    <div className="space-y-2 pt-4 border-t border-gray-200">
+                    <div className="space-y-2 pt-4 border-t border-border">
                       {plan.limitations.map((limitation, index) => (
                         <div key={index} className="flex items-center gap-3">
                           <div className="h-5 w-5 flex-shrink-0 flex items-center justify-center">
-                            <div className="h-1 w-3 bg-gray-300 rounded"></div>
+                            <div className="h-1 w-3 bg-muted-foreground rounded"></div>
                           </div>
-                          <span className="text-sm text-gray-500">{limitation}</span>
+                          <span className="text-sm text-muted-foreground">{limitation}</span>
                         </div>
                       ))}
                     </div>
@@ -244,7 +244,7 @@ export default function Subscribe() {
                   </Button>
 
                   {isUpgrade && (
-                    <p className="text-center text-sm text-blue-600 mt-2">
+                    <p className="text-center text-sm text-primary mt-2">
                       Upgrade anytime, cancel anytime
                     </p>
                   )}

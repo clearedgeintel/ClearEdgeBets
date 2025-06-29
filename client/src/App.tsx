@@ -15,6 +15,9 @@ import DailyPicks from "@/pages/daily-picks";
 import AdminDashboard from "@/pages/admin";
 import Subscribe from "@/pages/subscribe";
 import CFLHub from "@/pages/cfl-hub";
+import CFLGames from "@/pages/cfl-games";
+import CFLPicks from "@/pages/cfl-picks";
+import CFLDigest from "@/pages/cfl-digest";
 
 function Router() {
   return (
@@ -28,6 +31,9 @@ function Router() {
         <Route path="/subscribe" component={Subscribe} />
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/cfl" component={CFLHub} />
+        <Route path="/cfl/games" component={CFLGames} />
+        <Route path="/cfl/picks" component={CFLPicks} />
+        <Route path="/cfl/digest" component={CFLDigest} />
         <Route path="/cfl/:section" component={CFLHub} />
         <Route component={NotFound} />
       </Switch>

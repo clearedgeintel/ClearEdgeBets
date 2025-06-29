@@ -91,16 +91,30 @@ export default function Sidebar() {
           name: "CFL Hub", 
           href: "/cfl", 
           icon: Trophy,
-          current: location === "/cfl" || location.startsWith("/cfl"),
+          current: location === "/cfl",
           description: "Canadian Football League central",
           featured: true
         },
         { 
-          name: "CFL Schedule", 
-          href: "/cfl/schedule", 
+          name: "Today's Games", 
+          href: "/cfl/games", 
           icon: Calendar,
-          current: location === "/cfl/schedule",
-          description: "Upcoming CFL games and odds"
+          current: location === "/cfl/games",
+          description: "Live CFL games and odds"
+        },
+        { 
+          name: "Daily Picks", 
+          href: "/cfl/picks", 
+          icon: Target,
+          current: location === "/cfl/picks",
+          description: "AI-powered CFL betting picks"
+        },
+        { 
+          name: "Daily Digest", 
+          href: "/cfl/digest", 
+          icon: FileText,
+          current: location === "/cfl/digest",
+          description: "CFL analysis and insights"
         },
         { 
           name: "NFL", 

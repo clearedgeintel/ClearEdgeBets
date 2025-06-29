@@ -125,6 +125,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 29, 2025: Created complete CFL sub-pages matching Baseball structure
+  - Built CFL Games page (`/cfl/games`) with live odds, team matchups, and betting options
+  - Created CFL Daily Picks page (`/cfl/picks`) with AI-powered betting recommendations and confidence scoring
+  - Developed CFL Daily Digest page (`/cfl/digest`) with comprehensive analysis, weather alerts, and trending topics
+  - Updated sidebar navigation to include all CFL sub-pages (Hub, Games, Picks, Digest)
+  - Added routing for new CFL pages in App.tsx with proper hierarchical structure
+  - Fixed contrast issues on subscribe page pricing using semantic color variables
+  - Enhanced team name visibility in game cards using proper foreground colors
 - June 29, 2025: Major platform overhaul - Dark theme and hierarchical multi-sport structure
   - Implemented dark theme by default for premium sports betting aesthetic
   - Restructured sidebar navigation with hierarchical sports organization:
