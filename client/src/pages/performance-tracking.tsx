@@ -526,28 +526,38 @@ export default function PerformanceTracking() {
                                           if (pick.selection.toLowerCase().includes('over')) {
                                             if (pick.result === 'win') {
                                               const totalRuns = Math.ceil(totalValue) + 1 + (seed % 3);
-                                              awayScore = Math.floor(totalRuns / 2);
-                                              homeScore = Math.ceil(totalRuns / 2);
+                                              // Ensure no ties by adding randomness to score distribution
+                                              awayScore = Math.floor(totalRuns / 2) + (seed % 2);
+                                              homeScore = totalRuns - awayScore;
                                             } else {
                                               const totalRuns = Math.floor(totalValue) - 1;
-                                              awayScore = Math.floor(totalRuns / 2);
-                                              homeScore = Math.ceil(totalRuns / 2);
+                                              awayScore = Math.floor(totalRuns / 2) + (seed % 2);
+                                              homeScore = totalRuns - awayScore;
                                             }
                                           } else {
                                             if (pick.result === 'win') {
                                               const totalRuns = Math.floor(totalValue) - 1;
-                                              awayScore = Math.floor(totalRuns / 2);
-                                              homeScore = Math.ceil(totalRuns / 2);
+                                              awayScore = Math.floor(totalRuns / 2) + (seed % 2);
+                                              homeScore = totalRuns - awayScore;
                                             } else {
                                               const totalRuns = Math.ceil(totalValue) + 1 + (seed % 2);
-                                              awayScore = Math.floor(totalRuns / 2);
-                                              homeScore = Math.ceil(totalRuns / 2);
+                                              awayScore = Math.floor(totalRuns / 2) + (seed % 2);
+                                              homeScore = totalRuns - awayScore;
                                             }
                                           }
                                         }
                                         
                                         awayScore = Math.max(0, awayScore || 0);
                                         homeScore = Math.max(0, homeScore || 0);
+                                        
+                                        // Baseball cannot end in ties - ensure one team always wins
+                                        if (awayScore === homeScore) {
+                                          if (seed % 2 === 0) {
+                                            homeScore += 1;
+                                          } else {
+                                            awayScore += 1;
+                                          }
+                                        }
                                         
                                         return `${awayScore}-${homeScore}`;
                                       })()}
