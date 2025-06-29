@@ -245,10 +245,12 @@ export default function Home() {
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Today's MLB Games</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">MLB Betting Dashboard</h2>
                     <p className="text-gray-600 mt-1">
-                      <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span> • 
-                      <span className="font-medium text-primary ml-1">{games.length} Games</span>
+                      Today's MLB Games • <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      <span className="font-medium text-primary">{games.length} games</span> scheduled with AI analysis
                     </p>
                   </div>
                   <div className="flex items-center space-x-3">

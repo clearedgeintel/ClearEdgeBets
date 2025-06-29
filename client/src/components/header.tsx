@@ -14,7 +14,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigation = [
-    { name: "Today's Games", href: "/", current: location === "/" },
+    { name: "Home", href: "/", current: location === "/" },
     { name: "Daily Picks", href: "/daily-picks", current: location === "/daily-picks" },
     { name: "Daily Digest", href: "/daily-digest", current: location === "/daily-digest" },
     { name: "My Bets", href: "/my-bets", current: location === "/my-bets" },
