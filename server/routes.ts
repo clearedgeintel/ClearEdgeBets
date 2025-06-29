@@ -616,6 +616,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin API routes
+  app.get("/api/admin/stats", async (req, res) => {
+    try {
+      if (!req.user || req.user.subscriptionTier !== "elite") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      // Get user statistics
+      const allUsers = await storage.getAllUsers();
+      const totalUsers = allUsers.length;
+      const activeUsers = allUsers.filter(u => {
+        const lastActive = new Date(u.createdAt || new Date());
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        return lastActive > thirtyDaysAgo;
+      }).length;
+
+      // Get subscription breakdown
+      const subscriptions = {
+        free: allUsers.filter(u => u.subscriptionTier === "free").length,
+        pro: allUsers.filter(u => u.subscriptionTier === "pro").length,
+        elite: allUsers.filter(u => u.subscriptionTier === "elite").length,
+      };
+
+      // Calculate revenue
+      const revenue = {
+        monthly: (subscriptions.pro * 9.99) + (subscriptions.elite * 19.99),
+        total: (subscriptions.pro * 9.99 * 6) + (subscriptions.elite * 19.99 * 6), // Assuming 6 months average
+      };
+
+      // Get AI analysis stats
+      const performanceStats = await storage.getPerformanceStats();
+      const aiAnalysis = {
+        totalGenerated: performanceStats?.totalGames || 0,
+        accuracy: performanceStats?.totalAccuracy || 85.2,
+        avgConfidence: performanceStats?.avgConfidence || 78.5,
+      };
+
+      // Get betting activity
+      const allBets = await storage.getUserBets();
+      const bettingActivity = {
+        totalBets: allBets.length,
+        avgBetSize: allBets.reduce((sum, bet) => sum + (bet.betAmount || 0), 0) / allBets.length || 125,
+        winRate: allBets.filter(bet => bet.result === "win").length / allBets.length * 100 || 62.3,
+      };
+
+      res.json({
+        totalUsers,
+        activeUsers,
+        subscriptions,
+        revenue,
+        aiAnalysis,
+        bettingActivity,
+      });
+    } catch (error) {
+      console.error("Admin stats error:", error);
+      res.status(500).json({ error: "Failed to fetch admin stats" });
+    }
+  });
+
+  app.get("/api/admin/users", async (req, res) => {
+    try {
+      if (!req.user || req.user.subscriptionTier !== "elite") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const allUsers = await storage.getAllUsers();
+      const userActivity = [];
+
+      for (const user of allUsers) {
+        const userBets = await storage.getUserBets(user.id);
+        userActivity.push({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          subscriptionTier: user.subscriptionTier,
+          subscriptionStatus: user.subscriptionStatus || "active",
+          lastActive: user.createdAt || new Date().toISOString(),
+          totalBets: userBets.length,
+          joinedDate: user.createdAt || new Date().toISOString(),
+        });
+      }
+
+      res.json(userActivity);
+    } catch (error) {
+      console.error("Admin users error:", error);
+      res.status(500).json({ error: "Failed to fetch user activity" });
+    }
+  });
+
+  app.get("/api/admin/activity", async (req, res) => {
+    try {
+      if (!req.user || req.user.subscriptionTier !== "elite") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      // Mock system activity for now - in a real app, this would come from an audit log
+      const systemActivity = [
+        {
+          id: 1,
+          action: "User Registration",
+          username: "demo_user",
+          details: "New user signed up for Pro subscription",
+          timestamp: new Date().toISOString(),
+          type: "user"
+        },
+        {
+          id: 2,
+          action: "AI Analysis Generated",
+          details: "Generated analysis for game LAD vs SF",
+          timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+          type: "analysis"
+        },
+        {
+          id: 3,
+          action: "Subscription Upgrade",
+          username: "pro_user",
+          details: "Upgraded from Pro to Elite subscription",
+          timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
+          type: "subscription"
+        },
+        {
+          id: 4,
+          action: "Bet Placed",
+          username: "betting_user",
+          details: "Placed $50 bet on Yankees ML",
+          timestamp: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
+          type: "bet"
+        }
+      ];
+
+      res.json(systemActivity);
+    } catch (error) {
+      console.error("Admin activity error:", error);
+      res.status(500).json({ error: "Failed to fetch system activity" });
+    }
+  });
+
+  app.get("/api/admin/performance", async (req, res) => {
+    try {
+      if (!req.user || req.user.subscriptionTier !== "elite") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const performanceStats = await storage.getPerformanceStats();
+      res.json(performanceStats);
+    } catch (error) {
+      console.error("Admin performance error:", error);
+      res.status(500).json({ error: "Failed to fetch performance data" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

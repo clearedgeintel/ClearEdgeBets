@@ -27,6 +27,7 @@ import LoginForm from "@/components/auth/login-form";
 export default function Sidebar() {
   const [location] = useLocation();
   const { bets } = useBettingSlip();
+  const { user, hasAccess } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navigation = [
@@ -58,6 +59,13 @@ export default function Sidebar() {
       current: location === "/my-bets",
       description: "Betting history and tracking"
     },
+    ...(user && hasAccess("elite") ? [{ 
+      name: "Admin Dashboard", 
+      href: "/admin", 
+      icon: Settings,
+      current: location === "/admin",
+      description: "System analytics and management"
+    }] : []),
   ];
 
   const SidebarContent = () => (
