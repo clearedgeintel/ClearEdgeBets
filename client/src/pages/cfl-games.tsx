@@ -200,85 +200,10 @@ export default function CFLGames() {
   const [selectedDivision, setSelectedDivision] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Mock CFL games data - in production this would come from an API
-  const { data: games = [], isLoading } = useQuery({
-    queryKey: ['/api/cfl/games'],
-    queryFn: () => Promise.resolve([
-      {
-        id: 1,
-        gameId: "cfl_1",
-        awayTeam: "Calgary Stampeders",
-        homeTeam: "Toronto Argonauts",
-        awayTeamCode: "CGY",
-        homeTeamCode: "TOR",
-        gameTime: "7:30 PM ET",
-        venue: "BMO Field",
-        status: "scheduled",
-        week: 1,
-        season: "2025",
-        odds: [
-          {
-            id: 1,
-            gameId: "cfl_1",
-            bookmaker: "bet365",
-            market: "h2h",
-            awayOdds: 150,
-            homeOdds: -180
-          },
-          {
-            id: 2,
-            gameId: "cfl_1",
-            bookmaker: "bet365",
-            market: "totals",
-            total: "49.5",
-            overOdds: -110,
-            underOdds: -110
-          },
-          {
-            id: 3,
-            gameId: "cfl_1",
-            bookmaker: "bet365",
-            market: "spreads",
-            awaySpread: "+3.5",
-            homeSpread: "-3.5",
-            awaySpreadOdds: -110,
-            homeSpreadOdds: -110
-          }
-        ]
-      },
-      {
-        id: 2,
-        gameId: "cfl_2",
-        awayTeam: "BC Lions",
-        homeTeam: "Saskatchewan Roughriders",
-        awayTeamCode: "BC",
-        homeTeamCode: "SSK",
-        gameTime: "9:00 PM ET",
-        venue: "Mosaic Stadium",
-        status: "scheduled",
-        week: 1,
-        season: "2025",
-        odds: [
-          {
-            id: 4,
-            gameId: "cfl_2",
-            bookmaker: "bet365",
-            market: "h2h",
-            awayOdds: -120,
-            homeOdds: 100
-          },
-          {
-            id: 5,
-            gameId: "cfl_2",
-            bookmaker: "bet365",
-            market: "totals",
-            total: "52.0",
-            overOdds: -105,
-            underOdds: -115
-          }
-        ]
-      }
-    ] as CFLGame[])
+  // Fetch real CFL games data from API
+  const { data: games = [], isLoading } = useQuery<CFLGame[]>({
+    queryKey: ['/api/cfl/games', selectedDate.toISOString().split('T')[0]],
+    enabled: true
   });
 
   const filteredGames = games.filter(game => {

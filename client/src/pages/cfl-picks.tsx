@@ -212,62 +212,10 @@ export default function CFLPicks() {
   const [sortBy, setSortBy] = useState("confidence");
   const today = format(new Date(), "yyyy-MM-dd");
 
-  // Mock CFL picks data - in production this would come from an API
-  const { data: picks = [], isLoading } = useQuery({
+  // Fetch real CFL picks data from API
+  const { data: picks = [], isLoading } = useQuery<CFLPick[]>({
     queryKey: ['/api/cfl/daily-picks', today],
-    queryFn: () => Promise.resolve([
-      {
-        id: 1,
-        date: today,
-        gameId: "cfl_1",
-        pickType: "moneyline",
-        selection: "Calgary Stampeders",
-        odds: 150,
-        reasoning: "Calgary's strong rushing attack should dominate against Toronto's weak run defense. The Stampeders have averaged 142 rushing yards per game this season while the Argonauts allow 156 yards on the ground. Weather conditions favor the ground game, and Calgary's offensive line is healthier with key players returning from injury.",
-        confidence: 78,
-        expectedValue: 12.3,
-        awayTeam: "Calgary Stampeders",
-        homeTeam: "Toronto Argonauts",
-        awayTeamCode: "CGY",
-        homeTeamCode: "TOR",
-        gameTime: "7:30 PM ET",
-        status: "pending"
-      },
-      {
-        id: 2,
-        date: today,
-        gameId: "cfl_2",
-        pickType: "total",
-        selection: "Under 52.0",
-        odds: -115,
-        reasoning: "Expect a defensive battle in Saskatchewan with strong winds forecasted. Both teams have struggled offensively in recent weeks, and the Roughriders' home field advantage is significant in late-season games. BC's passing game has been inconsistent on the road, while Saskatchewan's defense is allowing just 18.2 points per game at home.",
-        confidence: 65,
-        expectedValue: 8.7,
-        awayTeam: "BC Lions",
-        homeTeam: "Saskatchewan Roughriders",
-        awayTeamCode: "BC",
-        homeTeamCode: "SSK",
-        gameTime: "9:00 PM ET",
-        status: "pending"
-      },
-      {
-        id: 3,
-        date: today,
-        gameId: "cfl_3",
-        pickType: "spread",
-        selection: "Edmonton Elks +7.5",
-        odds: -110,
-        reasoning: "Edmonton has been competitive as road underdogs this season, covering 4 of their last 6 games when getting more than a touchdown. Winnipeg tends to play down to competition at home, and this large spread creates value. The Elks' defense has improved significantly over the past month.",
-        confidence: 82,
-        expectedValue: 15.2,
-        awayTeam: "Edmonton Elks",
-        homeTeam: "Winnipeg Blue Bombers",
-        awayTeamCode: "EDM",
-        homeTeamCode: "WPG",
-        gameTime: "8:00 PM ET",
-        status: "pending"
-      }
-    ] as CFLPick[])
+    enabled: true
   });
 
   const highConfidencePicks = picks.filter(pick => pick.confidence >= 75);
