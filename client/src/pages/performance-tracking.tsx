@@ -82,6 +82,25 @@ export default function PerformanceTracking() {
     },
   });
 
+  const generateHistoricalMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/performance/generate-historical', { days: 14 }),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/performance/daily'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/performance/monthly'] });
+      toast({
+        title: "Historical Data Generated",
+        description: "Created sample historical betting data for the past 2 weeks.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate historical data. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const manualReconcileMutation = useMutation({
     mutationFn: ({ pickId, result }: { pickId: number; result: string }) => 
       apiRequest('POST', '/api/performance/reconcile', { pickId, result }),
@@ -182,14 +201,25 @@ export default function PerformanceTracking() {
                   />
                 </div>
               </div>
-              <Button 
-                onClick={() => autoReconcileMutation.mutate(selectedDate)}
-                disabled={autoReconcileMutation.isPending}
-                className="flex items-center space-x-2"
-              >
-                <RefreshCw className={`h-4 w-4 ${autoReconcileMutation.isPending ? 'animate-spin' : ''}`} />
-                <span>Auto Reconcile</span>
-              </Button>
+              <div className="flex items-center space-x-2">
+                <Button 
+                  onClick={() => autoReconcileMutation.mutate(selectedDate)}
+                  disabled={autoReconcileMutation.isPending}
+                  className="flex items-center space-x-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${autoReconcileMutation.isPending ? 'animate-spin' : ''}`} />
+                  <span>Auto Reconcile</span>
+                </Button>
+                <Button 
+                  onClick={() => generateHistoricalMutation.mutate()}
+                  disabled={generateHistoricalMutation.isPending}
+                  variant="outline"
+                  className="flex items-center space-x-2"
+                >
+                  <BarChart3 className={`h-4 w-4 ${generateHistoricalMutation.isPending ? 'animate-spin' : ''}`} />
+                  <span>Generate Sample Data</span>
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

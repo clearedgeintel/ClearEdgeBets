@@ -18,6 +18,7 @@ import CFLGames from "@/pages/cfl-games";
 import CFLPicks from "@/pages/cfl-picks";
 import PerformanceTracking from "@/pages/performance-tracking";
 import GolfTournaments from "@/pages/golf-tournaments";
+import AuthPage from "@/pages/auth";
 
 function Router() {
   return (
@@ -35,6 +36,7 @@ function Router() {
         <Route path="/cfl/:section" component={CFLHub} />
         <Route path="/golf/tournaments" component={GolfTournaments} />
         <Route path="/performance" component={PerformanceTracking} />
+        <Route path="/auth" component={AuthPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

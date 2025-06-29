@@ -722,6 +722,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get daily picks endpoint
+  app.get("/api/daily-picks", async (req, res) => {
+    try {
+      const { date } = req.query;
+      let targetDate = date ? String(date) : '';
+      if (!targetDate) {
+        const today = new Date();
+        const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
+        targetDate = localDate.toISOString().split('T')[0];
+      }
+      const picks = await storage.getDailyPicks(targetDate);
+      res.json(picks);
+    } catch (error) {
+      console.error("Error fetching daily picks:", error);
+      res.status(500).json({ error: "Failed to fetch daily picks" });
+    }
+  });
+
+  // Generate historical results for demonstration
+  app.post("/api/performance/generate-historical", async (req, res) => {
+    try {
+      const { days = 7 } = req.body;
+      
+      let generatedDays = 0;
+      const today = new Date();
+      
+      for (let i = 1; i <= days; i++) {
+        const pastDate = new Date(today);
+        pastDate.setDate(today.getDate() - i);
+        const dateString = pastDate.toISOString().split('T')[0];
+        
+        // Check if we already have picks for this date
+        const existingPicks = await storage.getDailyPicks(dateString);
+        if (existingPicks.length > 0) continue;
+        
+        // Generate sample historical picks
+        const samplePicks = [
+          {
+            date: dateString,
+            gameId: `Yankees@RedSox_${dateString}`,
+            pickType: "moneyline",
+            selection: "New York Yankees",
+            odds: -145,
+            confidence: 78,
+            reasoning: "Yankees starter has excellent record vs Red Sox lineup, bullpen advantage",
+            expectedValue: "6.2",
+            status: "completed"
+          },
+          {
+            date: dateString,
+            gameId: `Dodgers@Giants_${dateString}`,
+            pickType: "total",
+            selection: "Under 8.5",
+            odds: -110,
+            confidence: 82,
+            reasoning: "Strong pitching matchup, both teams trending under recently",
+            expectedValue: "4.8",
+            status: "completed"
+          },
+          {
+            date: dateString,
+            gameId: `Astros@Rangers_${dateString}`,
+            pickType: "spread",
+            selection: "Houston Astros -1.5",
+            odds: +125,
+            confidence: 75,
+            reasoning: "Astros offense has been dominant, Rangers struggling with injuries",
+            expectedValue: "8.1",
+            status: "completed"
+          }
+        ];
+        
+        // Create the picks
+        for (const pick of samplePicks) {
+          const createdPick = await storage.createDailyPick(pick);
+          
+          // Auto-reconcile with realistic results based on confidence
+          const random = Math.random();
+          let result = 'loss';
+          
+          if (random < pick.confidence / 100) {
+            result = 'win';
+          } else if (random < (pick.confidence / 100) + 0.05) {
+            result = 'push';
+          }
+          
+          await storage.updateDailyPickResult(createdPick.id, result);
+        }
+        
+        generatedDays++;
+      }
+      
+      res.json({ 
+        message: `Generated historical data for ${generatedDays} days`,
+        generatedDays 
+      });
+    } catch (error) {
+      console.error("Historical generation error:", error);
+      res.status(500).json({ error: "Failed to generate historical data" });
+    }
+  });
+
   // Subscription management
   app.post("/api/subscription/create", async (req, res) => {
     try {
@@ -1092,20 +1194,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const dailyPicks = await storage.getDailyPicks(targetDate);
-      const games = await storage.getAllTodaysGames();
       
       let reconciledCount = 0;
       
       for (const pick of dailyPicks) {
         if (pick.result !== null) continue; // Already reconciled
         
-        const game = games.find(g => g.gameId === pick.gameId);
-        if (!game) continue;
-        
         // Generate mock results based on pick confidence and type
+        // Higher confidence picks have better chance of winning
         let result: string;
         const random = Math.random();
-        const winProbability = pick.confidence / 100;
+        
+        // Adjust win probability based on confidence
+        let winProbability = pick.confidence / 100;
+        
+        // Add some realism based on pick type
+        if (pick.pickType === 'total') {
+          winProbability *= 0.85; // Totals are harder to predict
+        } else if (pick.pickType === 'spread') {
+          winProbability *= 0.9; // Spreads are moderately difficult
+        } else if (pick.pickType === 'moneyline') {
+          winProbability *= 0.95; // Moneylines are easier with good analysis
+        }
         
         if (random < winProbability) {
           result = 'win';
