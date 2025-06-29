@@ -30,6 +30,9 @@ export default function Sidebar() {
   const { user, hasAccess } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Debug logging
+  console.log("Sidebar bets:", bets);
+
   const navigation = [
     { 
       name: "Today's Games", 
