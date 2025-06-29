@@ -11,6 +11,7 @@ import MyBets from "@/pages/my-bets";
 import DailyDigest from "@/pages/daily-digest";
 import DailyPicks from "@/pages/daily-picks";
 import AdminDashboard from "@/pages/admin";
+import Subscribe from "@/pages/subscribe";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
         <Route path="/my-bets" component={MyBets} />
         <Route path="/daily-digest" component={DailyDigest} />
         <Route path="/daily-picks" component={DailyPicks} />
+        <Route path="/subscribe" component={Subscribe} />
         <Route path="/admin" component={AdminDashboard} />
         <Route component={NotFound} />
       </Switch>

@@ -1,13 +1,15 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Volleyball as Baseball, TrendingUp, Menu } from "lucide-react";
+import { Volleyball as Baseball, TrendingUp, Menu, Crown } from "lucide-react";
 import { useBettingSlip } from "@/hooks/use-betting-slip";
+import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export default function Header() {
   const [location] = useLocation();
+  const { user } = useAuth();
   const { bets } = useBettingSlip();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -45,6 +47,32 @@ export default function Header() {
           </div>
           
           <div className="flex items-center space-x-4">
+            {/* Subscription Status */}
+            {user && (
+              <div className="hidden sm:flex items-center space-x-2">
+                {user.subscriptionTier === "free" && (
+                  <Link href="/subscribe">
+                    <Button variant="outline" size="sm">
+                      <Crown className="h-4 w-4 mr-2" />
+                      Upgrade
+                    </Button>
+                  </Link>
+                )}
+                {user.subscriptionTier !== "free" && (
+                  <Badge 
+                    className={`${
+                      user.subscriptionTier === "pro" 
+                        ? "bg-blue-100 text-blue-800" 
+                        : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    <Crown className="h-3 w-3 mr-1" />
+                    {user.subscriptionTier?.toUpperCase()}
+                  </Badge>
+                )}
+              </div>
+            )}
+            
             <div className="hidden sm:flex items-center space-x-2 bg-secondary/10 px-3 py-1 rounded-full">
               <div className="w-2 h-2 bg-secondary rounded-full animate-pulse"></div>
               <span className="text-sm font-medium text-secondary">Live Odds</span>

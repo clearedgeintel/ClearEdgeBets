@@ -584,6 +584,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Subscription management
+  app.post("/api/subscription/create", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const { tier } = req.body;
+      
+      if (!["pro", "elite"].includes(tier)) {
+        return res.status(400).json({ error: "Invalid subscription tier" });
+      }
+
+      // For demo purposes, we'll simulate subscription creation
+      // In a real app, this would integrate with Stripe
+      const updatedUser = await storage.updateUserSubscription(req.user.id, {
+        tier,
+        status: "active",
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      });
+
+      res.json({ 
+        success: true, 
+        message: `Successfully subscribed to ${tier} tier`,
+        user: updatedUser 
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to create subscription" });
+    }
+  });
+
   // Consensus data endpoints
   app.get("/api/consensus/:gameId", async (req, res) => {
     try {
