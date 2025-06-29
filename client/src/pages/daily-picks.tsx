@@ -90,20 +90,20 @@ export default function DailyPicks() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-3 mb-8">
           <Target className="h-8 w-8 text-blue-600" />
-          <h1 className="text-3xl font-bold">Daily Expert Picks</h1>
+          <h1 className="text-3xl font-bold text-foreground">Daily Expert Picks</h1>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader>
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-muted rounded w-1/2"></div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="h-3 bg-gray-200 rounded"></div>
-                  <div className="h-3 bg-gray-200 rounded w-5/6"></div>
-                  <div className="h-10 bg-gray-200 rounded"></div>
+                  <div className="h-3 bg-muted rounded"></div>
+                  <div className="h-3 bg-muted rounded w-5/6"></div>
+                  <div className="h-10 bg-muted rounded"></div>
                 </div>
               </CardContent>
             </Card>
@@ -118,11 +118,11 @@ export default function DailyPicks() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-3 mb-8">
           <Target className="h-8 w-8 text-blue-600" />
-          <h1 className="text-3xl font-bold">Daily Expert Picks</h1>
+          <h1 className="text-3xl font-bold text-foreground">Daily Expert Picks</h1>
         </div>
         <Card>
           <CardContent className="p-8 text-center">
-            <p className="text-gray-500 mb-4">Unable to load daily picks</p>
+            <p className="text-muted-foreground mb-4">Unable to load daily picks</p>
             <Button 
               onClick={() => generatePicksMutation.mutate()}
               disabled={generatePicksMutation.isPending}
@@ -141,8 +141,8 @@ export default function DailyPicks() {
         <div className="flex items-center gap-3">
           <Target className="h-8 w-8 text-blue-600" />
           <div>
-            <h1 className="text-3xl font-bold">Daily Expert Picks</h1>
-            <p className="text-gray-600">AI-powered betting recommendations</p>
+            <h1 className="text-3xl font-bold text-foreground">Daily Expert Picks</h1>
+            <p className="text-muted-foreground">AI-powered betting recommendations</p>
           </div>
         </div>
         <Button 
@@ -158,9 +158,9 @@ export default function DailyPicks() {
       {picks && Array.isArray(picks) && picks.length === 0 && (
         <Card>
           <CardContent className="p-8 text-center">
-            <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No picks available</h3>
-            <p className="text-gray-500 mb-4">Generate AI-powered daily picks for today's games</p>
+            <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2 text-foreground">No picks available</h3>
+            <p className="text-muted-foreground mb-4">Generate AI-powered daily picks for today's games</p>
             <Button 
               onClick={() => generatePicksMutation.mutate()}
               disabled={generatePicksMutation.isPending}
@@ -192,9 +192,9 @@ export default function DailyPicks() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Confidence</span>
+                <span className="text-sm text-muted-foreground">Confidence</span>
                 <div className="flex items-center gap-2">
-                  <div className="w-16 h-2 bg-gray-200 rounded-full">
+                  <div className="w-16 h-2 bg-muted rounded-full">
                     <div 
                       className={`h-2 rounded-full ${getConfidenceColor(pick.confidence)}`}
                       style={{ width: `${pick.confidence}%` }}
@@ -206,10 +206,10 @@ export default function DailyPicks() {
 
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm font-medium">Analysis</span>
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground">Analysis</span>
                 </div>
-                <p className="text-sm text-gray-700 leading-relaxed">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   {pick.reasoning}
                 </p>
               </div>
