@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, TrendingDown, BarChart3, Calendar } from "lucide-react";
-import { useBettingSlip } from "@/hooks/use-betting-slip";
+import { useBettingSlip } from "@/contexts/betting-slip-context";
 
 interface Bet {
   id: number;

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatOdds, formatPercentage } from "@/lib/utils";
 import { Sparkles, TrendingUp, Target, BarChart3 } from "lucide-react";
-import { useBettingSlip } from "@/hooks/use-betting-slip";
+import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { useToast } from "@/hooks/use-toast";
 
 interface DailyPick {
