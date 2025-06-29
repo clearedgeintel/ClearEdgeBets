@@ -102,22 +102,22 @@ export default function BettingSlip() {
           <>
             <div className="space-y-3 mb-4">
               {bets.map((bet, index) => (
-                <div key={`${bet.gameId}-${bet.betType}-${bet.selection}`} className="bg-gray-50 rounded-lg p-3">
+                <div key={`${bet.gameId}-${bet.betType}-${bet.selection}`} className="bg-muted rounded-lg p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-900 truncate">{bet.selection}</span>
+                    <span className="text-sm font-medium text-foreground truncate">{bet.selection}</span>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-auto p-1 text-gray-400 hover:text-gray-600"
+                      className="h-auto p-1 text-muted-foreground hover:text-foreground"
                       onClick={() => clearBet(bet.gameId, bet.betType, bet.selection)}
                     >
                       <X className="h-3 w-3" />
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-600 mb-2">Game: {bet.gameId}</p>
+                  <p className="text-xs text-muted-foreground mb-2">Game: {bet.gameId}</p>
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <label className="text-xs text-gray-500 w-12">Odds:</label>
+                      <label className="text-xs text-muted-foreground w-12">Odds:</label>
                       <Input
                         type="number"
                         placeholder="Odds"
@@ -128,7 +128,7 @@ export default function BettingSlip() {
                       />
                     </div>
                     <div className="flex items-center space-x-2">
-                      <label className="text-xs text-gray-500 w-12">Stake:</label>
+                      <label className="text-xs text-muted-foreground w-12">Stake:</label>
                       <Input
                         type="number"
                         placeholder="$0.00"
@@ -139,7 +139,7 @@ export default function BettingSlip() {
                       />
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     To win: ${bet.potentialWin.toFixed(2)}
                   </p>
                 </div>

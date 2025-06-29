@@ -264,7 +264,11 @@ export default function Sidebar() {
                     View Slip
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-md">
+                <DialogContent 
+                  className="max-w-md" 
+                  onPointerDownOutside={(e) => e.preventDefault()}
+                  onInteractOutside={(e) => e.preventDefault()}
+                >
                   <DialogHeader>
                     <DialogTitle>Betting Slip</DialogTitle>
                   </DialogHeader>
