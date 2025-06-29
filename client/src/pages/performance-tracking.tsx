@@ -71,7 +71,7 @@ export default function PerformanceTracking() {
   });
 
   const autoReconcileMutation = useMutation({
-    mutationFn: (date: string) => apiRequest('POST', '/api/performance/auto-reconcile', { date }),
+    mutationFn: (date: string) => apiRequest('POST', '/api/performance/auto-reconcile', { date, force: true }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/performance/daily'] });
       toast({
@@ -409,9 +409,23 @@ export default function PerformanceTracking() {
                         <div className="flex-1 space-y-3">
                           <div className="flex items-center space-x-4">
                             <div className="space-y-1">
-                              <h3 className="font-semibold text-foreground">
-                                {pick.game ? `${pick.game.awayTeam} @ ${pick.game.homeTeam}` : pick.gameId}
-                              </h3>
+                              <div className="flex items-center space-x-3">
+                                <h3 className="font-semibold text-foreground">
+                                  {pick.game ? `${pick.game.awayTeam} @ ${pick.game.homeTeam}` : pick.gameId}
+                                </h3>
+                                {pick.result && (
+                                  <div className="flex items-center space-x-1">
+                                    {getResultIcon(pick.result)}
+                                    <span className={`text-sm font-medium ${
+                                      pick.result === 'win' ? 'text-green-600' : 
+                                      pick.result === 'loss' ? 'text-red-600' : 
+                                      'text-yellow-600'
+                                    }`}>
+                                      {pick.result.toUpperCase()}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                                 <Badge variant="outline">{pick.pickType}</Badge>
                                 <span>•</span>
@@ -420,6 +434,19 @@ export default function PerformanceTracking() {
                                 <span className="font-mono">
                                   {pick.odds > 0 ? `+${pick.odds}` : `${pick.odds}`}
                                 </span>
+                                {pick.result && (
+                                  <>
+                                    <span>•</span>
+                                    <Badge 
+                                      variant="outline" 
+                                      className={pick.result === 'win' ? 'text-green-600 border-green-500/20' : 
+                                                pick.result === 'loss' ? 'text-red-600 border-red-500/20' : 
+                                                'text-yellow-600 border-yellow-500/20'}
+                                    >
+                                      {pick.result.toUpperCase()}
+                                    </Badge>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>
