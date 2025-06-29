@@ -346,7 +346,7 @@ export default function GameCard({ game }: GameCardProps) {
             </CollapsibleTrigger>
             
             <CollapsibleContent className="mt-3">
-              {!user ? (
+              {(!user && !game.aiSummary) ? (
                 <div className="relative bg-gray-50 rounded-lg p-4">
                   <div className="blur-sm select-none pointer-events-none">
                     <p className="text-gray-700 text-sm leading-relaxed mb-3">
