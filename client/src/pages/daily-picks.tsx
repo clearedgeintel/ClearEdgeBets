@@ -4,9 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatOdds, formatPercentage } from "@/lib/utils";
-import { Sparkles, TrendingUp, Target, BarChart3 } from "lucide-react";
+import { Sparkles, TrendingUp, Target, BarChart3, Crown, Lock } from "lucide-react";
 import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/auth-context";
+import Header from "@/components/header";
+import Footer from "@/components/footer";
+import { Link } from "wouter";
 
 interface DailyPick {
   id: number;
@@ -27,6 +31,7 @@ export default function DailyPicks() {
   const queryClient = useQueryClient();
   const { addBet } = useBettingSlip();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const {
     data: picks,
@@ -135,14 +140,72 @@ export default function DailyPicks() {
     );
   }
 
+  // Check if user has Pro access
+  const hasProAccess = user && (user.subscriptionTier === 'pro' || user.subscriptionTier === 'elite');
+
+  // Pro access control
+  if (!hasProAccess) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-3xl mx-auto text-center">
+            <Card className="border-blue-200 bg-blue-50">
+              <CardContent className="p-12">
+                <Lock className="h-16 w-16 mx-auto mb-4 text-blue-600" />
+                <h1 className="text-3xl font-bold mb-4 text-foreground">Daily Expert Picks</h1>
+                <Badge className="bg-blue-600 text-white mb-6">
+                  <Crown className="h-3 w-3 mr-1" />
+                  Pro Feature
+                </Badge>
+                <p className="text-lg text-muted-foreground mb-8">
+                  Get AI-powered daily betting recommendations from our expert analysis system.
+                  Access premium picks with detailed reasoning and confidence scores.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                  <div className="p-4 bg-white rounded-lg border">
+                    <Target className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                    <h3 className="font-semibold mb-1">Expert Analysis</h3>
+                    <p className="text-sm text-muted-foreground">AI-powered picks with detailed reasoning</p>
+                  </div>
+                  <div className="p-4 bg-white rounded-lg border">
+                    <BarChart3 className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                    <h3 className="font-semibold mb-1">Confidence Scoring</h3>
+                    <p className="text-sm text-muted-foreground">Risk assessment for every pick</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Link href="/subscribe">
+                    <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700">
+                      <Crown className="h-4 w-4 mr-2" />
+                      Upgrade to Pro - $9.99/month
+                    </Button>
+                  </Link>
+                  <p className="text-sm text-muted-foreground">
+                    Join thousands of successful bettors with Pro access
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <Target className="h-8 w-8 text-blue-600" />
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Daily Expert Picks</h1>
-            <p className="text-muted-foreground">
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <Target className="h-8 w-8 text-blue-600" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Daily Expert Picks</h1>
+              <p className="text-muted-foreground">
               {new Date().toLocaleDateString('en-US', { 
                 weekday: 'long', 
                 year: 'numeric', 
@@ -308,6 +371,8 @@ export default function DailyPicks() {
           </Card>
         ))}
       </div>
+      </div>
+      <Footer />
     </div>
   );
 }
