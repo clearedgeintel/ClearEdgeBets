@@ -44,6 +44,127 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-05-28.basil",
 });
 
+// Function to generate different game data based on date
+function generateGamesForDate(dateString: string) {
+  const date = new Date(dateString);
+  const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  const dateHash = dateString.split('-').join(''); // Simple hash from date
+  
+  // Use date as seed for consistent results
+  const seed = parseInt(dateHash.substring(0, 8)) % 1000;
+  
+  // Vary game count based on day of week (MLB schedule patterns)
+  let gameCount: number;
+  if (dayOfWeek === 1) { // Monday - fewer games
+    gameCount = ((seed * 17) % 6) + 2; // 2-7 games
+  } else if (dayOfWeek === 0) { // Sunday - full schedule
+    gameCount = ((seed * 23) % 8) + 10; // 10-17 games
+  } else if (dayOfWeek === 6) { // Saturday - full schedule  
+    gameCount = ((seed * 31) % 8) + 12; // 12-19 games
+  } else { // Tuesday-Friday - normal schedule
+    gameCount = ((seed * 13) % 6) + 8; // 8-13 games
+  }
+  
+  const teams = [
+    { name: "Atlanta Braves", code: "ATL" },
+    { name: "Miami Marlins", code: "MIA" },
+    { name: "New York Mets", code: "NYM" },
+    { name: "Philadelphia Phillies", code: "PHI" },
+    { name: "Washington Nationals", code: "WSH" },
+    { name: "Chicago Cubs", code: "CHC" },
+    { name: "Cincinnati Reds", code: "CIN" },
+    { name: "Milwaukee Brewers", code: "MIL" },
+    { name: "Pittsburgh Pirates", code: "PIT" },
+    { name: "St. Louis Cardinals", code: "STL" },
+    { name: "Arizona Diamondbacks", code: "ARI" },
+    { name: "Colorado Rockies", code: "COL" },
+    { name: "Los Angeles Dodgers", code: "LAD" },
+    { name: "San Diego Padres", code: "SD" },
+    { name: "San Francisco Giants", code: "SF" },
+    { name: "Baltimore Orioles", code: "BAL" },
+    { name: "Boston Red Sox", code: "BOS" },
+    { name: "New York Yankees", code: "NYY" },
+    { name: "Tampa Bay Rays", code: "TB" },
+    { name: "Toronto Blue Jays", code: "TOR" },
+    { name: "Chicago White Sox", code: "CWS" },
+    { name: "Cleveland Guardians", code: "CLE" },
+    { name: "Detroit Tigers", code: "DET" },
+    { name: "Kansas City Royals", code: "KC" },
+    { name: "Minnesota Twins", code: "MIN" },
+    { name: "Houston Astros", code: "HOU" },
+    { name: "Los Angeles Angels", code: "LAA" },
+    { name: "Oakland Athletics", code: "OAK" },
+    { name: "Seattle Mariners", code: "SEA" },
+    { name: "Texas Rangers", code: "TEX" }
+  ];
+  
+  const games = [];
+  const usedTeams = new Set();
+  
+  for (let i = 0; i < gameCount; i++) {
+    // Pick teams that haven't been used yet
+    let awayTeam, homeTeam;
+    let attempts = 0;
+    do {
+      awayTeam = teams[(seed + i * 3) % teams.length];
+      homeTeam = teams[(seed + i * 5 + 1) % teams.length];
+      attempts++;
+    } while ((usedTeams.has(awayTeam.code) || usedTeams.has(homeTeam.code) || awayTeam.code === homeTeam.code) && attempts < 50);
+    
+    if (attempts >= 50) break; // Avoid infinite loop
+    
+    usedTeams.add(awayTeam.code);
+    usedTeams.add(homeTeam.code);
+    
+    // Generate game time (7:00 PM - 10:00 PM ET)
+    const hour = 19 + (seed + i) % 4; // 7, 8, 9, or 10 PM
+    const minute = (seed + i * 7) % 4 * 15; // 0, 15, 30, or 45 minutes
+    const gameTime = new Date(date);
+    gameTime.setHours(hour, minute, 0, 0);
+    
+    const gameId = `${awayTeam.code} @ ${homeTeam.code}`;
+    
+    games.push({
+      gameId,
+      awayTeam: awayTeam.name,
+      homeTeam: homeTeam.name,
+      awayTeamCode: awayTeam.code,
+      homeTeamCode: homeTeam.code,
+      gameTime: gameTime.toISOString(),
+      venue: `${homeTeam.name} Stadium`,
+      odds: {
+        moneyline: { 
+          away: -110 + (seed + i * 3) % 40 - 20, 
+          home: -110 + (seed + i * 5) % 40 - 20 
+        },
+        spread: { 
+          away: ((seed + i * 2) % 10 - 5) / 2, 
+          home: -((seed + i * 2) % 10 - 5) / 2,
+          awayOdds: -110,
+          homeOdds: -110
+        },
+        total: { 
+          line: 7.5 + ((seed + i * 4) % 6), 
+          over: -110, 
+          under: -110 
+        }
+      },
+      publicPercentage: {
+        moneyline: { 
+          away: 45 + (seed + i * 3) % 10, 
+          home: 55 - (seed + i * 3) % 10 
+        },
+        total: { 
+          over: 52 + (seed + i * 7) % 8 - 4, 
+          under: 48 - (seed + i * 7) % 8 + 4 
+        }
+      }
+    });
+  }
+  
+  return games;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Authentication Routes
@@ -263,11 +384,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get today's games with odds and AI analysis
+  // Get games with odds and AI analysis for specified date
   app.get("/api/games", async (req, res) => {
     try {
-      // Fetch fresh odds data
-      const gamesWithOdds = await fetchTodaysGames();
+      const { date } = req.query;
+      const targetDate = date as string || new Date().toISOString().split('T')[0];
+      
+      // Generate date-specific games data
+      const gamesWithOdds = generateGamesForDate(targetDate);
       
       // Store/update games in memory
       for (const gameData of gamesWithOdds) {
