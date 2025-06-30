@@ -530,43 +530,118 @@ export default function VirtualSportsbook() {
               ))}
             </div>
           ) : games && games.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {games.slice(0, 6).map((game: any) => (
-                <div key={game.gameId} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <div className="font-semibold">
-                      {game.awayTeam} @ {game.homeTeam}
-                    </div>
+                <div key={game.gameId} className="border rounded-lg p-4">
+                  {/* Game Header */}
+                  <div className="flex items-center justify-between mb-4">
                     <div className="text-sm text-muted-foreground">
                       {new Date(game.gameTime).toLocaleTimeString([], { 
                         hour: '2-digit', 
                         minute: '2-digit' 
                       })} • {game.venue}
                     </div>
+                    {game.odds?.total && (
+                      <div className="text-sm text-muted-foreground">
+                        Total: {game.odds.total.line}
+                      </div>
+                    )}
                   </div>
                   
-                  <div className="flex gap-2">
-                    {game.odds?.moneyline && (
-                      <>
-                        <Badge variant="outline">
-                          {game.awayTeam}: {game.odds.moneyline.away > 0 ? '+' : ''}{game.odds.moneyline.away}
-                        </Badge>
-                        <Badge variant="outline">
-                          {game.homeTeam}: {game.odds.moneyline.home > 0 ? '+' : ''}{game.odds.moneyline.home}
-                        </Badge>
-                      </>
-                    )}
+                  {/* Teams and Odds in Traditional Layout */}
+                  <div className="grid grid-cols-3 gap-4">
+                    {/* Teams Column */}
+                    <div className="space-y-2">
+                      <div className="text-sm text-muted-foreground mb-2">Teams</div>
+                      <div className="flex flex-col space-y-1">
+                        <div className="font-medium text-foreground">{game.awayTeam}</div>
+                        <div className="font-medium text-foreground">{game.homeTeam}</div>
+                      </div>
+                    </div>
                     
-                    {game.odds?.total && (
-                      <>
-                        <Badge variant="outline">
-                          O{game.odds.total.line}: {game.odds.total.over > 0 ? '+' : ''}{game.odds.total.over}
-                        </Badge>
-                        <Badge variant="outline">
-                          U{game.odds.total.line}: {game.odds.total.under > 0 ? '+' : ''}{game.odds.total.under}
-                        </Badge>
-                      </>
-                    )}
+                    {/* Moneyline Column */}
+                    <div className="space-y-2">
+                      <div className="text-sm text-muted-foreground mb-2">Moneyline</div>
+                      <div className="flex flex-col space-y-1">
+                        {game.odds?.moneyline ? (
+                          <>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="justify-center h-8 font-mono"
+                              onClick={() => {
+                                toast({
+                                  title: "Bet Placed",
+                                  description: `${game.awayTeam} ML ${game.odds.moneyline.away > 0 ? '+' : ''}${game.odds.moneyline.away}`,
+                                });
+                              }}
+                            >
+                              {game.odds.moneyline.away > 0 ? '+' : ''}{game.odds.moneyline.away}
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="justify-center h-8 font-mono"
+                              onClick={() => {
+                                toast({
+                                  title: "Bet Placed",
+                                  description: `${game.homeTeam} ML ${game.odds.moneyline.home > 0 ? '+' : ''}${game.odds.moneyline.home}`,
+                                });
+                              }}
+                            >
+                              {game.odds.moneyline.home > 0 ? '+' : ''}{game.odds.moneyline.home}
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <div className="h-8 flex items-center justify-center text-muted-foreground">-</div>
+                            <div className="h-8 flex items-center justify-center text-muted-foreground">-</div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Total Column */}
+                    <div className="space-y-2">
+                      <div className="text-sm text-muted-foreground mb-2">Total</div>
+                      <div className="flex flex-col space-y-1">
+                        {game.odds?.total ? (
+                          <>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="justify-center h-8 font-mono"
+                              onClick={() => {
+                                toast({
+                                  title: "Bet Placed",
+                                  description: `Over ${game.odds.total.line} ${game.odds.total.over > 0 ? '+' : ''}${game.odds.total.over}`,
+                                });
+                              }}
+                            >
+                              O{game.odds.total.line} {game.odds.total.over > 0 ? '+' : ''}{game.odds.total.over}
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="justify-center h-8 font-mono"
+                              onClick={() => {
+                                toast({
+                                  title: "Bet Placed",
+                                  description: `Under ${game.odds.total.line} ${game.odds.total.under > 0 ? '+' : ''}${game.odds.total.under}`,
+                                });
+                              }}
+                            >
+                              U{game.odds.total.line} {game.odds.total.under > 0 ? '+' : ''}{game.odds.total.under}
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <div className="h-8 flex items-center justify-center text-muted-foreground">-</div>
+                            <div className="h-8 flex items-center justify-center text-muted-foreground">-</div>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
