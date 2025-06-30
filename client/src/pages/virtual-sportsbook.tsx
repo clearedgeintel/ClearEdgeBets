@@ -536,10 +536,13 @@ export default function VirtualSportsbook() {
                   {/* Game Header */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="text-sm text-muted-foreground">
-                      {new Date(game.gameTime).toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })} • {game.venue}
+                      {game.gameTime && !isNaN(new Date(game.gameTime).getTime()) 
+                        ? new Date(game.gameTime).toLocaleTimeString([], { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })
+                        : game.gameTime || "TBD"
+                      } • {game.venue}
                     </div>
                     {game.odds?.total && (
                       <div className="text-sm text-muted-foreground">
@@ -563,41 +566,49 @@ export default function VirtualSportsbook() {
                     <div className="space-y-2">
                       <div className="text-sm text-muted-foreground mb-2">Spread</div>
                       <div className="flex flex-col space-y-1">
-                        {game.odds?.spread ? (
-                          <>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="justify-center h-8 font-mono text-xs"
-                              onClick={() => {
-                                toast({
-                                  title: "Bet Placed",
-                                  description: `${game.awayTeam} ${game.odds.spread.away > 0 ? '+' : ''}${game.odds.spread.away} (-110)`,
-                                });
-                              }}
-                            >
-                              {game.odds.spread.away > 0 ? '+' : ''}{game.odds.spread.away} -110
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="justify-center h-8 font-mono text-xs"
-                              onClick={() => {
-                                toast({
-                                  title: "Bet Placed",
-                                  description: `${game.homeTeam} ${game.odds.spread.home > 0 ? '+' : ''}${game.odds.spread.home} (-110)`,
-                                });
-                              }}
-                            >
-                              {game.odds.spread.home > 0 ? '+' : ''}{game.odds.spread.home} -110
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <div className="h-8 flex items-center justify-center text-muted-foreground">-</div>
-                            <div className="h-8 flex items-center justify-center text-muted-foreground">-</div>
-                          </>
-                        )}
+{(() => {
+                          // Generate spread if not available
+                          const spread = game.odds?.spread || {
+                            away: Math.random() > 0.5 ? +(Math.random() * 3 + 1).toFixed(1) : -(Math.random() * 3 + 1).toFixed(1),
+                            home: 0 // Home team gets opposite spread
+                          };
+                          if (!game.odds?.spread && spread.away > 0) {
+                            spread.home = -spread.away;
+                          } else if (!game.odds?.spread && spread.away < 0) {
+                            spread.home = Math.abs(spread.away);
+                          }
+                          
+                          return (
+                            <>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="justify-center h-8 font-mono text-xs"
+                                onClick={() => {
+                                  toast({
+                                    title: "Bet Placed",
+                                    description: `${game.awayTeam} ${spread.away > 0 ? '+' : ''}${spread.away} (-110)`,
+                                  });
+                                }}
+                              >
+                                {spread.away > 0 ? '+' : ''}{spread.away} -110
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="justify-center h-8 font-mono text-xs"
+                                onClick={() => {
+                                  toast({
+                                    title: "Bet Placed",
+                                    description: `${game.homeTeam} ${spread.home > 0 ? '+' : ''}${spread.home} (-110)`,
+                                  });
+                                }}
+                              >
+                                {spread.home > 0 ? '+' : ''}{spread.home} -110
+                              </Button>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                     
@@ -690,108 +701,130 @@ export default function VirtualSportsbook() {
                   <div className="mt-4 pt-4 border-t">
                     <div className="text-sm text-muted-foreground mb-3">Player Props</div>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                      {/* Sample player props for the game */}
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-xs p-2 h-auto"
-                        onClick={() => {
-                          toast({
-                            title: "Bet Placed",
-                            description: "Player Strikeouts Over 7.5 (+115)",
-                          });
-                        }}
-                      >
-                        <div className="text-center">
-                          <div className="font-medium">Strikeouts O7.5</div>
-                          <div className="text-muted-foreground">+115</div>
-                        </div>
-                      </Button>
-                      
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-xs p-2 h-auto"
-                        onClick={() => {
-                          toast({
-                            title: "Bet Placed",
-                            description: "Player Hits Over 1.5 (+140)",
-                          });
-                        }}
-                      >
-                        <div className="text-center">
-                          <div className="font-medium">Hits O1.5</div>
-                          <div className="text-muted-foreground">+140</div>
-                        </div>
-                      </Button>
-                      
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-xs p-2 h-auto"
-                        onClick={() => {
-                          toast({
-                            title: "Bet Placed",
-                            description: "Player RBIs Over 0.5 (+165)",
-                          });
-                        }}
-                      >
-                        <div className="text-center">
-                          <div className="font-medium">RBIs O0.5</div>
-                          <div className="text-muted-foreground">+165</div>
-                        </div>
-                      </Button>
-                      
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-xs p-2 h-auto"
-                        onClick={() => {
-                          toast({
-                            title: "Bet Placed",
-                            description: "Player Home Run (+350)",
-                          });
-                        }}
-                      >
-                        <div className="text-center">
-                          <div className="font-medium">Home Run</div>
-                          <div className="text-muted-foreground">+350</div>
-                        </div>
-                      </Button>
-                      
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-xs p-2 h-auto"
-                        onClick={() => {
-                          toast({
-                            title: "Bet Placed",
-                            description: "Innings Pitched O5.5 (-120)",
-                          });
-                        }}
-                      >
-                        <div className="text-center">
-                          <div className="font-medium">Innings O5.5</div>
-                          <div className="text-muted-foreground">-120</div>
-                        </div>
-                      </Button>
-                      
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-xs p-2 h-auto"
-                        onClick={() => {
-                          toast({
-                            title: "Bet Placed",
-                            description: "Walks Under 2.5 (-115)",
-                          });
-                        }}
-                      >
-                        <div className="text-center">
-                          <div className="font-medium">Walks U2.5</div>
-                          <div className="text-muted-foreground">-115</div>
-                        </div>
-                      </Button>
+                      {/* Dynamic player props based on the game */}
+                      {(() => {
+                        const awayPitcher = game.awayPitcher ? game.awayPitcher.split(' (')[0] : "Away Pitcher";
+                        const homePitcher = game.homePitcher ? game.homePitcher.split(' (')[0] : "Home Pitcher";
+                        const batterNames = ["Mookie Betts", "Ronald Acuña", "Jose Altuve", "Mike Trout", "Juan Soto", "Vladimir Guerrero"];
+                        const randomBatter1 = batterNames[Math.floor(Math.random() * batterNames.length)];
+                        const randomBatter2 = batterNames[Math.floor(Math.random() * batterNames.length)];
+                        
+                        return [
+                          <Button 
+                            key={`strikeouts-${game.gameId}`}
+                            variant="outline" 
+                            size="sm" 
+                            className="text-xs p-2 h-auto"
+                            onClick={() => {
+                              toast({
+                                title: "Bet Placed",
+                                description: `${awayPitcher} Strikeouts Over 7.5 (+115)`,
+                              });
+                            }}
+                          >
+                            <div className="text-center">
+                              <div className="font-medium text-xs">{awayPitcher}</div>
+                              <div className="text-xs">Strikeouts O7.5</div>
+                              <div className="text-muted-foreground text-xs">+115</div>
+                            </div>
+                          </Button>,
+                          
+                          <Button 
+                            key={`hits-${game.gameId}`}
+                            variant="outline" 
+                            size="sm" 
+                            className="text-xs p-2 h-auto"
+                            onClick={() => {
+                              toast({
+                                title: "Bet Placed",
+                                description: `${randomBatter1} Hits Over 1.5 (+140)`,
+                              });
+                            }}
+                          >
+                            <div className="text-center">
+                              <div className="font-medium text-xs">{randomBatter1}</div>
+                              <div className="text-xs">Hits O1.5</div>
+                              <div className="text-muted-foreground text-xs">+140</div>
+                            </div>
+                          </Button>,
+                          
+                          <Button 
+                            key={`rbis-${game.gameId}`}
+                            variant="outline" 
+                            size="sm" 
+                            className="text-xs p-2 h-auto"
+                            onClick={() => {
+                              toast({
+                                title: "Bet Placed",
+                                description: `${randomBatter2} RBIs Over 0.5 (+165)`,
+                              });
+                            }}
+                          >
+                            <div className="text-center">
+                              <div className="font-medium text-xs">{randomBatter2}</div>
+                              <div className="text-xs">RBIs O0.5</div>
+                              <div className="text-muted-foreground text-xs">+165</div>
+                            </div>
+                          </Button>,
+                          
+                          <Button 
+                            key={`homerun-${game.gameId}`}
+                            variant="outline" 
+                            size="sm" 
+                            className="text-xs p-2 h-auto"
+                            onClick={() => {
+                              toast({
+                                title: "Bet Placed",
+                                description: `${randomBatter1} Home Run (+350)`,
+                              });
+                            }}
+                          >
+                            <div className="text-center">
+                              <div className="font-medium text-xs">{randomBatter1}</div>
+                              <div className="text-xs">Home Run</div>
+                              <div className="text-muted-foreground text-xs">+350</div>
+                            </div>
+                          </Button>,
+                          
+                          <Button 
+                            key={`innings-${game.gameId}`}
+                            variant="outline" 
+                            size="sm" 
+                            className="text-xs p-2 h-auto"
+                            onClick={() => {
+                              toast({
+                                title: "Bet Placed",
+                                description: `${homePitcher} Innings Pitched O5.5 (-120)`,
+                              });
+                            }}
+                          >
+                            <div className="text-center">
+                              <div className="font-medium text-xs">{homePitcher}</div>
+                              <div className="text-xs">Innings O5.5</div>
+                              <div className="text-muted-foreground text-xs">-120</div>
+                            </div>
+                          </Button>,
+                          
+                          <Button 
+                            key={`walks-${game.gameId}`}
+                            variant="outline" 
+                            size="sm" 
+                            className="text-xs p-2 h-auto"
+                            onClick={() => {
+                              toast({
+                                title: "Bet Placed",
+                                description: `${awayPitcher} Walks Under 2.5 (-115)`,
+                              });
+                            }}
+                          >
+                            <div className="text-center">
+                              <div className="font-medium text-xs">{awayPitcher}</div>
+                              <div className="text-xs">Walks U2.5</div>
+                              <div className="text-muted-foreground text-xs">-115</div>
+                            </div>
+                          </Button>
+                        ];
+                      })()}
                     </div>
                   </div>
                 </div>

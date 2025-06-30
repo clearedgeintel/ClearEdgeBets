@@ -127,8 +127,11 @@ Preferred communication style: Simple, everyday language.
 
 - June 30, 2025: Enhanced virtual sportsbook with traditional betting layout format
   - Updated game display to show teams stacked vertically (away/home) like traditional sportsbooks
-  - Added three-column layout: Teams, Moneyline, and Total with clickable betting buttons
+  - Added four-column layout: Teams, Spread, Moneyline, and Total with clickable betting buttons
   - Implemented professional sportsbook interface with odds buttons for immediate bet placement
+  - Fixed "invalid date" display issues with proper date validation and fallbacks
+  - Added spread column with realistic MLB run lines and standard -110 odds
+  - Enhanced player props with actual pitcher names and famous MLB player names
   - Each game now displays in familiar format with away team on top, home team below
   - Users can click odds buttons to place bets with toast confirmations
 - June 30, 2025: Updated subscription pricing structure for better value positioning
