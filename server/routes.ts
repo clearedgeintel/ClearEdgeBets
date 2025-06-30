@@ -2315,6 +2315,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch('/api/admin/users/:id/username', async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      const userId = parseInt(req.params.id);
+      const { username } = req.body;
+
+      if (!username || username.trim().length === 0) {
+        return res.status(400).json({ error: 'Valid username is required' });
+      }
+
+      const updatedUser = await storage.updateUsername(userId, username.trim());
+      // Remove password from response
+      const safeUser = { ...updatedUser, password: undefined };
+      res.json(safeUser);
+    } catch (error) {
+      console.error('Update username error:', error);
+      res.status(500).json({ error: 'Failed to update username' });
+    }
+  });
+
   app.get('/api/admin/referral-codes', async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;

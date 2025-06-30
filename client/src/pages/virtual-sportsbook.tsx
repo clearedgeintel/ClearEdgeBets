@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/contexts/auth-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,30 +50,20 @@ interface AIBetRecommendation {
 export default function VirtualSportsbook() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const { user, isLoading: authLoading } = useAuth();
   const [aiBetSlip, setAiBetSlip] = useState<AIBetRecommendation[] | null>(null);
   const [isGeneratingAIBets, setIsGeneratingAIBets] = useState(false);
 
-  // Login mutation
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: { username: string; password: string }) => {
-      return await apiRequest("POST", "/api/login", credentials);
+  // Virtual balance mutation (reuse existing endpoint)
+  const initializeVirtualBalanceMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/user/virtual-balance/reset");
     },
-    onSuccess: (data: any) => {
-      setIsAuthenticated(true);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
       toast({
-        title: "Welcome to Virtual Sportsbook!",
-        description: data.message || "Login successful",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Login Failed",
-        description: error.message || "Please try again",
-        variant: "destructive",
+        title: "Virtual Sportsbook Initialized",
+        description: "Your virtual balance is ready! Start with $1,000.",
       });
     },
   });
@@ -81,7 +72,7 @@ export default function VirtualSportsbook() {
   const { data: balanceData, isLoading: balanceLoading } = useQuery<BalanceData>({
     queryKey: ["/api/user/balance"],
     retry: false,
-    enabled: isAuthenticated,
+    enabled: !!user,
   });
 
   // Fetch today's games for betting
@@ -111,10 +102,10 @@ export default function VirtualSportsbook() {
     },
   });
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (username.trim() && password.trim()) {
-      loginMutation.mutate({ username: username.trim(), password: password.trim() });
+  // Initialize virtual balance if needed
+  const initializeBalance = () => {
+    if (user && !balanceData) {
+      initializeVirtualBalanceMutation.mutate();
     }
   };
 
@@ -233,7 +224,7 @@ export default function VirtualSportsbook() {
   };
 
   // Show login form if not authenticated
-  if (!isAuthenticated) {
+  if (!user) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-md">
         <Card>
@@ -243,42 +234,22 @@ export default function VirtualSportsbook() {
               Virtual Sportsbook
             </CardTitle>
             <CardDescription>
-              Enter any username and password to start with $1,000 virtual money
+              Sign in to start with $1,000 virtual money for practice betting
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Choose any username"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Any password works"
-                  required
-                />
-              </div>
+            <div className="text-center space-y-4">
+              <p className="text-sm text-muted-foreground">
+                You need to be signed in to access the virtual sportsbook.
+              </p>
               <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={loginMutation.isPending}
+                onClick={() => window.location.href = '/auth'} 
+                className="w-full"
               >
                 <LogIn className="h-4 w-4 mr-2" />
-                {loginMutation.isPending ? "Logging in..." : "Start Virtual Betting"}
+                Sign In to Start
               </Button>
-            </form>
+            </div>
             
             <div className="mt-6 text-center text-sm text-muted-foreground">
               <p className="mb-2">🎯 Practice Mode Features:</p>
@@ -313,7 +284,9 @@ export default function VirtualSportsbook() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Virtual Sportsbook</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">
+          Welcome to Virtual Sportsbook, {user.username}!
+        </h1>
         <p className="text-muted-foreground">
           Practice your betting skills with simulated money. Start with $1,000 and track your performance!
         </p>

@@ -52,6 +52,8 @@ interface AdminStats {
 
 export default function AdminUsers() {
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [editedUsername, setEditedUsername] = useState('');
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -127,6 +129,28 @@ export default function AdminUsers() {
     },
   });
 
+  const updateUsernameMutation = useMutation({
+    mutationFn: async ({ userId, username }: { userId: number; username: string }) => {
+      return apiRequest("PATCH", `/api/admin/users/${userId}/username`, { username });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setEditingUser(null);
+      setEditedUsername('');
+      toast({
+        title: "Success",
+        description: "Username updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update username",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateUser = () => {
     if (!formData.username || !formData.email || !formData.password) {
       toast({
@@ -141,6 +165,24 @@ export default function AdminUsers() {
 
   const handleUpdateTier = (userId: number, tier: string, isAdmin?: boolean) => {
     updateTierMutation.mutate({ userId, tier, isAdmin });
+  };
+
+  const handleEditUsername = (user: AdminUser) => {
+    setEditingUser(user);
+    setEditedUsername(user.username);
+  };
+
+  const handleSaveUsername = () => {
+    if (!editingUser || !editedUsername.trim()) return;
+    updateUsernameMutation.mutate({
+      userId: editingUser.id,
+      username: editedUsername.trim()
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingUser(null);
+    setEditedUsername('');
   };
 
   const getTierBadge = (tier: string) => {
@@ -377,7 +419,48 @@ export default function AdminUsers() {
                         <TableCell>
                           <div className="flex items-center space-x-3">
                             <div className="flex flex-col">
-                              <span className="text-white font-medium">{user.username}</span>
+                              {editingUser?.id === user.id ? (
+                                <div className="flex items-center space-x-2">
+                                  <Input
+                                    value={editedUsername}
+                                    onChange={(e) => setEditedUsername(e.target.value)}
+                                    className="bg-gray-700 border-gray-600 text-white text-sm max-w-32"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') handleSaveUsername();
+                                      if (e.key === 'Escape') handleCancelEdit();
+                                    }}
+                                    autoFocus
+                                  />
+                                  <Button 
+                                    size="sm" 
+                                    onClick={handleSaveUsername}
+                                    disabled={updateUsernameMutation.isPending || !editedUsername.trim()}
+                                    className="h-6 px-2"
+                                  >
+                                    Save
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={handleCancelEdit}
+                                    className="h-6 px-2"
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-white font-medium">{user.username}</span>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleEditUsername(user)}
+                                    className="h-5 w-5 p-0 text-gray-400 hover:text-white"
+                                  >
+                                    <Edit className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              )}
                               <span className="text-gray-400 text-sm flex items-center">
                                 <Mail className="w-3 h-3 mr-1" />
                                 {user.email}

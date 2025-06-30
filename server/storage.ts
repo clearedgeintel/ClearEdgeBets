@@ -18,6 +18,7 @@ export interface IStorage {
   }): Promise<User>;
   updateUserTier(userId: number, tier: string, isAdmin?: boolean): Promise<User>;
   updateUserAdmin(userId: number, isAdmin: boolean): Promise<User>;
+  updateUsername(userId: number, username: string): Promise<User>;
   generateReferralCode(userId: number): Promise<string>;
   validateReferralCode(code: string): Promise<ReferralCode | null>;
   
@@ -726,6 +727,15 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .update(users)
       .set({ isAdmin })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async updateUsername(userId: number, username: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ username })
       .where(eq(users.id, userId))
       .returning();
     return user;
