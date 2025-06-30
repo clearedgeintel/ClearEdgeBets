@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import Header from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -217,51 +218,56 @@ export default function AdminUsers() {
   }
 
   return (
-    <div className="p-8 space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Admin Management</h1>
-          <p className="text-gray-400 mt-2">Manage users, tiers, and referral codes</p>
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      {/* Page Header */}
+      <div className="bg-background border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-foreground flex items-center space-x-3">
+                <Users className="h-8 w-8 text-primary" />
+                <span>User Management</span>
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Manage users, subscription tiers, and referral codes
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gray-800 border-gray-700">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-gray-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{stats?.totalUsers || 0}</div>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <Users className="h-8 w-8 text-primary mx-auto mb-2" />
+            <div className="text-2xl font-bold text-foreground">{stats?.totalUsers || 0}</div>
+            <div className="text-sm text-muted-foreground">Total Users</div>
           </CardContent>
         </Card>
-        <Card className="bg-gray-800 border-gray-700">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Pro Users</CardTitle>
-            <Crown className="h-4 w-4 text-blue-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{stats?.proUsers || 0}</div>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <Crown className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-blue-600">{stats?.proUsers || 0}</div>
+            <div className="text-sm text-muted-foreground">Pro Users</div>
           </CardContent>
         </Card>
-        <Card className="bg-gray-800 border-gray-700">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Elite Users</CardTitle>
-            <Award className="h-4 w-4 text-yellow-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{stats?.eliteUsers || 0}</div>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <Award className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-yellow-600">{stats?.eliteUsers || 0}</div>
+            <div className="text-sm text-muted-foreground">Elite Users</div>
           </CardContent>
         </Card>
-        <Card className="bg-gray-800 border-gray-700">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Referral Codes</CardTitle>
-            <Ticket className="h-4 w-4 text-green-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{stats?.activeReferralCodes || 0}</div>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <Ticket className="h-8 w-8 text-green-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-green-600">{stats?.activeReferralCodes || 0}</div>
+            <div className="text-sm text-muted-foreground">Referral Codes</div>
           </CardContent>
         </Card>
       </div>
@@ -592,6 +598,7 @@ export default function AdminUsers() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }

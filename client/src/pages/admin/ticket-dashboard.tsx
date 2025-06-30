@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import Header from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -196,19 +197,30 @@ export default function TicketDashboard() {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-blue-600">Admin Ticket & Betting Dashboard</h1>
-          <p className="text-muted-foreground">Manage support tickets and monitor betting activity</p>
-        </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Create Ticket
-            </Button>
-          </DialogTrigger>
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      {/* Page Header */}
+      <div className="bg-background border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-foreground flex items-center space-x-3">
+                <TicketIcon className="h-8 w-8 text-primary" />
+                <span>Ticket Dashboard</span>
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Manage support tickets and monitor betting activity
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0">
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-blue-600 hover:bg-blue-700">
+                    <PlusIcon className="w-4 h-4 mr-2" />
+                    Create Ticket
+                  </Button>
+                </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Ticket</DialogTitle>
@@ -275,10 +287,14 @@ export default function TicketDashboard() {
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+              </Dialog>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Dashboard Stats */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Dashboard Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -641,6 +657,7 @@ export default function TicketDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }
