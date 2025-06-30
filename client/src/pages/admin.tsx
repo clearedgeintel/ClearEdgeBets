@@ -120,26 +120,54 @@ function UserCard({ user, onUpdateTier }: { user: User; onUpdateTier: (userId: n
             </div>
           )}
 
-          <div className="flex items-center gap-2 pt-2">
-            <Select value={selectedTier} onValueChange={setSelectedTier}>
-              <SelectTrigger className="flex-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="free">Free</SelectItem>
-                <SelectItem value="pro">Pro</SelectItem>
-                <SelectItem value="elite">Elite</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-2 pt-2">
+            <div className="flex items-center gap-2">
+              <Select value={selectedTier} onValueChange={setSelectedTier}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                      Free - No premium features
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="pro">
+                    <div className="flex items-center gap-2">
+                      <Star className="h-3 w-3 text-blue-500" />
+                      Pro - $9.99/mo - Advanced analytics
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="elite">
+                    <div className="flex items-center gap-2">
+                      <Crown className="h-3 w-3 text-purple-500" />
+                      Elite - $19.99/mo - All features
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button 
+                size="sm"
+                onClick={() => onUpdateTier(user.id, selectedTier)}
+                disabled={selectedTier === user.subscriptionTier}
+                variant={selectedTier !== user.subscriptionTier ? "default" : "outline"}
+              >
+                {selectedTier !== user.subscriptionTier ? "Update" : "Current"}
+              </Button>
+            </div>
             
-            <Button 
-              size="sm"
-              onClick={() => onUpdateTier(user.id, selectedTier)}
-              disabled={selectedTier === user.subscriptionTier}
-              variant={selectedTier !== user.subscriptionTier ? "default" : "outline"}
-            >
-              Update
-            </Button>
+            {selectedTier !== user.subscriptionTier && (
+              <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                <strong>Tier Change:</strong> {user.subscriptionTier} → {selectedTier}
+                {selectedTier !== 'free' && (
+                  <span className="block mt-1">
+                    Will set 30-day subscription period and active status
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
