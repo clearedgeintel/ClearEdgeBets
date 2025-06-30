@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { 
-  Volleyball as Baseball, 
+  Sword as Bat, 
   Home, 
   Target, 
   FileText, 
@@ -48,7 +48,7 @@ export default function Sidebar() {
   const sportsNavigation = [
     {
       sport: "Baseball",
-      icon: Baseball,
+      icon: Bat,
       expanded: baseballExpanded,
       setExpanded: setBaseballExpanded,
       active: location === "/" || location.startsWith("/baseball") || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets",
@@ -219,7 +219,7 @@ export default function Sidebar() {
                 onClick={() => sport.setExpanded(!sport.expanded)}
                 className={`w-full flex items-center justify-between px-3 py-3 rounded-lg transition-colors group ${
                   sport.active
-                    ? "bg-gray-800 text-white border border-gray-700"
+                    ? "bg-gray-800 text-white"
                     : "text-gray-300 hover:bg-gray-800 hover:text-white"
                 }`}
               >
