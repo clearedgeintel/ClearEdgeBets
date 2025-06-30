@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon, Trophy, TrendingUp, Target, CheckCircle, XCircle, Minus, RefreshCw, BarChart3, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar as CalendarIcon, Trophy, TrendingUp, Target, CheckCircle, XCircle, Minus, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -97,24 +97,7 @@ export default function PerformanceTracking() {
     },
   });
 
-  const generateHistoricalMutation = useMutation({
-    mutationFn: () => apiRequest('POST', '/api/performance/generate-historical', { days: 14 }),
-    onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/performance/daily'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/performance/monthly'] });
-      toast({
-        title: "Historical Data Generated",
-        description: "Created sample historical betting data for the past 2 weeks.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Generation Failed",
-        description: "Failed to generate historical data. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
+
 
   const manualReconcileMutation = useMutation({
     mutationFn: ({ pickId, result }: { pickId: number; result: string }) => 
@@ -135,24 +118,6 @@ export default function PerformanceTracking() {
     },
   });
 
-  const resetResultsMutation = useMutation({
-    mutationFn: (date: string) => 
-      apiRequest('POST', '/api/performance/reset-results', { date }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/performance/daily'] });
-      toast({
-        title: "Results Reset",
-        description: "All pick results have been cleared and can now be re-reconciled.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Reset Failed",
-        description: "Failed to reset results. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
 
 
 
@@ -277,15 +242,7 @@ export default function PerformanceTracking() {
                   <RefreshCw className={`h-4 w-4 ${autoReconcileMutation.isPending ? 'animate-spin' : ''}`} />
                   <span>Auto Reconcile</span>
                 </Button>
-                <Button 
-                  onClick={() => generateHistoricalMutation.mutate()}
-                  disabled={generateHistoricalMutation.isPending}
-                  variant="outline"
-                  className="flex items-center space-x-2"
-                >
-                  <BarChart3 className={`h-4 w-4 ${generateHistoricalMutation.isPending ? 'animate-spin' : ''}`} />
-                  <span>Generate Sample Data</span>
-                </Button>
+
               </div>
             </div>
           </CardContent>
@@ -370,43 +327,7 @@ export default function PerformanceTracking() {
                     )}
                   </Button>
                   
-                  <Button
-                    onClick={() => resetResultsMutation.mutate(dateString)}
-                    disabled={resetResultsMutation.isPending}
-                    variant="outline"
-                    className="border-red-500/20 text-red-600 hover:bg-red-500/10"
-                  >
-                    {resetResultsMutation.isPending ? (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        Resetting...
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="mr-2 h-4 w-4" />
-                        Reset Results
-                      </>
-                    )}
-                  </Button>
-                  
-                  <Button
-                    onClick={() => generateHistoricalMutation.mutate()}
-                    disabled={generateHistoricalMutation.isPending}
-                    variant="outline"
-                    className="border-secondary/20 text-secondary hover:bg-secondary/10"
-                  >
-                    {generateHistoricalMutation.isPending ? (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <BarChart3 className="mr-2 h-4 w-4" />
-                        Generate Sample Data
-                      </>
-                    )}
-                  </Button>
+
                 </div>
               </div>
 
