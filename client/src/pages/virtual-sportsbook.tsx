@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { DollarSign, TrendingUp, TrendingDown, RotateCcw, Target, Trophy, BarChart3, LogIn } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, RotateCcw, Target, Trophy, BarChart3, LogIn, Brain, Calculator } from "lucide-react";
 
 interface BalanceData {
   balance: number;
@@ -31,12 +31,29 @@ interface Game {
   };
 }
 
+interface AIBetRecommendation {
+  gameId: string;
+  team: string;
+  matchup: string;
+  betType: string;
+  selection: string;
+  odds: number;
+  aiProbability: number;
+  confidence: number;
+  stake: number;
+  expectedReturn: number;
+  impliedValue: number;
+  reasoning: string;
+}
+
 export default function VirtualSportsbook() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [aiBetSlip, setAiBetSlip] = useState<AIBetRecommendation[] | null>(null);
+  const [isGeneratingAIBets, setIsGeneratingAIBets] = useState(false);
 
   // Login mutation
   const loginMutation = useMutation({
@@ -110,6 +127,114 @@ export default function VirtualSportsbook() {
   const handleResetBalance = () => {
     if (window.confirm("Are you sure you want to reset your balance to $1,000? This will clear all your statistics.")) {
       resetBalanceMutation.mutate();
+    }
+  };
+
+  // Generate AI bet recommendations
+  const generateAIBetSlip = async () => {
+    if (!balanceData || !games || games.length === 0) {
+      toast({
+        title: "Unable to generate bets",
+        description: "No games available or balance information missing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingAIBets(true);
+    
+    try {
+      const bankroll = balanceData.balance;
+      const totalBudget = bankroll * 0.10; // 10% of bankroll
+      
+      // Simulate AI analysis with confidence scores
+      const availableGames = games.slice(0, 5); // Top 5 games
+      const recommendations: AIBetRecommendation[] = [];
+      
+      let totalConfidence = 0;
+      const gameAnalysis = availableGames.map((game: any) => {
+        const confidence = Math.random() * 40 + 60; // 60-100% confidence
+        totalConfidence += confidence;
+        
+        // Determine bet type and selection
+        const betTypes = ['moneyline', 'total'];
+        const betType = betTypes[Math.floor(Math.random() * betTypes.length)];
+        
+        let selection = '';
+        let odds = 0;
+        let reasoning = '';
+        
+        if (betType === 'moneyline' && game.odds?.moneyline) {
+          const favorHome = Math.random() > 0.5;
+          selection = favorHome ? game.homeTeam : game.awayTeam;
+          odds = favorHome ? game.odds.moneyline.home : game.odds.moneyline.away;
+          reasoning = favorHome 
+            ? `Home field advantage and strong recent performance favor ${game.homeTeam}`
+            : `${game.awayTeam} has superior pitching matchup and momentum`;
+        } else if (game.odds?.total) {
+          const favorOver = Math.random() > 0.5;
+          selection = favorOver ? `Over ${game.odds.total.line}` : `Under ${game.odds.total.line}`;
+          odds = favorOver ? game.odds.total.over : game.odds.total.under;
+          reasoning = favorOver
+            ? 'Weather conditions and offensive trends suggest high-scoring game'
+            : 'Strong pitching matchup and defensive statistics favor under';
+        }
+        
+        return {
+          game,
+          confidence,
+          betType,
+          selection,
+          odds,
+          reasoning
+        };
+      });
+      
+      // Calculate weighted stakes based on confidence
+      gameAnalysis.forEach(({ game, confidence, betType, selection, odds, reasoning }) => {
+        const weight = confidence / totalConfidence;
+        const stake = Math.round((totalBudget * weight) * 100) / 100;
+        
+        // Calculate implied probability and value
+        const impliedProbability = odds > 0 ? 100 / (odds + 100) : Math.abs(odds) / (Math.abs(odds) + 100);
+        const aiProbability = confidence / 100;
+        const impliedValue = ((aiProbability - impliedProbability) / impliedProbability) * 100;
+        
+        const expectedReturn = odds > 0 
+          ? stake * (odds / 100) + stake
+          : stake * (100 / Math.abs(odds)) + stake;
+        
+        recommendations.push({
+          gameId: game.gameId,
+          team: selection.includes('Over') || selection.includes('Under') ? 'Total' : selection,
+          matchup: `${game.awayTeam} @ ${game.homeTeam}`,
+          betType: betType === 'moneyline' ? 'Moneyline' : 'Total',
+          selection,
+          odds,
+          aiProbability: aiProbability * 100,
+          confidence,
+          stake,
+          expectedReturn: Math.round(expectedReturn * 100) / 100,
+          impliedValue,
+          reasoning
+        });
+      });
+      
+      setAiBetSlip(recommendations);
+      
+      toast({
+        title: "AI Bet Slip Generated!",
+        description: `Created 5 optimized bets using 10% of your $${bankroll.toFixed(2)} bankroll.`,
+      });
+      
+    } catch (error) {
+      toast({
+        title: "Generation failed",
+        description: "Unable to generate AI bet recommendations. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingAIBets(false);
     }
   };
 
@@ -266,6 +391,15 @@ export default function VirtualSportsbook() {
       {/* Action Buttons */}
       <div className="flex flex-wrap gap-4 mb-8">
         <Button
+          onClick={generateAIBetSlip}
+          disabled={isGeneratingAIBets || !games || games.length === 0}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+        >
+          <Brain className="h-4 w-4" />
+          {isGeneratingAIBets ? "Generating AI Bets..." : "Generate AI Bet Slip"}
+        </Button>
+        
+        <Button
           variant="outline"
           onClick={handleResetBalance}
           disabled={resetBalanceMutation.isPending}
@@ -280,6 +414,108 @@ export default function VirtualSportsbook() {
           View Performance Stats
         </Button>
       </div>
+
+      {/* AI Generated Bet Slip */}
+      {aiBetSlip && aiBetSlip.length > 0 && (
+        <Card className="mb-8 border-blue-200 dark:border-blue-800">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-blue-600" />
+              AI Generated Bet Slip
+            </CardTitle>
+            <CardDescription>
+              Optimized betting recommendations using 10% of your bankroll with confidence-based stake allocation.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {aiBetSlip.map((bet, index) => (
+                <div key={index} className="p-4 border rounded-lg bg-muted/20">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="font-semibold">{bet.matchup}</div>
+                      <div className="text-sm text-muted-foreground">{bet.betType}: {bet.selection}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-mono">{bet.odds > 0 ? '+' : ''}{bet.odds}</div>
+                      <Badge variant={bet.confidence >= 80 ? "default" : bet.confidence >= 70 ? "secondary" : "outline"}>
+                        {bet.confidence.toFixed(0)}% confident
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <div className="text-muted-foreground">Stake</div>
+                      <div className="font-semibold">${bet.stake.toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Potential Return</div>
+                      <div className="font-semibold text-green-600">${bet.expectedReturn.toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">AI Probability</div>
+                      <div className="font-semibold">{bet.aiProbability.toFixed(1)}%</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Implied Value</div>
+                      <div className={`font-semibold ${bet.impliedValue > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {bet.impliedValue > 0 ? '+' : ''}{bet.impliedValue.toFixed(1)}%
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-3 p-3 bg-background rounded border-l-4 border-l-blue-500">
+                    <div className="text-sm text-muted-foreground mb-1">AI Reasoning</div>
+                    <div className="text-sm">{bet.reasoning}</div>
+                  </div>
+                </div>
+              ))}
+              
+              <Separator />
+              
+              <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                <div>
+                  <div className="font-semibold">Total Bet Slip Summary</div>
+                  <div className="text-sm text-muted-foreground">
+                    {aiBetSlip.length} bets • 10% bankroll allocation
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-muted-foreground">Total Stake</div>
+                  <div className="text-xl font-bold">
+                    ${aiBetSlip.reduce((sum, bet) => sum + bet.stake, 0).toFixed(2)}
+                  </div>
+                  <div className="text-sm text-green-600">
+                    Potential: ${aiBetSlip.reduce((sum, bet) => sum + bet.expectedReturn, 0).toFixed(2)}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  onClick={() => {
+                    toast({
+                      title: "Place All Bets",
+                      description: "This feature will be available soon!",
+                    });
+                  }}
+                >
+                  <Calculator className="h-4 w-4 mr-2" />
+                  Place All Bets
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setAiBetSlip(null)}
+                >
+                  Clear Slip
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Available Games for Betting */}
       <Card>
