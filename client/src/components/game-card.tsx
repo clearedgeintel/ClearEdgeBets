@@ -425,7 +425,7 @@ export default function GameCard({ game }: GameCardProps) {
             </CollapsibleTrigger>
             
             <CollapsibleContent>
-              {user?.subscriptionTier === "free" ? (
+              {!user || user?.subscriptionTier === "free" ? (
                 <div className="bg-muted/50 rounded-lg p-6 text-center border-2 border-dashed border-muted-foreground/20">
                   <Lock className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
                   <h3 className="font-medium text-foreground mb-2">Premium Feature</h3>
