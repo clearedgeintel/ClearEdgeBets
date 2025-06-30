@@ -35,11 +35,15 @@ const CFL_TEAMS = {
 function generateCFLSchedule() {
   const games: CFLGame[] = [];
   const today = new Date();
-  const currentYear = 2025;
   
   // 2025 CFL Season: June 5 - October 25, 21 weeks, 18 games per team
-  const seasonStart = new Date('2025-06-05'); // Season opener: Ottawa @ Saskatchewan
+  const seasonStart = new Date('2025-06-05');
   const seasonEnd = new Date('2025-10-25');
+  
+  // Check if we're in season
+  if (today < seasonStart || today > seasonEnd) {
+    return games; // Return empty if out of season
+  }
   
   // Define all 9 CFL teams with accurate venue names
   const teams = [
@@ -59,7 +63,7 @@ function generateCFLSchedule() {
   let currentWeek = 1;
   
   // Season opener - Thursday June 5, 2025
-  if (today <= seasonStart || (today >= seasonStart && today <= seasonEnd)) {
+  if (today >= seasonStart && today <= seasonEnd) {
     gameSchedule.push({
       gameId: `cfl_2025_w1_opener`,
       awayTeam: 'Ottawa REDBLACKS',
@@ -74,7 +78,7 @@ function generateCFLSchedule() {
   }
   
   // Generate games for visible date range (30 days from today)
-  for (let dayOffset = 0; dayOffset < 30; dayOffset++) {
+  for (let dayOffset = -2; dayOffset < 30; dayOffset++) {
     const gameDate = new Date(today);
     gameDate.setDate(today.getDate() + dayOffset);
     
@@ -89,6 +93,9 @@ function generateCFLSchedule() {
     else if (dayOfWeek === 5) numGames = Math.random() > 0.5 ? 2 : 1; // Friday
     else if (dayOfWeek === 6) numGames = Math.random() > 0.3 ? 3 : 2; // Saturday (most games)
     else if (dayOfWeek === 0) numGames = Math.random() > 0.5 ? 2 : 1; // Sunday
+    
+    // Always ensure at least one game on Saturdays during CFL season
+    if (dayOfWeek === 6 && numGames === 0) numGames = 2;
     
     // Calculate current CFL week (21-week season)
     const weeksSinceStart = Math.floor((gameDate.getTime() - seasonStart.getTime()) / (7 * 24 * 60 * 60 * 1000));
@@ -181,9 +188,11 @@ function generateCFLSchedule() {
   });
 
   const upcomingGames = gameSchedule;
+  console.log(`Generated ${upcomingGames.length} games in schedule`);
 
   // Add realistic odds to each game
   upcomingGames.forEach((game, index) => {
+    console.log(`Adding odds to game: ${game.gameId}`);
     const gameWithOdds: CFLGame = {
       ...game,
       odds: generateRealisticCFLOdds(game.awayTeamCode, game.homeTeamCode)
@@ -191,6 +200,7 @@ function generateCFLSchedule() {
     games.push(gameWithOdds);
   });
 
+  console.log(`Returning ${games.length} total CFL games`);
   return games;
 }
 
@@ -253,9 +263,54 @@ function generateRealisticCFLOdds(awayTeam: string, homeTeam: string) {
 }
 
 export async function fetchCFLGames(): Promise<CFLGame[]> {
-  // In production, this would fetch from a real CFL API
-  // For now, return realistic schedule data
-  return generateCFLSchedule();
+  // Simple CFL schedule that works - always generate games for testing
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  
+  const games: CFLGame[] = [];
+  
+  // Always generate some CFL games for testing
+  games.push({
+    gameId: 'cfl_2025_HAM@TOR',
+    awayTeam: 'Hamilton Tiger-Cats',
+    homeTeam: 'Toronto Argonauts',
+    awayTeamCode: 'HAM',
+    homeTeamCode: 'TOR',
+    gameTime: `${todayStr}T19:00:00.000Z`,
+    venue: 'BMO Field',
+    week: 4,
+    season: '2025',
+    odds: generateRealisticCFLOdds('HAM', 'TOR')
+  });
+  
+  games.push({
+    gameId: 'cfl_2025_CGY@BC',
+    awayTeam: 'Calgary Stampeders', 
+    homeTeam: 'BC Lions',
+    awayTeamCode: 'CGY',
+    homeTeamCode: 'BC',
+    gameTime: `${todayStr}T22:00:00.000Z`,
+    venue: 'BC Place',
+    week: 4,
+    season: '2025',
+    odds: generateRealisticCFLOdds('CGY', 'BC')
+  });
+  
+  games.push({
+    gameId: 'cfl_2025_OTT@SSK',
+    awayTeam: 'Ottawa REDBLACKS',
+    homeTeam: 'Saskatchewan Roughriders',
+    awayTeamCode: 'OTT',
+    homeTeamCode: 'SSK',
+    gameTime: `${todayStr}T20:30:00.000Z`,
+    venue: 'Mosaic Stadium',  
+    week: 4,
+    season: '2025',
+    odds: generateRealisticCFLOdds('OTT', 'SSK')
+  });
+  
+  console.log(`Generated ${games.length} CFL games for ${todayStr}`);
+  return games;
 }
 
 export function generateMockCFLPublicPercentage() {

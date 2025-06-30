@@ -404,14 +404,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get CFL games with odds
   app.get("/api/cfl/games", async (req, res) => {
     try {
-      const { date } = req.query;
-      const targetDate = date ? String(date) : new Date().toISOString().split('T')[0];
-      
       const cflGames = await fetchCFLGames();
       
       // Transform CFL games to match expected format
       const formattedGames = cflGames.map(game => ({
-        id: Math.floor(Math.random() * 1000000), // Generate unique ID
+        id: Math.floor(Math.random() * 1000000),
         gameId: game.gameId,
         awayTeam: game.awayTeam,
         homeTeam: game.homeTeam,
@@ -423,7 +420,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         week: game.week,
         season: game.season,
         odds: [
-          // Moneyline odds
           game.odds.moneyline && {
             id: Math.floor(Math.random() * 1000000),
             gameId: game.gameId,
@@ -432,7 +428,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             awayOdds: game.odds.moneyline.away,
             homeOdds: game.odds.moneyline.home
           },
-          // Total odds
           game.odds.total && {
             id: Math.floor(Math.random() * 1000000),
             gameId: game.gameId,
@@ -442,7 +437,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             overOdds: game.odds.total.over,
             underOdds: game.odds.total.under
           },
-          // Spread odds
           game.odds.spread && {
             id: Math.floor(Math.random() * 1000000),
             gameId: game.gameId,
@@ -453,17 +447,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             awaySpreadOdds: game.odds.spread.awayOdds,
             homeSpreadOdds: game.odds.spread.homeOdds
           }
-        ].filter(Boolean) // Remove null entries
+        ].filter(Boolean)
       }));
 
-      // Filter games by target date
-      const filteredGames = formattedGames.filter(game => {
-        // Parse the game time to check if it matches the target date
-        const gameDate = new Date(game.gameTime).toISOString().split('T')[0];
-        return gameDate === targetDate;
-      });
-
-      res.json(filteredGames);
+      res.json(formattedGames);
     } catch (error) {
       console.error("Error fetching CFL games:", error);
       res.status(500).json({ error: "Failed to fetch CFL games" });
