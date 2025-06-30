@@ -125,6 +125,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Reorganized sidebar navigation with sport-specific tier structure
+  - Moved Pro and Elite features below each sport section instead of global tier sections
+  - Added Free tier header to clearly categorize basic features available to all users
+  - Each sport (Baseball, Football, Golf) now has its own tiered features: Free, Pro, Elite
+  - Baseball features: Free (Games, Daily Picks, My Bets), Pro (Odds Comparison, Hot Trends), Elite (Performance Analytics, AI Assistant, Prop Finder, Parlay Builder, etc.)
+  - Enhanced sidebar organization prepares platform for sport-specific feature expansion
+  - Tier-specific styling maintains visual hierarchy with color-coded headers and icons
 - June 30, 2025: Fixed odds decimal precision formatting for clean betting display
   - Resolved long decimal issues in runline and total run odds (e.g., -104.7716 → -104, 9.178925 → 9.5)
   - Implemented proper rounding for all odds values: totals over/under, spread odds, and line values

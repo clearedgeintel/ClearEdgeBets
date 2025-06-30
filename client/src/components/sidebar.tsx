@@ -57,7 +57,7 @@ export default function Sidebar() {
       expanded: baseballExpanded,
       setExpanded: setBaseballExpanded,
       active: location === "/" || location.startsWith("/baseball") || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets" || location === "/performance-tracking",
-      subItems: [
+      freeItems: [
         { 
           name: "Games", 
           href: "/todays-games", 
@@ -72,7 +72,6 @@ export default function Sidebar() {
           current: location === "/daily-picks",
           description: "AI-powered betting recommendations"
         },
-
         { 
           name: "My Bets", 
           href: "/my-bets", 
@@ -80,7 +79,85 @@ export default function Sidebar() {
           current: location === "/my-bets",
           description: "Your MLB betting history"
         }
-      ]
+      ],
+      proItems: user && (hasAccess("pro") || hasAccess("elite")) ? [
+        { 
+          name: "Odds Comparison", 
+          href: "/odds-comparison", 
+          icon: BarChart3,
+          current: location === "/odds-comparison",
+          description: "Compare odds across multiple sportsbooks"
+        },
+        { 
+          name: "Hot Trends", 
+          href: "/hot-trends", 
+          icon: TrendingUp,
+          current: location === "/hot-trends",
+          description: "Discover trending betting patterns"
+        }
+      ] : [],
+      eliteItems: user && hasAccess("elite") ? [
+        { 
+          name: "Performance Analytics", 
+          href: "/analytics", 
+          icon: BarChart3,
+          current: location === "/analytics",
+          description: "Advanced betting performance insights"
+        },
+        { 
+          name: "AI Assistant", 
+          href: "/ai-assistant", 
+          icon: Brain,
+          current: location === "/ai-assistant",
+          description: "Chat with AI for betting insights"
+        },
+        { 
+          name: "Prop Finder", 
+          href: "/prop-finder", 
+          icon: Target,
+          current: location === "/prop-finder",
+          description: "Find positive EV player props"
+        },
+        { 
+          name: "Parlay Builder", 
+          href: "/parlay-builder", 
+          icon: Calculator,
+          current: location === "/parlay-builder",
+          description: "Build optimal parlays with EV guidance"
+        },
+        { 
+          name: "Custom Strategies", 
+          href: "/strategies", 
+          icon: Target,
+          current: location === "/strategies",
+          description: "Create and manage betting strategies"
+        },
+        { 
+          name: "Expert Consultation", 
+          href: "#", 
+          icon: Users,
+          current: false,
+          description: "1-on-1 sessions with betting experts",
+          disabled: true,
+          comingSoon: true
+        },
+        { 
+          name: "Early Access", 
+          href: "/early-access", 
+          icon: Zap,
+          current: location === "/early-access",
+          description: "Beta features and new releases"
+        },
+        { 
+          name: "White Label", 
+          href: "#", 
+          icon: Building,
+          current: false,
+          description: "Brand customization options",
+          disabled: true,
+          comingSoon: true
+        }
+      ] : []
     },
     {
       sport: "Football",
@@ -88,7 +165,7 @@ export default function Sidebar() {
       expanded: footballExpanded,
       setExpanded: setFootballExpanded,
       active: location.startsWith("/football") || location.startsWith("/cfl"),
-      subItems: [
+      freeItems: [
         { 
           name: "CFL Hub", 
           href: "/cfl", 
@@ -111,7 +188,6 @@ export default function Sidebar() {
           current: location === "/cfl/picks",
           description: "AI-powered CFL betting picks"
         },
-
         { 
           name: "NFL", 
           href: "/nfl", 
@@ -120,7 +196,9 @@ export default function Sidebar() {
           description: "Coming Soon",
           disabled: true
         }
-      ]
+      ],
+      proItems: [],
+      eliteItems: []
     },
     {
       sport: "Golf",
@@ -128,7 +206,7 @@ export default function Sidebar() {
       expanded: golfExpanded,
       setExpanded: setGolfExpanded,
       active: location.startsWith("/golf"),
-      subItems: [
+      freeItems: [
         { 
           name: "Tournaments", 
           href: "/golf/tournaments", 
@@ -151,7 +229,9 @@ export default function Sidebar() {
           current: location === "/golf/futures",
           description: "Season-long betting markets"
         }
-      ]
+      ],
+      proItems: [],
+      eliteItems: []
     }
   ];
 
@@ -163,87 +243,7 @@ export default function Sidebar() {
     description: "System analytics and management"
   }] : [];
 
-  // Pro tier features navigation  
-  const proNavigation = user && (hasAccess("pro") || hasAccess("elite")) ? [
-    { 
-      name: "Odds Comparison", 
-      href: "/odds-comparison", 
-      icon: BarChart3,
-      current: location === "/odds-comparison",
-      description: "Compare odds across multiple sportsbooks"
-    },
-    { 
-      name: "Hot Trends", 
-      href: "/hot-trends", 
-      icon: TrendingUp,
-      current: location === "/hot-trends",
-      description: "Discover trending betting patterns"
-    }
-  ] : [];
 
-  // Elite tier features navigation
-  const eliteNavigation = user && hasAccess("elite") ? [
-    { 
-      name: "Performance Analytics", 
-      href: "/analytics", 
-      icon: BarChart3,
-      current: location === "/analytics",
-      description: "Advanced betting performance insights"
-    },
-    { 
-      name: "AI Assistant", 
-      href: "/ai-assistant", 
-      icon: Brain,
-      current: location === "/ai-assistant",
-      description: "Chat with AI for betting insights"
-    },
-    { 
-      name: "Prop Finder", 
-      href: "/prop-finder", 
-      icon: Target,
-      current: location === "/prop-finder",
-      description: "Find positive EV player props"
-    },
-    { 
-      name: "Parlay Builder", 
-      href: "/parlay-builder", 
-      icon: Calculator,
-      current: location === "/parlay-builder",
-      description: "Build optimal parlays with EV guidance"
-    },
-    { 
-      name: "Custom Strategies", 
-      href: "/strategies", 
-      icon: Target,
-      current: location === "/strategies",
-      description: "Create and manage betting strategies"
-    },
-    { 
-      name: "Expert Consultation", 
-      href: "#", 
-      icon: Users,
-      current: false,
-      description: "1-on-1 sessions with betting experts",
-      disabled: true,
-      comingSoon: true
-    },
-    { 
-      name: "Early Access", 
-      href: "/early-access", 
-      icon: Zap,
-      current: location === "/early-access",
-      description: "Beta features and new releases"
-    },
-    { 
-      name: "White Label", 
-      href: "#", 
-      icon: Building,
-      current: false,
-      description: "Brand customization options",
-      disabled: true,
-      comingSoon: true
-    }
-  ] : [];
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-gray-900 text-white">
@@ -315,7 +315,14 @@ export default function Sidebar() {
               
               {sport.expanded && (
                 <div className="ml-6 space-y-1">
-                  {sport.subItems.map((item) => {
+                  {/* Free Tier Items */}
+                  <div className="px-3 mb-2">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Free</span>
+                    </div>
+                  </div>
+                  {sport.freeItems.map((item) => {
                     const Icon = item.icon;
                     return (
                       <Link
@@ -324,7 +331,7 @@ export default function Sidebar() {
                         className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors group ${
                           item.current
                             ? "bg-secondary text-white"
-                            : item.disabled
+                            : (item as any).disabled
                             ? "text-gray-500 cursor-not-allowed"
                             : "text-gray-300 hover:bg-gray-800 hover:text-white"
                         }`}
@@ -332,13 +339,13 @@ export default function Sidebar() {
                       >
                         <Icon className={`h-4 w-4 ${
                           item.current ? "text-white" : 
-                          item.disabled ? "text-gray-500" :
+                          (item as any).disabled ? "text-gray-500" :
                           "text-gray-400 group-hover:text-white"
                         }`} />
                         <div className="flex-1">
-                          <div className={`text-sm font-medium ${item.featured ? "flex items-center" : ""}`}>
+                          <div className={`text-sm font-medium ${(item as any).featured ? "flex items-center" : ""}`}>
                             {item.name}
-                            {item.featured && <Star className="h-3 w-3 ml-1 text-accent" />}
+                            {(item as any).featured && <Star className="h-3 w-3 ml-1 text-accent" />}
                           </div>
                           <div className="text-xs text-gray-400 group-hover:text-gray-300">
                             {item.description}
@@ -347,110 +354,111 @@ export default function Sidebar() {
                       </Link>
                     );
                   })}
+
+                  {/* Pro Tier Items */}
+                  {sport.proItems && sport.proItems.length > 0 && (
+                    <>
+                      <div className="px-3 mb-2 mt-4">
+                        <div className="flex items-center space-x-2">
+                          <Crown className="h-3 w-3 text-blue-600" />
+                          <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Pro</span>
+                        </div>
+                      </div>
+                      {sport.proItems.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={item.name}
+                            href={item.href}
+                            className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors group ${
+                              item.current
+                                ? "bg-blue-600 text-white"
+                                : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                            }`}
+                            onClick={() => setMobileOpen(false)}
+                          >
+                            <Icon className={`h-4 w-4 ${
+                              item.current ? "text-white" : "text-blue-400 group-hover:text-white"
+                            }`} />
+                            <div className="flex-1">
+                              <div className="text-sm font-medium">{item.name}</div>
+                              <div className="text-xs text-gray-400 group-hover:text-gray-300">
+                                {item.description}
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </>
+                  )}
+
+                  {/* Elite Tier Items */}
+                  {sport.eliteItems && sport.eliteItems.length > 0 && (
+                    <>
+                      <div className="px-3 mb-2 mt-4">
+                        <div className="flex items-center space-x-2">
+                          <Award className="h-3 w-3 text-yellow-600" />
+                          <span className="text-xs font-semibold text-yellow-600 uppercase tracking-wide">Elite</span>
+                        </div>
+                      </div>
+                      {sport.eliteItems.map((item) => {
+                        const Icon = item.icon;
+                        const isDisabled = (item as any).disabled;
+                        const isComingSoon = (item as any).comingSoon;
+                        
+                        if (isDisabled) {
+                          return (
+                            <div
+                              key={item.name}
+                              className="flex items-center space-x-3 px-3 py-2 rounded-lg opacity-60 cursor-not-allowed"
+                            >
+                              <Icon className="h-4 w-4 text-gray-500" />
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-sm font-medium text-gray-500">{item.name}</span>
+                                  {isComingSoon && (
+                                    <Badge variant="secondary" className="text-xs bg-gray-700 text-gray-300">
+                                      Coming Soon
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {item.description}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        return (
+                          <Link
+                            key={item.name}
+                            href={item.href}
+                            className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors group ${
+                              item.current
+                                ? "bg-yellow-600/20 text-yellow-400"
+                                : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                            }`}
+                            onClick={() => setMobileOpen(false)}
+                          >
+                            <Icon className={`h-4 w-4 ${item.current ? "text-yellow-400" : "text-gray-400 group-hover:text-white"}`} />
+                            <div className="flex-1">
+                              <div className="text-sm font-medium">{item.name}</div>
+                              <div className="text-xs text-gray-400 group-hover:text-gray-300">
+                                {item.description}
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </>
+                  )}
                 </div>
               )}
             </div>
           );
         })}
-        
-        {/* Pro Tier Features */}
-        {proNavigation.length > 0 && (
-          <div className="mt-6 pt-4 border-t border-gray-700">
-            <div className="px-3 mb-3">
-              <div className="flex items-center space-x-2">
-                <Crown className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-semibold text-blue-600">Pro Features</span>
-              </div>
-            </div>
-            {proNavigation.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors group ${
-                    item.current
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-300 hover:bg-gray-800 hover:text-white"
-                  }`}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  <Icon className={`h-4 w-4 ${
-                    item.current ? "text-white" : "text-blue-400 group-hover:text-white"
-                  }`} />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">{item.name}</div>
-                    <div className="text-xs text-gray-400 group-hover:text-gray-300">
-                      {item.description}
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
 
-        {/* Elite Tier Features */}
-        {eliteNavigation.length > 0 && (
-          <div className="mt-6 pt-4 border-t border-gray-700">
-            <div className="px-3 mb-3">
-              <div className="flex items-center space-x-2">
-                <Award className="h-4 w-4 text-yellow-600" />
-                <span className="text-sm font-semibold text-yellow-600">Elite Features</span>
-              </div>
-            </div>
-            {eliteNavigation.map((item) => {
-              const Icon = item.icon;
-              const isDisabled = (item as any).disabled;
-              const isComingSoon = (item as any).comingSoon;
-              
-              if (isDisabled) {
-                return (
-                  <div
-                    key={item.name}
-                    className="flex items-center space-x-3 px-3 py-2 rounded-lg opacity-60 cursor-not-allowed"
-                  >
-                    <Icon className="h-4 w-4 text-gray-500" />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-gray-500">{item.name}</span>
-                        {isComingSoon && (
-                          <Badge variant="secondary" className="text-xs bg-gray-700 text-gray-300">
-                            Coming Soon
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {item.description}
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-              
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors group ${
-                    item.current
-                      ? "bg-yellow-600/20 text-yellow-400"
-                      : "text-gray-300 hover:bg-gray-800 hover:text-white"
-                  }`}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  <Icon className={`h-4 w-4 ${item.current ? "text-yellow-400" : "text-gray-400 group-hover:text-white"}`} />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">{item.name}</div>
-                    <div className="text-xs text-gray-400 group-hover:text-gray-300">
-                      {item.description}
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
         
         {/* Admin Navigation */}
         {adminNavigation.map((item) => {
