@@ -490,7 +490,7 @@ export default function Home() {
 
             {/* MLB News Section */}
             <Card>
-              <CardHeader className="bg-gradient-to-r from-red-600 to-blue-600 text-white">
+              <CardHeader className="bg-red-600 text-white">
                 <CardTitle className="flex items-center">
                   <Newspaper className="h-5 w-5 mr-2" />
                   Latest MLB News
@@ -562,7 +562,7 @@ export default function Home() {
 
             {/* Baseball Games List */}
             <Card>
-              <CardHeader className="bg-gradient-to-r from-blue-600 to-red-600 text-white">
+              <CardHeader className="bg-blue-600 text-white">
                 <CardTitle className="flex items-center">
                   <Clock className="h-5 w-5 mr-2" />
                   Today's MLB Games
@@ -635,7 +635,7 @@ export default function Home() {
             {/* Coming Soon - Other Sports */}
             <div className="space-y-6 mt-12">
               {/* Football Section */}
-              <Card className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-orange-200 dark:border-orange-800">
+              <Card className="bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -663,7 +663,7 @@ export default function Home() {
               </Card>
 
               {/* Hockey Section */}
-              <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
+              <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -685,7 +685,7 @@ export default function Home() {
               </Card>
 
               {/* Basketball Section */}
-              <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800">
+              <Card className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
