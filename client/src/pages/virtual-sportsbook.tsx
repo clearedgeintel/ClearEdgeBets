@@ -524,6 +524,107 @@ export default function VirtualSportsbook() {
         </Button>
       </div>
 
+      {/* My Virtual Betting Slips */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Receipt className="h-5 w-5" />
+            My Virtual Betting Slips
+            <Badge variant="secondary" className="ml-auto">
+              {bettingSlips.length} {bettingSlips.length === 1 ? 'slip' : 'slips'}
+            </Badge>
+          </CardTitle>
+          <CardDescription>
+            Track all your virtual betting slips and their performance. This is separate from live money picks.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {bettingSlips.length > 0 ? (
+            <div className="space-y-4">
+              {bettingSlips.map((slip) => (
+                <div key={slip.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="font-semibold">Betting Slip #{slip.id.split('-')[1]}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Created: {slip.createdAt.toLocaleDateString()} at {slip.createdAt.toLocaleTimeString()}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge 
+                        variant={slip.status === 'placed' ? 'default' : slip.status === 'settled' ? 'secondary' : 'outline'}
+                      >
+                        {slip.status.charAt(0).toUpperCase() + slip.status.slice(1)}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {slip.items.map((bet) => (
+                      <div key={bet.id} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded">
+                        <div className="flex-1">
+                          <div className="font-medium">{bet.selection}</div>
+                          <div className="text-xs text-muted-foreground">{bet.matchup}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">${bet.stake.toFixed(2)}</div>
+                          <div className="text-xs text-green-600">Win: ${bet.potentialWin.toFixed(2)}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                    <div>
+                      <span className="text-sm text-muted-foreground">Total Stake: </span>
+                      <span className="font-semibold">${slip.totalStake.toFixed(2)}</span>
+                    </div>
+                    <div>
+                      <span className="text-sm text-muted-foreground">Potential Win: </span>
+                      <span className="font-semibold text-green-600">${slip.totalPotentialWin.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  
+                  {slip.status === 'draft' && slip === currentSlip && (
+                    <div className="mt-3 flex gap-2">
+                      <Button 
+                        size="sm" 
+                        onClick={() => setShowBettingSlip(true)}
+                        variant="outline"
+                      >
+                        Edit Slip
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        className="bg-green-600 hover:bg-green-700"
+                        disabled={slip.totalStake === 0}
+                        onClick={() => {
+                          toast({
+                            title: "Bets Placed!",
+                            description: `${slip.items.length} bets placed for $${slip.totalStake.toFixed(2)}`,
+                          });
+                          const updatedSlip = { ...slip, status: 'placed' as const };
+                          setBettingSlips(prev => prev.map(s => s.id === slip.id ? updatedSlip : s));
+                          setCurrentSlip(null);
+                        }}
+                      >
+                        Place Bets (${slip.totalStake.toFixed(2)})
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No virtual betting slips yet.</p>
+              <p className="text-sm">Start by adding bets to create your first slip!</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* AI Generated Bet Slip */}
       {aiBetSlip && aiBetSlip.length > 0 && (
         <Card className="mb-8 border-blue-200 dark:border-blue-800">
