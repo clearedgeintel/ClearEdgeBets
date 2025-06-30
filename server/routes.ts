@@ -507,10 +507,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Get all games with their odds and AI summaries
+      // Get games for the specified date
       const games = await storage.getAllTodaysGames();
+      const filteredGames = games.filter(game => game.gameId.startsWith(targetDate));
       const gamesWithData = await Promise.all(
-        games.map(async (game) => {
+        filteredGames.map(async (game) => {
           const odds = await storage.getOddsByGameId(game.gameId);
           let aiSummary = await storage.getAiSummary(game.gameId);
           
