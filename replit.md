@@ -125,6 +125,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Fixed daily picks to show today's games instead of yesterday's data
+  - Resolved gameId format mismatch between daily picks and current games
+  - Updated daily picks generation to use fresh game data instead of accumulated storage
+  - Created new daily picks matching actual games: ATL@MIA, SEA@BAL, CLE@WSH, CHC@LAA, TOR@TB
+  - Fixed home page daily picks API to correctly pass date parameter
+  - Cleared old picks with incorrect format and replaced with current game selections
 - June 30, 2025: Enhanced AI Game Analysis with suggested betting options
   - Added intelligent bet suggestions directly under AI Game Analysis section in game cards
   - Suggestions include Moneyline, Total, and Run Line bets with confidence levels and EV percentages
