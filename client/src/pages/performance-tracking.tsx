@@ -99,24 +99,7 @@ export default function PerformanceTracking() {
 
 
 
-  const manualReconcileMutation = useMutation({
-    mutationFn: ({ pickId, result }: { pickId: number; result: string }) => 
-      apiRequest('POST', '/api/performance/reconcile', { pickId, result }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/performance/daily'] });
-      toast({
-        title: "Pick Updated",
-        description: "Pick result has been updated successfully.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Update Failed",
-        description: "Failed to update pick result. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
+
 
 
 
@@ -467,35 +450,7 @@ export default function PerformanceTracking() {
                             </div>
                           </Badge>
 
-                          <div className="flex space-x-1">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-green-600 border-green-500/20 hover:bg-green-500/10"
-                              onClick={() => manualReconcileMutation.mutate({ pickId: pick.id, result: 'win' })}
-                              disabled={manualReconcileMutation.isPending}
-                            >
-                              Win
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-red-600 border-red-500/20 hover:bg-red-500/10"
-                              onClick={() => manualReconcileMutation.mutate({ pickId: pick.id, result: 'loss' })}
-                              disabled={manualReconcileMutation.isPending}
-                            >
-                              Loss
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-yellow-600 border-yellow-500/20 hover:bg-yellow-500/10"
-                              onClick={() => manualReconcileMutation.mutate({ pickId: pick.id, result: 'push' })}
-                              disabled={manualReconcileMutation.isPending}
-                            >
-                              Push
-                            </Button>
-                          </div>
+
                         </div>
                       </div>
                     </CardContent>
