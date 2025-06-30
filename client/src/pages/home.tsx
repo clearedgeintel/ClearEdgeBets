@@ -120,6 +120,7 @@ export default function Home() {
         reasoning: pick.reasoning,
         expectedValue: pick.confidence, // Use confidence as expected value display
         confidence: pick.confidence,
+        result: pick.result, // Add result for display
         gameInfo: game ? {
           awayTeam: game.awayTeam,
           homeTeam: game.homeTeam,
@@ -347,18 +348,33 @@ export default function Home() {
                         <span className="text-sm font-medium text-white">
                           {index === 0 ? "Best Value" : index === 1 ? "Sharp Play" : "AI Special"}
                         </span>
-                        <Badge 
-                          variant="secondary" 
-                          className={`${
-                            index === 0 
-                              ? 'bg-green-500 text-white' 
-                              : index === 1 
-                                ? 'bg-yellow-500 text-gray-900' 
-                                : 'bg-orange-500 text-white'
-                          } border-0 font-bold`}
-                        >
-                          {pick.confidence ? `${pick.confidence}% Confidence` : "Hot"}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          {pick.result && (
+                            <Badge 
+                              className={`${
+                                pick.result === 'win' 
+                                  ? 'bg-green-600 text-white border-green-500' 
+                                  : pick.result === 'loss' 
+                                    ? 'bg-red-600 text-white border-red-500' 
+                                    : 'bg-yellow-600 text-white border-yellow-500'
+                              } border font-bold text-xs`}
+                            >
+                              {pick.result.toUpperCase()}
+                            </Badge>
+                          )}
+                          <Badge 
+                            variant="secondary" 
+                            className={`${
+                              index === 0 
+                                ? 'bg-green-500 text-white' 
+                                : index === 1 
+                                  ? 'bg-yellow-500 text-gray-900' 
+                                  : 'bg-orange-500 text-white'
+                            } border-0 font-bold`}
+                          >
+                            {pick.confidence ? `${pick.confidence}% Confidence` : "Hot"}
+                          </Badge>
+                        </div>
                       </div>
                       
                       {/* Game Matchup */}
