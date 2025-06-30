@@ -567,15 +567,15 @@ export default function VirtualSportsbook() {
                       <div className="text-sm text-muted-foreground mb-2">Spread</div>
                       <div className="flex flex-col space-y-1">
 {(() => {
-                          // Generate spread if not available
+                          // Generate realistic MLB run line spreads
+                          const runLines = [1.5, 2.5]; // Common MLB run lines
+                          const randomLine = runLines[Math.floor(Math.random() * runLines.length)];
                           const spread = game.odds?.spread || {
-                            away: Math.random() > 0.5 ? +(Math.random() * 3 + 1).toFixed(1) : -(Math.random() * 3 + 1).toFixed(1),
-                            home: 0 // Home team gets opposite spread
+                            away: Math.random() > 0.5 ? +randomLine : -randomLine,
+                            home: 0
                           };
-                          if (!game.odds?.spread && spread.away > 0) {
-                            spread.home = -spread.away;
-                          } else if (!game.odds?.spread && spread.away < 0) {
-                            spread.home = Math.abs(spread.away);
+                          if (!game.odds?.spread) {
+                            spread.home = -spread.away; // Home team gets opposite
                           }
                           
                           return (
@@ -616,83 +616,111 @@ export default function VirtualSportsbook() {
                     <div className="space-y-2">
                       <div className="text-sm text-muted-foreground mb-2">Moneyline</div>
                       <div className="flex flex-col space-y-1">
-                        {game.odds?.moneyline ? (
-                          <>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="justify-center h-8 font-mono"
-                              onClick={() => {
-                                toast({
-                                  title: "Bet Placed",
-                                  description: `${game.awayTeam} ML ${game.odds.moneyline.away > 0 ? '+' : ''}${game.odds.moneyline.away}`,
-                                });
-                              }}
-                            >
-                              {game.odds.moneyline.away > 0 ? '+' : ''}{game.odds.moneyline.away}
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="justify-center h-8 font-mono"
-                              onClick={() => {
-                                toast({
-                                  title: "Bet Placed",
-                                  description: `${game.homeTeam} ML ${game.odds.moneyline.home > 0 ? '+' : ''}${game.odds.moneyline.home}`,
-                                });
-                              }}
-                            >
-                              {game.odds.moneyline.home > 0 ? '+' : ''}{game.odds.moneyline.home}
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <div className="h-8 flex items-center justify-center text-muted-foreground">-</div>
-                            <div className="h-8 flex items-center justify-center text-muted-foreground">-</div>
-                          </>
-                        )}
+{(() => {
+                          // Generate realistic MLB moneyline odds
+                          const moneyline = game.odds?.moneyline || (() => {
+                            const favoriteOdds = [-110, -120, -130, -140, -150, -160, -170, -180];
+                            const underdogOdds = [110, 120, 130, 140, 150, 160, 170, 180];
+                            const isFavoriteAway = Math.random() > 0.5;
+                            
+                            if (isFavoriteAway) {
+                              return {
+                                away: favoriteOdds[Math.floor(Math.random() * favoriteOdds.length)],
+                                home: underdogOdds[Math.floor(Math.random() * underdogOdds.length)]
+                              };
+                            } else {
+                              return {
+                                away: underdogOdds[Math.floor(Math.random() * underdogOdds.length)],
+                                home: favoriteOdds[Math.floor(Math.random() * favoriteOdds.length)]
+                              };
+                            }
+                          })();
+                          
+                          return (
+                            <>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="justify-center h-8 font-mono text-xs"
+                                onClick={() => {
+                                  toast({
+                                    title: "Bet Placed",
+                                    description: `${game.awayTeam} ML ${moneyline.away > 0 ? '+' : ''}${moneyline.away}`,
+                                  });
+                                }}
+                              >
+                                {moneyline.away > 0 ? '+' : ''}{moneyline.away}
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="justify-center h-8 font-mono text-xs"
+                                onClick={() => {
+                                  toast({
+                                    title: "Bet Placed",
+                                    description: `${game.homeTeam} ML ${moneyline.home > 0 ? '+' : ''}${moneyline.home}`,
+                                  });
+                                }}
+                              >
+                                {moneyline.home > 0 ? '+' : ''}{moneyline.home}
+                              </Button>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                     
-                    {/* Total Column */}
+                    {/* Total Runs Column */}
                     <div className="space-y-2">
-                      <div className="text-sm text-muted-foreground mb-2">Total</div>
+                      <div className="text-sm text-muted-foreground mb-2">Total Runs</div>
                       <div className="flex flex-col space-y-1">
-                        {game.odds?.total ? (
-                          <>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="justify-center h-8 font-mono"
-                              onClick={() => {
-                                toast({
-                                  title: "Bet Placed",
-                                  description: `Over ${game.odds.total.line} ${game.odds.total.over > 0 ? '+' : ''}${game.odds.total.over}`,
-                                });
-                              }}
-                            >
-                              O{game.odds.total.line} {game.odds.total.over > 0 ? '+' : ''}{game.odds.total.over}
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="justify-center h-8 font-mono"
-                              onClick={() => {
-                                toast({
-                                  title: "Bet Placed",
-                                  description: `Under ${game.odds.total.line} ${game.odds.total.under > 0 ? '+' : ''}${game.odds.total.under}`,
-                                });
-                              }}
-                            >
-                              U{game.odds.total.line} {game.odds.total.under > 0 ? '+' : ''}{game.odds.total.under}
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <div className="h-8 flex items-center justify-center text-muted-foreground">-</div>
-                            <div className="h-8 flex items-center justify-center text-muted-foreground">-</div>
-                          </>
-                        )}
+{(() => {
+                          // Generate realistic MLB total runs odds
+                          const total = game.odds?.total || (() => {
+                            const totalLines = [7.5, 8.0, 8.5, 9.0, 9.5, 10.0, 10.5]; // Common MLB totals
+                            const overUnderOdds = [-105, -110, -115, -120, 105, 110, 115, 120];
+                            const line = totalLines[Math.floor(Math.random() * totalLines.length)];
+                            const overOdds = overUnderOdds[Math.floor(Math.random() * overUnderOdds.length)];
+                            const underOdds = overOdds > 0 ? -overOdds - 10 : Math.abs(overOdds) + 10;
+                            
+                            return {
+                              line,
+                              over: overOdds,
+                              under: underOdds
+                            };
+                          })();
+                          
+                          return (
+                            <>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="justify-center h-8 font-mono text-xs"
+                                onClick={() => {
+                                  toast({
+                                    title: "Bet Placed",
+                                    description: `Over ${total.line} ${total.over > 0 ? '+' : ''}${total.over}`,
+                                  });
+                                }}
+                              >
+                                O{total.line} {total.over > 0 ? '+' : ''}{total.over}
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="justify-center h-8 font-mono text-xs"
+                                onClick={() => {
+                                  toast({
+                                    title: "Bet Placed",
+                                    description: `Under ${total.line} ${total.under > 0 ? '+' : ''}${total.under}`,
+                                  });
+                                }}
+                              >
+                                U{total.line} {total.under > 0 ? '+' : ''}{total.under}
+                              </Button>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
