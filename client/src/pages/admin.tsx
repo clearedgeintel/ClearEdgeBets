@@ -24,6 +24,7 @@ import {
 import Header from "@/components/header";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
+import { Link } from "wouter";
 
 interface User {
   id: number;
@@ -259,6 +260,14 @@ export default function AdminPanel() {
               <p className="text-muted-foreground mt-2">
                 Manage users, subscriptions, and system settings
               </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0">
+              <Link href="/admin/users">
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  <Users className="w-4 h-4 mr-2" />
+                  User Management
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

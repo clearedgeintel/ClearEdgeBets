@@ -125,6 +125,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Implemented comprehensive admin user management system with referral codes
+  - Created dedicated admin users page (/admin/users) with full user management interface
+  - Added admin API endpoints for user creation, tier assignment, and referral code management
+  - Enhanced database schema with admin flags, referral codes, and usage tracking
+  - Built admin dashboard with user statistics breakdown by tier and referral metrics
+  - Implemented referral code validation system for user acquisition and tier rewards
+  - Admin users can manually create users, assign tiers, manage admin permissions, and track referrals
+  - Added navigation link from main admin panel to user management section
 - June 30, 2025: Enhanced sidebar navigation with tier visibility and upgrade prompts
   - All users now see Free, Pro, and Elite tier sections for each sport to encourage upgrades
   - Free tier users see locked Pro/Elite features with tier badges and "Upgrade" buttons

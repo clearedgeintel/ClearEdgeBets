@@ -12,7 +12,25 @@ export const users = pgTable("users", {
   stripeSubscriptionId: text("stripe_subscription_id"),
   subscriptionStatus: text("subscription_status").default("inactive"), // active, canceled, past_due
   subscriptionEndDate: timestamp("subscription_end_date"),
+  referralCode: text("referral_code").unique(),
+  referredBy: text("referred_by"),
+  referralCount: integer("referral_count").default(0),
+  isAdmin: boolean("is_admin").default(false),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Referral codes table for tracking and management
+export const referralCodes = pgTable("referral_codes", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  userId: integer("user_id").references(() => users.id),
+  usageCount: integer("usage_count").default(0),
+  maxUses: integer("max_uses"), // null = unlimited
+  isActive: boolean("is_active").default(true),
+  rewardTier: text("reward_tier"), // what tier to grant
+  rewardDuration: integer("reward_duration"), // days of access
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
 });
 
 export const games = pgTable("games", {
@@ -197,6 +215,11 @@ export const insertPerformanceTrackingSchema = createInsertSchema(performanceTra
   updatedAt: true,
 });
 
+export const insertReferralCodeSchema = createInsertSchema(referralCodes).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertGame = z.infer<typeof insertGameSchema>;
@@ -215,3 +238,5 @@ export type InsertConsensusData = z.infer<typeof insertConsensusDataSchema>;
 export type ConsensusData = typeof consensusData.$inferSelect;
 export type InsertPerformanceTracking = z.infer<typeof insertPerformanceTrackingSchema>;
 export type PerformanceTracking = typeof performanceTracking.$inferSelect;
+export type InsertReferralCode = z.infer<typeof insertReferralCodeSchema>;
+export type ReferralCode = typeof referralCodes.$inferSelect;

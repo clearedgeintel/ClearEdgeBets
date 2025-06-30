@@ -2196,6 +2196,179 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin routes for user management and referral codes
+  app.get('/api/admin/stats', async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      const stats = await storage.getAdminStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('Admin stats error:', error);
+      res.status(500).json({ error: 'Failed to fetch admin stats' });
+    }
+  });
+
+  app.get('/api/admin/users', async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      const users = await storage.getAllUsers();
+      // Remove passwords from response
+      const safeUsers = users.map(u => ({
+        ...u,
+        password: undefined
+      }));
+      res.json(safeUsers);
+    } catch (error) {
+      console.error('Admin users error:', error);
+      res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  });
+
+  app.post('/api/admin/users', async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      const { username, email, password, subscriptionTier = 'free', isAdmin = false, referredBy } = req.body;
+      
+      if (!username || !email || !password) {
+        return res.status(400).json({ error: 'Username, email, and password are required' });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ error: 'User with this email already exists' });
+      }
+
+      const bcrypt = require('bcrypt');
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const newUser = await storage.createUser({
+        username,
+        email,
+        password: hashedPassword,
+        subscriptionTier,
+        isAdmin,
+        referredBy
+      });
+
+      // Generate referral code for new user
+      if (newUser.id) {
+        await storage.generateReferralCode(newUser.id);
+      }
+
+      // Remove password from response
+      const safeUser = { ...newUser, password: undefined };
+      res.status(201).json(safeUser);
+    } catch (error) {
+      console.error('Create user error:', error);
+      res.status(500).json({ error: 'Failed to create user' });
+    }
+  });
+
+  app.patch('/api/admin/users/:id/tier', async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      const userId = parseInt(req.params.id);
+      const { tier, isAdmin } = req.body;
+
+      if (!tier || !['free', 'pro', 'elite'].includes(tier)) {
+        return res.status(400).json({ error: 'Valid tier is required (free, pro, elite)' });
+      }
+
+      const updatedUser = await storage.updateUserTier(userId, tier, isAdmin);
+      // Remove password from response
+      const safeUser = { ...updatedUser, password: undefined };
+      res.json(safeUser);
+    } catch (error) {
+      console.error('Update user tier error:', error);
+      res.status(500).json({ error: 'Failed to update user tier' });
+    }
+  });
+
+  app.get('/api/admin/referral-codes', async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      const referralCodes = await storage.getAllReferralCodes();
+      res.json(referralCodes);
+    } catch (error) {
+      console.error('Admin referral codes error:', error);
+      res.status(500).json({ error: 'Failed to fetch referral codes' });
+    }
+  });
+
+  app.post('/api/admin/referral-codes', async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      const { code, rewardTier, rewardDuration, maxUses, expiresAt } = req.body;
+      
+      if (!code || !rewardTier) {
+        return res.status(400).json({ error: 'Code and reward tier are required' });
+      }
+
+      const referralCode = await storage.createReferralCode({
+        code: code.toUpperCase(),
+        rewardTier,
+        rewardDuration: rewardDuration || null,
+        maxUses: maxUses || null,
+        expiresAt: expiresAt ? new Date(expiresAt) : null
+      });
+
+      res.status(201).json(referralCode);
+    } catch (error) {
+      console.error('Create referral code error:', error);
+      res.status(500).json({ error: 'Failed to create referral code' });
+    }
+  });
+
+  app.post('/api/validate-referral', async (req: Request, res: Response) => {
+    try {
+      const { code } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ error: 'Referral code is required' });
+      }
+
+      const referralCode = await storage.validateReferralCode(code.toUpperCase());
+      
+      if (!referralCode) {
+        return res.status(404).json({ error: 'Invalid or expired referral code' });
+      }
+
+      res.json({
+        valid: true,
+        rewardTier: referralCode.rewardTier,
+        rewardDuration: referralCode.rewardDuration
+      });
+    } catch (error) {
+      console.error('Validate referral error:', error);
+      res.status(500).json({ error: 'Failed to validate referral code' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

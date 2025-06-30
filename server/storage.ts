@@ -1,6 +1,6 @@
-import { users, games, odds, aiSummaries, bets, props, dailyPicks, consensusData, performanceTracking, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking } from "@shared/schema";
+import { users, games, odds, aiSummaries, bets, props, dailyPicks, consensusData, performanceTracking, referralCodes, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -16,6 +16,26 @@ export interface IStorage {
     status?: string;
     endDate?: Date;
   }): Promise<User>;
+  updateUserTier(userId: number, tier: string, isAdmin?: boolean): Promise<User>;
+  updateUserAdmin(userId: number, isAdmin: boolean): Promise<User>;
+  generateReferralCode(userId: number): Promise<string>;
+  validateReferralCode(code: string): Promise<ReferralCode | null>;
+
+  // Referral Code methods
+  createReferralCode(referralCode: InsertReferralCode): Promise<ReferralCode>;
+  getReferralCode(code: string): Promise<ReferralCode | undefined>;
+  getAllReferralCodes(): Promise<ReferralCode[]>;
+  updateReferralCodeUsage(code: string): Promise<ReferralCode>;
+  
+  // Admin methods
+  getAdminStats(): Promise<{
+    totalUsers: number;
+    freeUsers: number;
+    proUsers: number;
+    eliteUsers: number;
+    totalReferrals: number;
+    activeReferralCodes: number;
+  }>;
 
   // Game methods
   getAllTodaysGames(): Promise<Game[]>;
@@ -676,6 +696,124 @@ export class DatabaseStorage implements IStorage {
       avgConfidence,
       pitchingAccuracy: avgPitchingAccuracy,
       monthlyBreakdown
+    };
+  }
+
+  // Admin and referral methods
+  async updateUserTier(userId: number, tier: string, isAdmin?: boolean): Promise<User> {
+    const updateData: any = { subscriptionTier: tier };
+    if (isAdmin !== undefined) {
+      updateData.isAdmin = isAdmin;
+    }
+    
+    const [user] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async updateUserAdmin(userId: number, isAdmin: boolean): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ isAdmin })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async generateReferralCode(userId: number): Promise<string> {
+    // Generate a unique 8-character referral code
+    const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+    
+    await db
+      .update(users)
+      .set({ referralCode: code })
+      .where(eq(users.id, userId));
+    
+    return code;
+  }
+
+  async validateReferralCode(code: string): Promise<ReferralCode | null> {
+    const [referralCode] = await db
+      .select()
+      .from(referralCodes)
+      .where(eq(referralCodes.code, code));
+    
+    if (!referralCode || !referralCode.isActive) {
+      return null;
+    }
+    
+    // Check if it has reached max uses
+    if (referralCode.maxUses && referralCode.usageCount >= referralCode.maxUses) {
+      return null;
+    }
+    
+    // Check if it's expired
+    if (referralCode.expiresAt && referralCode.expiresAt < new Date()) {
+      return null;
+    }
+    
+    return referralCode;
+  }
+
+  async createReferralCode(insertReferralCode: InsertReferralCode): Promise<ReferralCode> {
+    const [referralCode] = await db
+      .insert(referralCodes)
+      .values(insertReferralCode)
+      .returning();
+    return referralCode;
+  }
+
+  async getReferralCode(code: string): Promise<ReferralCode | undefined> {
+    const [referralCode] = await db
+      .select()
+      .from(referralCodes)
+      .where(eq(referralCodes.code, code));
+    return referralCode || undefined;
+  }
+
+  async getAllReferralCodes(): Promise<ReferralCode[]> {
+    return await db.select().from(referralCodes);
+  }
+
+  async updateReferralCodeUsage(code: string): Promise<ReferralCode> {
+    const [referralCode] = await db
+      .update(referralCodes)
+      .set({ 
+        usageCount: sql`${referralCodes.usageCount} + 1`
+      })
+      .where(eq(referralCodes.code, code))
+      .returning();
+    return referralCode;
+  }
+
+  async getAdminStats(): Promise<{
+    totalUsers: number;
+    freeUsers: number;
+    proUsers: number;
+    eliteUsers: number;
+    totalReferrals: number;
+    activeReferralCodes: number;
+  }> {
+    const allUsers = await db.select().from(users);
+    const allReferralCodes = await db.select().from(referralCodes);
+    
+    const totalUsers = allUsers.length;
+    const freeUsers = allUsers.filter(u => u.subscriptionTier === 'free').length;
+    const proUsers = allUsers.filter(u => u.subscriptionTier === 'pro').length;
+    const eliteUsers = allUsers.filter(u => u.subscriptionTier === 'elite').length;
+    const totalReferrals = allUsers.filter(u => u.referredBy).length;
+    const activeReferralCodes = allReferralCodes.filter(r => r.isActive).length;
+
+    return {
+      totalUsers,
+      freeUsers,
+      proUsers,
+      eliteUsers,
+      totalReferrals,
+      activeReferralCodes
     };
   }
 }
