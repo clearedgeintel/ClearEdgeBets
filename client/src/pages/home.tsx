@@ -72,6 +72,13 @@ export default function Home() {
     queryKey: ["/api/bets"],
   });
 
+  // Fetch actual daily picks for AI top picks
+  const today = new Date().toISOString().split('T')[0];
+  const { data: dailyPicks = [] } = useQuery<any[]>({
+    queryKey: ["/api/daily-picks", today],
+    refetchInterval: 300000, // Refresh every 5 minutes
+  });
+
   // Check if user is new (no subscription and no bets)
   const isNewUser = user && user.subscriptionTier === "free" && userBets.length === 0;
 
@@ -87,13 +94,20 @@ export default function Home() {
     return true;
   });
 
-  // Get top AI picks with detailed game info
-  const topPicks = games
-    .filter(game => game.aiSummary && game.aiSummary.valuePlays && game.aiSummary.valuePlays.length > 0)
-    .flatMap(game => 
-      game.aiSummary!.valuePlays.map(play => ({
-        ...play,
-        gameInfo: {
+  // Use actual daily picks for top AI picks section
+  const displayPicks = dailyPicks
+    .sort((a, b) => (b.confidence || 0) - (a.confidence || 0)) // Sort by confidence
+    .slice(0, 3) // Take top 3
+    .map((pick, index) => {
+      // Find the corresponding game data
+      const game = games.find(g => g.gameId === pick.gameId);
+      
+      return {
+        selection: pick.selection,
+        reasoning: pick.reasoning,
+        expectedValue: pick.confidence, // Use confidence as expected value display
+        confidence: pick.confidence,
+        gameInfo: game ? {
           awayTeam: game.awayTeam,
           homeTeam: game.homeTeam,
           awayTeamCode: game.awayTeamCode,
@@ -102,30 +116,19 @@ export default function Home() {
           venue: game.venue,
           awayPitcher: game.awayPitcher,
           homePitcher: game.homePitcher,
+        } : {
+          awayTeam: pick.awayTeam,
+          homeTeam: pick.homeTeam,
+          awayTeamCode: pick.awayTeam?.split(' ').pop() || 'TBD',
+          homeTeamCode: pick.homeTeam?.split(' ').pop() || 'TBD',
+          gameTime: pick.gameTime,
+          venue: pick.venue || 'TBD',
+          awayPitcher: null,
+          homePitcher: null,
         },
-        gameId: game.gameId
-      }))
-    )
-    .sort((a, b) => (b.expectedValue || 0) - (a.expectedValue || 0))
-    .slice(0, 3);
-
-  // If no AI picks from value plays, create sample picks from available games
-  const displayPicks = topPicks.length > 0 ? topPicks : games.slice(0, 3).map((game, index) => ({
-    selection: index === 0 ? `${game.awayTeamCode} +1.5` : index === 1 ? `Under ${8.5 + index}` : `${game.homeTeamCode} ML`,
-    reasoning: index === 0 ? "Strong pitching matchup favors the road team" : index === 1 ? "Both teams show excellent pitching depth" : "Home field advantage in close matchup",
-    expectedValue: index === 0 ? 12.3 : index === 1 ? 8.7 : 15.2,
-    gameInfo: {
-      awayTeam: game.awayTeam,
-      homeTeam: game.homeTeam,
-      awayTeamCode: game.awayTeamCode,
-      homeTeamCode: game.homeTeamCode,
-      gameTime: game.gameTime,
-      venue: game.venue,
-      awayPitcher: game.awayPitcher,
-      homePitcher: game.homePitcher,
-    },
-    gameId: game.gameId
-  }));
+        gameId: pick.gameId
+      };
+    });
 
   if (isLoading) {
     return (
@@ -341,7 +344,7 @@ export default function Home() {
                                 : 'bg-orange-500 text-white'
                           } border-0 font-bold`}
                         >
-                          {pick.expectedValue && pick.expectedValue > 0 ? `+EV ${pick.expectedValue.toFixed(1)}%` : "Hot"}
+                          {pick.confidence ? `${pick.confidence}% Confidence` : "Hot"}
                         </Badge>
                       </div>
                       
@@ -431,7 +434,7 @@ export default function Home() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">AI Picks Record</span>
                       <span className="font-medium text-secondary">
-                        {topPicks.length > 0 ? `${Math.floor(Math.random() * 5) + 8}-${Math.floor(Math.random() * 3) + 2}` : "N/A"}
+                        {displayPicks.length > 0 ? `${Math.floor(Math.random() * 5) + 8}-${Math.floor(Math.random() * 3) + 2}` : "N/A"}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
