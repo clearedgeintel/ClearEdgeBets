@@ -108,9 +108,9 @@ export class MemStorage implements IStorage {
     const sampleUsers = [
       {
         id: 1,
-        username: "admin_user",
+        username: "admin",
         email: "admin@clearedgebets.com",
-        password: "hashedpassword",
+        password: "$2b$10$8rZ8qOHx3MQPzYmLzJ3b4u7Y6VlG2K9sR4jK8P9tNwQ5uA7X1cD2e", // "admin123"
         subscriptionTier: "elite",
         subscriptionStatus: "active",
         subscriptionEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),

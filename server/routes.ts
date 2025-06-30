@@ -1536,6 +1536,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create admin user endpoint
+  app.post("/api/admin/create-admin", async (req, res) => {
+    try {
+      const { username, email, password } = req.body;
+
+      if (!username || !email || !password) {
+        return res.status(400).json({ error: "Username, email, and password are required" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ error: "User with this email already exists" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create admin user with Elite tier
+      const adminUser = await storage.createUser({
+        username,
+        email,
+        password: hashedPassword,
+        subscriptionTier: "elite",
+        subscriptionStatus: "active",
+        subscriptionEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+        stripeCustomerId: null,
+        stripeSubscriptionId: null
+      });
+
+      res.json({
+        message: "Admin user created successfully",
+        user: {
+          id: adminUser.id,
+          username: adminUser.username,
+          email: adminUser.email,
+          subscriptionTier: adminUser.subscriptionTier,
+          subscriptionStatus: adminUser.subscriptionStatus
+        }
+      });
+    } catch (error) {
+      console.error("Create admin user error:", error);
+      res.status(500).json({ error: "Failed to create admin user" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
