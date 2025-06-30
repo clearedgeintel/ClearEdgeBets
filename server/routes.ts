@@ -764,6 +764,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper function to calculate bet result
+  function calculateBetResult(bet: any, game: any): string | null {
+    if (!game.awayScore || !game.homeScore) return null;
+    
+    const awayScore = parseInt(game.awayScore);
+    const homeScore = parseInt(game.homeScore);
+    
+    switch (bet.betType) {
+      case 'moneyline':
+        const winner = awayScore > homeScore ? 'away' : 'home';
+        const selectedTeam = bet.selection.toLowerCase();
+        const awayTeam = game.awayTeam?.toLowerCase() || '';
+        const homeTeam = game.homeTeam?.toLowerCase() || '';
+        
+        if (selectedTeam.includes(awayTeam.split(' ').pop()) && winner === 'away') return 'win';
+        if (selectedTeam.includes(homeTeam.split(' ').pop()) && winner === 'home') return 'win';
+        return 'loss';
+        
+      case 'spread':
+        // Parse spread from selection like "Baltimore Orioles -1.5"
+        const spreadMatch = bet.selection.match(/([-+]\d+\.?\d*)/);
+        if (!spreadMatch) return null;
+        
+        const spread = parseFloat(spreadMatch[1]);
+        const selectedTeam2 = bet.selection.toLowerCase();
+        const awayTeam2 = game.awayTeam?.toLowerCase() || '';
+        const homeTeam2 = game.homeTeam?.toLowerCase() || '';
+        
+        let actualSpread;
+        if (selectedTeam2.includes(awayTeam2.split(' ').pop())) {
+          actualSpread = awayScore - homeScore;
+        } else if (selectedTeam2.includes(homeTeam2.split(' ').pop())) {
+          actualSpread = homeScore - awayScore;
+        } else {
+          return null;
+        }
+        
+        if (actualSpread + spread > 0) return 'win';
+        if (actualSpread + spread === 0) return 'push';
+        return 'loss';
+        
+      case 'total':
+        const totalScore = awayScore + homeScore;
+        const totalMatch = bet.selection.match(/(\d+\.?\d*)/);
+        if (!totalMatch) return null;
+        
+        const line = parseFloat(totalMatch[1]);
+        const isOver = bet.selection.toLowerCase().includes('over');
+        
+        if (isOver) {
+          if (totalScore > line) return 'win';
+          if (totalScore === line) return 'push';
+          return 'loss';
+        } else {
+          if (totalScore < line) return 'win';
+          if (totalScore === line) return 'push';
+          return 'loss';
+        }
+        
+      default:
+        return null;
+    }
+  }
+
+  // Endpoint to resolve pending bets based on game results
+  app.post("/api/resolve-bets", async (req, res) => {
+    try {
+      const allBets = await storage.getUserBets();
+      const pendingBets = allBets.filter(bet => bet.status === "pending");
+      
+      let resolvedCount = 0;
+      
+      for (const bet of pendingBets) {
+        // Try to get the game result
+        const game = await storage.getGame(bet.gameId);
+        
+        if (game && game.status === "completed" && game.awayScore !== null && game.homeScore !== null) {
+          // Calculate bet result based on bet type and selection
+          const result = calculateBetResult(bet, game);
+          
+          if (result) {
+            const actualWin = result === "win" ? 
+              parseFloat(bet.potentialWin.toString()) : 
+              result === "push" ? parseFloat(bet.stake.toString()) : 0;
+            
+            await storage.updateBetResult(bet.id, result, actualWin);
+            resolvedCount++;
+          }
+        }
+      }
+      
+      res.json({ message: `Resolved ${resolvedCount} bets` });
+    } catch (error) {
+      console.error("Error resolving bets:", error);
+      res.status(500).json({ error: "Failed to resolve bets" });
+    }
+  });
+
+  // Endpoint to simulate game completion with final scores for testing
+  app.post("/api/simulate-game-results", async (req, res) => {
+    try {
+      const games = await storage.getAllTodaysGames();
+      
+      // Simulate final scores for a few games
+      const gameUpdates = [
+        { gameId: "Baltimore Orioles @ Texas Rangers", awayScore: 8, homeScore: 5 },
+        { gameId: "Philadelphia Phillies @ Atlanta Braves", awayScore: 3, homeScore: 7 },
+        { gameId: "Minnesota Twins @ Detroit Tigers", awayScore: 6, homeScore: 4 },
+        { gameId: "Miami Marlins @ Arizona Diamondbacks", awayScore: 2, homeScore: 9 },
+      ];
+      
+      let updatedCount = 0;
+      
+      for (const update of gameUpdates) {
+        const game = games.find(g => g.gameId === update.gameId);
+        if (game) {
+          await storage.updateGame(game.gameId, {
+            status: "completed",
+            awayScore: update.awayScore,
+            homeScore: update.homeScore
+          });
+          updatedCount++;
+        }
+      }
+      
+      res.json({ 
+        message: `Simulated results for ${updatedCount} games`,
+        games: gameUpdates
+      });
+    } catch (error) {
+      console.error("Error simulating game results:", error);
+      res.status(500).json({ error: "Failed to simulate game results" });
+    }
+  });
+
   // Reset all results for a date to allow re-reconciliation
   app.post("/api/performance/reset-results", async (req, res) => {
     try {
