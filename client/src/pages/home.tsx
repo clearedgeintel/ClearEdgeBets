@@ -317,18 +317,42 @@ export default function Home() {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <main className="lg:col-span-3 space-y-6">
-            {/* Date Header */}
+            {/* Multi-Sport Dashboard Header */}
             <Card>
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                   <div>
-                    <h2 className="text-2xl font-bold text-foreground">ClearEdge MLB Dashboard</h2>
+                    <h2 className="text-2xl font-bold text-foreground">ClearEdge Sports Dashboard</h2>
                     <p className="text-muted-foreground mt-1">
-                      Today's MLB Games • <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                      Multi-Sport Betting Intelligence • <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      <span className="font-medium text-accent">{games.length} games</span> scheduled with AI analysis
+                      AI-powered analysis across Baseball, Football, Hockey & Basketball
                     </p>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary">
+                      Live Updates
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Baseball Section Header */}
+            <Card className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 border-green-200 dark:border-green-800">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">⚾</span>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-foreground">Major League Baseball</h3>
+                      <p className="text-muted-foreground text-sm">
+                        <span className="font-medium text-green-600">{games.length} games</span> today with complete AI analysis
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <Tabs value={filter} onValueChange={setFilter}>
@@ -347,12 +371,12 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            {/* Top AI Picks */}
+            {/* Baseball AI Picks */}
             {displayPicks.length > 0 && (
               <div className="ai-card animate-fade-in-up bg-slate-800 rounded-xl border border-slate-700">
                 <div className="flex items-center space-x-3 mb-4">
                   <Star className="h-5 w-5 text-blue-200" />
-                  <h3 className="text-xl font-bold text-white">Today's Top AI Picks</h3>
+                  <h3 className="text-xl font-bold text-white">Today's Top MLB AI Picks</h3>
                   <div className="badge bg-slate-700 text-slate-200 border-slate-600">
                     Updated {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} ET
                   </div>
@@ -448,14 +472,14 @@ export default function Home() {
               </div>
             )}
 
-            {/* Games List */}
+            {/* Baseball Games List */}
             <div className="space-y-4">
               {filteredGames.length === 0 ? (
                 <Card>
                   <CardContent className="p-8 text-center">
                     <div className="text-gray-500">
                       <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <h3 className="text-lg font-medium mb-2">No games available</h3>
+                      <h3 className="text-lg font-medium mb-2">No MLB games available</h3>
                       <p className="text-sm">
                         {games.length === 0 
                           ? "Check back later for today's MLB games and betting odds."
@@ -470,6 +494,81 @@ export default function Home() {
                   <GameCard key={game.gameId} game={game} />
                 ))
               )}
+            </div>
+
+            {/* Coming Soon - Other Sports */}
+            <div className="space-y-6 mt-12">
+              {/* Football Section */}
+              <Card className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-orange-200 dark:border-orange-800">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">🏈</span>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-foreground">Canadian Football League</h3>
+                        <p className="text-muted-foreground text-sm">CFL games and betting analysis</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <Badge variant="outline" className="border-orange-300 text-orange-700 dark:text-orange-300">
+                        Available Now
+                      </Badge>
+                      <Link href="/cfl/games">
+                        <Button variant="outline" size="sm">
+                          <ArrowRight className="h-4 w-4 mr-2" />
+                          View CFL Games
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Hockey Section */}
+              <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">🏒</span>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-foreground">National Hockey League</h3>
+                        <p className="text-muted-foreground text-sm">NHL games, player props, and live betting</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <Badge variant="secondary" className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                        Coming Soon
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Basketball Section */}
+              <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">🏀</span>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-foreground">National Basketball Association</h3>
+                        <p className="text-muted-foreground text-sm">NBA games, player props, and advanced analytics</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <Badge variant="secondary" className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                        Coming Soon
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </main>
 

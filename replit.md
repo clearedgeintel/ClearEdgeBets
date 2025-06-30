@@ -125,6 +125,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Restructured home page to showcase multi-sport platform capabilities
+  - Changed from single-sport "ClearEdge MLB Dashboard" to "ClearEdge Sports Dashboard"
+  - Added dedicated Baseball section header with game count and filters
+  - Updated AI Picks section to "Today's Top MLB AI Picks" for clarity
+  - Added preview sections for CFL (Available Now), NHL, and NBA (Coming Soon)
+  - Enhanced visual hierarchy with sport-specific color coding and icons
+  - Prepared structure for expanding to additional sports on main dashboard
 - June 30, 2025: Removed development/testing functions from production interface
   - Eliminated "Simulate Games" and "Resolve Bets" buttons from My Bets page
   - These were development utilities inappropriate for production sports betting platform
