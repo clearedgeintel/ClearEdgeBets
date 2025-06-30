@@ -1582,6 +1582,366 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Odds comparison endpoint for Pro tier
+  app.get("/api/odds-comparison", async (req, res) => {
+    try {
+      const { date } = req.query;
+      const targetDate = date ? String(date) : new Date().toISOString().split('T')[0];
+      
+      // Mock odds comparison data for multiple sportsbooks
+      const games = await storage.getAllTodaysGames();
+      
+      const oddsComparison = games.map(game => {
+        const bookmakers = [
+          {
+            name: "DraftKings",
+            moneyline: { away: -115, home: 105 },
+            spread: { away: -110, home: -110, line: 1.5 },
+            total: { over: -115, under: -105, line: 9.5 },
+            bestLines: {
+              moneylineAway: true,  // Best line for away ML
+              moneylineHome: false,
+              spreadAway: false,
+              spreadHome: true,     // Best line for home spread
+              totalOver: false,
+              totalUnder: true      // Best line for under
+            }
+          },
+          {
+            name: "FanDuel",
+            moneyline: { away: -120, home: 110 },
+            spread: { away: -105, home: -115, line: 1.5 },
+            total: { over: -110, under: -110, line: 9.5 },
+            bestLines: {
+              moneylineAway: false,
+              moneylineHome: true,  // Best line for home ML
+              spreadAway: true,     // Best line for away spread
+              spreadHome: false,
+              totalOver: true,      // Best line for over
+              totalUnder: false
+            }
+          },
+          {
+            name: "BetMGM",
+            moneyline: { away: -118, home: 108 },
+            spread: { away: -108, home: -112, line: 1.5 },
+            total: { over: -112, under: -108, line: 9.5 },
+            bestLines: {
+              moneylineAway: false,
+              moneylineHome: false,
+              spreadAway: false,
+              spreadHome: false,
+              totalOver: false,
+              totalUnder: false
+            }
+          },
+          {
+            name: "Caesars",
+            moneyline: { away: -116, home: 106 },
+            spread: { away: -115, home: -105, line: 1.5 },
+            total: { over: -118, under: -102, line: 9.5 },
+            bestLines: {
+              moneylineAway: false,
+              moneylineHome: false,
+              spreadAway: false,
+              spreadHome: false,
+              totalOver: false,
+              totalUnder: false
+            }
+          }
+        ];
+
+        return {
+          gameId: game.gameId,
+          awayTeam: game.awayTeam,
+          homeTeam: game.homeTeam,
+          gameTime: game.gameTime,
+          venue: game.venue,
+          bookmakers
+        };
+      });
+
+      res.json(oddsComparison);
+    } catch (error) {
+      console.error("Odds comparison error:", error);
+      res.status(500).json({ error: "Failed to fetch odds comparison" });
+    }
+  });
+
+  // Prop Finder endpoint for Elite tier
+  app.get("/api/prop-finder", async (req, res) => {
+    try {
+      const { category, propType, minEV, positiveEVOnly } = req.query;
+      
+      // Generate mock prop betting data with realistic player names and statistics
+      const mockProps = [
+        {
+          id: "prop_1",
+          gameId: "LAD@SF",
+          awayTeam: "Los Angeles Dodgers",
+          homeTeam: "San Francisco Giants", 
+          playerName: "Mookie Betts",
+          position: "RF",
+          category: "batting",
+          propType: "hits",
+          line: 1.5,
+          overOdds: -115,
+          underOdds: -105,
+          expectedValue: 12.3,
+          impliedProb: 53.5,
+          projectedProb: 65.8,
+          confidence: 85,
+          lastGames: "2-1-3-1-2",
+          seasonAvg: 1.8,
+          vsOpponent: 2.1,
+          weather: "Clear, 75°F",
+          venue: "Oracle Park",
+          gameTime: "2025-06-30T19:10:00Z"
+        },
+        {
+          id: "prop_2", 
+          gameId: "HOU@SEA",
+          awayTeam: "Houston Astros",
+          homeTeam: "Seattle Mariners",
+          playerName: "Framber Valdez",
+          position: "P",
+          category: "pitching",
+          propType: "strikeouts",
+          line: 6.5,
+          overOdds: 110,
+          underOdds: -130,
+          expectedValue: 8.7,
+          impliedProb: 56.5,
+          projectedProb: 65.2,
+          confidence: 78,
+          lastGames: "7-8-5-9-6",
+          seasonAvg: 7.2,
+          vsOpponent: 8.1,
+          weather: "Partly cloudy, 68°F",
+          venue: "T-Mobile Park",
+          gameTime: "2025-06-30T22:10:00Z"
+        },
+        {
+          id: "prop_3",
+          gameId: "NYY@BOS", 
+          awayTeam: "New York Yankees",
+          homeTeam: "Boston Red Sox",
+          playerName: "Rafael Devers",
+          position: "3B",
+          category: "batting",
+          propType: "home_runs",
+          line: 0.5,
+          overOdds: 265,
+          underOdds: -350,
+          expectedValue: 15.2,
+          impliedProb: 27.4,
+          projectedProb: 42.6,
+          confidence: 72,
+          lastGames: "1-0-1-0-0",
+          seasonAvg: 0.8,
+          vsOpponent: 1.2,
+          weather: "Clear, 72°F",
+          venue: "Fenway Park",
+          gameTime: "2025-06-30T19:10:00Z"
+        },
+        {
+          id: "prop_4",
+          gameId: "ATL@MIA",
+          awayTeam: "Atlanta Braves", 
+          homeTeam: "Miami Marlins",
+          playerName: "Ronald Acuña Jr.",
+          position: "OF",
+          category: "batting",
+          propType: "stolen_bases",
+          line: 0.5,
+          overOdds: 180,
+          underOdds: -220,
+          expectedValue: 6.8,
+          impliedProb: 35.7,
+          projectedProb: 42.5,
+          confidence: 68,
+          lastGames: "1-0-1-1-0",
+          seasonAvg: 0.6,
+          vsOpponent: 0.8,
+          weather: "Humid, 82°F",
+          venue: "loanDepot park", 
+          gameTime: "2025-06-30T19:10:00Z"
+        },
+        {
+          id: "prop_5",
+          gameId: "SD@COL",
+          awayTeam: "San Diego Padres",
+          homeTeam: "Colorado Rockies",
+          playerName: "Manny Machado",
+          position: "3B",
+          category: "batting", 
+          propType: "rbis",
+          line: 1.5,
+          overOdds: 125,
+          underOdds: -145,
+          expectedValue: 4.3,
+          impliedProb: 59.2,
+          projectedProb: 63.5,
+          confidence: 61,
+          lastGames: "2-1-0-3-1",
+          seasonAvg: 1.4,
+          vsOpponent: 1.7,
+          weather: "Clear, 78°F",
+          venue: "Coors Field",
+          gameTime: "2025-06-30T20:40:00Z"
+        }
+      ];
+
+      // Apply filters
+      let filteredProps = mockProps;
+
+      if (category && category !== 'all') {
+        filteredProps = filteredProps.filter(prop => prop.category === category);
+      }
+
+      if (propType && propType !== 'all') {
+        filteredProps = filteredProps.filter(prop => prop.propType === propType);
+      }
+
+      if (positiveEVOnly === 'true') {
+        filteredProps = filteredProps.filter(prop => prop.expectedValue > 0);
+      }
+
+      if (minEV) {
+        filteredProps = filteredProps.filter(prop => prop.expectedValue >= parseFloat(String(minEV)));
+      }
+
+      res.json(filteredProps);
+    } catch (error) {
+      console.error("Prop finder error:", error);
+      res.status(500).json({ error: "Failed to fetch prop bets" });
+    }
+  });
+
+  // Hot Trends endpoint for Elite tier
+  app.get("/api/hot-trends", async (req, res) => {
+    try {
+      const { category } = req.query;
+      
+      // Generate mock hot trends data with realistic MLB patterns
+      const mockTrends = [
+        {
+          id: "trend_1",
+          title: "Rockies Home Overs",
+          description: "Colorado Rockies home games consistently hitting the over at Coors Field",
+          percentage: 73,
+          games: 32,
+          category: "venue",
+          trend: "hot",
+          confidence: 87,
+          roi: 18.5,
+          examples: [
+            "COL vs LAD - Over 11.5 ✓ (Final: 8-6)",
+            "COL vs SD - Over 10.5 ✓ (Final: 9-7)", 
+            "COL vs ARI - Over 12 ✓ (Final: 10-8)"
+          ],
+          lastUpdated: new Date().toISOString()
+        },
+        {
+          id: "trend_2", 
+          title: "Astros Road Favorites",
+          description: "Houston Astros as road favorites covering the run line consistently",
+          percentage: 68,
+          games: 28,
+          category: "team",
+          trend: "hot",
+          confidence: 82,
+          roi: 14.2,
+          examples: [
+            "HOU -1.5 @ SEA ✓ (Won 7-3)",
+            "HOU -1.5 @ LAA ✓ (Won 8-4)",
+            "HOU -1.5 @ TEX ✓ (Won 6-2)"
+          ],
+          lastUpdated: new Date().toISOString()
+        },
+        {
+          id: "trend_3",
+          title: "White Sox Under Streak", 
+          description: "Chicago White Sox games trending heavily under the total",
+          percentage: 71,
+          games: 24,
+          category: "total",
+          trend: "hot",
+          confidence: 79,
+          roi: 12.8,
+          examples: [
+            "CWS vs DET - Under 9 ✓ (Final: 4-2)",
+            "CWS @ KC - Under 8.5 ✓ (Final: 3-1)",
+            "CWS vs MIN - Under 9.5 ✓ (Final: 5-3)"
+          ],
+          lastUpdated: new Date().toISOString()
+        },
+        {
+          id: "trend_4",
+          title: "Rain Game Unders",
+          description: "Games with 30%+ rain probability hitting under at high rate",
+          percentage: 69,
+          games: 18,
+          category: "weather", 
+          trend: "hot",
+          confidence: 75,
+          roi: 11.3,
+          examples: [
+            "NYY @ BOS - Under 9.5 ✓ (Rain delay, Final: 4-1)",
+            "PHI @ WAS - Under 10 ✓ (Drizzle throughout)",
+            "MIL @ CHC - Under 8.5 ✓ (Postponed, makeup under)"
+          ],
+          lastUpdated: new Date().toISOString()
+        },
+        {
+          id: "trend_5",
+          title: "Brewers First 5 Overs",
+          description: "Milwaukee Brewers first 5 innings consistently high scoring",
+          percentage: 64,
+          games: 21,
+          category: "team",
+          trend: "hot", 
+          confidence: 71,
+          roi: 9.7,
+          examples: [
+            "MIL F5 Over 4.5 vs STL ✓ (5-2 after 5)",
+            "MIL F5 Over 5 @ CIN ✓ (6-1 after 5)",
+            "MIL F5 Over 4.5 vs PIT ✓ (4-3 after 5)"
+          ],
+          lastUpdated: new Date().toISOString()
+        },
+        {
+          id: "trend_6",
+          title: "Yankees Losing Streak ATS",
+          description: "New York Yankees failing to cover as favorites during recent slump",
+          percentage: 29,
+          games: 14,
+          category: "streak",
+          trend: "cold",
+          confidence: 68,
+          roi: -8.4,
+          examples: [
+            "NYY -1.5 vs BOS ✗ (Won 5-4)",
+            "NYY -2.5 @ TB ✗ (Lost 6-3)",
+            "NYY -1.5 vs TOR ✗ (Won 4-3)"
+          ],
+          lastUpdated: new Date().toISOString()
+        }
+      ];
+
+      // Apply category filter
+      let filteredTrends = mockTrends;
+      if (category && category !== 'all') {
+        filteredTrends = mockTrends.filter(trend => trend.category === category);
+      }
+
+      res.json(filteredTrends);
+    } catch (error) {
+      console.error("Hot trends error:", error);
+      res.status(500).json({ error: "Failed to fetch hot trends" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

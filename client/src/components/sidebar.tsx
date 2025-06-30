@@ -168,6 +168,17 @@ export default function Sidebar() {
     description: "System analytics and management"
   }] : [];
 
+  // Pro tier features navigation  
+  const proNavigation = user && (hasAccess("pro") || hasAccess("elite")) ? [
+    { 
+      name: "Odds Comparison", 
+      href: "/odds-comparison", 
+      icon: BarChart3,
+      current: location === "/odds-comparison",
+      description: "Compare odds across multiple sportsbooks"
+    }
+  ] : [];
+
   // Elite tier features navigation
   const eliteNavigation = user && hasAccess("elite") ? [
     { 
@@ -176,6 +187,20 @@ export default function Sidebar() {
       icon: BarChart3,
       current: location === "/analytics",
       description: "Advanced betting performance insights"
+    },
+    { 
+      name: "Prop Finder", 
+      href: "/prop-finder", 
+      icon: Target,
+      current: location === "/prop-finder",
+      description: "Find positive EV player props"
+    },
+    { 
+      name: "Hot Trends", 
+      href: "/hot-trends", 
+      icon: TrendingUp,
+      current: location === "/hot-trends",
+      description: "Discover trending betting patterns"
     },
     { 
       name: "Custom Strategies", 
@@ -315,6 +340,43 @@ export default function Sidebar() {
           );
         })}
         
+        {/* Pro Tier Features */}
+        {proNavigation.length > 0 && (
+          <div className="mt-6 pt-4 border-t border-gray-700">
+            <div className="px-3 mb-3">
+              <div className="flex items-center space-x-2">
+                <Crown className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-semibold text-blue-600">Pro Features</span>
+              </div>
+            </div>
+            {proNavigation.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors group ${
+                    item.current
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  }`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <Icon className={`h-4 w-4 ${
+                    item.current ? "text-white" : "text-blue-400 group-hover:text-white"
+                  }`} />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">{item.name}</div>
+                    <div className="text-xs text-gray-400 group-hover:text-gray-300">
+                      {item.description}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
         {/* Elite Tier Features */}
         {eliteNavigation.length > 0 && (
           <div className="mt-6 pt-4 border-t border-gray-700">

@@ -24,6 +24,9 @@ import CustomStrategies from "@/pages/custom-strategies";
 import ExpertConsultation from "@/pages/expert-consultation";
 import EarlyAccess from "@/pages/early-access";
 import WhiteLabel from "@/pages/white-label";
+import OddsComparison from "@/pages/odds-comparison";
+import PropFinder from "@/pages/prop-finder";
+import HotTrends from "@/pages/hot-trends";
 
 function Router() {
   return (
@@ -46,6 +49,9 @@ function Router() {
         <Route path="/consultation" component={ExpertConsultation} />
         <Route path="/early-access" component={EarlyAccess} />
         <Route path="/white-label" component={WhiteLabel} />
+        <Route path="/odds-comparison" component={OddsComparison} />
+        <Route path="/prop-finder" component={PropFinder} />
+        <Route path="/hot-trends" component={HotTrends} />
         <Route path="/auth" component={AuthPage} />
         <Route component={NotFound} />
       </Switch>
