@@ -290,12 +290,12 @@ export default function GameCard({ game }: GameCardProps) {
 
 
         {/* AI Summary */}
-        <div className="border-t border-gray-200 pt-4">
+        <div className="border-t border-border pt-4">
           <Collapsible open={aiSummaryOpen} onOpenChange={setAiSummaryOpen}>
             <CollapsibleTrigger className="flex items-center justify-between w-full text-left">
               <div className="flex items-center space-x-2">
                 <Brain className="h-4 w-4 text-primary" />
-                <span className="font-medium text-gray-900">AI Game Analysis</span>
+                <span className="font-medium text-foreground">AI Game Analysis</span>
                 {!user && (
                   <Badge variant="outline" className="border-orange-200 text-orange-600">
                     <Lock className="h-3 w-3 mr-1" />
@@ -309,9 +309,9 @@ export default function GameCard({ game }: GameCardProps) {
                 )}
               </div>
               {aiSummaryOpen ? (
-                <ChevronUp className="h-4 w-4 text-gray-400" />
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-gray-400" />
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
               )}
             </CollapsibleTrigger>
             
