@@ -154,7 +154,8 @@ export async function fetchMLBScoreboard(year: number, month: number, day: numbe
         gameTime: new Date(event.date).toLocaleTimeString('en-US', {
           hour: 'numeric',
           minute: '2-digit',
-          hour12: true
+          hour12: true,
+          timeZone: 'America/New_York'
         }),
         venue: competition.venue.fullName,
         status: competition.status.type.detail,
@@ -302,7 +303,8 @@ export async function fetchMLBGameDetails(year: number, month: number, day: numb
         gameTime: new Date(event.date).toLocaleTimeString('en-US', {
           hour: 'numeric',
           minute: '2-digit',
-          hour12: true
+          hour12: true,
+          timeZone: 'America/New_York'
         }),
         venue: competition.venue.fullName,
         status: competition.status.type.detail,
