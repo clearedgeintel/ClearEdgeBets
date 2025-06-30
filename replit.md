@@ -125,6 +125,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Fixed green color elements to maintain patriotic red, white, and blue theme
+  - Updated AI picks section CSS gradient from green to blue-to-red patriotic gradient
+  - Changed "Value Play" text from green to blue in AI picks display
+  - Updated win/loss badges to use blue for wins instead of green
+  - Fixed confidence badges to use patriotic colors (blue, yellow, red) instead of green/orange
+  - Maintained consistent patriotic color scheme throughout the platform
 - June 30, 2025: Implemented comprehensive parlay betting functionality in Virtual Sportsbook
   - Added parlay toggle allowing users to combine multiple bets into single high-payout wager
   - Implemented parlay odds calculation by multiplying individual American odds

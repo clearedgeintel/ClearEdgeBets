@@ -89,17 +89,17 @@
 @layer components {
   /* AI Pick Cards with Gradient and Glow */
   .ai-card {
-    background: linear-gradient(135deg, var(--primary) 0%, #1de9b6 100%);
+    background: linear-gradient(135deg, #1E40AF 0%, #DC2626 100%);
     border-radius: 12px;
-    box-shadow: 0 0 10px rgba(0, 230, 118, 0.6);
+    box-shadow: 0 0 10px rgba(30, 64, 175, 0.6);
     padding: 1rem;
-    color: var(--background);
+    color: white;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
   
   .ai-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 0 20px rgba(0, 230, 118, 0.8);
+    box-shadow: 0 0 20px rgba(30, 64, 175, 0.8);
   }
   
   /* Badge Styling */

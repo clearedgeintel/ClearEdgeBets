@@ -389,7 +389,7 @@ export default function Home() {
 
             {/* Baseball AI Picks */}
             {displayPicks.length > 0 && (
-              <div className="ai-card animate-fade-in-up bg-red-600 rounded-xl border border-red-500">
+              <div className="ai-card animate-fade-in-up bg-blue-600 rounded-xl border border-blue-500">
                 <div className="flex items-center space-x-3 mb-4">
                   <Star className="h-5 w-5 text-white" />
                   <h3 className="text-xl font-bold text-white">Today's Top MLB AI Picks</h3>
