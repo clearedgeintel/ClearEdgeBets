@@ -89,6 +89,13 @@ export default function Sidebar() {
           icon: Trophy,
           current: location === "/weekly-leaderboard",
           description: "Compete with other users weekly"
+        },
+        { 
+          name: "Groups", 
+          href: "/groups", 
+          icon: Users,
+          current: location === "/groups",
+          description: "Create groups and invite friends"
         }
       ],
       proItems: [

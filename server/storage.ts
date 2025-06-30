@@ -1,4 +1,4 @@
-import { users, games, odds, aiSummaries, bets, props, dailyPicks, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard } from "@shared/schema";
+import { users, games, odds, aiSummaries, bets, props, dailyPicks, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, gte, lte, desc, lt } from "drizzle-orm";
 
@@ -104,6 +104,36 @@ export interface IStorage {
   updateUserWeeklyStats(userId: number, betResult: 'win' | 'loss', stakeAmount: number, winAmount?: number): Promise<void>;
   resetWeeklyLeaderboard(): Promise<void>;
   getUserWeeklyStats(userId: number): Promise<WeeklyLeaderboard | undefined>;
+
+  // Groups methods
+  createGroup(group: InsertGroup): Promise<Group>;
+  getGroup(groupId: number): Promise<Group | undefined>;
+  getUserGroups(userId: number): Promise<Array<Group & { membership: GroupMembership }>>;
+  getAllGroups(): Promise<Group[]>;
+  updateGroup(groupId: number, updates: Partial<Group>): Promise<Group>;
+  deleteGroup(groupId: number): Promise<void>;
+  generateGroupInviteCode(groupId: number): Promise<string>;
+
+  // Group Membership methods
+  addGroupMember(groupId: number, userId: number, role?: string): Promise<GroupMembership>;
+  removeGroupMember(groupId: number, userId: number): Promise<void>;
+  getGroupMembers(groupId: number): Promise<Array<GroupMembership & { user: User }>>;
+  getUserGroupRole(groupId: number, userId: number): Promise<GroupMembership | undefined>;
+  updateGroupMemberRole(groupId: number, userId: number, role: string): Promise<GroupMembership>;
+
+  // Friend Invitation methods
+  createFriendInvitation(invitation: InsertFriendInvitation): Promise<FriendInvitation>;
+  getFriendInvitation(invitationId: number): Promise<FriendInvitation | undefined>;
+  getFriendInvitationByToken(token: string): Promise<FriendInvitation | undefined>;
+  getUserFriendInvitations(userId: number, status?: string): Promise<FriendInvitation[]>;
+  updateFriendInvitationStatus(invitationId: number, status: string): Promise<FriendInvitation>;
+  acceptFriendInvitation(invitationId: number): Promise<Friendship>;
+
+  // Friendship methods
+  createFriendship(userId1: number, userId2: number): Promise<Friendship>;
+  getUserFriends(userId: number): Promise<Array<Friendship & { friend: User }>>;
+  deleteFriendship(userId1: number, userId2: number): Promise<void>;
+  areFriends(userId1: number, userId2: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -1094,6 +1124,291 @@ export class DatabaseStorage implements IStorage {
         .set({ rank: i + 1 })
         .where(eq(weeklyLeaderboard.id, leaderboardEntries[i].id));
     }
+  }
+
+  // Groups methods
+  async createGroup(insertGroup: InsertGroup): Promise<Group> {
+    const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const [group] = await db
+      .insert(groups)
+      .values({ ...insertGroup, inviteCode })
+      .returning();
+    
+    // Add creator as admin member
+    await this.addGroupMember(group.id, group.createdBy, 'admin');
+    return group;
+  }
+
+  async getGroup(groupId: number): Promise<Group | undefined> {
+    const [group] = await db.select().from(groups).where(eq(groups.id, groupId));
+    return group;
+  }
+
+  async getUserGroups(userId: number): Promise<Array<Group & { membership: GroupMembership }>> {
+    const results = await db
+      .select({
+        group: groups,
+        membership: groupMemberships,
+      })
+      .from(groups)
+      .innerJoin(groupMemberships, eq(groups.id, groupMemberships.groupId))
+      .where(
+        and(
+          eq(groupMemberships.userId, userId),
+          eq(groupMemberships.isActive, true)
+        )
+      );
+
+    return results.map(result => ({
+      ...result.group,
+      membership: result.membership,
+    }));
+  }
+
+  async getAllGroups(): Promise<Group[]> {
+    return await db.select().from(groups);
+  }
+
+  async updateGroup(groupId: number, updates: Partial<Group>): Promise<Group> {
+    const [group] = await db
+      .update(groups)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(groups.id, groupId))
+      .returning();
+    return group;
+  }
+
+  async deleteGroup(groupId: number): Promise<void> {
+    // Remove all memberships first
+    await db.delete(groupMemberships).where(eq(groupMemberships.groupId, groupId));
+    // Delete the group
+    await db.delete(groups).where(eq(groups.id, groupId));
+  }
+
+  async generateGroupInviteCode(groupId: number): Promise<string> {
+    const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    await db
+      .update(groups)
+      .set({ inviteCode, updatedAt: new Date() })
+      .where(eq(groups.id, groupId));
+    return inviteCode;
+  }
+
+  // Group Membership methods
+  async addGroupMember(groupId: number, userId: number, role: string = 'member'): Promise<GroupMembership> {
+    const [membership] = await db
+      .insert(groupMemberships)
+      .values({ groupId, userId, role })
+      .returning();
+    
+    // Update group member count
+    await db
+      .update(groups)
+      .set({ 
+        currentMembers: sql`${groups.currentMembers} + 1`,
+        updatedAt: new Date()
+      })
+      .where(eq(groups.id, groupId));
+    
+    return membership;
+  }
+
+  async removeGroupMember(groupId: number, userId: number): Promise<void> {
+    await db
+      .update(groupMemberships)
+      .set({ isActive: false })
+      .where(
+        and(
+          eq(groupMemberships.groupId, groupId),
+          eq(groupMemberships.userId, userId)
+        )
+      );
+    
+    // Update group member count
+    await db
+      .update(groups)
+      .set({ 
+        currentMembers: sql`${groups.currentMembers} - 1`,
+        updatedAt: new Date()
+      })
+      .where(eq(groups.id, groupId));
+  }
+
+  async getGroupMembers(groupId: number): Promise<Array<GroupMembership & { user: User }>> {
+    const results = await db
+      .select({
+        membership: groupMemberships,
+        user: users,
+      })
+      .from(groupMemberships)
+      .innerJoin(users, eq(groupMemberships.userId, users.id))
+      .where(
+        and(
+          eq(groupMemberships.groupId, groupId),
+          eq(groupMemberships.isActive, true)
+        )
+      );
+
+    return results.map(result => ({
+      ...result.membership,
+      user: result.user,
+    }));
+  }
+
+  async getUserGroupRole(groupId: number, userId: number): Promise<GroupMembership | undefined> {
+    const [membership] = await db
+      .select()
+      .from(groupMemberships)
+      .where(
+        and(
+          eq(groupMemberships.groupId, groupId),
+          eq(groupMemberships.userId, userId),
+          eq(groupMemberships.isActive, true)
+        )
+      );
+    return membership;
+  }
+
+  async updateGroupMemberRole(groupId: number, userId: number, role: string): Promise<GroupMembership> {
+    const [membership] = await db
+      .update(groupMemberships)
+      .set({ role })
+      .where(
+        and(
+          eq(groupMemberships.groupId, groupId),
+          eq(groupMemberships.userId, userId)
+        )
+      )
+      .returning();
+    return membership;
+  }
+
+  // Friend Invitation methods
+  async createFriendInvitation(insertInvitation: InsertFriendInvitation): Promise<FriendInvitation> {
+    const token = Math.random().toString(36).substring(2, 15);
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+
+    const [invitation] = await db
+      .insert(friendInvitations)
+      .values({ 
+        ...insertInvitation, 
+        inviteToken: token,
+        expiresAt 
+      })
+      .returning();
+    return invitation;
+  }
+
+  async getFriendInvitation(invitationId: number): Promise<FriendInvitation | undefined> {
+    const [invitation] = await db
+      .select()
+      .from(friendInvitations)
+      .where(eq(friendInvitations.id, invitationId));
+    return invitation;
+  }
+
+  async getFriendInvitationByToken(token: string): Promise<FriendInvitation | undefined> {
+    const [invitation] = await db
+      .select()
+      .from(friendInvitations)
+      .where(eq(friendInvitations.inviteToken, token));
+    return invitation;
+  }
+
+  async getUserFriendInvitations(userId: number, status?: string): Promise<FriendInvitation[]> {
+    if (status) {
+      return await db
+        .select()
+        .from(friendInvitations)
+        .where(
+          and(
+            eq(friendInvitations.recipientId, userId),
+            eq(friendInvitations.status, status)
+          )
+        );
+    }
+    
+    return await db
+      .select()
+      .from(friendInvitations)
+      .where(eq(friendInvitations.recipientId, userId));
+  }
+
+  async updateFriendInvitationStatus(invitationId: number, status: string): Promise<FriendInvitation> {
+    const [invitation] = await db
+      .update(friendInvitations)
+      .set({ status, respondedAt: new Date() })
+      .where(eq(friendInvitations.id, invitationId))
+      .returning();
+    return invitation;
+  }
+
+  async acceptFriendInvitation(invitationId: number): Promise<Friendship> {
+    const invitation = await this.getFriendInvitation(invitationId);
+    if (!invitation || !invitation.recipientId) {
+      throw new Error('Invalid invitation');
+    }
+
+    // Create friendship
+    const friendship = await this.createFriendship(invitation.senderId, invitation.recipientId);
+    
+    // Update invitation status
+    await this.updateFriendInvitationStatus(invitationId, 'accepted');
+    
+    return friendship;
+  }
+
+  // Friendship methods
+  async createFriendship(userId1: number, userId2: number): Promise<Friendship> {
+    const [friendship] = await db
+      .insert(friendships)
+      .values({ userId1, userId2 })
+      .returning();
+    return friendship;
+  }
+
+  async getUserFriends(userId: number): Promise<Array<Friendship & { friend: User }>> {
+    const results = await db
+      .select({
+        friendship: friendships,
+        friend: users,
+      })
+      .from(friendships)
+      .innerJoin(users, 
+        sql`${users.id} = CASE 
+          WHEN ${friendships.userId1} = ${userId} THEN ${friendships.userId2}
+          ELSE ${friendships.userId1}
+        END`
+      )
+      .where(
+        sql`${friendships.userId1} = ${userId} OR ${friendships.userId2} = ${userId}`
+      );
+
+    return results.map(result => ({
+      ...result.friendship,
+      friend: result.friend,
+    }));
+  }
+
+  async deleteFriendship(userId1: number, userId2: number): Promise<void> {
+    await db
+      .delete(friendships)
+      .where(
+        sql`(${friendships.userId1} = ${userId1} AND ${friendships.userId2} = ${userId2}) 
+            OR (${friendships.userId1} = ${userId2} AND ${friendships.userId2} = ${userId1})`
+      );
+  }
+
+  async areFriends(userId1: number, userId2: number): Promise<boolean> {
+    const [friendship] = await db
+      .select()
+      .from(friendships)
+      .where(
+        sql`(${friendships.userId1} = ${userId1} AND ${friendships.userId2} = ${userId2}) 
+            OR (${friendships.userId1} = ${userId2} AND ${friendships.userId2} = ${userId1})`
+      );
+    return !!friendship;
   }
 }
 

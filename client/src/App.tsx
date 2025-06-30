@@ -35,6 +35,7 @@ import KellyCalculator from "@/pages/kelly-calculator";
 import GameDetail from "@/pages/game-detail";
 import VirtualSportsbook from "@/pages/virtual-sportsbook";
 import WeeklyLeaderboard from "@/pages/weekly-leaderboard";
+import Groups from "@/pages/groups";
 
 function Router() {
   return (
@@ -46,6 +47,7 @@ function Router() {
         <Route path="/my-bets" component={MyBets} />
         <Route path="/virtual-sportsbook" component={VirtualSportsbook} />
         <Route path="/weekly-leaderboard" component={WeeklyLeaderboard} />
+        <Route path="/groups" component={Groups} />
         <Route path="/daily-picks" component={DailyPicks} />
         <Route path="/subscribe" component={Subscribe} />
         <Route path="/admin" component={AdminPanel} />

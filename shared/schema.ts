@@ -278,3 +278,92 @@ export type InsertReferralCode = z.infer<typeof insertReferralCodeSchema>;
 export type ReferralCode = typeof referralCodes.$inferSelect;
 export type InsertWeeklyLeaderboard = z.infer<typeof insertWeeklyLeaderboardSchema>;
 export type WeeklyLeaderboard = typeof weeklyLeaderboard.$inferSelect;
+
+// Groups table for betting groups
+export const groups = pgTable("groups", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  isPrivate: boolean("is_private").default(false),
+  maxMembers: integer("max_members").default(50),
+  currentMembers: integer("current_members").default(1),
+  inviteCode: text("invite_code").unique(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Group memberships table
+export const groupMemberships = pgTable("group_memberships", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").notNull().references(() => groups.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  role: text("role").notNull().default("member"), // admin, moderator, member
+  joinedAt: timestamp("joined_at").defaultNow(),
+  isActive: boolean("is_active").default(true),
+});
+
+// Friend invitations table
+export const friendInvitations = pgTable("friend_invitations", {
+  id: serial("id").primaryKey(),
+  senderId: integer("sender_id").notNull().references(() => users.id),
+  recipientId: integer("recipient_id").references(() => users.id), // null for email invites
+  recipientEmail: text("recipient_email"), // for inviting non-users
+  groupId: integer("group_id").references(() => groups.id), // optional group invitation
+  status: text("status").notNull().default("pending"), // pending, accepted, declined, expired
+  message: text("message"),
+  inviteToken: text("invite_token").unique(),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  respondedAt: timestamp("responded_at"),
+});
+
+// Friendships table for accepted friend relationships
+export const friendships = pgTable("friendships", {
+  id: serial("id").primaryKey(),
+  userId1: integer("user_id_1").notNull().references(() => users.id),
+  userId2: integer("user_id_2").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Group leaderboards (group-specific weekly competition)
+export const groupLeaderboards = pgTable("group_leaderboards", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").notNull().references(() => groups.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  weekStart: timestamp("week_start").notNull(),
+  weekEnd: timestamp("week_end").notNull(),
+  totalBets: integer("total_bets").default(0),
+  wonBets: integer("won_bets").default(0),
+  lostBets: integer("lost_bets").default(0),
+  winRate: text("win_rate").default("0%"),
+  totalStaked: text("total_staked").default("$0"),
+  totalWinnings: text("total_winnings").default("$0"),
+  netProfit: text("net_profit").default("$0"),
+  profitMargin: text("profit_margin").default("0%"),
+  rank: integer("rank").default(1),
+  points: integer("points").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Type exports for groups
+export const insertGroupSchema = createInsertSchema(groups);
+export type InsertGroup = z.infer<typeof insertGroupSchema>;
+export type Group = typeof groups.$inferSelect;
+
+export const insertGroupMembershipSchema = createInsertSchema(groupMemberships);
+export type InsertGroupMembership = z.infer<typeof insertGroupMembershipSchema>;
+export type GroupMembership = typeof groupMemberships.$inferSelect;
+
+export const insertFriendInvitationSchema = createInsertSchema(friendInvitations);
+export type InsertFriendInvitation = z.infer<typeof insertFriendInvitationSchema>;
+export type FriendInvitation = typeof friendInvitations.$inferSelect;
+
+export const insertFriendshipSchema = createInsertSchema(friendships);
+export type InsertFriendship = z.infer<typeof insertFriendshipSchema>;
+export type Friendship = typeof friendships.$inferSelect;
+
+export const insertGroupLeaderboardSchema = createInsertSchema(groupLeaderboards);
+export type InsertGroupLeaderboard = z.infer<typeof insertGroupLeaderboardSchema>;
+export type GroupLeaderboard = typeof groupLeaderboards.$inferSelect;
