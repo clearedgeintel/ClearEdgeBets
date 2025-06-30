@@ -137,15 +137,19 @@ function generateGamesForDate(dateString: string) {
   
   for (let i = 0; i < gameCount; i++) {
     // Pick teams that haven't been used yet
-    let awayTeam, homeTeam;
-    let attempts = 0;
-    do {
-      awayTeam = teams[(seed + i * 3) % teams.length];
-      homeTeam = teams[(seed + i * 5 + 1) % teams.length];
-      attempts++;
-    } while ((usedTeams.has(awayTeam.code) || usedTeams.has(homeTeam.code) || awayTeam.code === homeTeam.code) && attempts < 50);
+    const availableTeams = teams.filter(team => !usedTeams.has(team.code));
     
-    if (attempts >= 50) break; // Avoid infinite loop
+    if (availableTeams.length < 2) {
+      console.log(`Only ${availableTeams.length} teams available, stopping at ${i} games`);
+      break; // Not enough teams for another game
+    }
+    
+    // Use a more deterministic selection to ensure we use all available teams
+    const awayIndex = (seed + i * 7) % availableTeams.length;
+    const homeIndex = (seed + i * 11 + 1) % availableTeams.length;
+    
+    let awayTeam = availableTeams[awayIndex];
+    let homeTeam = availableTeams[homeIndex === awayIndex ? (homeIndex + 1) % availableTeams.length : homeIndex];
     
     usedTeams.add(awayTeam.code);
     usedTeams.add(homeTeam.code);
