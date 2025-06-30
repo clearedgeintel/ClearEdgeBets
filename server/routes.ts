@@ -408,21 +408,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const targetDate = date ? String(date) : new Date().toISOString().split('T')[0];
       
       const cflGames = await fetchCFLGames();
+      console.log(`CFL Route: Got ${cflGames.length} raw CFL games from service`);
       
       // Transform CFL games to match expected format
-      const formattedGames = cflGames.map(game => ({
-        id: Math.floor(Math.random() * 1000000),
-        gameId: game.gameId,
-        awayTeam: game.awayTeam,
-        homeTeam: game.homeTeam,
-        awayTeamCode: game.awayTeamCode,
-        homeTeamCode: game.homeTeamCode,
-        gameTime: game.gameTime,
-        venue: game.venue,
-        status: "scheduled",
-        week: game.week,
-        season: game.season,
-        odds: [
+      const formattedGames = cflGames.map(game => {
+        console.log(`CFL Route: Formatting game ${game.gameId} with time ${game.gameTime}`);
+        return {
+          id: Math.floor(Math.random() * 1000000),
+          gameId: game.gameId,
+          awayTeam: game.awayTeam,
+          homeTeam: game.homeTeam,
+          awayTeamCode: game.awayTeamCode,
+          homeTeamCode: game.homeTeamCode,
+          gameTime: game.gameTime,
+          venue: game.venue,
+          status: "scheduled",
+          week: game.week,
+          season: game.season,
+          odds: [
           game.odds.moneyline && {
             id: Math.floor(Math.random() * 1000000),
             gameId: game.gameId,
@@ -451,13 +454,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             homeSpreadOdds: game.odds.spread.homeOdds
           }
         ].filter(Boolean)
-      }));
+        };
+      });
 
       // Filter games by target date
       const filteredGames = formattedGames.filter(game => {
         const gameDate = new Date(game.gameTime).toISOString().split('T')[0];
+        console.log(`CFL Filtering: Game ${game.gameId} date ${gameDate} vs target ${targetDate} = ${gameDate === targetDate}`);
         return gameDate === targetDate;
       });
+      
+      console.log(`CFL Final: ${filteredGames.length} games after filtering from ${formattedGames.length} total`);
 
       res.json(filteredGames);
     } catch (error) {

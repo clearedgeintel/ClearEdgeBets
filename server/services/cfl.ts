@@ -274,8 +274,9 @@ export async function fetchCFLGames(targetDate?: string): Promise<CFLGame[]> {
     const gameDateStr = gameDate.toISOString().split('T')[0];
     const dayOfWeek = gameDate.getDay();
     
-    // CFL games typically on weekends (Friday/Saturday/Sunday)
-    if (dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) {
+    // For testing: Generate CFL games for more days, with more games on weekends
+    const shouldHaveGames = dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0 || dayOfWeek === 1; // Fri, Sat, Sun, Mon
+    if (shouldHaveGames) {
       const gameCount = dayOfWeek === 6 ? 3 : 2; // More games on Saturday
       
       const matchups = [
