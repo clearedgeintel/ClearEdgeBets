@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon, Trophy, TrendingUp, Target, CheckCircle, XCircle, Minus, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar as CalendarIcon, Trophy, TrendingUp, Target, CheckCircle, XCircle, Minus, RefreshCw, BarChart3, ChevronLeft, ChevronRight } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
