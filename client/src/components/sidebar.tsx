@@ -219,7 +219,7 @@ export default function Sidebar() {
                 onClick={() => sport.setExpanded(!sport.expanded)}
                 className={`w-full flex items-center justify-between px-3 py-3 rounded-lg transition-all duration-200 group ${
                   sport.active
-                    ? "sidebar-active text-white"
+                    ? "bg-gray-800 text-white"
                     : "text-gray-300 hover:bg-gray-800/50 hover:text-white"
                 }`}
               >
