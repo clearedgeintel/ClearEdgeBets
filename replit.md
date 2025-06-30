@@ -125,6 +125,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Added comprehensive top navigation bar with user account management
+  - Created TopNav component with user avatar, tier badges, and account dropdown
+  - Integrated user information display: username, email, subscription tier, and status
+  - Added tier-specific styling: Free (gray), Pro (blue with crown), Elite (purple with lightning)
+  - Included live status indicator, notifications bell, and quick navigation links
+  - Comprehensive dropdown menu with account details, navigation shortcuts, and logout
+  - Sign-in modal for non-authenticated users with prominent upgrade CTA
+  - Fixed Home navigation styling to match other sidebar items (removed green highlight)
+  - Added multiple subscribe links throughout home page hero section
 - June 30, 2025: Complete dark theme implementation with new analytics-focused logo
   - Integrated new ClearEdge Bets logo featuring analytics chart, baseball, and football elements throughout platform
   - Implemented comprehensive dark theme using semantic CSS variables: deep navy blue backgrounds (hsl(220, 30%, 6%))

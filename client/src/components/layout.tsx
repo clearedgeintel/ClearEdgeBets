@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import Sidebar from "./sidebar";
+import TopNav from "./top-nav";
 import Footer from "./footer";
 
 interface LayoutProps {
@@ -13,6 +14,7 @@ export default function Layout({ children }: LayoutProps) {
       
       {/* Main content */}
       <div className="flex-1 flex flex-col">
+        <TopNav />
         <main className="flex-1 overflow-y-auto">
           <div className="lg:pl-0 pl-16">
             {children}

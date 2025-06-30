@@ -7,6 +7,8 @@ interface User {
   email: string;
   subscriptionTier: "free" | "pro" | "elite";
   subscriptionStatus: string | null;
+  createdAt?: Date | string;
+  subscriptionEndDate?: Date | string;
 }
 
 interface AuthContextType {
