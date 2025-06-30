@@ -110,7 +110,7 @@ export class MemStorage implements IStorage {
         id: 1,
         username: "admin",
         email: "admin@clearedgebets.com",
-        password: "$2b$10$8rZ8qOHx3MQPzYmLzJ3b4u7Y6VlG2K9sR4jK8P9tNwQ5uA7X1cD2e", // "admin123"
+        password: "$2b$10$qiCcMv9IkhmlFRXZMuf0YuELoUzEgWsTzkGxPYn3CBGXp131ArRGi", // "admin123"
         subscriptionTier: "elite",
         subscriptionStatus: "active",
         subscriptionEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
