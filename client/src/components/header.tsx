@@ -28,7 +28,7 @@ export default function Header() {
           <div className="flex items-center space-x-8">
             <Link href="/" className="flex items-center space-x-3">
               <img 
-                src="/clearedge-logo-new.png" 
+                src={`/clearedge-logo-final.png?v=${Date.now()}`}
                 alt="ClearEdge Bets" 
                 className="h-12 w-auto"
                 onError={(e) => {
