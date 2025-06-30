@@ -125,6 +125,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Implemented comprehensive tiered feature system based on subscription levels
+  - Created TierRestriction component system for enforcing feature access controls
+  - Built FreeTierHome page with core features: top 3 daily picks, basic game data, AI reasoning
+  - Implemented tiered routing that shows appropriate interface based on user subscription level
+  - Added FreeTierLimit component to enforce usage restrictions (e.g., 3 games max for free users)
+  - Enhanced Daily Picks with Pro tier features: full card access, confidence & EV% display
+  - Created foundation for Elite tier features: prop finder, parlay builder, advanced analytics
+  - All features now properly restricted based on subscription tier (Free/Pro/Elite)
 - June 30, 2025: Enhanced betting interface with comprehensive result displays
   - Added game results to Games page showing final scores when available
   - Enhanced Daily Picks page with WIN/LOSS/PUSH result badges for settled picks

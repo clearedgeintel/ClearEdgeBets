@@ -7,7 +7,7 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { BettingSlipProvider } from "@/contexts/betting-slip-context";
 import Layout from "@/components/layout";
 import NotFound from "@/pages/not-found";
-import Home from "@/pages/home-new";
+import Home from "@/pages/tiered-home";
 import TodaysGames from "@/pages/todays-games";
 import MyBets from "@/pages/my-bets";
 import DailyPicks from "@/pages/daily-picks";
