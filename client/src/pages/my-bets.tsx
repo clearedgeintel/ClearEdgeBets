@@ -155,7 +155,10 @@ export default function MyBets() {
                           <Badge variant="outline">{bet.betType}</Badge>
                           <Badge variant="secondary">{formatOdds(bet.odds)}</Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground mb-2">Game ID: {bet.gameId}</p>
+                        <div className="mb-2">
+                          <p className="text-sm font-medium text-foreground">{bet.gameId.replace('@', ' @ ')}</p>
+                          <p className="text-xs text-muted-foreground">Placed: {new Date(bet.placedAt).toLocaleDateString()}</p>
+                        </div>
                         <div className="flex items-center space-x-4 text-sm">
                           <span className="text-muted-foreground">
                             Stake: <span className="font-medium text-foreground">{formatCurrency(bet.stake)}</span>
@@ -207,7 +210,10 @@ export default function MyBets() {
                           <Badge variant="outline">{bet.betType}</Badge>
                           <Badge variant="secondary">{formatOdds(bet.odds)}</Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground mb-2">Game ID: {bet.gameId}</p>
+                        <div className="mb-2">
+                          <p className="text-sm font-medium text-foreground">{bet.gameId.replace('@', ' @ ')}</p>
+                          <p className="text-xs text-muted-foreground">Placed: {new Date(bet.placedAt).toLocaleDateString()}</p>
+                        </div>
                         <div className="flex items-center space-x-4 text-sm">
                           <span className="text-muted-foreground">
                             Stake: <span className="font-medium text-foreground">{formatCurrency(bet.stake)}</span>

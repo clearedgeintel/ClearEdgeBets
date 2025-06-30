@@ -282,42 +282,7 @@ export default function GameCard({ game }: GameCardProps) {
           </div>
         </div>
 
-        {/* Public Betting Info */}
-        <div className="bg-muted rounded-lg p-3 mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-foreground">Public Betting</span>
-            <span className="text-xs text-muted-foreground">
-              <Users className="h-3 w-3 inline mr-1" />
-              Updated 10 min ago
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <div className="flex justify-between mb-1">
-                <span className="text-muted-foreground">Moneyline</span>
-                <span className="font-medium text-foreground">{getPublicPercentage("moneyline", "away")}% {game.awayTeamCode}</span>
-              </div>
-              <div className="w-full bg-background rounded-full h-2">
-                <div 
-                  className="bg-primary h-2 rounded-full" 
-                  style={{ width: `${getPublicPercentage("moneyline", "away")}%` }}
-                ></div>
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between mb-1">
-                <span className="text-muted-foreground">Total</span>
-                <span className="font-medium text-foreground">{getPublicPercentage("totals", "over")}% Over</span>
-              </div>
-              <div className="w-full bg-background rounded-full h-2">
-                <div 
-                  className="bg-secondary h-2 rounded-full" 
-                  style={{ width: `${getPublicPercentage("totals", "over")}%` }}
-                ></div>
-              </div>
-            </div>
-          </div>
-        </div>
+
 
         {/* AI Summary */}
         <div className="border-t border-gray-200 pt-4">
@@ -346,7 +311,7 @@ export default function GameCard({ game }: GameCardProps) {
             </CollapsibleTrigger>
             
             <CollapsibleContent className="mt-3">
-              {(!user && !game.aiSummary) ? (
+              {!user ? (
                 <div className="relative bg-gray-50 rounded-lg p-4">
                   <div className="blur-sm select-none pointer-events-none">
                     <p className="text-gray-700 text-sm leading-relaxed mb-3">

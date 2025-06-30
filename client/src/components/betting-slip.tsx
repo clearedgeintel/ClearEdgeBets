@@ -114,7 +114,10 @@ export default function BettingSlip() {
                       <X className="h-3 w-3" />
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-2">Game: {bet.gameId}</p>
+                  <div className="mb-2">
+                    <p className="text-xs font-medium text-foreground">{bet.gameId.replace('@', ' @ ')}</p>
+                    <p className="text-xs text-muted-foreground">{bet.betType.charAt(0).toUpperCase() + bet.betType.slice(1)} Bet</p>
+                  </div>
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
                       <label className="text-xs text-muted-foreground w-12">Odds:</label>

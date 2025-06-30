@@ -1238,13 +1238,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Auto-reconcile picks based on mock game results
+  // Auto-reconcile picks using real MLB API data only
   app.post("/api/performance/auto-reconcile", async (req, res) => {
     try {
       const { date, force = false } = req.body;
       let targetDate = date;
       if (!targetDate) {
-        // Use the same date calculation as elsewhere to avoid timezone issues
         const today = new Date();
         const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
         targetDate = localDate.toISOString().split('T')[0];
@@ -1252,43 +1251,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const dailyPicks = await storage.getDailyPicks(targetDate);
       
+      // Only reconcile if we have real MLB game data
+      const mlbGames = await fetchMLBGamesForDate(targetDate);
+      if (mlbGames.length === 0) {
+        return res.json({ 
+          message: `No real MLB games found for ${targetDate} - no reconciliation performed`,
+          reconciledCount: 0 
+        });
+      }
+      
       let reconciledCount = 0;
       
       for (const pick of dailyPicks) {
         // Skip already reconciled picks unless force is true
         if (pick.result !== null && !force) continue;
         
-        // Generate mock results based on pick confidence and type
-        // Higher confidence picks have better chance of winning
-        let result: string;
-        const random = Math.random();
+        // Find corresponding MLB game
+        const mlbGame = mlbGames.find(game => {
+          const gameTeams = pick.gameId.toLowerCase();
+          const awayTeam = game.awayTeam.toLowerCase();
+          const homeTeam = game.homeTeam.toLowerCase();
+          return gameTeams.includes(awayTeam.split(' ')[0]) && gameTeams.includes(homeTeam.split(' ')[0]);
+        });
         
-        // Adjust win probability based on confidence
-        let winProbability = pick.confidence / 100;
-        
-        // Add some realism based on pick type
-        if (pick.pickType === 'total') {
-          winProbability *= 0.85; // Totals are harder to predict
-        } else if (pick.pickType === 'spread') {
-          winProbability *= 0.9; // Spreads are moderately difficult
-        } else if (pick.pickType === 'moneyline') {
-          winProbability *= 0.95; // Moneylines are easier with good analysis
+        if (mlbGame && mlbGame.isCompleted) {
+          const result = getGameResult(mlbGame, pick.pickType, pick.selection);
+          if (result) {
+            await storage.updateDailyPickResult(pick.id, result);
+            reconciledCount++;
+          }
         }
-        
-        if (random < winProbability) {
-          result = 'win';
-        } else if (random < winProbability + 0.05) { // 5% chance of push
-          result = 'push';
-        } else {
-          result = 'loss';
-        }
-        
-        await storage.updateDailyPickResult(pick.id, result);
-        reconciledCount++;
       }
       
       res.json({ 
-        message: `Reconciled ${reconciledCount} picks for ${targetDate}`,
+        message: `Reconciled ${reconciledCount} picks using real MLB data for ${targetDate}`,
         reconciledCount 
       });
     } catch (error) {
