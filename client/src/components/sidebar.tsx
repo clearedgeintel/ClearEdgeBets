@@ -761,6 +761,11 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
     </div>
   );
 
+  // When used as mobile sheet, render only the content
+  if (isMobileSheet) {
+    return <SidebarContent />;
+  }
+
   return (
     <>
       {/* Desktop Sidebar */}
@@ -768,22 +773,6 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
         <div className="w-80">
           <SidebarContent />
         </div>
-      </div>
-
-      {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger asChild>
-            <Button size="sm" variant="outline" className="bg-white shadow-lg border-2 hover:bg-blue-50">
-              <Menu className="h-4 w-4 text-gray-700" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-80 overflow-y-auto">
-            <div className="h-full overflow-y-auto">
-              <SidebarContent />
-            </div>
-          </SheetContent>
-        </Sheet>
       </div>
     </>
   );
