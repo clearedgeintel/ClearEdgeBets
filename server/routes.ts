@@ -2512,6 +2512,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin Dashboard Stats Endpoint
+  app.get("/api/admin/dashboard-stats", async (req, res) => {
+    try {
+      const bets = await storage.getAllBets();
+      const stats = {
+        totalTickets: 1, // Demo data since we're using test endpoint
+        openTickets: 1,
+        resolvedTickets: 0,
+        highPriorityTickets: 0,
+        totalBets: bets.length,
+        activeBets: bets.filter(bet => bet.status === 'pending').length,
+        settledBets: bets.filter(bet => bet.status !== 'pending').length,
+        totalStaked: bets.reduce((sum, bet) => sum + parseFloat(bet.stake || '0'), 0),
+        totalWinnings: bets.filter(bet => bet.status === 'won').reduce((sum, bet) => sum + parseFloat(bet.actualWin || '0'), 0)
+      };
+      res.json(stats);
+    } catch (error) {
+      console.error('Dashboard stats error:', error);
+      res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+    }
+  });
+
   // AI Ticket Management Endpoints (for demonstration and testing)
   app.post("/api/admin/tickets/generate-test", async (req, res) => {
     try {

@@ -13,6 +13,7 @@ import {
   X,
   Crown,
   Star,
+  Ticket as TicketIcon,
   User,
   LogOut,
   LogIn,
@@ -369,13 +370,22 @@ export default function Sidebar() {
     }
   ];
 
-  const adminNavigation = user && hasAccess("elite") ? [{ 
-    name: "Admin Dashboard", 
-    href: "/admin", 
-    icon: Settings,
-    current: location === "/admin",
-    description: "System analytics and management"
-  }] : [];
+  const adminNavigation = user && hasAccess("elite") ? [
+    { 
+      name: "Admin Dashboard", 
+      href: "/admin", 
+      icon: Settings,
+      current: location === "/admin",
+      description: "System analytics and management"
+    },
+    { 
+      name: "Ticket Dashboard", 
+      href: "/admin/ticket-dashboard", 
+      icon: TicketIcon,
+      current: location === "/admin/ticket-dashboard",
+      description: "Manage support tickets and betting slips"
+    }
+  ] : [];
 
 
 

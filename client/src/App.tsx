@@ -14,6 +14,7 @@ import DailyPicks from "@/pages/daily-picks";
 import AdminPanel from "@/pages/admin";
 import AdminUsers from "@/pages/admin-users";
 import AdminReferrals from "@/pages/admin-referrals";
+import TicketDashboard from "@/pages/admin/ticket-dashboard";
 import Subscribe from "@/pages/subscribe";
 import CFLHub from "@/pages/cfl-hub";
 import CFLGames from "@/pages/cfl-games";
@@ -55,6 +56,7 @@ function Router() {
         <Route path="/admin/users" component={AdminUsers} />
         <Route path="/admin/referrals" component={AdminReferrals} />
         <Route path="/admin/stripe-setup" component={StripeSetup} />
+        <Route path="/admin/ticket-dashboard" component={TicketDashboard} />
         <Route path="/cfl" component={CFLHub} />
         <Route path="/cfl/games" component={CFLGames} />
         <Route path="/cfl/picks" component={CFLPicks} />
