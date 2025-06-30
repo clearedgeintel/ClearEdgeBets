@@ -96,6 +96,14 @@ export default function Sidebar() {
           current: location === "/hot-trends",
           description: "Discover trending betting patterns",
           requiresPro: true
+        },
+        { 
+          name: "Kelly Calculator", 
+          href: "/kelly-calculator", 
+          icon: Calculator,
+          current: location === "/kelly-calculator",
+          description: "Optimize bet sizing with mathematical precision",
+          requiresPro: true
         }
       ],
       eliteItems: [

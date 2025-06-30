@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import GameCard from "@/components/game-card";
-import KellyCalculator from "@/components/kelly-calculator";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -476,9 +476,7 @@ export default function Home() {
           {/* Sidebar */}
           <aside className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
-
-
-              <KellyCalculator />
+              {/* Sidebar content can be added here */}
             </div>
           </aside>
         </div>

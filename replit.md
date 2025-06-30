@@ -125,6 +125,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Restructured Kelly Calculator as dedicated Pro feature
+  - Moved Kelly Calculator from home page sidebar to dedicated `/kelly-calculator` page route
+  - Added Kelly Calculator to Pro Features section in sidebar navigation with Calculator icon
+  - Feature now requires Pro subscription (Pro or Elite users) to access
+  - Removed Kelly Calculator component from home page to streamline main interface
+  - Enhanced navigation structure with better feature organization by subscription tier
 - June 30, 2025: Enhanced referral system with commission percentage tracking and payout management
   - Added commission percentage configuration to referral code creation (0-100%)
   - Implemented commission tracking database fields: totalCommissionEarned, totalReferrals, payoutStatus, lastPayoutAt

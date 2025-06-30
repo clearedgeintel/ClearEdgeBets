@@ -31,6 +31,7 @@ import OddsComparison from "@/pages/odds-comparison";
 import PropFinder from "@/pages/prop-finder";
 import HotTrends from "@/pages/hot-trends";
 import AIAssistant from "@/pages/ai-assistant";
+import KellyCalculator from "@/pages/kelly-calculator";
 
 function Router() {
   return (
@@ -60,6 +61,7 @@ function Router() {
         <Route path="/parlay-builder" component={ParlayBuilder} />
         <Route path="/hot-trends" component={HotTrends} />
         <Route path="/ai-assistant" component={AIAssistant} />
+        <Route path="/kelly-calculator" component={KellyCalculator} />
         <Route path="/auth" component={AuthPage} />
         <Route component={NotFound} />
       </Switch>
