@@ -196,7 +196,7 @@ export default function Sidebar() {
           href="/"
           className={`flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors group ${
             location === "/"
-              ? "bg-primary text-white"
+              ? "bg-gray-800 text-white"
               : "text-gray-300 hover:bg-gray-800 hover:text-white"
           }`}
           onClick={() => setMobileOpen(false)}

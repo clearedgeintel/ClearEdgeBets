@@ -259,6 +259,22 @@ export default function Home() {
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
             Your ultimate sports betting intelligence platform powered by advanced AI analytics
           </p>
+          
+          {/* Subscribe Call-to-Action */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+            <Link href="/subscribe">
+              <Button size="lg" className="bg-primary hover:bg-primary/90 text-white px-8 py-3">
+                <Crown className="h-5 w-5 mr-2" />
+                Upgrade to Pro
+              </Button>
+            </Link>
+            <Link href="/subscribe">
+              <Button variant="outline" size="lg" className="px-8 py-3">
+                View All Plans
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Welcome Banner for New Users */}
