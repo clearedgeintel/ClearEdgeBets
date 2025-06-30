@@ -330,9 +330,8 @@ export default function GameCard({ game }: GameCardProps) {
                 <Brain className="h-4 w-4 text-primary" />
                 <span className="font-medium text-foreground">AI Game Analysis</span>
                 {(!user || user?.subscriptionTier === "free") && (
-                  <Badge variant="outline" className="border-orange-200 text-orange-600">
-                    <Lock className="h-3 w-3 mr-1" />
-                    Premium
+                  <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
+                    PRO
                   </Badge>
                 )}
                 {user && game.aiSummary && (
