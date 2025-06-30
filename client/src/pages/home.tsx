@@ -321,7 +321,7 @@ export default function Home() {
 
         {/* Welcome Banner for New Users */}
         {isNewUser && (
-          <div className="bg-gradient-to-r from-blue-600 to-red-600 rounded-xl shadow-lg p-6 mb-6">
+          <div className="bg-blue-600 rounded-xl shadow-lg p-6 mb-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold mb-2 text-white">Welcome, {user?.username}!</h2>
@@ -361,7 +361,7 @@ export default function Home() {
           <main className="space-y-6">
 
             {/* Baseball Section Header */}
-            <Card className="bg-gradient-to-r from-blue-900/80 to-red-900/80 border-blue-500">
+            <Card className="bg-blue-600 border-blue-500">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -389,17 +389,17 @@ export default function Home() {
 
             {/* Baseball AI Picks */}
             {displayPicks.length > 0 && (
-              <div className="ai-card animate-fade-in-up bg-slate-800 rounded-xl border border-slate-700">
+              <div className="ai-card animate-fade-in-up bg-red-600 rounded-xl border border-red-500">
                 <div className="flex items-center space-x-3 mb-4">
-                  <Star className="h-5 w-5 text-blue-200" />
+                  <Star className="h-5 w-5 text-white" />
                   <h3 className="text-xl font-bold text-white">Today's Top MLB AI Picks</h3>
-                  <div className="badge bg-slate-700 text-slate-200 border-slate-600">
+                  <div className="badge bg-white/20 text-white border-white/30">
                     Updated {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} ET
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {displayPicks.map((pick, index) => (
-                    <div key={index} className="bg-slate-700/50 rounded-lg p-4 border border-slate-600 hover:bg-slate-700/70 hover:border-slate-500 transition-all duration-200 shadow-lg">
+                    <div key={index} className="bg-white/10 rounded-lg p-4 border border-white/20 hover:bg-white/15 hover:border-white/30 transition-all duration-200 shadow-lg">
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-sm font-medium text-white">
                           {index === 0 ? "Best Value" : index === 1 ? "Sharp Play" : "AI Special"}
