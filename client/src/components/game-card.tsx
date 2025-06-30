@@ -316,70 +316,29 @@ export default function GameCard({ game }: GameCardProps) {
             </CollapsibleTrigger>
             
             <CollapsibleContent className="mt-3">
-              {!user ? (
-                <div className="relative bg-gray-50 rounded-lg p-4">
-                  <div className="blur-sm select-none pointer-events-none">
-                    <p className="text-gray-700 text-sm leading-relaxed mb-3">
-                      This matchup features strong pitching on both sides with the home starter showing excellent command in recent outings. The visiting team's recent offensive struggles against similar pitching styles suggest value on the under. Key factors include weather conditions favoring pitchers and both bullpens well-rested.
-                    </p>
-                    <div className="pt-3 border-t border-gray-200">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-500">Confidence Level</span>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-16 bg-gray-200 rounded-full h-1.5">
-                            <div className="bg-secondary h-1.5 rounded-full" style={{ width: '78%' }}></div>
-                          </div>
-                          <span className="font-medium text-secondary">78%</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="absolute inset-0 bg-white/90 flex items-center justify-center rounded-lg">
-                    <div className="text-center p-4">
-                      <Lock className="h-8 w-8 text-gray-400 mx-auto mb-3" />
-                      <h3 className="font-semibold text-gray-900 mb-2">Premium AI Analysis</h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Get detailed game breakdowns, value plays, and confidence ratings
-                      </p>
-                      <div className="space-y-2">
-                        <Link href="/subscribe">
-                          <Button className="w-full bg-primary hover:bg-primary/90">
-                            Sign Up for Free
-                          </Button>
-                        </Link>
-                        <Link href="/subscribe">
-                          <Button variant="outline" size="sm" className="w-full">
-                            Learn More
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : game.aiSummary ? (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-gray-700 text-sm leading-relaxed mb-3">
+              {game.aiSummary ? (
+                <div className="bg-muted rounded-lg p-4">
+                  <p className="text-foreground text-sm leading-relaxed mb-3">
                     {game.aiSummary.summary}
                   </p>
-                  <div className="pt-3 border-t border-gray-200">
+                  <div className="pt-3 border-t border-border">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-500">Confidence Level</span>
+                      <span className="text-muted-foreground">Confidence Level</span>
                       <div className="flex items-center space-x-2">
-                        <div className="w-16 bg-gray-200 rounded-full h-1.5">
+                        <div className="w-16 bg-border rounded-full h-1.5">
                           <div 
-                            className="bg-secondary h-1.5 rounded-full" 
+                            className="bg-primary h-1.5 rounded-full" 
                             style={{ width: `${game.aiSummary.confidence}%` }}
                           ></div>
                         </div>
-                        <span className="font-medium text-secondary">{game.aiSummary.confidence}%</span>
+                        <span className="font-medium text-primary">{game.aiSummary.confidence}%</span>
                       </div>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="bg-gray-50 rounded-lg p-4 text-center">
-                  <p className="text-gray-600 text-sm mb-3">
+                <div className="bg-muted rounded-lg p-4 text-center">
+                  <p className="text-muted-foreground text-sm mb-3">
                     AI analysis not yet available for this game.
                   </p>
                   <Button 
@@ -398,14 +357,14 @@ export default function GameCard({ game }: GameCardProps) {
 
 
         {/* Props Section */}
-        <div className="mt-4 pt-4 border-t border-gray-200">
+        <div className="mt-4 pt-4 border-t border-border">
           <Collapsible open={propsOpen} onOpenChange={setPropsOpen}>
             <CollapsibleTrigger className="flex items-center justify-between w-full text-left mb-3">
-              <span className="font-medium text-gray-900">Player Props & Specials</span>
+              <span className="font-medium text-foreground">Player Props & Specials</span>
               {propsOpen ? (
-                <ChevronUp className="h-4 w-4 text-gray-400" />
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
               ) : (
-                <Plus className="h-4 w-4 text-gray-400" />
+                <Plus className="h-4 w-4 text-muted-foreground" />
               )}
             </CollapsibleTrigger>
             
@@ -415,14 +374,14 @@ export default function GameCard({ game }: GameCardProps) {
                   <Button
                     key={index}
                     variant="outline"
-                    className="bg-gray-50 hover:bg-primary hover:text-white p-3 h-auto justify-between"
+                    className="bg-muted hover:bg-primary hover:text-white p-3 h-auto justify-between border-border"
                     onClick={() => handleAddBet("prop", `${prop.player} ${prop.line}`, prop.odds)}
                   >
                     <div className="text-left">
-                      <p className="font-medium text-sm">{prop.player} {prop.line}</p>
-                      <p className="text-xs opacity-75">{prop.description}</p>
+                      <p className="font-medium text-sm text-foreground">{prop.player} {prop.line}</p>
+                      <p className="text-xs text-muted-foreground">{prop.description}</p>
                     </div>
-                    <span className="font-bold">{formatOdds(prop.odds)}</span>
+                    <span className="font-bold text-foreground">{formatOdds(prop.odds)}</span>
                   </Button>
                 ))}
               </div>
