@@ -816,38 +816,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/daily-picks/generate", async (req, res) => {
     try {
-      const games = await storage.getAllTodaysGames();
+      // Use fresh game generation instead of storage to get current games
+      const today = new Date();
+      const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
+      const todayString = localDate.toISOString().split('T')[0];
+      
+      const freshGames = generateGamesForDate(todayString);
       const { generateDailyPicks } = await import("./services/openai.js");
       
-      const gameData = await Promise.all(games.map(async game => {
-        const odds = await storage.getOddsByGameId(game.gameId);
-        const moneylineOdds = odds.find(o => o.market === "h2h");
-        const totalOdds = odds.find(o => o.market === "totals");
-        const spreadOdds = odds.find(o => o.market === "spreads");
-
+      const gameData = freshGames.map(game => {
         return {
           awayTeam: game.awayTeam,
           homeTeam: game.homeTeam,
           gameId: game.gameId,
-          moneylineOdds: moneylineOdds ? { away: moneylineOdds.awayOdds || 0, home: moneylineOdds.homeOdds || 0 } : undefined,
-          total: totalOdds ? { line: parseFloat(totalOdds.total || "0"), overOdds: totalOdds.overOdds || 0, underOdds: totalOdds.underOdds || 0 } : undefined,
-          runLine: spreadOdds ? { 
-            awaySpread: parseFloat(spreadOdds.awaySpread || "0"), 
-            homeSpread: parseFloat(spreadOdds.homeSpread || "0"),
-            awayOdds: spreadOdds.awaySpreadOdds || 0,
-            homeOdds: spreadOdds.homeSpreadOdds || 0
+          moneylineOdds: game.odds.moneyline ? { away: game.odds.moneyline.away, home: game.odds.moneyline.home } : undefined,
+          total: game.odds.total ? { line: game.odds.total.line, overOdds: game.odds.total.over, underOdds: game.odds.total.under } : undefined,
+          runLine: game.odds.spread ? { 
+            awaySpread: game.odds.spread.away, 
+            homeSpread: game.odds.spread.home,
+            awayOdds: game.odds.spread.awayOdds,
+            homeOdds: game.odds.spread.homeOdds
           } : undefined,
           venue: game.venue,
           gameTime: game.gameTime,
-          publicPercentage: moneylineOdds?.publicPercentage ? JSON.parse(JSON.stringify(moneylineOdds.publicPercentage)) : undefined
+          publicPercentage: game.publicPercentage || 50
         };
-      }));
+      });
 
       const aiPicks = await generateDailyPicks(gameData);
-      // Use the same date calculation as the frontend to avoid timezone issues
-      const today = new Date();
-      const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
-      const todayString = localDate.toISOString().split('T')[0];
 
       // Store picks in database
       const storedPicks = await Promise.all(aiPicks.map(pick => 
