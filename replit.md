@@ -125,6 +125,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Fixed odds decimal precision formatting for clean betting display
+  - Resolved long decimal issues in runline and total run odds (e.g., -104.7716 → -104, 9.178925 → 9.5)
+  - Implemented proper rounding for all odds values: totals over/under, spread odds, and line values
+  - Total lines now display in clean 0.5 increments (7.5, 8.0, 8.5, 9.0, 9.5, 10.0)
+  - All betting odds now show as clean integers (-110, -104, +180) for professional sportsbook appearance
+  - Enhanced odds formatting maintains authentic ranges while ensuring clean presentation
 - June 30, 2025: Complete authentic MLB pitcher statistics integration from RapidAPI
   - Successfully integrated real pitcher statistics using MLB scoreboard API embedded data
   - Now displays authentic pitcher records: Matt Waldron (6-6, 3.72 ERA) vs. Zack Wheeler (7-3, 2.45), Erick Fedde (3-7, 4.11) vs. Andrew Heaney (3-7, 4.48)

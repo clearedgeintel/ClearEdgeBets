@@ -18,12 +18,12 @@ function convertMLBGameToGameFormat(mlbGame: any, targetDate: string) {
   const awayOdds = Math.round(baseOdds / homeAdvantage);
   const homeOdds = Math.round(-baseOdds * homeAdvantage);
   
-  const totalLine = 7.5 + Math.random() * 3; // 7.5 to 10.5
-  const overOdds = -110 + Math.random() * 20 - 10; // -120 to -100
-  const underOdds = -110 + Math.random() * 20 - 10;
+  const totalLine = Math.round((7.5 + Math.random() * 3) * 2) / 2; // 7.5 to 10.5 in 0.5 increments
+  const overOdds = Math.round(-110 + Math.random() * 20 - 10); // -120 to -100, rounded
+  const underOdds = Math.round(-110 + Math.random() * 20 - 10);
   
   const runLine = Math.random() > 0.5 ? 1.5 : -1.5;
-  const runLineOdds = runLine > 0 ? 140 + Math.random() * 40 : -160 - Math.random() * 40;
+  const runLineOdds = Math.round(runLine > 0 ? 140 + Math.random() * 40 : -160 - Math.random() * 40);
   
   return {
     gameId: `${targetDate}_${mlbGame.awayTeamCode} @ ${mlbGame.homeTeamCode}`,
@@ -528,9 +528,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             gameId: gameData.gameId,
             bookmaker: "consensus", 
             market: "totals",
-            overOdds: gameData.odds.total.over,
-            underOdds: gameData.odds.total.under,
-            total: gameData.odds.total.line.toString(),
+            overOdds: Math.round(parseFloat(gameData.odds.total.over.toString())),
+            underOdds: Math.round(parseFloat(gameData.odds.total.under.toString())),
+            total: (Math.round(parseFloat(gameData.odds.total.line.toString()) * 2) / 2).toString(),
             publicPercentage: gameData.publicPercentage || 50
           });
         }
@@ -543,8 +543,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             market: "spreads",
             awaySpread: gameData.odds.spread.away.toString(),
             homeSpread: gameData.odds.spread.home.toString(),
-            awaySpreadOdds: gameData.odds.spread.awayOdds,
-            homeSpreadOdds: gameData.odds.spread.homeOdds,
+            awaySpreadOdds: Math.round(parseFloat(gameData.odds.spread.awayOdds.toString())),
+            homeSpreadOdds: Math.round(parseFloat(gameData.odds.spread.homeOdds.toString())),
             publicPercentage: gameData.publicPercentage || 50
           });
         }
