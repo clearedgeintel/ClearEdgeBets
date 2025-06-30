@@ -494,7 +494,7 @@ export default function AdminUsers() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex space-x-2">
+                          <div className="flex flex-col space-y-2">
                             <Select onValueChange={(tier) => handleUpdateTier(user.id, tier, user.isAdmin)}>
                               <SelectTrigger className="w-24 bg-gray-700 border-gray-600 text-white">
                                 <SelectValue placeholder="Change" />
@@ -505,6 +505,16 @@ export default function AdminUsers() {
                                 <SelectItem value="elite">Elite</SelectItem>
                               </SelectContent>
                             </Select>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`admin-${user.id}`}
+                                checked={user.isAdmin}
+                                onCheckedChange={(checked) => handleUpdateTier(user.id, user.subscriptionTier, !!checked)}
+                              />
+                              <Label htmlFor={`admin-${user.id}`} className="text-xs text-gray-400">
+                                Admin
+                              </Label>
+                            </div>
                           </div>
                         </TableCell>
                       </TableRow>

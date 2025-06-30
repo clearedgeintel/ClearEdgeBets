@@ -388,7 +388,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: user.username, 
           email: user.email,
           subscriptionTier: user.subscriptionTier,
-          subscriptionStatus: user.subscriptionStatus
+          subscriptionStatus: user.subscriptionStatus,
+          isAdmin: user.isAdmin || false
         } 
       });
     } catch (error) {
@@ -2267,7 +2268,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin routes for user management and referral codes
   app.get('/api/admin/stats', async (req: Request, res: Response) => {
     try {
-      const user = (req as any).user;
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const user = await storage.getUser(userId);
       if (!user || !user.isAdmin) {
         return res.status(403).json({ error: 'Admin access required' });
       }
@@ -2282,7 +2288,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/admin/users', async (req: Request, res: Response) => {
     try {
-      const user = (req as any).user;
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const user = await storage.getUser(userId);
       if (!user || !user.isAdmin) {
         return res.status(403).json({ error: 'Admin access required' });
       }
@@ -2302,7 +2313,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/admin/users', async (req: Request, res: Response) => {
     try {
-      const user = (req as any).user;
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const user = await storage.getUser(userId);
       if (!user || !user.isAdmin) {
         return res.status(403).json({ error: 'Admin access required' });
       }
@@ -2319,7 +2335,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'User with this email already exists' });
       }
 
-      const bcrypt = require('bcrypt');
       const hashedPassword = await bcrypt.hash(password, 10);
 
       const newUser = await storage.createUser({
@@ -3283,7 +3298,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Test Stripe connection by creating a temporary instance
       try {
-        const Stripe = require('stripe');
         const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
         const account = await stripe.accounts.retrieve();
         
