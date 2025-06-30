@@ -102,28 +102,38 @@ export default function Subscribe() {
     setLoading(tier);
 
     try {
-      // For demo purposes, we'll simulate subscription
-      // In a real app, this would integrate with Stripe
-      const response = await apiRequest("POST", "/api/subscription/create", { tier });
+      const response = await apiRequest("POST", "/api/subscription/change", { tier });
       
       if (response.ok) {
+        const action = getTierAction(user.subscriptionTier, tier);
         toast({
-          title: "Subscription successful!",
-          description: `Welcome to ${tier} tier! Your features are now active.`,
+          title: `Subscription ${action}!`,
+          description: `Successfully ${action}d to ${tier} tier. Your features are now active.`,
         });
         window.location.reload(); // Refresh to update user context
       } else {
-        throw new Error("Subscription failed");
+        throw new Error("Subscription change failed");
       }
     } catch (error) {
       toast({
-        title: "Subscription failed",
-        description: "Unable to process subscription. Please try again.",
+        title: "Subscription change failed",
+        description: "Unable to process subscription change. Please try again.",
         variant: "destructive",
       });
     } finally {
       setLoading(null);
     }
+  };
+
+  // Helper function to determine action type
+  const getTierAction = (currentTier: string, newTier: string) => {
+    const tierLevels = { free: 0, pro: 1, elite: 2 };
+    const currentLevel = tierLevels[currentTier as keyof typeof tierLevels];
+    const newLevel = tierLevels[newTier as keyof typeof tierLevels];
+    
+    if (newLevel > currentLevel) return "upgrade";
+    if (newLevel < currentLevel) return "downgrade";
+    return "change";
   };
 
   return (
@@ -145,7 +155,14 @@ export default function Subscribe() {
           {plans.map((plan) => {
             const Icon = plan.icon;
             const isCurrentPlan = user?.subscriptionTier === plan.tier;
-            const isUpgrade = user && user.subscriptionTier === "free" && plan.tier !== "free";
+            
+            // Determine button action based on tier hierarchy
+            const tierLevels = { free: 0, pro: 1, elite: 2 };
+            const currentLevel = tierLevels[user?.subscriptionTier as keyof typeof tierLevels] ?? 0;
+            const planLevel = tierLevels[plan.tier as keyof typeof tierLevels];
+            
+            const isUpgrade = planLevel > currentLevel;
+            const isDowngrade = planLevel < currentLevel;
             
             return (
               <Card 
@@ -234,7 +251,7 @@ export default function Subscribe() {
                           ? "bg-yellow-600 hover:bg-yellow-700"
                           : ""
                     } ${isCurrentPlan ? "bg-gray-400" : ""}`}
-                    variant={plan.tier === "free" ? "outline" : "default"}
+                    variant={plan.tier === "free" || isDowngrade ? "outline" : "default"}
                   >
                     {loading === plan.tier ? (
                       <div className="flex items-center gap-2">
@@ -243,14 +260,18 @@ export default function Subscribe() {
                       </div>
                     ) : isCurrentPlan ? (
                       "Current Plan"
+                    ) : isUpgrade ? (
+                      `Upgrade to ${plan.name}`
+                    ) : isDowngrade ? (
+                      `Downgrade to ${plan.name}`
                     ) : (
                       plan.buttonText
                     )}
                   </Button>
 
-                  {isUpgrade && (
+                  {(isUpgrade || isDowngrade) && !isCurrentPlan && (
                     <p className="text-center text-sm text-primary mt-2">
-                      Upgrade anytime, cancel anytime
+                      {isUpgrade ? "Upgrade anytime, cancel anytime" : "Downgrade anytime, keep savings"}
                     </p>
                   )}
                 </CardContent>

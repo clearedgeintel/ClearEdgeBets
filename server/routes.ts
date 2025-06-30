@@ -3028,6 +3028,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Subscription tier change endpoint
+  app.post("/api/subscription/change", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { tier } = req.body;
+      if (!tier || !['free', 'pro', 'elite'].includes(tier)) {
+        return res.status(400).json({ error: "Invalid subscription tier" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Update user subscription tier
+      const subscriptionData: any = {
+        tier: tier
+      };
+
+      // Set subscription status and end date based on tier
+      if (tier === 'free') {
+        subscriptionData.status = 'inactive';
+        subscriptionData.endDate = null;
+      } else {
+        subscriptionData.status = 'active';
+        // Set end date to 30 days from now for demo purposes
+        subscriptionData.endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      }
+
+      await storage.updateUserSubscription(userId, subscriptionData);
+
+      // Get updated user data
+      const updatedUser = await storage.getUser(userId);
+
+      res.json({
+        success: true,
+        message: `Successfully changed to ${tier} tier`,
+        user: {
+          id: updatedUser!.id,
+          username: updatedUser!.username,
+          email: updatedUser!.email,
+          subscriptionTier: updatedUser!.subscriptionTier,
+          subscriptionStatus: updatedUser!.subscriptionStatus,
+          subscriptionEndDate: updatedUser!.subscriptionEndDate
+        }
+      });
+    } catch (error) {
+      console.error("Subscription change error:", error);
+      res.status(500).json({ error: "Failed to change subscription tier" });
+    }
+  });
+
   // Admin Stripe configuration endpoints
   app.get('/api/admin/stripe-config', async (req: Request, res: Response) => {
     try {
