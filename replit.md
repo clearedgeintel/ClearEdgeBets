@@ -125,6 +125,10 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Enhanced home page games list with full team names and proper navigation
+  - Updated games list to show full team names instead of 3-letter abbreviations
+  - Arrow button now links to Today's Games page (/todays-games) with complete odds and analysis
+  - Improved user experience with clear team identification and proper navigation flow
 - June 30, 2025: Simplified home page games display with clean list format
   - Replaced detailed game cards with simple list view showing essential information
   - Games now display: time, team matchup, starting pitchers, and venue

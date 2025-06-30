@@ -498,14 +498,14 @@ export default function Home() {
                           </div>
                           <div className="flex items-center space-x-3">
                             <div className="text-right">
-                              <div className="font-medium text-foreground">{game.awayTeamCode}</div>
+                              <div className="font-medium text-foreground">{game.awayTeam}</div>
                               {game.awayPitcher && (
                                 <div className="text-xs text-muted-foreground">{game.awayPitcher}</div>
                               )}
                             </div>
                             <span className="text-muted-foreground">@</span>
                             <div className="text-left">
-                              <div className="font-medium text-foreground">{game.homeTeamCode}</div>
+                              <div className="font-medium text-foreground">{game.homeTeam}</div>
                               {game.homePitcher && (
                                 <div className="text-xs text-muted-foreground">{game.homePitcher}</div>
                               )}
@@ -519,7 +519,7 @@ export default function Home() {
                               <Badge variant="secondary" className="text-xs">Final</Badge>
                             )}
                           </div>
-                          <Link href={`/games/${game.gameId}`}>
+                          <Link href="/todays-games">
                             <Button variant="outline" size="sm">
                               <ArrowRight className="h-4 w-4" />
                             </Button>
