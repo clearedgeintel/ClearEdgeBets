@@ -170,6 +170,13 @@ export default function Sidebar() {
       icon: BarChart3,
       current: location === "/odds-comparison",
       description: "Compare odds across multiple sportsbooks"
+    },
+    { 
+      name: "Hot Trends", 
+      href: "/hot-trends", 
+      icon: TrendingUp,
+      current: location === "/hot-trends",
+      description: "Discover trending betting patterns"
     }
   ] : [];
 
@@ -195,13 +202,6 @@ export default function Sidebar() {
       icon: Target,
       current: location === "/prop-finder",
       description: "Find positive EV player props"
-    },
-    { 
-      name: "Hot Trends", 
-      href: "/hot-trends", 
-      icon: TrendingUp,
-      current: location === "/hot-trends",
-      description: "Discover trending betting patterns"
     },
     { 
       name: "Custom Strategies", 

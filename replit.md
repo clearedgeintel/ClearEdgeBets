@@ -125,6 +125,10 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Moved Hot Trends from Elite tier to Pro tier
+  - Updated sidebar navigation to include Hot Trends in Pro Features section
+  - Removed Hot Trends from Elite Features section
+  - Feature now accessible to both Pro and Elite subscription tiers
 - June 30, 2025: Built AI Betting Assistant for Elite tier users
   - Created comprehensive chat interface with contextual game analysis and betting insights
   - Added 6 pre-configured quick questions: "Which unders have edge today?", "What are your highest confidence picks?", etc.
