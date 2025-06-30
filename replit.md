@@ -125,6 +125,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Simplified home page games display with clean list format
+  - Replaced detailed game cards with simple list view showing essential information
+  - Games now display: time, team matchup, starting pitchers, and venue
+  - Removed odds, AI analysis, and detailed betting options from home page overview
+  - Added arrow button to link to full game details for users wanting complete analysis
+  - Enhanced readability with clean spacing and hover effects
 - June 30, 2025: Restructured home page to showcase multi-sport platform capabilities
   - Changed from single-sport "ClearEdge MLB Dashboard" to "ClearEdge Sports Dashboard"
   - Added dedicated Baseball section header with game count and filters

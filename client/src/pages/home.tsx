@@ -473,28 +473,64 @@ export default function Home() {
             )}
 
             {/* Baseball Games List */}
-            <div className="space-y-4">
-              {filteredGames.length === 0 ? (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <div className="text-gray-500">
-                      <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <h3 className="text-lg font-medium mb-2">No MLB games available</h3>
-                      <p className="text-sm">
-                        {games.length === 0 
-                          ? "Check back later for today's MLB games and betting odds."
-                          : "No games match the selected filter. Try adjusting your filters."
-                        }
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                filteredGames.map(game => (
-                  <GameCard key={game.gameId} game={game} />
-                ))
-              )}
-            </div>
+            <Card>
+              <CardContent className="p-6">
+                <h4 className="text-lg font-semibold mb-4 text-foreground">Today's MLB Games</h4>
+                {filteredGames.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <h3 className="text-lg font-medium mb-2">No MLB games available</h3>
+                    <p className="text-sm">
+                      {games.length === 0 
+                        ? "Check back later for today's MLB games and betting odds."
+                        : "No games match the selected filter. Try adjusting your filters."
+                      }
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredGames.map(game => (
+                      <div key={game.gameId} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center space-x-4">
+                          <div className="text-center">
+                            <div className="text-sm font-medium text-foreground">{game.gameTime}</div>
+                            <div className="text-xs text-muted-foreground">ET</div>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <div className="text-right">
+                              <div className="font-medium text-foreground">{game.awayTeamCode}</div>
+                              {game.awayPitcher && (
+                                <div className="text-xs text-muted-foreground">{game.awayPitcher}</div>
+                              )}
+                            </div>
+                            <span className="text-muted-foreground">@</span>
+                            <div className="text-left">
+                              <div className="font-medium text-foreground">{game.homeTeamCode}</div>
+                              {game.homePitcher && (
+                                <div className="text-xs text-muted-foreground">{game.homePitcher}</div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <div className="text-right">
+                            <div className="text-sm font-medium text-muted-foreground">{game.venue}</div>
+                            {game.status === "completed" && (
+                              <Badge variant="secondary" className="text-xs">Final</Badge>
+                            )}
+                          </div>
+                          <Link href={`/games/${game.gameId}`}>
+                            <Button variant="outline" size="sm">
+                              <ArrowRight className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Coming Soon - Other Sports */}
             <div className="space-y-6 mt-12">
