@@ -247,7 +247,7 @@ export default function AIAssistant() {
 
                   <Button size="lg" className="bg-purple-600 hover:bg-purple-700">
                     <Zap className="h-4 w-4 mr-2" />
-                    Upgrade to Elite - $19.99/month
+                    Upgrade to Elite - $40/month
                   </Button>
                 </div>
               </CardContent>

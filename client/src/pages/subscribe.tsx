@@ -31,7 +31,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: 9.99,
+    price: 25,
     period: "month",
     icon: Star,
     description: "Advanced analytics for serious bettors",
@@ -51,7 +51,7 @@ const plans = [
   },
   {
     name: "Elite",
-    price: 19.99,
+    price: 40,
     period: "month",
     icon: Crown,
     description: "Professional-grade tools & insights",

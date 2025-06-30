@@ -125,6 +125,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Updated subscription pricing structure for better value positioning
+  - Increased Pro tier pricing from $9.99/month to $25/month
+  - Increased Elite tier pricing from $19.99/month to $40/month
+  - Updated pricing displays across all components: subscribe page, admin panel, daily picks, kelly calculator, AI assistant
+  - Updated revenue calculations in admin dashboard and analytics
+  - Enhanced pricing structure to better reflect comprehensive feature set and AI-powered analytics value
 - June 30, 2025: Complete patriotic red, white, and blue rebrand with enhanced game information
   - Implemented patriotic color scheme: blue (#1E40AF), red (#DC2626), white (#F8FAFC) with dark navy base
   - Added card headers with patriotic gradients for "Today's MLB Games" and "Latest MLB News" sections
@@ -401,7 +407,7 @@ Preferred communication style: Simple, everyday language.
   - Complete site-wide rebranding from "MLB Insights" to "ClearEdge Bets"
 - June 29, 2025: Implementing subscription-based betting intelligence platform
   - Added user authentication system with email/password login
-  - Implemented tiered subscription model (Free, Pro $9.99/mo, Elite $19.99/mo)
+  - Implemented tiered subscription model (Free, Pro $25/mo, Elite $40/mo)
   - Integrated Stripe payment processing for subscription management
   - Updated user schema with subscription fields and Stripe customer data
   - Building tiered content access control system

@@ -1317,8 +1317,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Calculate revenue
       const revenue = {
-        monthly: (subscriptions.pro * 9.99) + (subscriptions.elite * 19.99),
-        total: (subscriptions.pro * 9.99 * 6) + (subscriptions.elite * 19.99 * 6), // Assuming 6 months average
+        monthly: (subscriptions.pro * 25) + (subscriptions.elite * 40),
+        total: (subscriptions.pro * 25 * 6) + (subscriptions.elite * 40 * 6), // Assuming 6 months average
       };
 
       // Get AI analysis stats
@@ -1641,7 +1641,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activeSubscriptions = users.filter(u => u.subscriptionStatus === 'active').length;
       
       // Mock revenue calculation (in real app, would fetch from Stripe)
-      const totalRevenue = (proUsers * 9.99) + (eliteUsers * 19.99);
+      const totalRevenue = (proUsers * 25) + (eliteUsers * 40);
 
       const stats = {
         totalUsers,

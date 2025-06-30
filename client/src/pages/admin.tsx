@@ -138,13 +138,13 @@ function UserCard({ user, onUpdateTier }: { user: User; onUpdateTier: (userId: n
                   <SelectItem value="pro">
                     <div className="flex items-center gap-2">
                       <Star className="h-3 w-3 text-blue-500" />
-                      Pro - $9.99/mo - Advanced analytics
+                      Pro - $25/mo - Advanced analytics
                     </div>
                   </SelectItem>
                   <SelectItem value="elite">
                     <div className="flex items-center gap-2">
                       <Crown className="h-3 w-3 text-purple-500" />
-                      Elite - $19.99/mo - All features
+                      Elite - $40/mo - All features
                     </div>
                   </SelectItem>
                 </SelectContent>

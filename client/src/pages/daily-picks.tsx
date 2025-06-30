@@ -59,7 +59,7 @@ export default function DailyPicks() {
               <div className="space-y-4">
                 <div className="flex items-center justify-center space-x-2">
                   <Crown className="w-5 h-5 text-blue-500" />
-                  <span className="font-medium">Upgrade to Pro for $9.99/month</span>
+                  <span className="font-medium">Upgrade to Pro for $25/month</span>
                 </div>
                 <Link href="/subscribe">
                   <Button className="w-full bg-blue-600 hover:bg-blue-700">

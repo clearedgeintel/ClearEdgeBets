@@ -100,7 +100,7 @@ export default function KellyCalculator() {
             <div className="text-center pt-4">
               <Button className="bg-blue-600 hover:bg-blue-700">
                 <a href="/subscribe" className="flex items-center">
-                  Upgrade to Pro - $9.99/month
+                  Upgrade to Pro - $25/month
                 </a>
               </Button>
             </div>
