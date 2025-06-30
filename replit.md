@@ -126,7 +126,8 @@ Preferred communication style: Simple, everyday language.
 ## Changelog
 
 - June 30, 2025: Fixed green color elements to maintain patriotic red, white, and blue theme
-  - Updated AI picks section CSS gradient from green to blue-to-red patriotic gradient
+  - Updated AI picks section CSS from green gradient to solid blue background (#1E40AF)
+  - Removed all gradients per user preference for clean, professional appearance
   - Changed "Value Play" text from green to blue in AI picks display
   - Updated win/loss badges to use blue for wins instead of green
   - Fixed confidence badges to use patriotic colors (blue, yellow, red) instead of green/orange

@@ -89,7 +89,7 @@
 @layer components {
   /* AI Pick Cards with Gradient and Glow */
   .ai-card {
-    background: linear-gradient(135deg, #1E40AF 0%, #DC2626 100%);
+    background: #1E40AF;
     border-radius: 12px;
     box-shadow: 0 0 10px rgba(30, 64, 175, 0.6);
     padding: 1rem;
