@@ -152,7 +152,14 @@ export default function DailyPicks() {
           <div className="max-w-3xl mx-auto text-center">
             <Card className="border-blue-200 bg-blue-50">
               <CardContent className="p-12">
-                <Lock className="h-16 w-16 mx-auto mb-4 text-blue-600" />
+                <div className="mb-6">
+                  <img 
+                    src="/clearedge-logo-final.png" 
+                    alt="ClearEdge Bets" 
+                    className="h-20 w-auto mx-auto mb-4"
+                  />
+                  <Lock className="h-16 w-16 mx-auto mb-4 text-blue-600" />
+                </div>
                 <h1 className="text-3xl font-bold mb-4 text-foreground">Daily Expert Picks</h1>
                 <Badge className="bg-blue-600 text-white mb-6">
                   <Crown className="h-3 w-3 mr-1" />
