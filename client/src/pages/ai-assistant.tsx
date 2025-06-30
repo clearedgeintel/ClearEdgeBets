@@ -16,7 +16,15 @@ import {
   MessageCircle,
   Sparkles,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Users,
+  Layers,
+  TrendingDown,
+  AlertTriangle,
+  Flame,
+  Shield,
+  Heart,
+  Radio
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -70,6 +78,90 @@ const quickQuestions: QuickQuestion[] = [
     question: "Which home underdogs have the best chance?",
     category: "Home Underdogs",
     icon: Sparkles
+  },
+  {
+    id: '7',
+    question: "What are the best parlay combinations today?",
+    category: "Parlays",
+    icon: Layers
+  },
+  {
+    id: '8',
+    question: "Which games have the most public money?",
+    category: "Public Action",
+    icon: Users
+  },
+  {
+    id: '9',
+    question: "Are there any trap games to avoid?",
+    category: "Sharp Spots",
+    icon: AlertTriangle
+  },
+  {
+    id: '10',
+    question: "What first inning props have value?",
+    category: "Props",
+    icon: Clock
+  },
+  {
+    id: '11',
+    question: "Which teams are in must-win situations?",
+    category: "Motivation",
+    icon: Flame
+  },
+  {
+    id: '12',
+    question: "What bullpen mismatches can I exploit?",
+    category: "Bullpens",
+    icon: Shield
+  },
+  {
+    id: '13',
+    question: "Are there any injury-related value plays?",
+    category: "Injuries",
+    icon: Heart
+  },
+  {
+    id: '14',
+    question: "Which totals are moving the wrong way?",
+    category: "Line Movement",
+    icon: TrendingDown
+  },
+  {
+    id: '15',
+    question: "What are the best live betting opportunities?",
+    category: "Live Betting",
+    icon: Radio
+  },
+  {
+    id: '16',
+    question: "Which road favorites are overvalued?",
+    category: "Road Teams",
+    icon: Target
+  },
+  {
+    id: '17',
+    question: "What strikeout props offer the best value?",
+    category: "Player Props",
+    icon: Zap
+  },
+  {
+    id: '18',
+    question: "Are there any revenge game narratives?",
+    category: "Narratives",
+    icon: Flame
+  },
+  {
+    id: '19',
+    question: "Which late-game relievers are vulnerable?",
+    category: "Bullpen Analysis",
+    icon: Clock
+  },
+  {
+    id: '20',
+    question: "What same-game parlay legs correlate well?",
+    category: "SGP Strategy",
+    icon: Layers
   }
 ];
 

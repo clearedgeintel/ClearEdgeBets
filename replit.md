@@ -150,6 +150,13 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- June 30, 2025: Expanded AI assistant question library from 6 to 20 comprehensive betting questions
+  - Added 14 new quick questions covering advanced betting strategies and market intelligence
+  - New categories include: parlays, public action, sharp spots, player props, team motivation
+  - Enhanced bullpen analysis, injury-related plays, line movement, and live betting opportunities
+  - Added situational questions for revenge narratives, trap games, and contrarian opportunities
+  - Each question includes relevant category badges and lucide-react icons for visual organization
+  - Comprehensive coverage of value betting, strategy analysis, and market intelligence topics
 - June 30, 2025: Successfully implemented comprehensive automated daily AI ticket submission system
   - Added tickets database table with full schema for AI-generated support tickets and market insights
   - Created scheduler service using node-cron for automated ticket generation at 9 AM Central Time
