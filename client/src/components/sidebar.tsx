@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { 
-  Sword as Bat, 
+  Diamond as HomePlate, 
   Home, 
   Target, 
   FileText, 
@@ -48,7 +48,7 @@ export default function Sidebar() {
   const sportsNavigation = [
     {
       sport: "Baseball",
-      icon: Bat,
+      icon: HomePlate,
       expanded: baseballExpanded,
       setExpanded: setBaseballExpanded,
       active: location === "/" || location.startsWith("/baseball") || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets",
@@ -217,15 +217,15 @@ export default function Sidebar() {
             <div key={sport.sport} className="space-y-1">
               <button
                 onClick={() => sport.setExpanded(!sport.expanded)}
-                className={`w-full flex items-center justify-between px-3 py-3 rounded-lg transition-colors group ${
+                className={`w-full flex items-center justify-between px-3 py-3 rounded-lg transition-colors duration-200 group ${
                   sport.active
                     ? "bg-gray-800 text-white"
-                    : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                    : "text-gray-300 hover:bg-gray-800/50 hover:text-white"
                 }`}
               >
                 <div className="flex items-center space-x-3">
-                  <SportIcon className={`h-5 w-5 ${sport.active ? "text-white" : "text-gray-400 group-hover:text-white"}`} />
-                  <span className="font-semibold">{sport.sport}</span>
+                  <SportIcon className={`h-5 w-5 transition-colors duration-200 ${sport.active ? "text-white" : "text-gray-400 group-hover:text-white"}`} />
+                  <span className="font-semibold transition-colors duration-200">{sport.sport}</span>
                 </div>
                 {sport.expanded ? 
                   <ChevronDown className="h-4 w-4" /> : 

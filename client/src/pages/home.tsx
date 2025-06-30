@@ -228,14 +228,14 @@ export default function Home() {
 
         {/* Welcome Banner for New Users */}
         {isNewUser && (
-          <div className="bg-accent rounded-xl shadow-lg p-6 text-background mb-6">
+          <div className="bg-accent rounded-xl shadow-lg p-6 mb-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold mb-2 text-background">Welcome, {user?.username}!</h2>
-                <p className="opacity-90 mb-4 text-background">
+                <h2 className="text-2xl font-bold mb-2 text-white">Welcome, {user?.username}!</h2>
+                <p className="opacity-90 mb-4 text-white">
                   You're on the Free plan. Ready to unlock professional betting insights?
                 </p>
-                <div className="flex items-center gap-4 text-sm text-background">
+                <div className="flex items-center gap-4 text-sm text-white">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     <span>Join 2,847+ successful bettors</span>
@@ -248,13 +248,13 @@ export default function Home() {
               </div>
               <div className="flex flex-col gap-2">
                 <Link href="/subscribe">
-                  <Button className="bg-background text-accent hover:bg-muted">
+                  <Button className="bg-white text-accent hover:bg-gray-100">
                     Upgrade Now
                   </Button>
                 </Link>
                 <Button 
                   variant="ghost" 
-                  className="text-background border-background/30 hover:bg-background/10"
+                  className="text-white border-white/30 hover:bg-white/10"
                   onClick={() => setShowOnboarding(true)}
                 >
                   Learn More
@@ -281,7 +281,7 @@ export default function Home() {
                   </div>
                   <div className="flex items-center space-x-3">
                     <Tabs value={filter} onValueChange={setFilter}>
-                      <TabsList className="bg-gray-100">
+                      <TabsList className="bg-muted">
                         <TabsTrigger value="all" className="text-sm">All Games</TabsTrigger>
                         <TabsTrigger value="early" className="text-sm">Early</TabsTrigger>
                         <TabsTrigger value="late" className="text-sm">Late</TabsTrigger>
