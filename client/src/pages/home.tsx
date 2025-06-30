@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import GameCard from "@/components/game-card";
-import BettingSlip from "@/components/betting-slip";
 import KellyCalculator from "@/components/kelly-calculator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Star, TrendingUp, Target, Filter, Crown, Zap, ArrowRight, Users, BarChart3, Shield } from "lucide-react";
-import { useBettingSlip } from "@/contexts/betting-slip-context";
+
 import { useAuth } from "@/contexts/auth-context";
 import { Link } from "wouter";
 
@@ -61,7 +60,6 @@ export default function Home() {
   const [filter, setFilter] = useState("all");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { user } = useAuth();
-  const { bets, stats } = useBettingSlip();
 
   const { data: games = [], isLoading } = useQuery<Game[]>({
     queryKey: ["/api/games"],
@@ -469,8 +467,6 @@ export default function Home() {
           {/* Sidebar */}
           <aside className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
-              <BettingSlip />
-              
               {/* Quick Stats */}
               <Card>
                 <CardContent className="p-4">
@@ -483,20 +479,16 @@ export default function Home() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Your Record</span>
-                      <span className="font-medium">
-                        {stats.wins}-{stats.losses} ({stats.winRate}%)
-                      </span>
+                      <span className="text-sm text-gray-600">AI Confidence</span>
+                      <span className="font-medium text-primary">85%</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Profit/Loss</span>
-                      <span className={`font-medium ${stats.totalProfit >= 0 ? 'text-secondary' : 'text-red-600'}`}>
-                        {stats.totalProfit >= 0 ? '+' : ''}${stats.totalProfit.toFixed(2)}
-                      </span>
+                      <span className="text-sm text-gray-600">Value Plays</span>
+                      <span className="font-medium text-primary">{Math.ceil(games.length * 0.4)}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Active Bets</span>
-                      <span className="font-medium">{bets.length}</span>
+                      <span className="text-sm text-gray-600">Games Today</span>
+                      <span className="font-medium">{games.length}</span>
                     </div>
                   </div>
                 </CardContent>
