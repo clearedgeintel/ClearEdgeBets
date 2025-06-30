@@ -123,8 +123,38 @@ This is a full-stack web application built for providing daily MLB betting insig
 
 Preferred communication style: Simple, everyday language.
 
+## User Creation Solution
+
+If you encounter "admin access required" errors when creating users, you can create your first user account using one of these methods:
+
+1. **Direct Database Creation** (Recommended for first user):
+   - Use the SQL tool to create a user directly in the database
+   - Example: `INSERT INTO users (username, email, password, subscription_tier) VALUES ('yourusername', 'your@email.com', 'hashed_password', 'elite')`
+
+2. **API Endpoint** (for testing):
+   - Use the `/api/create-first-user` endpoint with POST request
+   - Send JSON with username, email, password, and optional tier
+
+3. **Authentication Flow**:
+   - Once first user is created, use the standard login/register flow
+   - Registration endpoint: `/api/auth/register`
+   - Login endpoint: `/api/auth/login`
+
+## Test User Credentials
+
+A test user has been created with Elite tier access:
+- Username: testuser
+- Email: test@example.com
+- Password: password123
+- Tier: elite
+
 ## Changelog
 
+- June 30, 2025: Fixed user creation process and database setup issues
+  - Added `/api/create-first-user` endpoint for initial user setup
+  - Resolved "admin access required" errors in user registration
+  - Created test user with Elite tier access for platform testing
+  - Confirmed database tables are properly created and accessible
 - June 30, 2025: Moved Kelly Calculator from Pro tier to Free tier
   - Relocated Kelly Calculator from Pro Features to Free Features in sidebar navigation
   - Removed subscription access restrictions from Kelly Calculator page

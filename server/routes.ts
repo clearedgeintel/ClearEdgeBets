@@ -267,6 +267,45 @@ function generateGamesForDate(dateString: string) {
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Authentication Routes
+  // Simple test user creation for initial setup
+  app.post("/api/create-first-user", async (req, res) => {
+    try {
+      const { username, email, password, tier } = req.body;
+      
+      if (!username || !email || !password) {
+        return res.status(400).json({ error: "Username, email, and password required" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ error: "User already exists" });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      const user = await storage.createUser({
+        username,
+        email,
+        password: hashedPassword,
+        subscriptionTier: tier || "free"
+      });
+
+      res.json({ 
+        message: "User created successfully",
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          email: user.email,
+          subscriptionTier: user.subscriptionTier 
+        } 
+      });
+    } catch (error) {
+      console.error("User creation error:", error);
+      res.status(500).json({ error: "Failed to create user" });
+    }
+  });
+
   // Test endpoint to create elite user for admin testing
   app.post("/api/test/create-elite-user", async (req, res) => {
     try {
