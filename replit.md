@@ -127,6 +127,7 @@ Preferred communication style: Simple, everyday language.
 
 - June 30, 2025: Updated game card player props section title
   - Renamed "Player Props & Specials" to "AI Player Props" for better brand alignment with AI-powered betting intelligence
+  - Added Brain icon next to "AI Player Props" title to enhance visual appeal and reinforce AI branding
 - June 30, 2025: Enhanced games layout and added odds to AI picks
   - Changed games page layout from three columns to two columns for more space per game card
   - Added betting odds display to Today's Top AI Picks section with prominent yellow badges
