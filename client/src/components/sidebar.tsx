@@ -212,10 +212,12 @@ export default function Sidebar() {
     },
     { 
       name: "Expert Consultation", 
-      href: "/consultation", 
+      href: "#", 
       icon: Users,
-      current: location === "/consultation",
-      description: "1-on-1 sessions with betting experts"
+      current: false,
+      description: "1-on-1 sessions with betting experts",
+      disabled: true,
+      comingSoon: true
     },
     { 
       name: "Early Access", 
@@ -226,10 +228,12 @@ export default function Sidebar() {
     },
     { 
       name: "White Label", 
-      href: "/white-label", 
+      href: "#", 
       icon: Building,
-      current: location === "/white-label",
-      description: "Brand customization options"
+      current: false,
+      description: "Brand customization options",
+      disabled: true,
+      comingSoon: true
     }
   ] : [];
 
@@ -389,6 +393,33 @@ export default function Sidebar() {
             </div>
             {eliteNavigation.map((item) => {
               const Icon = item.icon;
+              const isDisabled = (item as any).disabled;
+              const isComingSoon = (item as any).comingSoon;
+              
+              if (isDisabled) {
+                return (
+                  <div
+                    key={item.name}
+                    className="flex items-center space-x-3 px-3 py-2 rounded-lg opacity-60 cursor-not-allowed"
+                  >
+                    <Icon className="h-4 w-4 text-gray-500" />
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-500">{item.name}</span>
+                        {isComingSoon && (
+                          <Badge variant="secondary" className="text-xs bg-gray-700 text-gray-300">
+                            Coming Soon
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {item.description}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              
               return (
                 <Link
                   key={item.name}

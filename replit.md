@@ -125,6 +125,10 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Marked Expert Consultation and White Label as "Coming Soon" 
+  - Updated Elite Features to show disabled state for Expert Consultation and White Label
+  - Added "Coming Soon" badges and grayed-out styling for unavailable features
+  - Links changed to "#" and made non-clickable with cursor-not-allowed styling
 - June 30, 2025: Moved Hot Trends from Elite tier to Pro tier
   - Updated sidebar navigation to include Hot Trends in Pro Features section
   - Removed Hot Trends from Elite Features section
