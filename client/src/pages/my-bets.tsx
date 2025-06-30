@@ -270,6 +270,11 @@ export default function MyBets() {
               <Card>
                 <CardContent className="p-8 text-center">
                   <div className="text-muted-foreground">
+                    <img 
+                      src="/clearedge-logo-final.png" 
+                      alt="ClearEdge Bets" 
+                      className="h-16 w-auto mx-auto mb-4 opacity-60"
+                    />
                     <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <h3 className="text-lg font-medium mb-2 text-foreground">No pending bets</h3>
                     <p className="text-sm">Your active bets will appear here once placed.</p>
@@ -376,6 +381,11 @@ export default function MyBets() {
               <Card>
                 <CardContent className="p-8 text-center">
                   <div className="text-gray-500">
+                    <img 
+                      src="/clearedge-logo-final.png" 
+                      alt="ClearEdge Bets" 
+                      className="h-16 w-auto mx-auto mb-4 opacity-60"
+                    />
                     <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <h3 className="text-lg font-medium mb-2">No betting history</h3>
                     <p className="text-sm">Your completed bets will appear here.</p>
