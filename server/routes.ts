@@ -156,7 +156,7 @@ function generateGamesForDate(dateString: string) {
     const gameTime = new Date(date);
     gameTime.setHours(hour, minute, 0, 0);
     
-    const gameId = `${awayTeam.code} @ ${homeTeam.code}`;
+    const gameId = `${dateString}_${awayTeam.code} @ ${homeTeam.code}`;
     
     // Get starting pitchers for both teams
     const awayPitchers = (mlbPitchers as any)[awayTeam.code] || ["TBD"];
