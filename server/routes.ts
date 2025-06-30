@@ -407,7 +407,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { date } = req.query;
       const targetDate = date ? String(date) : new Date().toISOString().split('T')[0];
       
-      const cflGames = await fetchCFLGames();
+      const cflGames = await fetchCFLGames(targetDate);
       console.log(`CFL Route: Got ${cflGames.length} raw CFL games from service`);
       
       // Transform CFL games to match expected format
