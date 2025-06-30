@@ -111,29 +111,29 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <main className="lg:col-span-3">
               <div className="space-y-4">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <div key={i} className="bg-card rounded-xl shadow-sm border border-border p-6">
                     <div className="animate-pulse">
-                      <div className="h-6 bg-gray-200 rounded mb-4"></div>
-                      <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                      <div className="h-6 bg-muted rounded mb-4"></div>
+                      <div className="h-4 bg-muted rounded mb-2"></div>
+                      <div className="h-4 bg-muted rounded w-3/4"></div>
                     </div>
                   </div>
                 ))}
               </div>
             </main>
             <aside className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <div className="bg-card rounded-xl shadow-sm border border-border p-4">
                 <div className="animate-pulse">
-                  <div className="h-6 bg-gray-200 rounded mb-4"></div>
+                  <div className="h-6 bg-muted rounded mb-4"></div>
                   <div className="space-y-3">
                     {[...Array(2)].map((_, i) => (
-                      <div key={i} className="h-20 bg-gray-200 rounded"></div>
+                      <div key={i} className="h-20 bg-muted rounded"></div>
                     ))}
                   </div>
                 </div>
@@ -146,7 +146,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Onboarding Modal */}
       <Dialog open={showOnboarding} onOpenChange={setShowOnboarding}>
         <DialogContent className="max-w-2xl">
@@ -209,16 +209,33 @@ export default function Home() {
       </Dialog>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Hero Section with New Logo */}
+        <div className="text-center mb-12">
+          <div className="mb-8">
+            <img 
+              src="/clearedge-logo-new.png" 
+              alt="ClearEdge Bets" 
+              className="h-24 w-auto mx-auto mb-6"
+            />
+          </div>
+          <h1 className="text-4xl font-bold text-foreground mb-4">
+            Welcome to ClearEdge Bets
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
+            Your ultimate sports betting intelligence platform powered by advanced AI analytics
+          </p>
+        </div>
+
         {/* Welcome Banner for New Users */}
         {isNewUser && (
-          <div className="bg-primary rounded-xl shadow-lg p-6 text-white mb-6">
+          <div className="bg-accent rounded-xl shadow-lg p-6 text-background mb-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold mb-2">Welcome, {user?.username}! 👋</h2>
-                <p className="opacity-90 mb-4">
+                <h2 className="text-2xl font-bold mb-2 text-background">Welcome, {user?.username}!</h2>
+                <p className="opacity-90 mb-4 text-background">
                   You're on the Free plan. Ready to unlock professional betting insights?
                 </p>
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-4 text-sm text-background">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     <span>Join 2,847+ successful bettors</span>
@@ -231,13 +248,13 @@ export default function Home() {
               </div>
               <div className="flex flex-col gap-2">
                 <Link href="/subscribe">
-                  <Button className="bg-white text-blue-600 hover:bg-gray-100">
+                  <Button className="bg-background text-accent hover:bg-muted">
                     Upgrade Now
                   </Button>
                 </Link>
                 <Button 
                   variant="ghost" 
-                  className="text-white border-white/30 hover:bg-white/10"
+                  className="text-background border-background/30 hover:bg-background/10"
                   onClick={() => setShowOnboarding(true)}
                 >
                   Learn More
@@ -255,11 +272,11 @@ export default function Home() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                   <div>
                     <h2 className="text-2xl font-bold text-foreground">ClearEdge MLB Dashboard</h2>
-                    <p className="text-gray-600 mt-1">
+                    <p className="text-muted-foreground mt-1">
                       Today's MLB Games • <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     </p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      <span className="font-medium text-primary">{games.length} games</span> scheduled with AI analysis
+                    <p className="text-sm text-muted-foreground mt-1">
+                      <span className="font-medium text-accent">{games.length} games</span> scheduled with AI analysis
                     </p>
                   </div>
                   <div className="flex items-center space-x-3">

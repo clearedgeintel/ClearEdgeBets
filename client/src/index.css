@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  /* Dark theme with ClearEdge navy blue and analytics green accent */
+  /* ClearEdge Bets Dark Theme - Deep Navy Blue with Analytics Green */
   --background: hsl(220, 30%, 6%);
   --foreground: hsl(0, 0%, 95%);
   --muted: hsl(220, 20%, 12%);
@@ -14,11 +14,11 @@
   --card-foreground: hsl(0, 0%, 95%);
   --border: hsl(220, 20%, 18%);
   --input: hsl(220, 20%, 15%);
-  --primary: hsl(138, 75%, 45%);
+  --primary: hsl(220, 60%, 25%);
   --primary-foreground: hsl(0, 0%, 98%);
-  --secondary: hsl(220, 60%, 35%);
+  --secondary: hsl(220, 25%, 15%);
   --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(138, 80%, 50%);
+  --accent: hsl(138, 75%, 45%);
   --accent-foreground: hsl(220, 30%, 10%);
   --destructive: hsl(0, 84.2%, 60.2%);
   --destructive-foreground: hsl(60, 9.1%, 97.8%);

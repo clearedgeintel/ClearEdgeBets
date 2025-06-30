@@ -21,12 +21,9 @@ export default function Header() {
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
               <img 
-                src={`/clearedge-logo-final.png?v=${Date.now()}`}
+                src="/clearedge-logo-new.png"
                 alt="ClearEdge Bets" 
                 className="h-12 w-auto"
-                onError={(e) => {
-                  e.currentTarget.src = "/logo.svg";
-                }}
               />
             </Link>
           </div>

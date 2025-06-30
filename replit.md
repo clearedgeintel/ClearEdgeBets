@@ -125,6 +125,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Complete dark theme implementation with new analytics-focused logo
+  - Integrated new ClearEdge Bets logo featuring analytics chart, baseball, and football elements throughout platform
+  - Implemented comprehensive dark theme using semantic CSS variables: deep navy blue backgrounds (hsl(220, 30%, 6%))
+  - Updated all color schemes to use proper dark theme variables: background, foreground, muted, card, border
+  - Replaced all gray color references with semantic color tokens for consistency
+  - Fixed Baseball navigation section to use neutral gray background instead of green
+  - Updated hero section with prominent new logo display and dark theme styling
+  - Enhanced AI picks section with comprehensive game information recaps including team matchups, venues, and pitching details
+  - Added Home navigation link to sidebar for better user experience
+  - All components now use consistent dark theme styling with no gradients for professional appearance
 - June 30, 2025: Complete visual rebrand with new ClearEdge Bets analytics-focused logo
   - Implemented new professional logo featuring analytics chart, baseball, and football elements
   - Updated color palette to match logo: deep navy blue backgrounds with bright analytics green accents

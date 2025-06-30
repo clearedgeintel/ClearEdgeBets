@@ -170,14 +170,13 @@ export default function Sidebar() {
       {/* Header */}
       <div className="p-6 border-b border-gray-700">
         <div className="flex items-center space-x-3">
-          <Baseball className="h-8 w-8 text-blue-400" />
           <div>
             <img 
-              src="/clearedge-logo.png" 
+              src="/clearedge-logo-new.png" 
               alt="ClearEdge Bets" 
-              className="h-8 w-auto"
+              className="h-12 w-auto"
             />
-            <p className="text-sm text-gray-400">Betting Platform</p>
+            <p className="text-sm text-gray-400 mt-1">Betting Platform</p>
           </div>
         </div>
       </div>
@@ -220,7 +219,7 @@ export default function Sidebar() {
                 onClick={() => sport.setExpanded(!sport.expanded)}
                 className={`w-full flex items-center justify-between px-3 py-3 rounded-lg transition-colors group ${
                   sport.active
-                    ? "bg-primary text-white"
+                    ? "bg-gray-800 text-white border border-gray-700"
                     : "text-gray-300 hover:bg-gray-800 hover:text-white"
                 }`}
               >
