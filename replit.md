@@ -125,6 +125,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Integrated Betting Slip functionality into My Bets page
+  - Moved betting slip from sidebar to dedicated tab in My Bets page
+  - Created tabbed interface: Betting Slip, Pending Bets, and Betting History
+  - Added comprehensive betting slip features: stake adjustment, bet removal, total calculations
+  - Integrated place bets functionality with real-time updates and error handling
+  - Enhanced user experience with centralized betting management in one location
+  - Maintained all existing betting slip features while improving organization
 - June 30, 2025: Expanded sports navigation with Hockey and Basketball, marked Golf as coming soon
   - Added Hockey as new sport category with NHL Games, Daily Picks, and Player Props (all coming soon)
   - Added Basketball as new sport category with NBA Games, Daily Picks, and Player Props (all coming soon)

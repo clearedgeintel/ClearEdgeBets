@@ -1,12 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/header";
+import Footer from "@/components/footer";
 import MobileNav from "@/components/mobile-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { TrendingUp, TrendingDown, BarChart3, Calendar, RefreshCw, Edit2, Check, X, Trash2 } from "lucide-react";
+import { TrendingUp, TrendingDown, BarChart3, Calendar, RefreshCw, Edit2, Check, X, Trash2, ShoppingCart } from "lucide-react";
 import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -27,7 +28,7 @@ interface Bet {
 }
 
 export default function MyBets() {
-  const { bets, stats, clearBet, updateBet } = useBettingSlip();
+  const { bets, stats, clearBet, updateBet, clearAllBets, getTotalStake, getTotalPotentialWin } = useBettingSlip();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [editingBet, setEditingBet] = useState<number | null>(null);
@@ -35,6 +36,31 @@ export default function MyBets() {
   
   const { data: serverBets = [] } = useQuery<Bet[]>({
     queryKey: ["/api/bets"],
+  });
+
+  // Mutation to place bets from betting slip
+  const placeBetsMutation = useMutation({
+    mutationFn: async (betsToPlace: typeof bets) => {
+      const promises = betsToPlace.map(bet => 
+        apiRequest("POST", "/api/bets", bet)
+      );
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      clearAllBets();
+      toast({
+        title: "Bets Placed",
+        description: "Your bets have been successfully placed.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/bets"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to place bets. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   // Mutation to simulate game results for testing
@@ -259,11 +285,123 @@ export default function MyBets() {
         </div>
 
         {/* Bets Tabs */}
-        <Tabs defaultValue="pending" className="space-y-6">
+        <Tabs defaultValue="slip" className="space-y-6">
           <TabsList>
+            <TabsTrigger value="slip">
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Betting Slip ({bets.length})
+            </TabsTrigger>
             <TabsTrigger value="pending">Pending Bets ({pendingBets.length})</TabsTrigger>
             <TabsTrigger value="settled">Betting History ({settledBets.length})</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="slip" className="space-y-4">
+            {bets.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No bets in slip</h3>
+                  <p className="text-muted-foreground">
+                    Add bets from games to build your betting slip
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  {bets.map((bet) => (
+                    <Card key={`${bet.gameId}-${bet.betType}-${bet.selection}`}>
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-foreground">{bet.selection}</h4>
+                            <p className="text-sm text-muted-foreground">{bet.gameId}</p>
+                            <Badge variant="outline" className="mt-1">{bet.betType}</Badge>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-primary">{formatOdds(bet.odds)}</p>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => removeBet(bet)}
+                              className="mt-1 h-6 w-6 p-0"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <label className="text-sm font-medium">Stake:</label>
+                            <Input
+                              type="number"
+                              value={bet.stake || ""}
+                              onChange={(e) => {
+                                const newStake = parseFloat(e.target.value) || 0;
+                                updateBet(bet.gameId, bet.betType, bet.selection, {
+                                  stake: newStake,
+                                  potentialWin: calculatePotentialWin(newStake, bet.odds)
+                                });
+                              }}
+                              placeholder="0.00"
+                              className="flex-1"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                          
+                          {bet.stake > 0 && (
+                            <div className="text-sm text-muted-foreground">
+                              Potential Win: {formatCurrency(bet.potentialWin)}
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Total Stake:</span>
+                        <span className="font-bold">{formatCurrency(getTotalStake())}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Potential Win:</span>
+                        <span className="font-bold text-green-600">{formatCurrency(getTotalPotentialWin())}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Potential Profit:</span>
+                        <span className="font-bold text-green-600">
+                          {formatCurrency(getTotalPotentialWin() - getTotalStake())}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex space-x-2 mt-4">
+                      <Button
+                        onClick={() => placeBetsMutation.mutate(bets)}
+                        disabled={placeBetsMutation.isPending || bets.some(bet => !bet.stake || bet.stake <= 0)}
+                        className="flex-1"
+                      >
+                        {placeBetsMutation.isPending ? "Placing Bets..." : `Place ${bets.length} Bet${bets.length > 1 ? 's' : ''}`}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={clearAllBets}
+                        disabled={placeBetsMutation.isPending}
+                      >
+                        Clear All
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </TabsContent>
 
           <TabsContent value="pending" className="space-y-4">
             {pendingBets.length === 0 ? (
@@ -446,7 +584,7 @@ export default function MyBets() {
         </Tabs>
       </div>
 
-      <MobileNav />
+      <Footer />
     </div>
   );
 }
