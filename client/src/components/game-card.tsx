@@ -329,7 +329,7 @@ export default function GameCard({ game }: GameCardProps) {
               <div className="flex items-center space-x-2">
                 <Brain className="h-4 w-4 text-primary" />
                 <span className="font-medium text-foreground">AI Game Analysis</span>
-                {!user && (
+                {(!user || user?.subscriptionTier === "free") && (
                   <Badge variant="outline" className="border-orange-200 text-orange-600">
                     <Lock className="h-3 w-3 mr-1" />
                     Premium
@@ -349,23 +349,33 @@ export default function GameCard({ game }: GameCardProps) {
             </CollapsibleTrigger>
             
             <CollapsibleContent className="mt-3">
-              {!user ? (
+              {!user || user?.subscriptionTier === "free" ? (
                 <div className="bg-muted rounded-lg p-4 text-center">
                   <Lock className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
                   <h4 className="text-sm font-semibold text-foreground mb-2">Premium Feature</h4>
                   <p className="text-muted-foreground text-sm mb-3">
-                    AI-powered game analysis with confidence scoring and betting insights is available to premium subscribers.
+                    AI-powered game analysis with confidence scoring and betting insights is available to Pro and Elite subscribers.
                   </p>
-                  <Link href="/login">
-                    <Button size="sm" className="mr-2">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link href="/subscribe">
-                    <Button size="sm" variant="outline">
-                      Upgrade
-                    </Button>
-                  </Link>
+                  {!user ? (
+                    <>
+                      <Link href="/login">
+                        <Button size="sm" className="mr-2">
+                          Sign In
+                        </Button>
+                      </Link>
+                      <Link href="/subscribe">
+                        <Button size="sm" variant="outline">
+                          Upgrade
+                        </Button>
+                      </Link>
+                    </>
+                  ) : (
+                    <Link href="/subscribe">
+                      <Button size="sm" className="bg-primary text-white hover:bg-primary/90">
+                        Upgrade to Pro
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               ) : game.aiSummary ? (
                 <div className="bg-muted rounded-lg p-4">

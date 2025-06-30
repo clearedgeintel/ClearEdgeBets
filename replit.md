@@ -125,12 +125,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
-- June 30, 2025: Made Player Props & Specials premium-only
+- June 30, 2025: Made Player Props & Specials and AI Game Analysis premium-only
   - Added access control to Player Props & Specials section in GameCard component
-  - Free tier users now see premium upgrade prompt with lock icon when expanding props section
-  - Added "PRO" badge to section header to clearly indicate premium requirement
-  - Pro and Elite users continue to see full player props and special bets functionality
-  - Upgrade CTA directs users to subscription page for seamless conversion flow
+  - Added access control to AI Game Analysis section for free tier users
+  - Free tier users now see premium upgrade prompts with lock icons for both premium features
+  - Added "PRO" badge to props section and "Premium" badge to AI analysis section headers
+  - Smart upgrade CTAs: unauthenticated users see "Sign In" + "Upgrade", free users see "Upgrade to Pro"
+  - Pro and Elite users continue to see full AI analysis and player props functionality
 - June 30, 2025: Fixed dynamic games count display based on selected date
   - Created generateGamesForDate function with day-of-week specific game counts (Monday: 2-7, Tuesday-Friday: 8-13, Saturday: 12-19, Sunday: 10-17 games)
   - Modified /api/games endpoint to accept date parameter and generate consistent date-specific mock data
