@@ -125,6 +125,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Streamlined home page layout with prominent MLB news placement
+  - Removed duplicate MLB news from sidebar and moved to main content area for better visibility
+  - Eliminated platform analytics section and games filter tabs (All/Early/Late) for cleaner design
+  - Converted to full-width layout by removing empty sidebar completely
+  - Replaced filter functionality with simple "View All Games" button linking to complete games page
+  - MLB news now displays 6 latest articles in responsive grid with headlines, summaries, and external links
 - June 30, 2025: Enhanced home page games list with full team names and proper navigation
   - Updated games list to show full team names instead of 3-letter abbreviations
   - Arrow button now links to Today's Games page (/todays-games) with complete odds and analysis

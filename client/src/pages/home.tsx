@@ -333,8 +333,8 @@ export default function Home() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <main className="lg:col-span-3 space-y-6">
+        <div className="grid grid-cols-1 gap-6">
+          <main className="space-y-6">
 
             {/* Baseball Section Header */}
             <Card className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 border-green-200 dark:border-green-800">
@@ -671,105 +671,6 @@ export default function Home() {
               </Card>
             </div>
           </main>
-
-          {/* Sidebar */}
-          <aside className="lg:col-span-1">
-            <div className="sticky top-24 space-y-6">
-              {/* MLB News Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Newspaper className="h-5 w-5 mr-2" />
-                    Latest MLB News
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {newsLoading ? (
-                    <div className="space-y-3">
-                      {[...Array(3)].map((_, i) => (
-                        <div key={i} className="space-y-2">
-                          <div className="h-4 bg-muted rounded animate-pulse"></div>
-                          <div className="h-3 bg-muted rounded animate-pulse w-3/4"></div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : mlbNews.length > 0 ? (
-                    mlbNews.slice(0, 5).map((article) => (
-                      <div key={article.id} className="space-y-2 pb-3 border-b border-muted last:border-b-0">
-                        <h4 className="text-sm font-medium leading-tight line-clamp-2">
-                          {article.title}
-                        </h4>
-                        {article.summary && (
-                          <p className="text-xs text-muted-foreground line-clamp-2">
-                            {article.summary}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <div className="flex items-center">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {new Date(article.publishedAt).toLocaleTimeString([], { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
-                            })}
-                          </div>
-                          {article.url !== '#' && (
-                            <a 
-                              href={article.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="flex items-center hover:text-primary"
-                            >
-                              <ExternalLink className="h-3 w-3 ml-1" />
-                            </a>
-                          )}
-                        </div>
-                        {article.category && (
-                          <Badge variant="outline" className="text-xs">
-                            {article.category}
-                          </Badge>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-4">
-                      <Newspaper className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground">No news available</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Platform Stats */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <BarChart3 className="h-5 w-5 mr-2" />
-                    Platform Analytics
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Games Analyzed</span>
-                      <span className="text-sm font-medium">{filteredGames.length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">AI Confidence</span>
-                      <span className="text-sm font-medium">87%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Value Plays</span>
-                      <span className="text-sm font-medium">
-                        {games.reduce((total, game) => 
-                          total + (game.aiSummary?.valuePlays?.length || 0), 0
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </aside>
         </div>
       </div>
     </div>
