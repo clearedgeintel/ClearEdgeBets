@@ -15,10 +15,12 @@ import { Bell, User, Settings, LogOut, Crown, Zap, Shield, ChevronDown } from "l
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
 import LoginForm from "@/components/auth/login-form";
+import RegisterForm from "@/components/auth/register-form";
 
 export default function TopNav() {
   const { user, logout } = useAuth();
-  const [showLogin, setShowLogin] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   const getTierBadge = (tier: string) => {
     switch (tier) {
@@ -177,26 +179,50 @@ export default function TopNav() {
               </DropdownMenu>
             ) : (
               <div className="flex items-center space-x-2">
-                <Dialog open={showLogin} onOpenChange={setShowLogin}>
+                <Dialog open={showAuth} onOpenChange={setShowAuth}>
                   <DialogTrigger asChild>
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => {
+                        setAuthMode('login');
+                        setShowAuth(true);
+                      }}
+                    >
                       Sign In
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Welcome Back</DialogTitle>
+                      <DialogTitle>
+                        {authMode === 'login' ? 'Welcome Back' : 'Join ClearEdge Bets'}
+                      </DialogTitle>
                     </DialogHeader>
-                    <LoginForm onSuccess={() => setShowLogin(false)} />
+                    {authMode === 'login' ? (
+                      <LoginForm 
+                        onSuccess={() => setShowAuth(false)} 
+                        onToggleMode={() => setAuthMode('register')}
+                      />
+                    ) : (
+                      <RegisterForm 
+                        onSuccess={() => setShowAuth(false)} 
+                        onToggleMode={() => setAuthMode('login')}
+                      />
+                    )}
                   </DialogContent>
                 </Dialog>
                 
-                <Link href="/subscribe">
-                  <Button size="sm" className="bg-primary hover:bg-primary/90">
-                    <Crown className="h-4 w-4 mr-2" />
-                    Get Pro
-                  </Button>
-                </Link>
+                <Button 
+                  size="sm" 
+                  className="bg-primary hover:bg-primary/90"
+                  onClick={() => {
+                    setAuthMode('register');
+                    setShowAuth(true);
+                  }}
+                >
+                  <Crown className="h-4 w-4 mr-2" />
+                  Get Pro
+                </Button>
               </div>
             )}
           </div>
