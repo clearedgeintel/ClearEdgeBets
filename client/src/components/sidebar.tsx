@@ -54,7 +54,7 @@ export default function Sidebar() {
       icon: HomePlate,
       expanded: baseballExpanded,
       setExpanded: setBaseballExpanded,
-      active: location === "/" || location.startsWith("/baseball") || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets",
+      active: location === "/" || location.startsWith("/baseball") || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets" || location === "/performance-tracking",
       subItems: [
         { 
           name: "Games", 
@@ -77,13 +77,6 @@ export default function Sidebar() {
           icon: History,
           current: location === "/my-bets",
           description: "Your MLB betting history"
-        },
-        { 
-          name: "Performance", 
-          href: "/performance", 
-          icon: BarChart3,
-          current: location === "/performance",
-          description: "Daily picks tracking and results"
         }
       ]
     },

@@ -222,14 +222,22 @@ export default function DailyPicks() {
             </p>
           </div>
         </div>
-        <Button 
-          onClick={() => generatePicksMutation.mutate()}
-          disabled={generatePicksMutation.isPending}
-          className="flex items-center gap-2"
-        >
-          <Sparkles className="h-4 w-4" />
-          {generatePicksMutation.isPending ? "Generating..." : "Generate New Picks"}
-        </Button>
+        <div className="flex items-center gap-3 mb-6">
+          <Button 
+            onClick={() => generatePicksMutation.mutate()}
+            disabled={generatePicksMutation.isPending}
+            className="flex items-center gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            {generatePicksMutation.isPending ? "Generating..." : "Generate New Picks"}
+          </Button>
+          <Link href="/performance-tracking">
+            <Button variant="outline" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Historical Performance
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {picks && Array.isArray(picks) && picks.length === 0 && (
