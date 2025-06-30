@@ -102,6 +102,15 @@ export default function Home() {
       // Find the corresponding game data
       const game = games.find(g => g.gameId === pick.gameId);
       
+      // Extract team info from gameId format "Team A @ Team B"
+      const gameIdParts = pick.gameId.split(' @ ');
+      const awayTeamFull = gameIdParts[0] || '';
+      const homeTeamFull = gameIdParts[1] || '';
+      
+      // Create team codes by taking last word of team name
+      const awayTeamCode = awayTeamFull.split(' ').pop() || 'TBD';
+      const homeTeamCode = homeTeamFull.split(' ').pop() || 'TBD';
+      
       return {
         selection: pick.selection,
         reasoning: pick.reasoning,
@@ -117,12 +126,12 @@ export default function Home() {
           awayPitcher: game.awayPitcher,
           homePitcher: game.homePitcher,
         } : {
-          awayTeam: pick.awayTeam,
-          homeTeam: pick.homeTeam,
-          awayTeamCode: pick.awayTeam?.split(' ').pop() || 'TBD',
-          homeTeamCode: pick.homeTeam?.split(' ').pop() || 'TBD',
-          gameTime: pick.gameTime,
-          venue: pick.venue || 'TBD',
+          awayTeam: awayTeamFull,
+          homeTeam: homeTeamFull,
+          awayTeamCode: awayTeamCode,
+          homeTeamCode: homeTeamCode,
+          gameTime: pick.gameTime || 'TBD',
+          venue: pick.venue || 'Stadium TBD',
           awayPitcher: null,
           homePitcher: null,
         },
