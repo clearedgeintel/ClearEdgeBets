@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { fetchTodaysGames } from "./services/odds";
 import { fetchCFLGames, generateMockCFLPublicPercentage, type CFLGame } from "./services/cfl";
 import { fetchMLBGamesForDate, fetchMLBGameDetails, getGameResult } from "./services/mlb-api";
+import { fetchRealMLBOdds, mergeRealOddsWithGames } from "./services/realOdds";
 import { fetchMLBNews, generateMockMLBNews } from "./services/mlb-news";
 import { generateGameAnalysis, generateDailyDigest, type GameAnalysisData } from "./services/openai";
 import { insertBetSchema, insertGameSchema, insertOddsSchema, insertUserSchema } from "@shared/schema";
@@ -488,7 +489,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const targetDate = date as string || new Date().toISOString().split('T')[0];
       
       // Try to fetch real MLB games with pitcher details first
-      let realMLBGames = [];
+      let realMLBGames: any[] = [];
       try {
         const date = new Date(targetDate);
         realMLBGames = await fetchMLBGameDetails(
@@ -501,13 +502,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("Failed to fetch real MLB games, using generated data:", error);
       }
       
+      // Fetch real odds from sportsbooks
+      let realOdds: any[] = [];
+      try {
+        realOdds = await fetchRealMLBOdds();
+        console.log(`Fetched real odds for ${realOdds.length} MLB games`);
+      } catch (error) {
+        console.log("Failed to fetch real odds:", error);
+      }
+      
       // Use real MLB games if available, otherwise fall back to generated
       const gamesWithOdds = realMLBGames.length > 0 ? 
         realMLBGames.map((game: any) => convertMLBGameToGameFormat(game, targetDate)) :
         generateGamesForDate(targetDate);
       
+      // Merge real odds with games
+      const gamesWithRealOdds = mergeRealOddsWithGames(gamesWithOdds, realOdds);
+      
       // Create formatted response directly from generated data
-      const formattedGames = gamesWithOdds.map((gameData) => {
+      const formattedGames = gamesWithRealOdds.map((gameData) => {
         // Format odds array
         const oddsArray = [];
         
