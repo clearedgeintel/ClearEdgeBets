@@ -744,11 +744,11 @@ export default function Sidebar() {
       </div>
 
       {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
+      <div className="lg:hidden fixed top-20 left-4 z-50">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
-            <Button size="sm" variant="outline" className="bg-white shadow-lg">
-              <Menu className="h-4 w-4" />
+            <Button size="sm" variant="outline" className="bg-white shadow-lg border-2 hover:bg-blue-50">
+              <Menu className="h-4 w-4 text-gray-700" />
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="p-0 w-80">
