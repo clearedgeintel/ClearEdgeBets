@@ -15,15 +15,18 @@ const plans = [
     icon: Target,
     description: "Get started with basic ClearEdge analysis",
     features: [
-      "Basic game odds",
-      "Limited AI analysis",
-      "3 daily picks",
-      "Basic statistics",
+      "View daily MLB games",
+      "Top 3 AI daily picks",
+      "Basic game information",
+      "Virtual sportsbook practice",
+      "$1000 virtual balance",
+      "Mobile-optimized interface",
     ],
     limitations: [
+      "No full AI analysis access",
       "No consensus data",
       "No Kelly calculator",
-      "Limited historical data",
+      "Limited daily picks",
     ],
     buttonText: "Current Plan",
     tier: "free",
@@ -37,12 +40,13 @@ const plans = [
     description: "Advanced analytics for serious bettors",
     features: [
       "Everything in Free",
-      "Advanced AI analysis",
+      "Full AI game analysis",
       "Unlimited daily picks",
-      "Consensus data & trends",
       "Kelly calculator",
-      "Detailed statistics",
-      "Priority support",
+      "Hot trends & consensus data",
+      "Player props analysis",
+      "Betting performance tracking",
+      "Historical game data",
     ],
     limitations: [],
     buttonText: "Upgrade to Pro",
@@ -57,12 +61,13 @@ const plans = [
     description: "Professional-grade tools & insights",
     features: [
       "Everything in Pro",
-      "Admin dashboard access",
-      "Performance analytics",
+      "AI betting assistant chat",
+      "Advanced parlay builder",
+      "Performance analytics dashboard",
       "Custom betting strategies",
-      "1-on-1 expert consultation",
-      "Early access to new features",
-      "White-label options",
+      "Admin panel access",
+      "Multi-sport coverage (MLB, CFL)",
+      "Priority customer support",
     ],
     limitations: [],
     buttonText: "Go Elite",
@@ -256,76 +261,76 @@ export default function Subscribe() {
 
         {/* Features Comparison */}
         <div className="mt-20">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            Why Choose Our Platform?
+          <h2 className="text-3xl font-bold text-center text-foreground mb-12">
+            Why Choose ClearEdge Bets?
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
-              <div className="bg-blue-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <div className="bg-blue-600/10 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <TrendingUp className="h-8 w-8 text-blue-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">85%+ Accuracy</h3>
-              <p className="text-gray-600">
-                Our AI models consistently deliver industry-leading prediction accuracy
+              <h3 className="text-xl font-semibold mb-2 text-foreground">AI-Powered Analytics</h3>
+              <p className="text-muted-foreground">
+                Advanced machine learning models analyze pitching matchups, team trends, and market data
               </p>
             </div>
             
             <div className="text-center">
-              <div className="bg-green-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <div className="bg-green-600/10 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <Zap className="h-8 w-8 text-green-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Real-Time Data</h3>
-              <p className="text-gray-600">
-                Live odds, injury reports, and market movements updated instantly
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Live MLB Data</h3>
+              <p className="text-muted-foreground">
+                Real-time game data, authentic pitcher statistics, and up-to-date betting odds
               </p>
             </div>
             
             <div className="text-center">
-              <div className="bg-purple-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <div className="bg-purple-600/10 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <Target className="h-8 w-8 text-purple-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Expert Analysis</h3>
-              <p className="text-gray-600">
-                Deep insights from professional analysts and advanced algorithms
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Multi-Sport Coverage</h3>
+              <p className="text-muted-foreground">
+                Comprehensive MLB and CFL analysis with NHL and NBA coming soon
               </p>
             </div>
           </div>
         </div>
 
         {/* Testimonials */}
-        <div className="mt-20 bg-white rounded-2xl shadow-lg p-8">
-          <h2 className="text-2xl font-bold text-center text-gray-900 mb-8">
-            Trusted by Professional Bettors
+        <div className="mt-20 bg-card rounded-2xl shadow-lg p-8 border border-border">
+          <h2 className="text-2xl font-bold text-center text-foreground mb-8">
+            Trusted by Sports Bettors
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="p-6 bg-gray-50 rounded-lg">
-              <p className="text-gray-700 mb-4">
-                "Increased my win rate from 52% to 68% in just 3 months. The AI insights are incredible."
+            <div className="p-6 bg-muted/50 rounded-lg">
+              <p className="text-foreground mb-4">
+                "The virtual sportsbook helped me practice before risking real money. Now I'm consistently profitable."
               </p>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
                   M
                 </div>
                 <div>
-                  <p className="font-semibold">Mike R.</p>
-                  <p className="text-sm text-gray-600">Professional Bettor</p>
+                  <p className="font-semibold text-foreground">Mike R.</p>
+                  <p className="text-sm text-muted-foreground">Sports Bettor</p>
                 </div>
               </div>
             </div>
             
-            <div className="p-6 bg-gray-50 rounded-lg">
-              <p className="text-gray-700 mb-4">
-                "The consensus data alone pays for the subscription. Best investment I've made."
+            <div className="p-6 bg-muted/50 rounded-lg">
+              <p className="text-foreground mb-4">
+                "The AI daily picks and Kelly calculator have completely changed my betting strategy."
               </p>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">
                   S
                 </div>
                 <div>
-                  <p className="font-semibold">Sarah T.</p>
-                  <p className="text-sm text-gray-600">Sports Analyst</p>
+                  <p className="font-semibold text-foreground">Sarah T.</p>
+                  <p className="text-sm text-muted-foreground">Data Analyst</p>
                 </div>
               </div>
             </div>
