@@ -217,9 +217,9 @@ export default function Sidebar() {
             <div key={sport.sport} className="space-y-1">
               <button
                 onClick={() => sport.setExpanded(!sport.expanded)}
-                className={`w-full flex items-center justify-between px-3 py-3 rounded-lg transition-colors duration-200 group ${
+                className={`w-full flex items-center justify-between px-3 py-3 rounded-lg transition-all duration-200 group ${
                   sport.active
-                    ? "bg-gray-800 text-white"
+                    ? "sidebar-active text-white"
                     : "text-gray-300 hover:bg-gray-800/50 hover:text-white"
                 }`}
               >

@@ -1,0 +1,90 @@
+Rebrand the ClearEdge Bets sports betting app with a professional, modern, and sporty aesthetic. Prioritize clarity, contrast, and motion, while preserving the dark mode theme. Apply the following improvements across layout, style, and interaction:
+
+Global Theme & Branding
+Typography:
+- Use Google Fonts: Poppins, Inter, or DM Sans
+- Headings: font-weight: 600–700
+- Body text: font-weight: 300–400
+
+CSS Color Variables:
+:root {
+  --primary: #00E676;
+  --secondary: #2196F3;
+  --background: #0D1117;
+  --surface: #1C1F26;
+  --accent: #FF4081;
+  --text-primary: #F5F5F5;
+  --text-muted: #9E9E9E;
+  --hot: #FFB300;
+}
+
+Component Styling
+
+Navbar (Left Sidebar):
+- Use fixed position, reduced padding
+- Highlight active tab with:
+  border-left: 3px solid var(--primary);
+- Add hover effect:
+  transition: background-color 0.2s ease;
+
+Main Card Layouts (e.g., AI Picks):
+.ai-card {
+  background: linear-gradient(135deg, #00E676 0%, #1de9b6 100%);
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0, 230, 118, 0.6);
+  padding: 1rem;
+  color: #0D1117;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.ai-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0 20px rgba(0, 230, 118, 0.8);
+}
+
+Badges (e.g. “Hot”, “Updated”):
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 12px;
+  background-color: var(--hot);
+  color: #000;
+  border-radius: 999px;
+  box-shadow: 0 0 6px rgba(255, 179, 0, 0.5);
+}
+
+Charting & Data Visuals
+- Use recharts or chart.js
+- Color-code EMAs:
+  - 9 EMA: #2196F3
+  - 21 EMA: #00E676
+  - 50 EMA: #FFA726
+  - 200 EMA: #FFFFFF
+
+Glow effect for chart lines:
+stroke: var(--primary);
+filter: drop-shadow(0 0 4px var(--primary));
+
+Dark Mode Polish
+- Keep dark as default theme
+- Use #1C1F26 for cards and surface
+- Add subtle text-shadow to major headings:
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+
+UX Enhancements
+- Add animated entrance to AI pick cards:
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+- Highlight important games using:
+.highlight-game {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-left: 3px solid var(--accent);
+}
+
+Misc Polish
+- Add favicon with ClearEdge Bets logo
+- Responsive layout tweaks for mobile
+- Sticky Betting Slip on desktop
+- Add mode toggle (🌙 / ☀️)

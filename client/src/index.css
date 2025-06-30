@@ -1,35 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* ClearEdge Bets Dark Theme - Deep Navy Blue with Analytics Green */
-  --background: hsl(220, 30%, 6%);
-  --foreground: hsl(0, 0%, 95%);
-  --muted: hsl(220, 20%, 12%);
-  --muted-foreground: hsl(0, 0%, 70%);
-  --popover: hsl(220, 25%, 8%);
-  --popover-foreground: hsl(0, 0%, 95%);
-  --card: hsl(220, 25%, 10%);
-  --card-foreground: hsl(0, 0%, 95%);
-  --border: hsl(220, 20%, 18%);
-  --input: hsl(220, 20%, 15%);
-  --primary: hsl(220, 60%, 25%);
-  --primary-foreground: hsl(0, 0%, 98%);
-  --secondary: hsl(220, 25%, 15%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(138, 75%, 45%);
-  --accent-foreground: hsl(220, 30%, 10%);
-  --destructive: hsl(0, 84.2%, 60.2%);
-  --destructive-foreground: hsl(60, 9.1%, 97.8%);
-  --ring: hsl(138, 75%, 45%);
-  --radius: 0.5rem;
-  --warning: hsl(38, 92%, 50%);
-  --chart-1: hsl(138, 75%, 45%);
-  --chart-2: hsl(220, 60%, 35%);
-  --chart-3: hsl(28, 100%, 55%);
-  --chart-4: hsl(43, 74%, 66%);
-  --chart-5: hsl(27, 87%, 67%);
+  /* Professional ClearEdge Bets Theme */
+  --primary: #00E676;
+  --secondary: #2196F3;
+  --background: #0D1117;
+  --surface: #1C1F26;
+  --accent: #FF4081;
+  --text-primary: #F5F5F5;
+  --text-muted: #9E9E9E;
+  --hot: #FFB300;
+  
+  /* Tailwind compatibility */
+  --foreground: #F5F5F5;
+  --card: #1C1F26;
+  --card-foreground: #F5F5F5;
+  --popover: #1C1F26;
+  --popover-foreground: #F5F5F5;
+  --primary-foreground: #0D1117;
+  --secondary-foreground: #F5F5F5;
+  --muted: #2A2D34;
+  --muted-foreground: #9E9E9E;
+  --accent-foreground: #F5F5F5;
+  --destructive: #F44336;
+  --destructive-foreground: #F5F5F5;
+  --border: #2A2D34;
+  --input: #2A2D34;
+  --ring: #00E676;
+  --radius: 0.75rem;
+  --warning: #FFB300;
+  
+  /* Chart colors */
+  --chart-1: #00E676;
+  --chart-2: #2196F3;
+  --chart-3: #FFA726;
+  --chart-4: #FFFFFF;
+  --chart-5: #FF4081;
 }
 
 .dark {
@@ -60,23 +70,110 @@
 @layer base {
   * {
     @apply border-border;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased;
+    background-color: var(--background);
+    color: var(--text-primary);
+    font-weight: 400;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+  }
+}
+
+@layer components {
+  /* AI Pick Cards with Gradient and Glow */
+  .ai-card {
+    background: linear-gradient(135deg, var(--primary) 0%, #1de9b6 100%);
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0, 230, 118, 0.6);
+    padding: 1rem;
+    color: var(--background);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .ai-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0 20px rgba(0, 230, 118, 0.8);
+  }
+  
+  /* Badge Styling */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 12px;
+    background-color: var(--hot);
+    color: #000;
+    border-radius: 999px;
+    box-shadow: 0 0 6px rgba(255, 179, 0, 0.5);
+    font-weight: 500;
+  }
+  
+  /* Highlighted Games */
+  .highlight-game {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-left: 3px solid var(--accent);
+  }
+  
+  /* Sidebar Active Tab */
+  .sidebar-active {
+    border-left: 3px solid var(--primary);
+    background-color: rgba(0, 230, 118, 0.1);
+  }
+  
+  /* Chart Glow Effects */
+  .chart-line {
+    filter: drop-shadow(0 0 4px var(--primary));
   }
 }
 
 @layer utilities {
   .text-warning {
-    color: hsl(var(--warning));
+    color: var(--warning);
   }
   
   .bg-warning {
-    background-color: hsl(var(--warning));
+    background-color: var(--warning);
   }
   
   .border-warning {
-    border-color: hsl(var(--warning));
+    border-color: var(--warning);
   }
+  
+  .text-primary-custom {
+    color: var(--primary);
+  }
+  
+  .text-secondary-custom {
+    color: var(--secondary);
+  }
+  
+  .text-hot {
+    color: var(--hot);
+  }
+  
+  .bg-surface {
+    background-color: var(--surface);
+  }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out;
 }

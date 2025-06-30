@@ -298,17 +298,17 @@ export default function Home() {
 
             {/* Top AI Picks */}
             {topPicks.length > 0 && (
-              <div className="bg-primary rounded-xl shadow-lg p-6 text-white">
+              <div className="ai-card animate-fade-in-up">
                 <div className="flex items-center space-x-3 mb-4">
                   <Star className="h-5 w-5 text-yellow-300" />
                   <h3 className="text-xl font-bold">Today's Top AI Picks</h3>
-                  <Badge variant="secondary" className="bg-white/20 text-white border-0">
+                  <div className="badge">
                     Updated {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} ET
-                  </Badge>
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {topPicks.map((pick, index) => (
-                    <div key={index} className="bg-white/10 backdrop-blur rounded-lg p-4">
+                    <div key={index} className="bg-white/15 backdrop-blur rounded-lg p-4 border border-white/20 hover:bg-white/20 transition-all duration-200">
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-sm font-medium opacity-90">
                           {index === 0 ? "Best Value" : index === 1 ? "Sharp Play" : "AI Special"}
@@ -323,7 +323,7 @@ export default function Home() {
                                 : 'bg-orange-500 text-white'
                           } border-0 font-bold`}
                         >
-                          {pick.expectedValue > 0 ? `+EV ${pick.expectedValue.toFixed(1)}%` : "Hot"}
+                          {pick.expectedValue && pick.expectedValue > 0 ? `+EV ${pick.expectedValue.toFixed(1)}%` : "Hot"}
                         </Badge>
                       </div>
                       
@@ -341,8 +341,19 @@ export default function Home() {
                       
                       {/* Pick Details */}
                       <div className="border-t border-white/20 pt-3">
-                        <p className="text-sm font-bold text-yellow-300">{pick.selection}</p>
-                        <p className="text-xs opacity-90 mt-1">{pick.reasoning}</p>
+                        <div className="mb-2">
+                          <p className="text-xs opacity-75 uppercase tracking-wide font-bold">🎯 AI PICK</p>
+                          <p className="text-lg font-bold text-yellow-300 mb-1">{pick.selection}</p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-green-300 font-semibold">
+                              Value Play
+                            </p>
+                            <p className="text-xs bg-white/20 px-2 py-1 rounded-full">
+                              +EV {pick.expectedValue?.toFixed(1) || "0.0"}%
+                            </p>
+                          </div>
+                        </div>
+                        <p className="text-xs opacity-90 leading-relaxed">{pick.reasoning}</p>
                       </div>
                       
                       {/* Pitchers (if available) */}
