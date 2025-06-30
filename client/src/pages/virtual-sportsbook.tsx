@@ -107,9 +107,13 @@ export default function VirtualSportsbook() {
   const calculateParlayOdds = (items: BettingSlipItem[]): number => {
     if (items.length === 0) return 0;
     
+    // Filter out any items with invalid odds
+    const validItems = items.filter(item => item.odds !== 0 && !isNaN(item.odds));
+    if (validItems.length === 0) return 0;
+    
     // Convert American odds to decimal odds, multiply them, then convert back
     let combinedDecimalOdds = 1;
-    items.forEach(item => {
+    validItems.forEach(item => {
       const decimalOdds = item.odds > 0 
         ? (item.odds / 100) + 1 
         : (100 / Math.abs(item.odds)) + 1;
@@ -117,15 +121,20 @@ export default function VirtualSportsbook() {
     });
     
     // Convert back to American odds
+    if (combinedDecimalOdds === 1) return 0;
+    
     const americanOdds = combinedDecimalOdds >= 2 
       ? Math.round((combinedDecimalOdds - 1) * 100)
       : Math.round(-100 / (combinedDecimalOdds - 1));
     
-    return americanOdds;
+    return isNaN(americanOdds) || !isFinite(americanOdds) ? 0 : americanOdds;
   };
 
   // Calculate parlay payout
   const calculateParlayPayout = (stake: number, odds: number): number => {
+    if (isNaN(stake) || !isFinite(stake) || stake <= 0) return 0;
+    if (isNaN(odds) || !isFinite(odds) || odds === 0) return stake; // Return stake if odds are invalid
+    
     if (odds > 0) {
       return stake + (stake * odds / 100);
     } else {
@@ -189,7 +198,7 @@ export default function VirtualSportsbook() {
 
     const updatedItems = currentSlip.items.map(item => {
       if (item.id === betId) {
-        const potentialWin = stake * (item.odds > 0 ? item.odds / 100 : 100 / Math.abs(item.odds));
+        const potentialWin = item.odds === 0 ? 0 : stake * (item.odds > 0 ? item.odds / 100 : 100 / Math.abs(item.odds));
         return { ...item, stake, potentialWin };
       }
       return item;
