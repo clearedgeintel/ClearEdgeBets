@@ -561,10 +561,6 @@ export default function Home() {
                     {filteredGames.map(game => (
                       <div key={game.gameId} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
                         <div className="flex items-center space-x-4">
-                          <div className="text-center">
-                            <div className="text-sm font-medium text-foreground">{game.gameTime}</div>
-                            <div className="text-xs text-muted-foreground">ET</div>
-                          </div>
                           <div className="flex items-center space-x-3">
                             <div className="text-right">
                               <div className="font-medium text-foreground">{game.awayTeam}</div>
@@ -572,7 +568,7 @@ export default function Home() {
                                 <div className="text-xs text-muted-foreground">
                                   {game.awayPitcher}
                                   {game.awayPitcherStats && (
-                                    <span className="text-blue-400 ml-1">({game.awayPitcherStats})</span>
+                                    <span className="text-blue-400 ml-1">{game.awayPitcherStats}</span>
                                   )}
                                 </div>
                               )}
@@ -584,7 +580,7 @@ export default function Home() {
                                 <div className="text-xs text-muted-foreground">
                                   {game.homePitcher}
                                   {game.homePitcherStats && (
-                                    <span className="text-blue-400 ml-1">({game.homePitcherStats})</span>
+                                    <span className="text-blue-400 ml-1">{game.homePitcherStats}</span>
                                   )}
                                 </div>
                               )}
@@ -594,6 +590,7 @@ export default function Home() {
                         <div className="flex items-center space-x-3">
                           <div className="text-right">
                             <div className="text-sm font-medium text-muted-foreground">{game.venue}</div>
+                            <div className="text-xs text-muted-foreground">{game.gameTime} ET</div>
                             {game.status === "completed" && (
                               <Badge variant="secondary" className="text-xs">Final</Badge>
                             )}
