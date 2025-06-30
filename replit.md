@@ -125,6 +125,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Relocated betting slip to prominent position above available games in Virtual Sportsbook
+  - Moved betting slip from bottom left corner to main content area above game listings
+  - Enhanced betting slip UI with blue-themed professional design and comprehensive bet management
+  - Added individual bet stake inputs, real-time potential win calculations, and easy bet removal
+  - Users now see betting slip prominently with full functionality: review selections, set stakes, place bets
+  - Improved user experience matches professional sportsbook interfaces with always-visible betting slip
 - June 30, 2025: Enhanced virtual sportsbook with traditional betting layout format
   - Updated game display to show teams stacked vertically (away/home) like traditional sportsbooks
   - Added four-column layout: Teams, Spread, Moneyline, and Total with clickable betting buttons

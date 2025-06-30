@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { DollarSign, TrendingUp, TrendingDown, RotateCcw, Target, Trophy, BarChart3, LogIn, Brain, Calculator, Trash2, Plus, Minus } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, RotateCcw, Target, Trophy, BarChart3, LogIn, Brain, Calculator, Trash2, Plus, Minus, Receipt, X } from "lucide-react";
 
 interface BalanceData {
   balance: number;
@@ -617,6 +617,118 @@ export default function VirtualSportsbook() {
                 <Button 
                   variant="outline"
                   onClick={() => setAiBetSlip(null)}
+                >
+                  Clear Slip
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Betting Slip Section */}
+      {currentSlip && currentSlip.items.length > 0 && (
+        <Card className="mb-6 border-blue-200 dark:border-blue-800">
+          <CardHeader className="bg-blue-50 dark:bg-blue-950/20">
+            <CardTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5" />
+              Your Betting Slip
+              <Badge variant="secondary" className="ml-auto">
+                {currentSlip.items.length} {currentSlip.items.length === 1 ? 'bet' : 'bets'}
+              </Badge>
+            </CardTitle>
+            <CardDescription>
+              Review and manage your selected bets. Set stakes and place your bets when ready.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y">
+              {currentSlip.items.map((bet) => (
+                <div key={bet.id} className="p-4 hover:bg-muted/50">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">{bet.selection}</div>
+                      <div className="text-xs text-muted-foreground">{bet.matchup}</div>
+                      <div className="text-xs text-blue-600 font-medium">
+                        {bet.odds > 0 ? '+' : ''}{bet.odds} odds
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-4">
+                      <div className="text-right">
+                        <input
+                          type="number"
+                          placeholder="$0"
+                          value={bet.stake || ''}
+                          onChange={(e) => {
+                            const stake = parseFloat(e.target.value) || 0;
+                            updateBetStake(bet.id, stake);
+                          }}
+                          className="w-20 px-2 py-1 text-sm border rounded text-right"
+                          min="0"
+                          step="1"
+                        />
+                        {bet.stake > 0 && (
+                          <div className="text-xs text-green-600 font-medium">
+                            Win: ${bet.potentialWin.toFixed(2)}
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeBetFromSlip(bet.id)}
+                        className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Betting Slip Summary */}
+            <div className="p-4 bg-muted/50 border-t">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <div className="font-semibold">Total</div>
+                  <div className="text-sm text-muted-foreground">
+                    {currentSlip.items.length} bets selected
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-bold">
+                    Stake: ${currentSlip.totalStake.toFixed(2)}
+                  </div>
+                  <div className="text-sm text-green-600 font-medium">
+                    Potential Win: ${currentSlip.totalPotentialWin.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  disabled={currentSlip.totalStake === 0}
+                  onClick={() => {
+                    // TODO: Implement place bets functionality
+                    toast({
+                      title: "Bets Placed!",
+                      description: `${currentSlip.items.length} bets placed for $${currentSlip.totalStake.toFixed(2)}`,
+                    });
+                    setCurrentSlip(null);
+                    setBettingSlips(prev => prev.filter(s => s.id !== currentSlip.id));
+                  }}
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Place Bets (${currentSlip.totalStake.toFixed(2)})
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setCurrentSlip(null);
+                    setBettingSlips(prev => prev.filter(s => s.id !== currentSlip.id));
+                  }}
                 >
                   Clear Slip
                 </Button>
