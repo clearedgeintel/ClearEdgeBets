@@ -125,6 +125,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Expanded sports navigation with Hockey and Basketball, marked Golf as coming soon
+  - Added Hockey as new sport category with NHL Games, Daily Picks, and Player Props (all coming soon)
+  - Added Basketball as new sport category with NBA Games, Daily Picks, and Player Props (all coming soon)
+  - Marked all Golf features as "coming soon" including Tournaments, Leaderboards, and Futures
+  - Enhanced navigation structure to showcase platform's multi-sport expansion roadmap
+  - Maintained consistent "coming soon" styling with disabled state and badges
 - June 30, 2025: Successfully migrated Daily Picks to Pro tier with access control
   - Added Pro tier subscription requirement to Daily Picks page (/daily-picks)
   - Implemented upgrade prompt for non-Pro users with Lock icon and pricing information

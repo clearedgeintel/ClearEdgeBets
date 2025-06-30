@@ -28,7 +28,9 @@ import {
   Building,
   Award,
   Brain,
-  Calculator
+  Calculator,
+  CircleDot,
+  Shield
 } from "lucide-react";
 import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -46,6 +48,8 @@ export default function Sidebar() {
   const [baseballExpanded, setBaseballExpanded] = useState(true);
   const [footballExpanded, setFootballExpanded] = useState(false);
   const [golfExpanded, setGolfExpanded] = useState(false);
+  const [hockeyExpanded, setHockeyExpanded] = useState(false);
+  const [basketballExpanded, setBasketballExpanded] = useState(false);
 
   // Debug logging
   console.log("Sidebar bets:", bets);
@@ -226,25 +230,106 @@ export default function Sidebar() {
       freeItems: [
         { 
           name: "Tournaments", 
-          href: "/golf/tournaments", 
+          href: "#", 
           icon: Trophy,
-          current: location === "/golf/tournaments",
-          description: "PGA Tour tournaments and odds",
-          featured: true
+          current: false,
+          description: "Coming Soon",
+          disabled: true,
+          comingSoon: true
         },
         { 
           name: "Leaderboards", 
-          href: "/golf/leaderboards", 
+          href: "#", 
           icon: TrendingUp,
-          current: location === "/golf/leaderboards",
-          description: "Live tournament leaderboards"
+          current: false,
+          description: "Coming Soon",
+          disabled: true,
+          comingSoon: true
         },
         { 
           name: "Futures", 
-          href: "/golf/futures", 
+          href: "#", 
           icon: Target,
-          current: location === "/golf/futures",
-          description: "Season-long betting markets"
+          current: false,
+          description: "Coming Soon",
+          disabled: true,
+          comingSoon: true
+        }
+      ],
+      proItems: [],
+      eliteItems: []
+    },
+    {
+      sport: "Hockey",
+      icon: CircleDot,
+      expanded: hockeyExpanded,
+      setExpanded: setHockeyExpanded,
+      active: location.startsWith("/hockey"),
+      freeItems: [
+        { 
+          name: "NHL Games", 
+          href: "#", 
+          icon: Calendar,
+          current: false,
+          description: "Coming Soon",
+          disabled: true,
+          comingSoon: true
+        },
+        { 
+          name: "Daily Picks", 
+          href: "#", 
+          icon: Target,
+          current: false,
+          description: "Coming Soon",
+          disabled: true,
+          comingSoon: true
+        },
+        { 
+          name: "Player Props", 
+          href: "#", 
+          icon: Star,
+          current: false,
+          description: "Coming Soon",
+          disabled: true,
+          comingSoon: true
+        }
+      ],
+      proItems: [],
+      eliteItems: []
+    },
+    {
+      sport: "Basketball",
+      icon: Shield,
+      expanded: basketballExpanded,
+      setExpanded: setBasketballExpanded,
+      active: location.startsWith("/basketball"),
+      freeItems: [
+        { 
+          name: "NBA Games", 
+          href: "#", 
+          icon: Calendar,
+          current: false,
+          description: "Coming Soon",
+          disabled: true,
+          comingSoon: true
+        },
+        { 
+          name: "Daily Picks", 
+          href: "#", 
+          icon: Target,
+          current: false,
+          description: "Coming Soon",
+          disabled: true,
+          comingSoon: true
+        },
+        { 
+          name: "Player Props", 
+          href: "#", 
+          icon: Star,
+          current: false,
+          description: "Coming Soon",
+          disabled: true,
+          comingSoon: true
         }
       ],
       proItems: [],
