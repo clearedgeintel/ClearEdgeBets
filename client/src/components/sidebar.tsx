@@ -66,13 +66,6 @@ export default function Sidebar() {
           description: "MLB games and odds for any date"
         },
         { 
-          name: "Daily Picks", 
-          href: "/daily-picks", 
-          icon: Target,
-          current: location === "/daily-picks",
-          description: "AI-powered betting recommendations"
-        },
-        { 
           name: "My Bets", 
           href: "/my-bets", 
           icon: History,
@@ -81,6 +74,14 @@ export default function Sidebar() {
         }
       ],
       proItems: [
+        { 
+          name: "Daily Picks", 
+          href: "/daily-picks", 
+          icon: Target,
+          current: location === "/daily-picks",
+          description: "AI-powered betting recommendations",
+          requiresPro: true
+        },
         { 
           name: "Odds Comparison", 
           href: "/odds-comparison", 

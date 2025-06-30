@@ -125,6 +125,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Successfully migrated Daily Picks to Pro tier with access control
+  - Added Pro tier subscription requirement to Daily Picks page (/daily-picks)
+  - Implemented upgrade prompt for non-Pro users with Lock icon and pricing information
+  - Daily Picks now requires Pro or Elite subscription to access full functionality
+  - Free tier users can still see "Today's Top 3 Picks" on home page as preview
+  - Maintained existing Daily Picks interface for Pro/Elite users with all features intact
+  - Enhanced tier-based feature organization with proper access controls
 - June 30, 2025: Restructured Kelly Calculator as dedicated Pro feature
   - Moved Kelly Calculator from home page sidebar to dedicated `/kelly-calculator` page route
   - Added Kelly Calculator to Pro Features section in sidebar navigation with Calculator icon

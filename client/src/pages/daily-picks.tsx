@@ -1,16 +1,23 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { formatOdds, formatPercentage } from "@/lib/utils";
-import { Sparkles, TrendingUp, Target, BarChart3, Crown, Lock } from "lucide-react";
-import { useBettingSlip } from "@/contexts/betting-slip-context";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
+import { useBettingSlip } from "@/hooks/use-betting-slip";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Link } from "wouter";
+import { 
+  Target, 
+  BarChart3, 
+  Crown, 
+  Lock, 
+  Sparkles,
+  TrendingUp
+} from "lucide-react";
 
 interface DailyPick {
   id: number;
@@ -33,6 +40,42 @@ export default function DailyPicks() {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // Check if user has Pro access
+  const hasProAccess = user && (user.subscriptionTier === 'pro' || user.subscriptionTier === 'elite');
+
+  // Show upgrade prompt for non-Pro users
+  if (!hasProAccess) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="bg-card rounded-lg border p-8">
+              <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <h1 className="text-2xl font-bold mb-4">Pro Feature Required</h1>
+              <p className="text-muted-foreground mb-6">
+                Daily Picks is a Pro feature that provides AI-powered betting recommendations with detailed analysis and confidence scoring.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-center space-x-2">
+                  <Crown className="w-5 h-5 text-blue-500" />
+                  <span className="font-medium">Upgrade to Pro for $9.99/month</span>
+                </div>
+                <Link href="/subscribe">
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                    Upgrade to Pro
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Continue with the rest of the component for Pro users
   const {
     data: picks,
     isLoading: picksLoading,
@@ -62,140 +105,54 @@ export default function DailyPicks() {
     },
   });
 
-  const handleAddToBets = (pick: DailyPick) => {
-    addBet({
+  const setResultMutation = useMutation({
+    mutationFn: async ({ pickId, result }: { pickId: number; result: string }) => {
+      const response = await apiRequest("PATCH", `/api/daily-picks/${pickId}/result`, { result });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/daily-picks"] });
+      toast({
+        title: "Result updated",
+        description: "Pick result has been updated successfully.",
+      });
+    },
+  });
+
+  const addToBettingSlip = (pick: DailyPick) => {
+    const bet = {
       gameId: pick.gameId,
-      betType: pick.pickType,
+      betType: pick.pickType.toLowerCase(),
       selection: pick.selection,
       odds: pick.odds,
       stake: 0,
       potentialWin: 0,
-    });
+    };
+    
+    addBet(bet);
     toast({
       title: "Added to betting slip",
       description: `${pick.selection} has been added to your betting slip.`,
     });
   };
 
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 80) return "bg-green-500";
-    if (confidence >= 60) return "bg-yellow-500";
-    return "bg-red-500";
+  // Helper functions
+  const formatOdds = (odds: number) => {
+    return odds > 0 ? `+${odds}` : `${odds}`;
   };
 
-  const getExpectedValueColor = (ev: string) => {
-    const value = parseFloat(ev);
-    if (value > 5) return "text-green-600";
-    if (value > 0) return "text-green-500";
-    return "text-red-500";
+  const formatPercentage = (value: number) => {
+    return `${value}%`;
   };
-
-  if (picksLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <Target className="h-8 w-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-foreground">Daily Expert Picks</h1>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
-                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-muted rounded w-1/2"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="h-3 bg-muted rounded"></div>
-                  <div className="h-3 bg-muted rounded w-5/6"></div>
-                  <div className="h-10 bg-muted rounded"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   if (picksError) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <Target className="h-8 w-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-foreground">Daily Expert Picks</h1>
-        </div>
-        <Card>
-          <CardContent className="p-8 text-center">
-            <p className="text-muted-foreground mb-4">Unable to load daily picks</p>
-            <Button 
-              onClick={() => generatePicksMutation.mutate()}
-              disabled={generatePicksMutation.isPending}
-            >
-              {generatePicksMutation.isPending ? "Generating..." : "Generate New Picks"}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Check if user has Pro access
-  const hasProAccess = user && (user.subscriptionTier === 'pro' || user.subscriptionTier === 'elite');
-
-  // Pro access control
-  if (!hasProAccess) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
         <div className="container mx-auto px-4 py-8">
-          <div className="max-w-3xl mx-auto text-center">
-            <Card className="border-blue-200 bg-blue-50">
-              <CardContent className="p-12">
-                <div className="mb-6">
-                  <img 
-                    src="/clearedge-logo-final.png" 
-                    alt="ClearEdge Bets" 
-                    className="h-20 w-auto mx-auto mb-4"
-                  />
-                  <Lock className="h-16 w-16 mx-auto mb-4 text-blue-600" />
-                </div>
-                <h1 className="text-3xl font-bold mb-4 text-foreground">Daily Expert Picks</h1>
-                <Badge className="bg-blue-600 text-white mb-6">
-                  <Crown className="h-3 w-3 mr-1" />
-                  Pro Feature
-                </Badge>
-                <p className="text-lg text-muted-foreground mb-8">
-                  Get AI-powered daily betting recommendations from our expert analysis system.
-                  Access premium picks with detailed reasoning and confidence scores.
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                  <div className="p-4 bg-white rounded-lg border">
-                    <Target className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                    <h3 className="font-semibold mb-1">Expert Analysis</h3>
-                    <p className="text-sm text-muted-foreground">AI-powered picks with detailed reasoning</p>
-                  </div>
-                  <div className="p-4 bg-white rounded-lg border">
-                    <BarChart3 className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                    <h3 className="font-semibold mb-1">Confidence Scoring</h3>
-                    <p className="text-sm text-muted-foreground">Risk assessment for every pick</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Link href="/subscribe">
-                    <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700">
-                      <Crown className="h-4 w-4 mr-2" />
-                      Upgrade to Pro - $9.99/month
-                    </Button>
-                  </Link>
-                  <p className="text-sm text-muted-foreground">
-                    Join thousands of successful bettors with Pro access
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-red-600 mb-4">Error Loading Picks</h1>
+            <p className="text-muted-foreground">Unable to load daily picks. Please try again later.</p>
           </div>
         </div>
         <Footer />
@@ -207,185 +164,179 @@ export default function DailyPicks() {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <Target className="h-8 w-8 text-blue-600" />
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Daily Expert Picks</h1>
-              <p className="text-muted-foreground">
-              {new Date().toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })} • AI-powered betting recommendations
-            </p>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Daily Picks</h1>
+          <p className="text-muted-foreground">
+            AI-powered betting recommendations with detailed analysis and confidence scoring
+          </p>
         </div>
-        <div className="flex items-center gap-3 mb-6">
-          <Button 
+
+        <div className="mb-6 flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <Crown className="h-5 w-5 text-blue-500" />
+            <span className="font-medium">Pro Feature</span>
+          </div>
+          <Button
             onClick={() => generatePicksMutation.mutate()}
             disabled={generatePicksMutation.isPending}
-            className="flex items-center gap-2"
+            className="bg-primary hover:bg-primary/90"
           >
-            <Sparkles className="h-4 w-4" />
-            {generatePicksMutation.isPending ? "Generating..." : "Generate New Picks"}
+            {generatePicksMutation.isPending ? (
+              "Generating..."
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Generate New Picks
+              </>
+            )}
           </Button>
-          <Link href="/performance-tracking">
-            <Button variant="outline" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Historical Performance
-            </Button>
-          </Link>
         </div>
-      </div>
 
-      {picks && Array.isArray(picks) && picks.length === 0 && (
-        <Card>
-          <CardContent className="p-8 text-center">
+        {picksLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="p-6">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-muted rounded w-1/2"></div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : picks && picks.length > 0 ? (
+          <div className="space-y-6">
+            {picks.map((pick) => (
+              <Card key={pick.id} className="overflow-hidden">
+                <CardHeader className="pb-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg flex items-center space-x-2">
+                        <Target className="h-5 w-5 text-primary" />
+                        <span>{pick.selection}</span>
+                        <Badge variant="outline" className="ml-2">
+                          {pick.pickType}
+                        </Badge>
+                        {pick.result && (
+                          <Badge 
+                            variant={pick.result === 'WIN' ? 'default' : pick.result === 'LOSS' ? 'destructive' : 'secondary'}
+                            className="ml-2"
+                          >
+                            {pick.result}
+                          </Badge>
+                        )}
+                      </CardTitle>
+                      <CardDescription className="mt-1">
+                        Game ID: {pick.gameId}
+                      </CardDescription>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-primary">
+                        {formatOdds(pick.odds)}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {formatPercentage(pick.confidence)} confidence
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="pt-0">
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium mb-2 flex items-center space-x-2">
+                        <BarChart3 className="h-4 w-4" />
+                        <span>Analysis</span>
+                      </h4>
+                      <p className="text-muted-foreground text-sm leading-relaxed">
+                        {pick.reasoning}
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <div className="flex items-center space-x-4">
+                        <div className="text-center">
+                          <div className="text-sm font-medium">Expected Value</div>
+                          <div className="text-lg font-bold text-green-600">
+                            {pick.expectedValue}
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-sm font-medium">Status</div>
+                          <Badge variant={pick.status === 'active' ? 'default' : 'secondary'}>
+                            {pick.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="flex space-x-2">
+                        {!pick.result && (
+                          <div className="flex space-x-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setResultMutation.mutate({ pickId: pick.id, result: 'WIN' })}
+                              disabled={setResultMutation.isPending}
+                              className="text-green-600 border-green-600 hover:bg-green-50"
+                            >
+                              Win
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setResultMutation.mutate({ pickId: pick.id, result: 'LOSS' })}
+                              disabled={setResultMutation.isPending}
+                              className="text-red-600 border-red-600 hover:bg-red-50"
+                            >
+                              Loss
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setResultMutation.mutate({ pickId: pick.id, result: 'PUSH' })}
+                              disabled={setResultMutation.isPending}
+                              className="text-gray-600 border-gray-600 hover:bg-gray-50"
+                            >
+                              Push
+                            </Button>
+                          </div>
+                        )}
+                        <Button
+                          size="sm"
+                          onClick={() => addToBettingSlip(pick)}
+                          className="bg-primary hover:bg-primary/90"
+                        >
+                          Add to Slip
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="p-8 text-center">
             <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2 text-foreground">No picks available</h3>
-            <p className="text-muted-foreground mb-4">Generate AI-powered daily picks for today's games</p>
-            <Button 
+            <h3 className="text-lg font-medium mb-2">No picks available</h3>
+            <p className="text-muted-foreground mb-4">
+              Generate AI-powered daily picks to get started with your betting strategy.
+            </p>
+            <Button
               onClick={() => generatePicksMutation.mutate()}
               disabled={generatePicksMutation.isPending}
-              className="flex items-center gap-2"
+              className="bg-primary hover:bg-primary/90"
             >
-              <Sparkles className="h-4 w-4" />
-              {generatePicksMutation.isPending ? "Generating..." : "Generate Daily Picks"}
+              {generatePicksMutation.isPending ? (
+                "Generating..."
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate Daily Picks
+                </>
+              )}
             </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Results Recap */}
-      {picks && picks.length > 0 && picks.some(pick => pick.result) && (
-        <Card className="mb-6 bg-muted/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" />
-              Today's Results Recap
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-foreground">
-                  {picks.filter(pick => pick.result).length}
-                </div>
-                <div className="text-sm text-muted-foreground">Settled</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-500">
-                  {picks.filter(pick => pick.result === 'win').length}
-                </div>
-                <div className="text-sm text-muted-foreground">Wins</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-red-500">
-                  {picks.filter(pick => pick.result === 'loss').length}
-                </div>
-                <div className="text-sm text-muted-foreground">Losses</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-500">
-                  {picks.filter(pick => pick.result === 'push').length}
-                </div>
-                <div className="text-sm text-muted-foreground">Pushes</div>
-              </div>
-            </div>
-            {picks.filter(pick => pick.result).length > 0 && (
-              <div className="mt-4 text-center">
-                <div className="text-lg font-semibold text-foreground">
-                  Win Rate: {Math.round((picks.filter(pick => pick.result === 'win').length / picks.filter(pick => pick.result && pick.result !== 'push').length) * 100) || 0}%
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {picks.filter(pick => pick.result === 'win').length} wins out of {picks.filter(pick => pick.result && pick.result !== 'push').length} decisive picks
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {picks?.map((pick: DailyPick) => (
-          <Card key={pick.id} className="border-l-4 border-l-blue-500">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">{pick.selection}</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="capitalize">
-                    {pick.pickType}
-                  </Badge>
-                  {pick.result && (
-                    <Badge 
-                      variant={pick.result === 'win' ? 'default' : pick.result === 'loss' ? 'destructive' : 'secondary'}
-                      className={
-                        pick.result === 'win' ? 'bg-green-500 text-white' :
-                        pick.result === 'loss' ? 'bg-red-500 text-white' :
-                        'bg-yellow-500 text-white'
-                      }
-                    >
-                      {pick.result === 'win' ? 'WIN' : pick.result === 'loss' ? 'LOSS' : 'PUSH'}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              <CardDescription className="flex items-center gap-2">
-                <span className="font-mono">{formatOdds(pick.odds)}</span>
-                <span className={getExpectedValueColor(pick.expectedValue)}>
-                  {parseFloat(pick.expectedValue) > 0 ? '+' : ''}{formatPercentage(parseFloat(pick.expectedValue), 1)} EV
-                </span>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Confidence</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-16 h-2 bg-muted rounded-full">
-                    <div 
-                      className={`h-2 rounded-full ${getConfidenceColor(pick.confidence)}`}
-                      style={{ width: `${pick.confidence}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-sm font-medium">{pick.confidence}%</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium text-foreground">Analysis</span>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {pick.reasoning}
-                </p>
-              </div>
-
-              {pick.status === "active" && (
-                <Button 
-                  onClick={() => handleAddToBets(pick)}
-                  className="w-full flex items-center gap-2"
-                  variant="outline"
-                >
-                  <TrendingUp className="h-4 w-4" />
-                  Add to Betting Slip
-                </Button>
-              )}
-
-              {pick.result && (
-                <Badge 
-                  variant={pick.result === "win" ? "default" : "destructive"}
-                  className="w-full justify-center py-2"
-                >
-                  {pick.result === "win" ? "Won" : pick.result === "loss" ? "Lost" : "Push"}
-                </Badge>
-              )}
-            </CardContent>
           </Card>
-        ))}
-      </div>
+        )}
       </div>
       <Footer />
     </div>
