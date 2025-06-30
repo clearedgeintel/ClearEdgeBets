@@ -60,7 +60,7 @@ export default function Sidebar() {
       icon: HomePlate,
       expanded: baseballExpanded,
       setExpanded: setBaseballExpanded,
-      active: location === "/" || location.startsWith("/baseball") || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets" || location === "/performance-tracking",
+      active: location === "/" || location.startsWith("/baseball") || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets" || location === "/virtual-sportsbook" || location === "/performance-tracking",
       freeItems: [
         { 
           name: "Games", 
@@ -75,6 +75,13 @@ export default function Sidebar() {
           icon: History,
           current: location === "/my-bets",
           description: "Your MLB betting history"
+        },
+        { 
+          name: "Virtual Sportsbook", 
+          href: "/virtual-sportsbook", 
+          icon: CircleDot,
+          current: location === "/virtual-sportsbook",
+          description: "Practice betting with $1,000 virtual money"
         }
       ],
       proItems: [

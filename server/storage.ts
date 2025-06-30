@@ -20,6 +20,12 @@ export interface IStorage {
   updateUserAdmin(userId: number, isAdmin: boolean): Promise<User>;
   generateReferralCode(userId: number): Promise<string>;
   validateReferralCode(code: string): Promise<ReferralCode | null>;
+  
+  // Virtual Balance methods
+  getUserVirtualBalance(userId: number): Promise<number>;
+  updateVirtualBalance(userId: number, newBalance: number): Promise<User>;
+  resetVirtualBalance(userId: number): Promise<User>;
+  processBetSettlement(userId: number, betResult: 'win' | 'loss', amount: number): Promise<User>;
 
   // Referral Code methods
   createReferralCode(referralCode: InsertReferralCode): Promise<ReferralCode>;
@@ -843,6 +849,63 @@ export class DatabaseStorage implements IStorage {
       totalReferrals,
       activeReferralCodes
     };
+  }
+
+  // Virtual Balance methods
+  async getUserVirtualBalance(userId: number): Promise<number> {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    return user?.virtualBalance || 100000; // Default $1000 in cents
+  }
+
+  async updateVirtualBalance(userId: number, newBalance: number): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ virtualBalance: newBalance })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async resetVirtualBalance(userId: number): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ 
+        virtualBalance: 100000, // Reset to $1000
+        totalVirtualWinnings: 0,
+        totalVirtualLosses: 0,
+        betCount: 0,
+        winCount: 0
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async processBetSettlement(userId: number, betResult: 'win' | 'loss', amount: number): Promise<User> {
+    const currentUser = await this.getUser(userId);
+    if (!currentUser) throw new Error('User not found');
+
+    const currentBalance = currentUser.virtualBalance || 100000;
+    const newBalance = betResult === 'win' ? currentBalance + amount : currentBalance - amount;
+    
+    const updateData: any = {
+      virtualBalance: Math.max(0, newBalance), // Don't allow negative balance
+      betCount: (currentUser.betCount || 0) + 1
+    };
+
+    if (betResult === 'win') {
+      updateData.winCount = (currentUser.winCount || 0) + 1;
+      updateData.totalVirtualWinnings = (currentUser.totalVirtualWinnings || 0) + amount;
+    } else {
+      updateData.totalVirtualLosses = (currentUser.totalVirtualLosses || 0) + amount;
+    }
+
+    const [user] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
   }
 }
 

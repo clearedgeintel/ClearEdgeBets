@@ -33,6 +33,7 @@ import HotTrends from "@/pages/hot-trends";
 import AIAssistant from "@/pages/ai-assistant";
 import KellyCalculator from "@/pages/kelly-calculator";
 import GameDetail from "@/pages/game-detail";
+import VirtualSportsbook from "@/pages/virtual-sportsbook";
 
 function Router() {
   return (
@@ -42,6 +43,7 @@ function Router() {
         <Route path="/todays-games" component={TodaysGames} />
         <Route path="/game/:gameId" component={GameDetail} />
         <Route path="/my-bets" component={MyBets} />
+        <Route path="/virtual-sportsbook" component={VirtualSportsbook} />
         <Route path="/daily-picks" component={DailyPicks} />
         <Route path="/subscribe" component={Subscribe} />
         <Route path="/admin" component={AdminPanel} />

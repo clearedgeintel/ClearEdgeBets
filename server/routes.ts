@@ -2443,6 +2443,162 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Simple authentication for virtual sportsbook
+  app.post("/api/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password required" });
+      }
+
+      // For demo purposes, accept any username/password combination
+      let user = await storage.getUserByUsername(username);
+      
+      if (!user) {
+        // Create a new user with $1000 starting balance
+        user = await storage.createUser({
+          username,
+          email: `${username}@example.com`,
+          passwordHash: "demo_hash", // In production, use proper password hashing
+          subscriptionTier: "free",
+          virtualBalance: 100000, // $1000 in cents
+          totalVirtualWinnings: 0,
+          totalVirtualLosses: 0,
+          betCount: 0,
+          winCount: 0
+        });
+      }
+
+      // Store user ID in session
+      (req.session as any).userId = user.id;
+      
+      res.json({
+        message: "Login successful",
+        user: {
+          id: user.id,
+          username: user.username,
+          balance: (user.virtualBalance || 100000) / 100
+        }
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  // Virtual Balance Management Routes
+  app.get("/api/user/balance", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const balance = await storage.getUserVirtualBalance(userId);
+      const user = await storage.getUser(userId);
+      
+      res.json({
+        balance: balance / 100, // Convert cents to dollars
+        balanceInCents: balance,
+        totalWinnings: (user?.totalVirtualWinnings || 0) / 100,
+        totalLosses: (user?.totalVirtualLosses || 0) / 100,
+        betCount: user?.betCount || 0,
+        winCount: user?.winCount || 0,
+        winRate: user?.betCount ? ((user?.winCount || 0) / user.betCount * 100).toFixed(1) : "0.0"
+      });
+    } catch (error) {
+      console.error("Error fetching balance:", error);
+      res.status(500).json({ error: "Failed to fetch balance" });
+    }
+  });
+
+  app.post("/api/user/balance/reset", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const updatedUser = await storage.resetVirtualBalance(userId);
+      
+      res.json({
+        message: "Balance reset to $1,000",
+        balance: (updatedUser.virtualBalance || 100000) / 100,
+        totalWinnings: 0,
+        totalLosses: 0,
+        betCount: 0,
+        winCount: 0,
+        winRate: "0.0"
+      });
+    } catch (error) {
+      console.error("Error resetting balance:", error);
+      res.status(500).json({ error: "Failed to reset balance" });
+    }
+  });
+
+  // Enhanced bet placement with virtual balance validation
+  app.post("/api/place-bet", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { gameId, betType, selection, odds, stake } = req.body;
+      
+      if (!gameId || !betType || !selection || !odds || !stake) {
+        return res.status(400).json({ error: "Missing required bet information" });
+      }
+
+      // Validate stake amount
+      const stakeInCents = Math.round(parseFloat(stake) * 100);
+      if (stakeInCents <= 0) {
+        return res.status(400).json({ error: "Invalid stake amount" });
+      }
+
+      // Check user's virtual balance
+      const currentBalance = await storage.getUserVirtualBalance(userId);
+      if (stakeInCents > currentBalance) {
+        return res.status(400).json({ 
+          error: "Insufficient virtual funds",
+          currentBalance: currentBalance / 100,
+          requiredAmount: stakeInCents / 100
+        });
+      }
+
+      // Deduct stake from balance
+      const newBalance = currentBalance - stakeInCents;
+      await storage.updateVirtualBalance(userId, newBalance);
+
+      // Calculate potential win
+      const potentialWin = odds > 0 
+        ? (stakeInCents * odds) / 100 
+        : (stakeInCents * 100) / Math.abs(odds);
+
+      // Create the bet
+      const bet = await storage.createBet({
+        userId,
+        gameId,
+        betType,
+        selection,
+        odds: parseInt(odds),
+        stake: stake,
+        potentialWin: (potentialWin / 100).toFixed(2),
+        status: "pending"
+      });
+
+      res.json({
+        message: "Bet placed successfully!",
+        bet,
+        remainingBalance: newBalance / 100
+      });
+    } catch (error) {
+      console.error("Error placing bet:", error);
+      res.status(500).json({ error: "Failed to place bet" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

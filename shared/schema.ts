@@ -16,6 +16,12 @@ export const users = pgTable("users", {
   referredBy: text("referred_by"),
   referralCount: integer("referral_count").default(0),
   isAdmin: boolean("is_admin").default(false),
+  // Virtual betting balance (in cents to avoid decimal issues)
+  virtualBalance: integer("virtual_balance").default(100000), // $1000 in cents
+  totalVirtualWinnings: integer("total_virtual_winnings").default(0), // track total winnings
+  totalVirtualLosses: integer("total_virtual_losses").default(0), // track total losses
+  betCount: integer("bet_count").default(0), // track number of bets placed
+  winCount: integer("win_count").default(0), // track number of winning bets
   createdAt: timestamp("created_at").defaultNow(),
 });
 
