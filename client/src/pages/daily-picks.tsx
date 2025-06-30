@@ -7,8 +7,6 @@ import { formatOdds, formatPercentage } from "@/lib/utils";
 import { Sparkles, TrendingUp, Target, BarChart3 } from "lucide-react";
 import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { useToast } from "@/hooks/use-toast";
-import { TierRestriction, useTierAccess } from "@/components/tier-restrictions";
-import { useAuth } from "@/contexts/auth-context";
 
 interface DailyPick {
   id: number;
@@ -29,8 +27,6 @@ export default function DailyPicks() {
   const queryClient = useQueryClient();
   const { addBet } = useBettingSlip();
   const { toast } = useToast();
-  const { user } = useAuth();
-  const { userTier, hasProAccess, canAccess } = useTierAccess();
 
   const {
     data: picks,
