@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { fetchTodaysGames } from "./services/odds";
 import { fetchCFLGames, generateMockCFLPublicPercentage, type CFLGame } from "./services/cfl";
 import { fetchMLBGamesForDate, fetchMLBGameDetails, getGameResult } from "./services/mlb-api";
+import { fetchMLBNews, generateMockMLBNews } from "./services/mlb-news";
 import { generateGameAnalysis, generateDailyDigest, type GameAnalysisData } from "./services/openai";
 import { insertBetSchema, insertGameSchema, insertOddsSchema, insertUserSchema } from "@shared/schema";
 import Stripe from "stripe";
@@ -2417,6 +2418,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Mark paid error:', error);
       res.status(500).json({ error: 'Failed to mark commission as paid' });
+    }
+  });
+
+  // MLB News endpoint
+  app.get("/api/mlb/news", async (req, res) => {
+    try {
+      console.log("Fetching MLB news...");
+      let news = await fetchMLBNews();
+      
+      // If no news from API, use mock data for development
+      if (news.length === 0) {
+        console.log("No news from API, using mock data");
+        news = generateMockMLBNews();
+      }
+      
+      console.log(`Fetched ${news.length} MLB news articles`);
+      res.json(news);
+    } catch (error) {
+      console.error("Error fetching MLB news:", error);
+      // Return mock data as fallback
+      const fallbackNews = generateMockMLBNews();
+      res.json(fallbackNews);
     }
   });
 

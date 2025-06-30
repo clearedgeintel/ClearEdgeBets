@@ -32,6 +32,7 @@ import PropFinder from "@/pages/prop-finder";
 import HotTrends from "@/pages/hot-trends";
 import AIAssistant from "@/pages/ai-assistant";
 import KellyCalculator from "@/pages/kelly-calculator";
+import GameDetail from "@/pages/game-detail";
 
 function Router() {
   return (
@@ -39,6 +40,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/todays-games" component={TodaysGames} />
+        <Route path="/game/:gameId" component={GameDetail} />
         <Route path="/my-bets" component={MyBets} />
         <Route path="/daily-picks" component={DailyPicks} />
         <Route path="/subscribe" component={Subscribe} />

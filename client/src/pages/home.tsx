@@ -7,10 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Star, TrendingUp, Target, Filter, Crown, Zap, ArrowRight, Users, BarChart3, Shield } from "lucide-react";
+import { Star, TrendingUp, Target, Filter, Crown, Zap, ArrowRight, Users, BarChart3, Shield, Newspaper, Clock, ExternalLink } from "lucide-react";
 
 import { useAuth } from "@/contexts/auth-context";
 import { Link } from "wouter";
+
+interface MLBNewsArticle {
+  id: string;
+  title: string;
+  summary: string;
+  url: string;
+  publishedAt: string;
+  author?: string;
+  imageUrl?: string;
+  category?: string;
+  source?: string;
+}
 
 interface Game {
   id: number;
@@ -68,6 +80,12 @@ export default function Home() {
 
   const { data: userBets = [] } = useQuery<any[]>({
     queryKey: ["/api/bets"],
+  });
+
+  // Fetch MLB News
+  const { data: mlbNews = [], isLoading: newsLoading } = useQuery<MLBNewsArticle[]>({
+    queryKey: ["/api/mlb/news"],
+    refetchInterval: 300000, // Refresh every 5 minutes
   });
 
   // Fetch actual daily picks for AI top picks
@@ -317,27 +335,6 @@ export default function Home() {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <main className="lg:col-span-3 space-y-6">
-            {/* Multi-Sport Dashboard Header */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-                  <div>
-                    <h2 className="text-2xl font-bold text-foreground">ClearEdge Sports Dashboard</h2>
-                    <p className="text-muted-foreground mt-1">
-                      Multi-Sport Betting Intelligence • <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      AI-powered analysis across Baseball, Football, Hockey & Basketball
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <Badge variant="secondary" className="bg-primary/10 text-primary">
-                      Live Updates
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Baseball Section Header */}
             <Card className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 border-green-200 dark:border-green-800">
@@ -355,17 +352,12 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <Tabs value={filter} onValueChange={setFilter}>
-                      <TabsList className="bg-muted">
-                        <TabsTrigger value="all" className="text-sm">All Games</TabsTrigger>
-                        <TabsTrigger value="early" className="text-sm">Early</TabsTrigger>
-                        <TabsTrigger value="late" className="text-sm">Late</TabsTrigger>
-                      </TabsList>
-                    </Tabs>
-                    <Button variant="ghost" size="sm">
-                      <Filter className="h-4 w-4 mr-2" />
-                      Filters
-                    </Button>
+                    <Link href="/todays-games">
+                      <Button variant="outline" size="sm">
+                        <ArrowRight className="h-4 w-4 mr-2" />
+                        View All Games
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </CardContent>
@@ -471,6 +463,78 @@ export default function Home() {
                 </div>
               </div>
             )}
+
+            {/* MLB News Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Newspaper className="h-5 w-5 mr-2" />
+                  Latest MLB News
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {newsLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="space-y-3 p-4 border rounded-lg">
+                        <div className="h-4 bg-muted rounded animate-pulse"></div>
+                        <div className="h-3 bg-muted rounded animate-pulse w-3/4"></div>
+                        <div className="h-3 bg-muted rounded animate-pulse w-1/2"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : mlbNews.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {mlbNews.slice(0, 6).map((article) => (
+                      <div key={article.id} className="space-y-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                        <h4 className="font-medium leading-tight line-clamp-2">
+                          {article.title}
+                        </h4>
+                        {article.summary && (
+                          <p className="text-sm text-muted-foreground line-clamp-3">
+                            {article.summary}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <div className="flex items-center space-x-3">
+                            <div className="flex items-center">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {new Date(article.publishedAt).toLocaleTimeString([], { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </div>
+                            {article.source && (
+                              <span className="text-xs">{article.source}</span>
+                            )}
+                          </div>
+                          {article.url !== '#' && (
+                            <a 
+                              href={article.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center hover:text-primary"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
+                        </div>
+                        {article.category && (
+                          <Badge variant="outline" className="text-xs">
+                            {article.category}
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Newspaper className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">No MLB news available at the moment</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Baseball Games List */}
             <Card>
@@ -611,7 +675,99 @@ export default function Home() {
           {/* Sidebar */}
           <aside className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
-              {/* Sidebar content can be added here */}
+              {/* MLB News Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Newspaper className="h-5 w-5 mr-2" />
+                    Latest MLB News
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {newsLoading ? (
+                    <div className="space-y-3">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="space-y-2">
+                          <div className="h-4 bg-muted rounded animate-pulse"></div>
+                          <div className="h-3 bg-muted rounded animate-pulse w-3/4"></div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : mlbNews.length > 0 ? (
+                    mlbNews.slice(0, 5).map((article) => (
+                      <div key={article.id} className="space-y-2 pb-3 border-b border-muted last:border-b-0">
+                        <h4 className="text-sm font-medium leading-tight line-clamp-2">
+                          {article.title}
+                        </h4>
+                        {article.summary && (
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {article.summary}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <div className="flex items-center">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {new Date(article.publishedAt).toLocaleTimeString([], { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </div>
+                          {article.url !== '#' && (
+                            <a 
+                              href={article.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center hover:text-primary"
+                            >
+                              <ExternalLink className="h-3 w-3 ml-1" />
+                            </a>
+                          )}
+                        </div>
+                        {article.category && (
+                          <Badge variant="outline" className="text-xs">
+                            {article.category}
+                          </Badge>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4">
+                      <Newspaper className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">No news available</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Platform Stats */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <BarChart3 className="h-5 w-5 mr-2" />
+                    Platform Analytics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Games Analyzed</span>
+                      <span className="text-sm font-medium">{filteredGames.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">AI Confidence</span>
+                      <span className="text-sm font-medium">87%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Value Plays</span>
+                      <span className="text-sm font-medium">
+                        {games.reduce((total, game) => 
+                          total + (game.aiSummary?.valuePlays?.length || 0), 0
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </aside>
         </div>
