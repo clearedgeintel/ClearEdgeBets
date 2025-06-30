@@ -475,32 +475,7 @@ export default function Home() {
           {/* Sidebar */}
           <aside className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
-              {/* Quick Stats */}
-              <Card>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-gray-900 mb-3">Today's Performance</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">AI Picks Record</span>
-                      <span className="font-medium text-secondary">
-                        {displayPicks.length > 0 ? `${Math.floor(Math.random() * 5) + 8}-${Math.floor(Math.random() * 3) + 2}` : "N/A"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">AI Confidence</span>
-                      <span className="font-medium text-primary">85%</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Value Plays</span>
-                      <span className="font-medium text-primary">{Math.ceil(games.length * 0.4)}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Games Today</span>
-                      <span className="font-medium">{games.length}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+
 
               <KellyCalculator />
             </div>
