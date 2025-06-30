@@ -26,7 +26,8 @@ import {
   BarChart3,
   Users,
   Building,
-  Award
+  Award,
+  Brain
 } from "lucide-react";
 import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -180,6 +181,13 @@ export default function Sidebar() {
       icon: BarChart3,
       current: location === "/analytics",
       description: "Advanced betting performance insights"
+    },
+    { 
+      name: "AI Assistant", 
+      href: "/ai-assistant", 
+      icon: Brain,
+      current: location === "/ai-assistant",
+      description: "Chat with AI for betting insights"
     },
     { 
       name: "Prop Finder", 

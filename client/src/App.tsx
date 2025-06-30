@@ -27,6 +27,7 @@ import WhiteLabel from "@/pages/white-label";
 import OddsComparison from "@/pages/odds-comparison";
 import PropFinder from "@/pages/prop-finder";
 import HotTrends from "@/pages/hot-trends";
+import AIAssistant from "@/pages/ai-assistant";
 
 function Router() {
   return (
@@ -52,6 +53,7 @@ function Router() {
         <Route path="/odds-comparison" component={OddsComparison} />
         <Route path="/prop-finder" component={PropFinder} />
         <Route path="/hot-trends" component={HotTrends} />
+        <Route path="/ai-assistant" component={AIAssistant} />
         <Route path="/auth" component={AuthPage} />
         <Route component={NotFound} />
       </Switch>

@@ -125,6 +125,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Built AI Betting Assistant for Elite tier users
+  - Created comprehensive chat interface with contextual game analysis and betting insights
+  - Added 6 pre-configured quick questions: "Which unders have edge today?", "What are your highest confidence picks?", etc.
+  - AI assistant analyzes real game data and daily picks to provide intelligent responses about value betting, pitcher matchups, weather impacts, and contrarian opportunities
+  - Integrated with existing game and picks data for authentic betting recommendations
+  - Added to Elite Features section in sidebar navigation with Brain icon
+  - Non-Elite users see upgrade prompt with feature preview
 - June 30, 2025: Added comprehensive Game Summary section to game cards (Free tier)
   - Added detailed game summary above AI Game Analysis including team records, starting pitcher stats, venue/weather info, and season trends
   - Information available to all users on free tier to provide valuable betting context before premium AI analysis
