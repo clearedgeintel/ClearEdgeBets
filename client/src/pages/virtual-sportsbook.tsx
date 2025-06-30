@@ -1083,7 +1083,7 @@ export default function VirtualSportsbook() {
                     
                     {/* Moneyline Column */}
                     <div className="space-y-2">
-                      <div className="text-sm text-muted-foreground mb-2">Moneyline</div>
+                      <div className="text-sm text-muted-foreground mb-2">M/L</div>
                       <div className="flex flex-col space-y-1">
 {(() => {
                           // Generate realistic MLB moneyline odds
@@ -1147,7 +1147,7 @@ export default function VirtualSportsbook() {
                     
                     {/* Total Runs Column */}
                     <div className="space-y-2">
-                      <div className="text-sm text-muted-foreground mb-2">Total Runs</div>
+                      <div className="text-sm text-muted-foreground mb-2">Runs</div>
                       <div className="flex flex-col space-y-1">
 {(() => {
                           // Generate realistic MLB total runs odds
