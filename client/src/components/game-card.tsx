@@ -421,7 +421,7 @@ export default function GameCard({ game }: GameCardProps) {
           <Collapsible open={propsOpen} onOpenChange={setPropsOpen}>
             <CollapsibleTrigger className="flex items-center justify-between w-full text-left mb-3">
               <div className="flex items-center space-x-2">
-                <span className="font-medium text-foreground">Player Props & Specials</span>
+                <span className="font-medium text-foreground">AI Player Props</span>
                 <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
                   PRO
                 </Badge>
