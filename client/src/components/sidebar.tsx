@@ -27,7 +27,8 @@ import {
   Users,
   Building,
   Award,
-  Brain
+  Brain,
+  Calculator
 } from "lucide-react";
 import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -202,6 +203,13 @@ export default function Sidebar() {
       icon: Target,
       current: location === "/prop-finder",
       description: "Find positive EV player props"
+    },
+    { 
+      name: "Parlay Builder", 
+      href: "/parlay-builder", 
+      icon: Calculator,
+      current: location === "/parlay-builder",
+      description: "Build optimal parlays with EV guidance"
     },
     { 
       name: "Custom Strategies", 

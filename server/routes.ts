@@ -2006,6 +2006,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Parlay opportunities endpoint for Elite tier
+  app.get('/api/parlay-opportunities', async (req: Request, res: Response) => {
+    try {
+      const parlayOpportunities = [
+        {
+          id: 'leg1',
+          gameId: 'ATL@MIA',
+          awayTeam: 'Atlanta Braves',
+          homeTeam: 'Miami Marlins',
+          betType: 'Moneyline',
+          selection: 'Braves ML',
+          odds: -140,
+          impliedProbability: 0.583,
+          estimatedProbability: 0.625,
+          ev: 7.2
+        },
+        {
+          id: 'leg2',
+          gameId: 'NYY@BOS',
+          awayTeam: 'New York Yankees',
+          homeTeam: 'Boston Red Sox',
+          betType: 'Total',
+          selection: 'Under 9.5',
+          odds: -110,
+          impliedProbability: 0.524,
+          estimatedProbability: 0.580,
+          ev: 10.7
+        },
+        {
+          id: 'leg3',
+          gameId: 'LAD@SF',
+          awayTeam: 'Los Angeles Dodgers',
+          homeTeam: 'San Francisco Giants',
+          betType: 'Spread',
+          selection: 'Dodgers -1.5',
+          odds: +145,
+          impliedProbability: 0.408,
+          estimatedProbability: 0.450,
+          ev: 10.3
+        },
+        {
+          id: 'leg4',
+          gameId: 'HOU@TEX',
+          awayTeam: 'Houston Astros',
+          homeTeam: 'Texas Rangers',
+          betType: 'Total',
+          selection: 'Over 8.5',
+          odds: -105,
+          impliedProbability: 0.512,
+          estimatedProbability: 0.535,
+          ev: 4.5
+        },
+        {
+          id: 'leg5',
+          gameId: 'CHC@MIL',
+          awayTeam: 'Chicago Cubs',
+          homeTeam: 'Milwaukee Brewers',
+          betType: 'Moneyline',
+          selection: 'Brewers ML',
+          odds: -165,
+          impliedProbability: 0.623,
+          estimatedProbability: 0.640,
+          ev: 2.7
+        }
+      ];
+
+      res.json(parlayOpportunities);
+    } catch (error) {
+      console.error('Error fetching parlay opportunities:', error);
+      res.status(500).json({ error: 'Failed to fetch parlay opportunities' });
+    }
+  });
+
   // Hot Trends endpoint for Elite tier
   app.get("/api/hot-trends", async (req, res) => {
     try {

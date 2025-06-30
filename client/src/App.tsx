@@ -24,6 +24,7 @@ import CustomStrategies from "@/pages/custom-strategies";
 import ExpertConsultation from "@/pages/expert-consultation";
 import EarlyAccess from "@/pages/early-access";
 import WhiteLabel from "@/pages/white-label";
+import ParlayBuilder from "@/pages/parlay-builder";
 import OddsComparison from "@/pages/odds-comparison";
 import PropFinder from "@/pages/prop-finder";
 import HotTrends from "@/pages/hot-trends";
@@ -52,6 +53,7 @@ function Router() {
         <Route path="/white-label" component={WhiteLabel} />
         <Route path="/odds-comparison" component={OddsComparison} />
         <Route path="/prop-finder" component={PropFinder} />
+        <Route path="/parlay-builder" component={ParlayBuilder} />
         <Route path="/hot-trends" component={HotTrends} />
         <Route path="/ai-assistant" component={AIAssistant} />
         <Route path="/auth" component={AuthPage} />
