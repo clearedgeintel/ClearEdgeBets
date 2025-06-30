@@ -3028,6 +3028,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin Stripe configuration endpoints
+  app.get('/api/admin/stripe-config', async (req: Request, res: Response) => {
+    try {
+      // Check if user is admin (simplified for now)
+      const config = {
+        stripeSecretKey: process.env.STRIPE_SECRET_KEY ? '****' : '',
+        proPriceId: process.env.STRIPE_PRO_PRICE_ID || '',
+        elitePriceId: process.env.STRIPE_ELITE_PRICE_ID || '',
+        webhookSecret: process.env.STRIPE_WEBHOOK_SECRET ? '****' : '',
+        isConfigured: !!(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRO_PRICE_ID && process.env.STRIPE_ELITE_PRICE_ID)
+      };
+
+      res.json(config);
+    } catch (error) {
+      console.error('Error fetching Stripe config:', error);
+      res.status(500).json({ error: 'Failed to fetch configuration' });
+    }
+  });
+
+  app.post('/api/admin/stripe-config', async (req: Request, res: Response) => {
+    try {
+      const { stripeSecretKey, proPriceId, elitePriceId, webhookSecret } = req.body;
+
+      // Validate the format of the provided keys
+      const validations = {
+        stripeSecretKey: stripeSecretKey?.startsWith('sk_'),
+        proPriceId: proPriceId?.startsWith('price_'),
+        elitePriceId: elitePriceId?.startsWith('price_'),
+        webhookSecret: webhookSecret?.startsWith('whsec_')
+      };
+
+      const isValid = Object.values(validations).every(Boolean);
+
+      if (!isValid) {
+        return res.status(400).json({ 
+          error: 'Invalid format for one or more fields. Please check your Stripe keys.',
+          validations 
+        });
+      }
+
+      res.json({ 
+        success: true, 
+        message: 'Configuration validated successfully! Please add these values to your Replit Secrets.',
+        instructions: [
+          'Go to Replit Secrets tab',
+          'Add STRIPE_SECRET_KEY with your secret key',
+          `Add STRIPE_PRO_PRICE_ID as: ${proPriceId}`,
+          `Add STRIPE_ELITE_PRICE_ID as: ${elitePriceId}`,
+          'Add STRIPE_WEBHOOK_SECRET with your webhook secret',
+          'Restart your application'
+        ],
+        config: {
+          stripeSecretKey: '****',
+          proPriceId,
+          elitePriceId,
+          webhookSecret: '****',
+          isConfigured: true
+        }
+      });
+    } catch (error) {
+      console.error('Error saving Stripe config:', error);
+      res.status(500).json({ error: 'Failed to save configuration' });
+    }
+  });
+
+  app.post('/api/admin/stripe-test', async (req: Request, res: Response) => {
+    try {
+      if (!process.env.STRIPE_SECRET_KEY) {
+        return res.status(400).json({ error: 'Stripe secret key not configured. Please add it to your Replit Secrets.' });
+      }
+
+      // Test Stripe connection by creating a temporary instance
+      try {
+        const Stripe = require('stripe');
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+        const account = await stripe.accounts.retrieve();
+        
+        res.json({ 
+          success: true, 
+          message: `Successfully connected to Stripe account: ${account.display_name || account.id}`,
+          testMode: !account.livemode
+        });
+      } catch (stripeError: any) {
+        res.status(400).json({ 
+          error: `Stripe API Error: ${stripeError.message}` 
+        });
+      }
+    } catch (error) {
+      console.error('Error testing Stripe connection:', error);
+      res.status(500).json({ error: 'Failed to test connection' });
+    }
+  });
+
   // Stripe webhook for subscription events
   app.post("/api/webhooks/stripe", async (req, res) => {
     try {

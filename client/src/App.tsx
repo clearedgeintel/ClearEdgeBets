@@ -36,6 +36,7 @@ import GameDetail from "@/pages/game-detail";
 import VirtualSportsbook from "@/pages/virtual-sportsbook";
 import WeeklyLeaderboard from "@/pages/weekly-leaderboard";
 import Groups from "@/pages/groups";
+import StripeSetup from "@/pages/stripe-setup";
 
 function Router() {
   return (
@@ -53,6 +54,7 @@ function Router() {
         <Route path="/admin" component={AdminPanel} />
         <Route path="/admin/users" component={AdminUsers} />
         <Route path="/admin/referrals" component={AdminReferrals} />
+        <Route path="/admin/stripe-setup" component={StripeSetup} />
         <Route path="/cfl" component={CFLHub} />
         <Route path="/cfl/games" component={CFLGames} />
         <Route path="/cfl/picks" component={CFLPicks} />

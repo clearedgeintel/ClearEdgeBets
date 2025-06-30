@@ -275,6 +275,14 @@ export default function AdminPanel() {
                   Referral Codes
                 </Button>
               </Link>
+              <Link href="/admin/stripe-setup">
+                <Button className="bg-purple-600 hover:bg-purple-700">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Stripe Setup
+                </Button>
+              </Link>
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
