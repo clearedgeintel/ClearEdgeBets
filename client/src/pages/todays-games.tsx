@@ -66,6 +66,16 @@ export default function TodaysGames() {
 
   const { data: games = [], isLoading } = useQuery<Game[]>({
     queryKey: ["/api/games", format(selectedDate, "yyyy-MM-dd")],
+    queryFn: async () => {
+      const dateParam = format(selectedDate, "yyyy-MM-dd");
+      const response = await fetch(`/api/games?date=${dateParam}`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
