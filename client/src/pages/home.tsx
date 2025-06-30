@@ -74,6 +74,7 @@ export default function Home() {
   const today = new Date().toISOString().split('T')[0];
   const { data: dailyPicks = [] } = useQuery<any[]>({
     queryKey: ["/api/daily-picks", today],
+    queryFn: () => fetch(`/api/daily-picks?date=${today}`).then(res => res.json()),
     refetchInterval: 300000, // Refresh every 5 minutes
   });
 
