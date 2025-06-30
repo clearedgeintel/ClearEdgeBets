@@ -142,7 +142,7 @@ export default function AIAssistant() {
         .slice(0, 3);
 
       return `Here are today's best under plays with edge:\n\n${topUnders.map((pick, index) => 
-        `${index + 1}. **${pick.gameId.replace('2025-06-30_', '').replace(' @ ', ' vs ')}** - Under ${pick.reasoning?.includes('total') ? pick.reasoning.match(/under (\d+\.?\d*)/i)?.[1] || 'TBD' : 'TBD'}\n   Confidence: ${pick.confidence || 65}% | Edge based on pitcher stats and weather conditions`
+        `${index + 1}. **${(pick.gameId || 'Game TBD').replace('2025-06-30_', '').replace(' @ ', ' vs ')}** - Under ${pick.reasoning?.includes('total') ? pick.reasoning.match(/under (\d+\.?\d*)/i)?.[1] || 'TBD' : 'TBD'}\n   Confidence: ${pick.confidence || 65}% | Edge based on pitcher stats and weather conditions`
       ).join('\n\n')}\n\nKey factors: Strong pitching matchups, potential weather impact, and public over-betting create value on the under side.`;
     }
 
@@ -154,7 +154,7 @@ export default function AIAssistant() {
       }
 
       return `Today's highest confidence picks:\n\n${topPicks.map((pick, index) => 
-        `${index + 1}. **${pick.gameId.replace('2025-06-30_', '').replace(' @ ', ' vs ')}**\n   ${pick.betType.toUpperCase()}: ${pick.selection}\n   Confidence: ${pick.confidence || 70}%\n   Reasoning: ${pick.reasoning?.slice(0, 100)}...`
+        `${index + 1}. **${(pick.gameId || 'Game TBD').replace('2025-06-30_', '').replace(' @ ', ' vs ')}**\n   ${(pick.betType || 'Pick').toUpperCase()}: ${pick.selection || 'TBD'}\n   Confidence: ${pick.confidence || 70}%\n   Reasoning: ${pick.reasoning?.slice(0, 100) || 'Analysis based on current data'}...`
       ).join('\n\n')}\n\nThese picks combine strong statistical edges with favorable matchup dynamics.`;
     }
 
