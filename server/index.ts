@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { schedulerService } from "./services/scheduler";
 
 const app = express();
 app.use(express.json());
@@ -79,5 +80,8 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    log(`✓ Automated AI ticket scheduler initialized`);
+    log(`  - Daily tickets: 9:00 AM Central Time`);
+    log(`  - Weekly summaries: Mondays at 9:00 AM Central Time`);
   });
 })();

@@ -1,4 +1,4 @@
-import { users, games, odds, aiSummaries, bets, props, dailyPicks, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship } from "@shared/schema";
+import { users, games, odds, aiSummaries, bets, props, dailyPicks, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, tickets, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship, type Ticket, type InsertTicket } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, gte, lte, desc, lt } from "drizzle-orm";
 
@@ -135,6 +135,17 @@ export interface IStorage {
   getUserFriends(userId: number): Promise<Array<Friendship & { friend: User }>>;
   deleteFriendship(userId1: number, userId2: number): Promise<void>;
   areFriends(userId1: number, userId2: number): Promise<boolean>;
+
+  // Ticket methods
+  createTicket(ticket: InsertTicket): Promise<Ticket>;
+  getTickets(filters?: { status?: string; category?: string; source?: string }): Promise<Ticket[]>;
+  getTicket(id: number): Promise<Ticket | undefined>;
+  updateTicketStatus(id: number, status: string): Promise<Ticket>;
+  
+  // Performance data methods for scheduler
+  getGames(date: string): Promise<Game[]>;
+  getRecentPerformanceData(): Promise<any[]>;
+  getPerformanceDataRange(startDate: string, endDate: string): Promise<any[]>;
 }
 
 export class MemStorage implements IStorage {

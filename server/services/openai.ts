@@ -305,3 +305,111 @@ Focus on identifying public vs sharp money discrepancies and line movement signi
     return [];
   }
 }
+
+// Generate AI-powered support tickets for automated insights
+export async function generateAITicket(requestData: {
+  type: 'daily_market_insight' | 'weekly_summary' | 'feature_request' | 'bug_analysis';
+  games?: any[];
+  marketConditions?: any;
+  performanceData?: any;
+  dateRange?: { start: Date; end: Date };
+}): Promise<{
+  analysis: string;
+  recommendations?: string[];
+  metrics?: any;
+  summary?: string;
+}> {
+  try {
+    let prompt = '';
+    
+    switch (requestData.type) {
+      case 'daily_market_insight':
+        prompt = `You are an expert MLB betting analyst generating a daily market insight report. 
+
+**Current Market Data:**
+- Total games analyzed: ${requestData.games?.length || 0}
+- Market conditions: ${JSON.stringify(requestData.marketConditions, null, 2)}
+
+**Analysis Requirements:**
+1. Identify the strongest betting opportunities for today
+2. Highlight any unusual line movements or market inefficiencies  
+3. Provide risk assessment for high-profile games
+4. Suggest bankroll management strategies for current market conditions
+5. Flag any red flags or concerning trends
+
+**Output Format:**
+Provide a comprehensive analysis in JSON format:
+{
+  "analysis": "Detailed market analysis text",
+  "recommendations": ["actionable recommendation 1", "recommendation 2", "..."]
+}
+
+Focus on actionable insights that would help betting professionals make informed decisions.`;
+        break;
+
+      case 'weekly_summary':
+        prompt = `You are generating a comprehensive weekly performance summary for a professional betting platform.
+
+**Performance Data:**
+${JSON.stringify(requestData.performanceData, null, 2)}
+
+**Date Range:** ${requestData.dateRange?.start.toDateString()} to ${requestData.dateRange?.end.toDateString()}
+
+**Analysis Requirements:**
+1. Overall performance metrics and trends
+2. Best performing bet types and strategies
+3. Areas for improvement and optimization
+4. Market pattern recognition
+5. Strategic recommendations for next week
+
+**Output Format:**
+{
+  "summary": "Executive summary of weekly performance",
+  "metrics": {
+    "winRate": "percentage",
+    "roi": "return on investment",
+    "topPerformer": "best strategy/bet type",
+    "improvement_area": "area needing attention"
+  },
+  "recommendations": ["strategic recommendation 1", "recommendation 2"]
+}`;
+        break;
+
+      default:
+        prompt = `Generate a professional analysis ticket for type: ${requestData.type}`;
+    }
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert MLB betting analyst and platform administrator. Generate professional, actionable insights for automated ticket system."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 1500
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || '{}');
+    return result;
+  } catch (error) {
+    console.error("Error generating AI ticket:", error);
+    
+    // Fallback response structure
+    return {
+      analysis: `Automated ${requestData.type} analysis generated on ${new Date().toLocaleDateString()}. 
+      Market data has been collected and is ready for review. 
+      Contact platform administrator for detailed insights.`,
+      recommendations: [
+        "Review current betting positions",
+        "Monitor line movements closely",
+        "Adjust bankroll management strategy"
+      ]
+    };
+  }
+}

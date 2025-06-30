@@ -367,3 +367,25 @@ export type Friendship = typeof friendships.$inferSelect;
 export const insertGroupLeaderboardSchema = createInsertSchema(groupLeaderboards);
 export type InsertGroupLeaderboard = z.infer<typeof insertGroupLeaderboardSchema>;
 export type GroupLeaderboard = typeof groupLeaderboards.$inferSelect;
+
+// AI-generated support tickets table
+export const tickets = pgTable("tickets", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(), // bug_report, feature_request, analysis_insight, market_update
+  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
+  status: text("status").notNull().default("open"), // open, in_progress, resolved, closed
+  source: text("source").notNull().default("ai_automated"), // ai_automated, user_submitted, admin_created
+  metadata: jsonb("metadata"), // store additional data like game analysis, market conditions, etc.
+  assignedTo: integer("assigned_to").references(() => users.id),
+  createdBy: integer("created_by").references(() => users.id),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Type exports for tickets
+export const insertTicketSchema = createInsertSchema(tickets);
+export type InsertTicket = z.infer<typeof insertTicketSchema>;
+export type Ticket = typeof tickets.$inferSelect;
