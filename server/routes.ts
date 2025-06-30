@@ -10,6 +10,48 @@ import Stripe from "stripe";
 import bcrypt from "bcrypt";
 
 // Helper function to generate CFL pick reasoning
+function convertMLBGameToGameFormat(mlbGame: any, targetDate: string) {
+  // Generate realistic odds for the game
+  const homeAdvantage = Math.random() * 0.2 + 0.9; // 0.9 to 1.1
+  const baseOdds = 100 + Math.random() * 50; // 100 to 150
+  
+  const awayOdds = Math.round(baseOdds / homeAdvantage);
+  const homeOdds = Math.round(-baseOdds * homeAdvantage);
+  
+  const totalLine = 7.5 + Math.random() * 3; // 7.5 to 10.5
+  const overOdds = -110 + Math.random() * 20 - 10; // -120 to -100
+  const underOdds = -110 + Math.random() * 20 - 10;
+  
+  const runLine = Math.random() > 0.5 ? 1.5 : -1.5;
+  const runLineOdds = runLine > 0 ? 140 + Math.random() * 40 : -160 - Math.random() * 40;
+  
+  return {
+    gameId: `${targetDate}_${mlbGame.awayTeamCode} @ ${mlbGame.homeTeamCode}`,
+    awayTeam: mlbGame.awayTeam,
+    homeTeam: mlbGame.homeTeam,
+    awayTeamCode: mlbGame.awayTeamCode,
+    homeTeamCode: mlbGame.homeTeamCode,
+    gameTime: mlbGame.gameTime,
+    venue: mlbGame.venue,
+    awayPitcher: `Pitcher ${mlbGame.awayTeamCode}`,
+    homePitcher: `Pitcher ${mlbGame.homeTeamCode}`,
+    awayPitcherStats: "3.25 ERA, 1.18 WHIP",
+    homePitcherStats: "3.45 ERA, 1.22 WHIP",
+    status: "scheduled",
+    odds: {
+      moneyline: { away: awayOdds, home: homeOdds },
+      total: { line: totalLine, over: overOdds, under: underOdds },
+      spread: { 
+        away: runLine, 
+        home: -runLine, 
+        awayOdds: runLine > 0 ? runLineOdds : -runLineOdds,
+        homeOdds: runLine > 0 ? -runLineOdds : runLineOdds
+      }
+    },
+    publicPercentage: Math.floor(Math.random() * 40) + 30 // 30-70%
+  };
+}
+
 function generateCFLPickReasoning(game: CFLGame, pickType: number): string {
   const reasonings = [
     // Moneyline reasoning (pickType 0)
@@ -442,8 +484,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { date } = req.query;
       const targetDate = date as string || new Date().toISOString().split('T')[0];
       
-      // Generate fresh date-specific games data without storage accumulation
-      const gamesWithOdds = generateGamesForDate(targetDate);
+      // Try to fetch real MLB games first
+      let realMLBGames = [];
+      try {
+        const { fetchMLBGamesForDate } = await import("./services/mlb-api.js");
+        realMLBGames = await fetchMLBGamesForDate(targetDate);
+        console.log(`Fetched ${realMLBGames.length} real MLB games for ${targetDate}`);
+      } catch (error) {
+        console.log("Failed to fetch real MLB games, using generated data:", error);
+      }
+      
+      // Use real MLB games if available, otherwise fall back to generated
+      const gamesWithOdds = realMLBGames.length > 0 ? 
+        realMLBGames.map((game: any) => convertMLBGameToGameFormat(game, targetDate)) :
+        generateGamesForDate(targetDate);
       
       // Create formatted response directly from generated data
       const formattedGames = gamesWithOdds.map((gameData) => {
