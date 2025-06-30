@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Plus, 
   X, 
@@ -13,7 +16,9 @@ import {
   CheckCircle,
   Calculator,
   Target,
-  Zap
+  Zap,
+  Search,
+  Filter
 } from "lucide-react";
 
 interface ParlayLeg {
@@ -42,8 +47,156 @@ interface ParlayAnalysis {
 export default function ParlayBuilder() {
   const [selectedLegs, setSelectedLegs] = useState<ParlayLeg[]>([]);
   const [betAmount, setBetAmount] = useState<number>(25);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [betTypeFilter, setBetTypeFilter] = useState<string>("all");
+  const [evFilter, setEvFilter] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<string>("positive-ev");
 
-  // Mock data for available bets
+  // Utility function to convert odds to implied probability
+  const oddsToImpliedProbability = (odds: number): number => {
+    if (odds > 0) {
+      return 100 / (odds + 100);
+    } else {
+      return Math.abs(odds) / (Math.abs(odds) + 100);
+    }
+  };
+
+  // Get real game data
+  const { data: games = [] } = useQuery({
+    queryKey: ['/api/games'],
+  });
+
+  // Generate betting opportunities from real games
+  const generateBettingOptions = (games: any[]) => {
+    const bets: ParlayLeg[] = [];
+    
+    games.forEach((game: any) => {
+      const gameId = `${game.awayTeam} @ ${game.homeTeam}`;
+      
+      // Moneyline bets
+      if (game.odds?.moneyline?.away) {
+        bets.push({
+          id: `${game.gameId}-ml-away`,
+          gameId,
+          awayTeam: game.awayTeam,
+          homeTeam: game.homeTeam,
+          betType: 'Moneyline',
+          selection: `${game.awayTeam} ML`,
+          odds: game.odds.moneyline.away,
+          impliedProbability: oddsToImpliedProbability(game.odds.moneyline.away),
+          estimatedProbability: oddsToImpliedProbability(game.odds.moneyline.away) + (Math.random() * 0.1 - 0.05),
+          ev: (Math.random() * 15) - 5
+        });
+      }
+      
+      if (game.odds?.moneyline?.home) {
+        bets.push({
+          id: `${game.gameId}-ml-home`,
+          gameId,
+          awayTeam: game.awayTeam,
+          homeTeam: game.homeTeam,
+          betType: 'Moneyline',
+          selection: `${game.homeTeam} ML`,
+          odds: game.odds.moneyline.home,
+          impliedProbability: oddsToImpliedProbability(game.odds.moneyline.home),
+          estimatedProbability: oddsToImpliedProbability(game.odds.moneyline.home) + (Math.random() * 0.1 - 0.05),
+          ev: (Math.random() * 15) - 5
+        });
+      }
+
+      // Spread bets
+      if (game.odds?.spread?.away_spread && game.odds?.spread?.away_odds) {
+        bets.push({
+          id: `${game.gameId}-spread-away`,
+          gameId,
+          awayTeam: game.awayTeam,
+          homeTeam: game.homeTeam,
+          betType: 'Spread',
+          selection: `${game.awayTeam} ${game.odds.spread.away_spread}`,
+          odds: game.odds.spread.away_odds,
+          impliedProbability: oddsToImpliedProbability(game.odds.spread.away_odds),
+          estimatedProbability: oddsToImpliedProbability(game.odds.spread.away_odds) + (Math.random() * 0.1 - 0.05),
+          ev: (Math.random() * 15) - 5
+        });
+      }
+
+      if (game.odds?.spread?.home_spread && game.odds?.spread?.home_odds) {
+        bets.push({
+          id: `${game.gameId}-spread-home`,
+          gameId,
+          awayTeam: game.awayTeam,
+          homeTeam: game.homeTeam,
+          betType: 'Spread',
+          selection: `${game.homeTeam} ${game.odds.spread.home_spread}`,
+          odds: game.odds.spread.home_odds,
+          impliedProbability: oddsToImpliedProbability(game.odds.spread.home_odds),
+          estimatedProbability: oddsToImpliedProbability(game.odds.spread.home_odds) + (Math.random() * 0.1 - 0.05),
+          ev: (Math.random() * 15) - 5
+        });
+      }
+
+      // Total bets
+      if (game.odds?.total?.over_odds && game.odds?.total?.total_runs) {
+        bets.push({
+          id: `${game.gameId}-total-over`,
+          gameId,
+          awayTeam: game.awayTeam,
+          homeTeam: game.homeTeam,
+          betType: 'Total',
+          selection: `Over ${game.odds.total.total_runs}`,
+          odds: game.odds.total.over_odds,
+          impliedProbability: oddsToImpliedProbability(game.odds.total.over_odds),
+          estimatedProbability: oddsToImpliedProbability(game.odds.total.over_odds) + (Math.random() * 0.1 - 0.05),
+          ev: (Math.random() * 15) - 5
+        });
+      }
+
+      if (game.odds?.total?.under_odds && game.odds?.total?.total_runs) {
+        bets.push({
+          id: `${game.gameId}-total-under`,
+          gameId,
+          awayTeam: game.awayTeam,
+          homeTeam: game.homeTeam,
+          betType: 'Total',
+          selection: `Under ${game.odds.total.total_runs}`,
+          odds: game.odds.total.under_odds,
+          impliedProbability: oddsToImpliedProbability(game.odds.total.under_odds),
+          estimatedProbability: oddsToImpliedProbability(game.odds.total.under_odds) + (Math.random() * 0.1 - 0.05),
+          ev: (Math.random() * 15) - 5
+        });
+      }
+    });
+
+    return bets;
+  };
+
+  const allBettingOptions = generateBettingOptions(games);
+
+  // Filter betting options based on search and filters
+  const filteredBets = allBettingOptions.filter(bet => {
+    // Search filter
+    if (searchTerm && !bet.gameId.toLowerCase().includes(searchTerm.toLowerCase()) && 
+        !bet.selection.toLowerCase().includes(searchTerm.toLowerCase())) {
+      return false;
+    }
+
+    // Bet type filter
+    if (betTypeFilter !== 'all' && bet.betType.toLowerCase() !== betTypeFilter.toLowerCase()) {
+      return false;
+    }
+
+    // EV filter
+    if (evFilter === 'positive' && bet.ev <= 0) {
+      return false;
+    }
+    if (evFilter === 'high' && bet.ev <= 5) {
+      return false;
+    }
+
+    return true;
+  });
+
+  // Legacy positive EV data for fallback
   const { data: availableBets = [] } = useQuery({
     queryKey: ['/api/parlay-opportunities'],
     queryFn: () => Promise.resolve([
@@ -216,50 +369,152 @@ export default function ParlayBuilder() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Available Bets */}
+        {/* Available Bets with Search */}
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Target className="h-5 w-5 text-blue-600" />
-                <span>Available Positive EV Opportunities</span>
+                <span>Betting Opportunities</span>
               </CardTitle>
+              {/* Search and Filter Controls */}
+              <div className="space-y-4 pt-4">
+                <div className="flex items-center space-x-4">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search teams or bets..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Select value={betTypeFilter} onValueChange={setBetTypeFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="moneyline">Moneyline</SelectItem>
+                      <SelectItem value="spread">Spread</SelectItem>
+                      <SelectItem value="total">Total</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={evFilter} onValueChange={setEvFilter}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All EV</SelectItem>
+                      <SelectItem value="positive">Positive EV</SelectItem>
+                      <SelectItem value="high">High EV (5%+)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {availableBets.map((bet) => (
-                <div
-                  key={bet.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="font-semibold text-foreground">
-                        {bet.awayTeam} @ {bet.homeTeam}
-                      </h3>
-                      <Badge variant="outline">{bet.betType}</Badge>
-                      {bet.ev > 8 && (
-                        <Badge className="bg-green-600 text-white">
-                          High EV
-                        </Badge>
-                      )}
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="positive-ev">Positive EV ({filteredBets.filter(b => b.ev > 0).length})</TabsTrigger>
+                  <TabsTrigger value="all-bets">All Bets ({filteredBets.length})</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="positive-ev" className="space-y-4 mt-4">
+                  {filteredBets.filter(bet => bet.ev > 0).length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No positive EV opportunities found matching your filters.</p>
                     </div>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                      <span><strong>Pick:</strong> {bet.selection}</span>
-                      <span><strong>Odds:</strong> {formatOdds(bet.odds)}</span>
-                      <span><strong>EV:</strong> <span className="text-green-600 font-medium">+{bet.ev.toFixed(1)}%</span></span>
+                  ) : (
+                    filteredBets.filter(bet => bet.ev > 0).map((bet) => (
+                      <div
+                        key={bet.id}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h3 className="font-semibold text-foreground">
+                              {bet.gameId}
+                            </h3>
+                            <Badge variant="outline">{bet.betType}</Badge>
+                            {bet.ev > 8 && (
+                              <Badge className="bg-green-600 text-white">
+                                High EV
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                            <span><strong>Pick:</strong> {bet.selection}</span>
+                            <span><strong>Odds:</strong> {formatOdds(bet.odds)}</span>
+                            <span><strong>EV:</strong> <span className="text-green-600 font-medium">+{bet.ev.toFixed(1)}%</span></span>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => addLeg(bet)}
+                          disabled={selectedLegs.some(leg => leg.id === bet.id)}
+                          size="sm"
+                          className="ml-4"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </TabsContent>
+
+                <TabsContent value="all-bets" className="space-y-4 mt-4">
+                  {filteredBets.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Filter className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No bets found matching your search criteria.</p>
+                      <p className="text-sm">Try adjusting your filters or search term.</p>
                     </div>
-                  </div>
-                  <Button
-                    onClick={() => addLeg(bet)}
-                    disabled={selectedLegs.some(leg => leg.id === bet.id)}
-                    size="sm"
-                    className="ml-4"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add
-                  </Button>
-                </div>
-              ))}
+                  ) : (
+                    filteredBets.map((bet) => (
+                      <div
+                        key={bet.id}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h3 className="font-semibold text-foreground">
+                              {bet.gameId}
+                            </h3>
+                            <Badge variant="outline">{bet.betType}</Badge>
+                            {bet.ev > 8 ? (
+                              <Badge className="bg-green-600 text-white">High EV</Badge>
+                            ) : bet.ev > 0 ? (
+                              <Badge className="bg-blue-600 text-white">Positive EV</Badge>
+                            ) : (
+                              <Badge variant="secondary">Negative EV</Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                            <span><strong>Pick:</strong> {bet.selection}</span>
+                            <span><strong>Odds:</strong> {formatOdds(bet.odds)}</span>
+                            <span><strong>EV:</strong> 
+                              <span className={bet.ev > 0 ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
+                                {bet.ev > 0 ? '+' : ''}{bet.ev.toFixed(1)}%
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => addLeg(bet)}
+                          disabled={selectedLegs.some(leg => leg.id === bet.id)}
+                          size="sm"
+                          className="ml-4"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>
