@@ -109,6 +109,30 @@ export default function Home() {
       return gameHour >= 19; // 7 PM or later
     }
     return true;
+  }).sort((a, b) => {
+    // Sort by game time in ascending order (earliest first)
+    const timeA = a.gameTime.replace(/[^\d:]/g, ''); // Remove AM/PM, keep just time
+    const timeB = b.gameTime.replace(/[^\d:]/g, ''); // Remove AM/PM, keep just time
+    
+    // Convert to 24-hour format for proper sorting
+    const convertTo24Hour = (time: string, originalTime: string) => {
+      const [hours, minutes] = time.split(':').map(Number);
+      const isPM = originalTime.toLowerCase().includes('pm');
+      const isAM = originalTime.toLowerCase().includes('am');
+      
+      if (isPM && hours !== 12) {
+        return (hours + 12) * 100 + minutes;
+      } else if (isAM && hours === 12) {
+        return minutes;
+      } else {
+        return hours * 100 + minutes;
+      }
+    };
+    
+    const timeValueA = convertTo24Hour(timeA, a.gameTime);
+    const timeValueB = convertTo24Hour(timeB, b.gameTime);
+    
+    return timeValueA - timeValueB;
   });
 
   // Use actual daily picks for top AI picks section
