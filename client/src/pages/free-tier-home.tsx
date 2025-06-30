@@ -85,7 +85,7 @@ export default function FreeTierHome() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
         {/* Free Tier Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-6 text-white mb-6">
+        <div className="bg-primary rounded-xl shadow-lg p-6 text-white mb-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold mb-2">ClearEdge Bets Free</h1>
