@@ -479,10 +479,10 @@ export default function VirtualSportsbook() {
         <Card className="border-green-200 dark:border-green-800">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Virtual Balance</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
+            <DollarSign className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-blue-600">
               ${balanceData?.balance?.toFixed(2) || "1000.00"}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -494,10 +494,10 @@ export default function VirtualSportsbook() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Winnings</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
+            <TrendingUp className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-blue-600">
               ${balanceData?.totalWinnings?.toFixed(2) || "0.00"}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -608,7 +608,7 @@ export default function VirtualSportsbook() {
                         </div>
                         <div className="text-right">
                           <div className="font-medium">${bet.stake.toFixed(2)}</div>
-                          <div className="text-xs text-green-600">Win: ${bet.potentialWin.toFixed(2)}</div>
+                          <div className="text-xs text-blue-600">Win: ${bet.potentialWin.toFixed(2)}</div>
                         </div>
                       </div>
                     ))}
@@ -621,7 +621,7 @@ export default function VirtualSportsbook() {
                     </div>
                     <div>
                       <span className="text-sm text-muted-foreground">Potential Win: </span>
-                      <span className="font-semibold text-green-600">${slip.totalPotentialWin.toFixed(2)}</span>
+                      <span className="font-semibold text-blue-600">${slip.totalPotentialWin.toFixed(2)}</span>
                     </div>
                   </div>
                   
@@ -701,7 +701,7 @@ export default function VirtualSportsbook() {
                     </div>
                     <div>
                       <div className="text-muted-foreground">Potential Return</div>
-                      <div className="font-semibold text-green-600">${bet.expectedReturn.toFixed(2)}</div>
+                      <div className="font-semibold text-blue-600">${bet.expectedReturn.toFixed(2)}</div>
                     </div>
                     <div>
                       <div className="text-muted-foreground">AI Probability</div>
@@ -709,7 +709,7 @@ export default function VirtualSportsbook() {
                     </div>
                     <div>
                       <div className="text-muted-foreground">Implied Value</div>
-                      <div className={`font-semibold ${bet.impliedValue > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <div className={`font-semibold ${bet.impliedValue > 0 ? 'text-blue-600' : 'text-red-600'}`}>
                         {bet.impliedValue > 0 ? '+' : ''}{bet.impliedValue.toFixed(1)}%
                       </div>
                     </div>
@@ -736,7 +736,7 @@ export default function VirtualSportsbook() {
                   <div className="text-xl font-bold">
                     ${aiBetSlip.reduce((sum, bet) => sum + bet.stake, 0).toFixed(2)}
                   </div>
-                  <div className="text-sm text-green-600">
+                  <div className="text-sm text-blue-600">
                     Potential: ${aiBetSlip.reduce((sum, bet) => sum + bet.expectedReturn, 0).toFixed(2)}
                   </div>
                 </div>
@@ -809,7 +809,7 @@ export default function VirtualSportsbook() {
                           step="1"
                         />
                         {bet.stake > 0 && (
-                          <div className="text-xs text-green-600 font-medium">
+                          <div className="text-xs text-blue-600 font-medium">
                             Win: ${bet.potentialWin.toFixed(2)}
                           </div>
                         )}
@@ -889,7 +889,7 @@ export default function VirtualSportsbook() {
                         />
                       </div>
                       {parlayStake > 0 && (
-                        <div className="text-sm text-green-600 font-medium">
+                        <div className="text-sm text-blue-600 font-medium">
                           Potential Win: ${calculateParlayPayout(parlayStake, calculateParlayOdds(currentSlip.items)).toFixed(2)}
                         </div>
                       )}
@@ -915,7 +915,7 @@ export default function VirtualSportsbook() {
                   <div className="text-lg font-bold">
                     Stake: ${isParlayMode ? parlayStake.toFixed(2) : currentSlip.totalStake.toFixed(2)}
                   </div>
-                  <div className="text-sm text-green-600 font-medium">
+                  <div className="text-sm text-blue-600 font-medium">
                     Potential Win: ${isParlayMode 
                       ? calculateParlayPayout(parlayStake, calculateParlayOdds(currentSlip.items)).toFixed(2)
                       : currentSlip.totalPotentialWin.toFixed(2)
