@@ -281,8 +281,6 @@ export default function AdminPanel() {
                   Stripe Setup
                 </Button>
               </Link>
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
