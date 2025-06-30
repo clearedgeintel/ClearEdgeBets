@@ -328,7 +328,7 @@ export default function Home() {
                   {displayPicks.map((pick, index) => (
                     <div key={index} className="bg-white/15 backdrop-blur rounded-lg p-4 border border-white/20 hover:bg-white/20 transition-all duration-200">
                       <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm font-medium opacity-90">
+                        <span className="text-sm font-medium text-white">
                           {index === 0 ? "Best Value" : index === 1 ? "Sharp Play" : "AI Special"}
                         </span>
                         <Badge 
@@ -347,12 +347,12 @@ export default function Home() {
                       
                       {/* Game Matchup */}
                       <div className="mb-3">
-                        <div className="flex items-center justify-between text-sm font-bold">
+                        <div className="flex items-center justify-between text-sm font-bold text-white">
                           <span>{pick.gameInfo.awayTeamCode}</span>
-                          <span className="opacity-75">@</span>
+                          <span className="text-white/80">@</span>
                           <span>{pick.gameInfo.homeTeamCode}</span>
                         </div>
-                        <div className="text-xs opacity-75 mt-1">
+                        <div className="text-xs text-white/80 mt-1">
                           {pick.gameInfo.gameTime} • {pick.gameInfo.venue}
                         </div>
                       </div>
@@ -360,24 +360,24 @@ export default function Home() {
                       {/* Pick Details */}
                       <div className="border-t border-white/20 pt-3">
                         <div className="mb-2">
-                          <p className="text-xs opacity-75 uppercase tracking-wide font-bold">🎯 AI PICK</p>
+                          <p className="text-xs text-white/90 uppercase tracking-wide font-bold">🎯 AI PICK</p>
                           <p className="text-lg font-bold text-yellow-300 mb-1">{pick.selection}</p>
                           <div className="flex items-center justify-between">
                             <p className="text-sm text-green-300 font-semibold">
                               Value Play
                             </p>
-                            <p className="text-xs bg-white/20 px-2 py-1 rounded-full">
+                            <p className="text-xs bg-white/20 px-2 py-1 rounded-full text-white">
                               +EV {pick.expectedValue?.toFixed(1) || "0.0"}%
                             </p>
                           </div>
                         </div>
-                        <p className="text-xs opacity-90 leading-relaxed">{pick.reasoning}</p>
+                        <p className="text-xs text-white/90 leading-relaxed">{pick.reasoning}</p>
                       </div>
                       
                       {/* Pitchers (if available) */}
                       {(pick.gameInfo.awayPitcher || pick.gameInfo.homePitcher) && (
                         <div className="mt-2 pt-2 border-t border-white/20">
-                          <div className="text-xs opacity-75">
+                          <div className="text-xs text-white/80">
                             {pick.gameInfo.awayPitcher && (
                               <div>{pick.gameInfo.awayTeamCode}: {pick.gameInfo.awayPitcher}</div>
                             )}

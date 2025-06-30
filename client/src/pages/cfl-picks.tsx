@@ -153,7 +153,13 @@ function CFLPickCard({ pick, onUpdateResult }: { pick: CFLPick; onUpdateResult: 
             <div className="text-right">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4" />
-                {pick.gameTime}
+                {new Date(pick.gameTime).toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  timeZoneName: 'short'
+                })}
               </div>
             </div>
           </div>
@@ -312,25 +318,7 @@ export default function CFLPicks() {
     },
   });
 
-  // Reset results mutation
-  const resetResultsMutation = useMutation({
-    mutationFn: (date: string) => 
-      apiRequest('POST', '/api/performance/reset-results', { date }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/cfl/daily-picks'] });
-      toast({
-        title: "Results Reset",
-        description: "All CFL pick results have been cleared and can now be re-reconciled.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Reset Failed",
-        description: "Failed to reset results. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
+
 
   const getResultColor = (result: string | null) => {
     switch (result) {
@@ -517,15 +505,7 @@ export default function CFLPicks() {
                 Auto-Reconcile Picks
               </Button>
               
-              <Button 
-                onClick={() => resetResultsMutation.mutate(today)}
-                disabled={resetResultsMutation.isPending}
-                variant="outline"
-                className="flex items-center gap-2 text-orange-600 border-orange-500/20 hover:bg-orange-500/10"
-              >
-                <Trash2 className={`h-4 w-4 ${resetResultsMutation.isPending ? 'animate-spin' : ''}`} />
-                Reset All Results
-              </Button>
+
             </div>
           </CardContent>
         </Card>

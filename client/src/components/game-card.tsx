@@ -395,44 +395,7 @@ export default function GameCard({ game }: GameCardProps) {
           </Collapsible>
         </div>
 
-        {/* Public Sentiment Section */}
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="mb-3">
-            <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Public Betting Sentiment
-            </h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600">Moneyline Public</span>
-                  <span className="font-medium">62% • 38%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full" style={{ width: '62%' }}></div>
-                </div>
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>{game.awayTeamCode}</span>
-                  <span>{game.homeTeamCode}</span>
-                </div>
-              </div>
-              
-              <div className="bg-green-50 p-3 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600">Total Public</span>
-                  <span className="font-medium">58% • 42%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-green-500 h-2 rounded-full" style={{ width: '58%' }}></div>
-                </div>
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>Over</span>
-                  <span>Under</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+
 
         {/* Props Section */}
         <div className="mt-4 pt-4 border-t border-gray-200">
