@@ -43,7 +43,7 @@ function Router() {
         <Route path="/cfl/picks" component={CFLPicks} />
         <Route path="/cfl/:section" component={CFLHub} />
         <Route path="/golf/tournaments" component={GolfTournaments} />
-        <Route path="/performance" component={PerformanceTracking} />
+        <Route path="/performance-tracking" component={PerformanceTracking} />
         <Route path="/analytics" component={PerformanceAnalytics} />
         <Route path="/strategies" component={CustomStrategies} />
         <Route path="/consultation" component={ExpertConsultation} />
