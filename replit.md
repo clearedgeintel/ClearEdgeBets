@@ -125,6 +125,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Restructured navigation with dedicated Virtual Sportsbook section
+  - Created standalone Virtual Sportsbook section between Home and Baseball in sidebar navigation
+  - Moved Virtual Betting, Weekly Leaderboard, and Groups features into Virtual Sportsbook section
+  - Removed virtual betting from Baseball section to create cleaner sport-specific organization
+  - Positioned Virtual Sportsbook as expandable section for future multi-sport virtual betting
+  - Navigation structure now supports adding virtual NHL, NBA, CFL betting under same section
+- June 30, 2025: Completed comprehensive Groups functionality implementation
+  - Built complete backend infrastructure with 4 database tables and 15+ API endpoints
+  - Created frontend Groups page with create/join/manage group functionality
+  - Added group invitation system with unique codes and member management
+  - Integrated Groups into navigation and routing system
+  - Groups support private/public settings, member roles, and invite code sharing
 - June 30, 2025: Relocated betting slip to prominent position above available games in Virtual Sportsbook
   - Moved betting slip from bottom left corner to main content area above game listings
   - Enhanced betting slip UI with blue-themed professional design and comprehensive bet management

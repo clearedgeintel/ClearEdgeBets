@@ -45,6 +45,7 @@ export default function Sidebar() {
   const { bets } = useBettingSlip();
   const { user, hasAccess } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [virtualSportsbookExpanded, setVirtualSportsbookExpanded] = useState(true);
   const [baseballExpanded, setBaseballExpanded] = useState(true);
   const [footballExpanded, setFootballExpanded] = useState(false);
   const [golfExpanded, setGolfExpanded] = useState(false);
@@ -56,28 +57,14 @@ export default function Sidebar() {
 
   const sportsNavigation = [
     {
-      sport: "Baseball",
-      icon: HomePlate,
-      expanded: baseballExpanded,
-      setExpanded: setBaseballExpanded,
-      active: location === "/" || location.startsWith("/baseball") || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets" || location === "/virtual-sportsbook" || location === "/weekly-leaderboard" || location === "/performance-tracking",
+      sport: "Virtual Sportsbook",
+      icon: CircleDot,
+      expanded: virtualSportsbookExpanded,
+      setExpanded: setVirtualSportsbookExpanded,
+      active: location === "/virtual-sportsbook" || location === "/weekly-leaderboard" || location === "/groups",
       freeItems: [
         { 
-          name: "Games", 
-          href: "/todays-games", 
-          icon: Home,
-          current: location === "/todays-games",
-          description: "MLB games and odds for any date"
-        },
-        { 
-          name: "My Bets", 
-          href: "/my-bets", 
-          icon: History,
-          current: location === "/my-bets",
-          description: "Your MLB betting history"
-        },
-        { 
-          name: "Virtual Sportsbook", 
+          name: "Virtual Betting", 
           href: "/virtual-sportsbook", 
           icon: CircleDot,
           current: location === "/virtual-sportsbook",
@@ -96,6 +83,31 @@ export default function Sidebar() {
           icon: Users,
           current: location === "/groups",
           description: "Create groups and invite friends"
+        }
+      ],
+      proItems: [],
+      eliteItems: []
+    },
+    {
+      sport: "Baseball",
+      icon: HomePlate,
+      expanded: baseballExpanded,
+      setExpanded: setBaseballExpanded,
+      active: location === "/" || location.startsWith("/baseball") || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets" || location === "/performance-tracking",
+      freeItems: [
+        { 
+          name: "Games", 
+          href: "/todays-games", 
+          icon: Home,
+          current: location === "/todays-games",
+          description: "MLB games and odds for any date"
+        },
+        { 
+          name: "My Bets", 
+          href: "/my-bets", 
+          icon: History,
+          current: location === "/my-bets",
+          description: "Your MLB betting history"
         }
       ],
       proItems: [
