@@ -80,57 +80,64 @@ export default function Sidebar() {
           description: "Your MLB betting history"
         }
       ],
-      proItems: user && (hasAccess("pro") || hasAccess("elite")) ? [
+      proItems: [
         { 
           name: "Odds Comparison", 
           href: "/odds-comparison", 
           icon: BarChart3,
           current: location === "/odds-comparison",
-          description: "Compare odds across multiple sportsbooks"
+          description: "Compare odds across multiple sportsbooks",
+          requiresPro: true
         },
         { 
           name: "Hot Trends", 
           href: "/hot-trends", 
           icon: TrendingUp,
           current: location === "/hot-trends",
-          description: "Discover trending betting patterns"
+          description: "Discover trending betting patterns",
+          requiresPro: true
         }
-      ] : [],
-      eliteItems: user && hasAccess("elite") ? [
+      ],
+      eliteItems: [
         { 
           name: "Performance Analytics", 
           href: "/analytics", 
           icon: BarChart3,
           current: location === "/analytics",
-          description: "Advanced betting performance insights"
+          description: "Advanced betting performance insights",
+          requiresElite: true
         },
         { 
           name: "AI Assistant", 
           href: "/ai-assistant", 
           icon: Brain,
           current: location === "/ai-assistant",
-          description: "Chat with AI for betting insights"
+          description: "Chat with AI for betting insights",
+          requiresElite: true
         },
         { 
           name: "Prop Finder", 
           href: "/prop-finder", 
           icon: Target,
           current: location === "/prop-finder",
-          description: "Find positive EV player props"
+          description: "Find positive EV player props",
+          requiresElite: true
         },
         { 
           name: "Parlay Builder", 
           href: "/parlay-builder", 
           icon: Calculator,
           current: location === "/parlay-builder",
-          description: "Build optimal parlays with EV guidance"
+          description: "Build optimal parlays with EV guidance",
+          requiresElite: true
         },
         { 
           name: "Custom Strategies", 
           href: "/strategies", 
           icon: Target,
           current: location === "/strategies",
-          description: "Create and manage betting strategies"
+          description: "Create and manage betting strategies",
+          requiresElite: true
         },
         { 
           name: "Expert Consultation", 
@@ -146,7 +153,8 @@ export default function Sidebar() {
           href: "/early-access", 
           icon: Zap,
           current: location === "/early-access",
-          description: "Beta features and new releases"
+          description: "Beta features and new releases",
+          requiresElite: true
         },
         { 
           name: "White Label", 
@@ -157,7 +165,7 @@ export default function Sidebar() {
           disabled: true,
           comingSoon: true
         }
-      ] : []
+      ]
     },
     {
       sport: "Football",
@@ -359,13 +367,47 @@ export default function Sidebar() {
                   {sport.proItems && sport.proItems.length > 0 && (
                     <>
                       <div className="px-3 mb-2 mt-4">
-                        <div className="flex items-center space-x-2">
-                          <Crown className="h-3 w-3 text-blue-600" />
-                          <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Pro</span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Crown className="h-3 w-3 text-blue-600" />
+                            <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Pro</span>
+                          </div>
+                          {!user || !hasAccess("pro") ? (
+                            <Link href="/subscribe">
+                              <Button size="sm" variant="outline" className="h-6 text-xs border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white">
+                                Upgrade
+                              </Button>
+                            </Link>
+                          ) : null}
                         </div>
                       </div>
                       {sport.proItems.map((item) => {
                         const Icon = item.icon;
+                        const hasProAccess = user && hasAccess("pro");
+                        const requiresPro = (item as any).requiresPro;
+                        
+                        if (requiresPro && !hasProAccess) {
+                          return (
+                            <div
+                              key={item.name}
+                              className="flex items-center space-x-3 px-3 py-2 rounded-lg opacity-60 cursor-not-allowed"
+                            >
+                              <Icon className="h-4 w-4 text-gray-500" />
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-sm font-medium text-gray-500">{item.name}</span>
+                                  <Badge variant="secondary" className="text-xs bg-blue-600/20 text-blue-400 border border-blue-600/30">
+                                    Pro
+                                  </Badge>
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {item.description}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
                         return (
                           <Link
                             key={item.name}
@@ -396,15 +438,26 @@ export default function Sidebar() {
                   {sport.eliteItems && sport.eliteItems.length > 0 && (
                     <>
                       <div className="px-3 mb-2 mt-4">
-                        <div className="flex items-center space-x-2">
-                          <Award className="h-3 w-3 text-yellow-600" />
-                          <span className="text-xs font-semibold text-yellow-600 uppercase tracking-wide">Elite</span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Award className="h-3 w-3 text-yellow-600" />
+                            <span className="text-xs font-semibold text-yellow-600 uppercase tracking-wide">Elite</span>
+                          </div>
+                          {!user || !hasAccess("elite") ? (
+                            <Link href="/subscribe">
+                              <Button size="sm" variant="outline" className="h-6 text-xs border-yellow-600 text-yellow-600 hover:bg-yellow-600 hover:text-white">
+                                Upgrade
+                              </Button>
+                            </Link>
+                          ) : null}
                         </div>
                       </div>
                       {sport.eliteItems.map((item) => {
                         const Icon = item.icon;
                         const isDisabled = (item as any).disabled;
                         const isComingSoon = (item as any).comingSoon;
+                        const hasEliteAccess = user && hasAccess("elite");
+                        const requiresElite = (item as any).requiresElite;
                         
                         if (isDisabled) {
                           return (
@@ -421,6 +474,28 @@ export default function Sidebar() {
                                       Coming Soon
                                     </Badge>
                                   )}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {item.description}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        if (requiresElite && !hasEliteAccess) {
+                          return (
+                            <div
+                              key={item.name}
+                              className="flex items-center space-x-3 px-3 py-2 rounded-lg opacity-60 cursor-not-allowed"
+                            >
+                              <Icon className="h-4 w-4 text-gray-500" />
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-sm font-medium text-gray-500">{item.name}</span>
+                                  <Badge variant="secondary" className="text-xs bg-yellow-600/20 text-yellow-400 border border-yellow-600/30">
+                                    Elite
+                                  </Badge>
                                 </div>
                                 <div className="text-xs text-gray-500">
                                   {item.description}

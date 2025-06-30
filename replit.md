@@ -125,6 +125,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Enhanced sidebar navigation with tier visibility and upgrade prompts
+  - All users now see Free, Pro, and Elite tier sections for each sport to encourage upgrades
+  - Free tier users see locked Pro/Elite features with tier badges and "Upgrade" buttons
+  - Added tier-specific upgrade prompts linking directly to subscription page (/subscribe)
+  - Pro/Elite features display as grayed-out with "Pro" or "Elite" badges when user lacks access
+  - Enhanced user experience shows feature value proposition while maintaining clear access controls
 - June 30, 2025: Reorganized sidebar navigation with sport-specific tier structure
   - Moved Pro and Elite features below each sport section instead of global tier sections
   - Added Free tier header to clearly categorize basic features available to all users
