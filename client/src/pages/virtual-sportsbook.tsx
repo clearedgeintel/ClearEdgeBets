@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { DollarSign, TrendingUp, TrendingDown, RotateCcw, Target, Trophy, BarChart3, LogIn, Brain, Calculator } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, RotateCcw, Target, Trophy, BarChart3, LogIn, Brain, Calculator, Trash2, Plus, Minus } from "lucide-react";
 
 interface BalanceData {
   balance: number;
@@ -47,12 +47,154 @@ interface AIBetRecommendation {
   reasoning: string;
 }
 
+interface BettingSlipItem {
+  id: string;
+  gameId: string;
+  matchup: string;
+  betType: string;
+  selection: string;
+  odds: number;
+  stake: number;
+  potentialWin: number;
+  addedAt: Date;
+}
+
+interface BettingSlip {
+  id: string;
+  items: BettingSlipItem[];
+  totalStake: number;
+  totalPotentialWin: number;
+  createdAt: Date;
+  status: 'draft' | 'placed' | 'settled';
+}
+
 export default function VirtualSportsbook() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user, isLoading: authLoading } = useAuth();
   const [aiBetSlip, setAiBetSlip] = useState<AIBetRecommendation[] | null>(null);
   const [isGeneratingAIBets, setIsGeneratingAIBets] = useState(false);
+  
+  // Betting slip state management
+  const [bettingSlips, setBettingSlips] = useState<BettingSlip[]>([]);
+  const [currentSlip, setCurrentSlip] = useState<BettingSlip | null>(null);
+  const [showBettingSlip, setShowBettingSlip] = useState(false);
+
+  // Helper functions for betting slip management
+  const createNewBettingSlip = (): BettingSlip => {
+    const newSlip: BettingSlip = {
+      id: `slip-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      items: [],
+      totalStake: 0,
+      totalPotentialWin: 0,
+      createdAt: new Date(),
+      status: 'draft'
+    };
+    return newSlip;
+  };
+
+  const addToBettingSlip = (gameId: string, matchup: string, betType: string, selection: string, odds: number) => {
+    let slip = currentSlip;
+    
+    // Create new slip if none exists
+    if (!slip) {
+      slip = createNewBettingSlip();
+      setCurrentSlip(slip);
+      setBettingSlips(prev => [...prev, slip!]);
+    }
+
+    // Check if bet already exists in slip
+    const existingBetIndex = slip.items.findIndex(
+      item => item.gameId === gameId && item.betType === betType && item.selection === selection
+    );
+
+    if (existingBetIndex >= 0) {
+      toast({
+        title: "Bet Already Added",
+        description: "This bet is already in your betting slip.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newBet: BettingSlipItem = {
+      id: `bet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      gameId,
+      matchup,
+      betType,
+      selection,
+      odds,
+      stake: 0,
+      potentialWin: 0,
+      addedAt: new Date()
+    };
+
+    const updatedSlip = {
+      ...slip,
+      items: [...slip.items, newBet]
+    };
+
+    setCurrentSlip(updatedSlip);
+    setBettingSlips(prev => prev.map(s => s.id === slip!.id ? updatedSlip : s));
+    setShowBettingSlip(true);
+
+    toast({
+      title: "Added to Betting Slip",
+      description: `${selection} added to your betting slip.`,
+    });
+  };
+
+  const updateBetStake = (betId: string, stake: number) => {
+    if (!currentSlip) return;
+
+    const updatedItems = currentSlip.items.map(item => {
+      if (item.id === betId) {
+        const potentialWin = stake * (item.odds > 0 ? item.odds / 100 : 100 / Math.abs(item.odds));
+        return { ...item, stake, potentialWin };
+      }
+      return item;
+    });
+
+    const totalStake = updatedItems.reduce((sum, item) => sum + item.stake, 0);
+    const totalPotentialWin = updatedItems.reduce((sum, item) => sum + item.potentialWin, 0);
+
+    const updatedSlip = {
+      ...currentSlip,
+      items: updatedItems,
+      totalStake,
+      totalPotentialWin
+    };
+
+    setCurrentSlip(updatedSlip);
+    setBettingSlips(prev => prev.map(s => s.id === currentSlip.id ? updatedSlip : s));
+  };
+
+  const removeBetFromSlip = (betId: string) => {
+    if (!currentSlip) return;
+
+    const updatedItems = currentSlip.items.filter(item => item.id !== betId);
+    
+    if (updatedItems.length === 0) {
+      // Remove empty slip
+      setBettingSlips(prev => prev.filter(s => s.id !== currentSlip.id));
+      setCurrentSlip(null);
+      setShowBettingSlip(false);
+      return;
+    }
+
+    const totalStake = updatedItems.reduce((sum, item) => sum + item.stake, 0);
+    const totalPotentialWin = updatedItems.reduce((sum, item) => sum + item.potentialWin, 0);
+
+    const updatedSlip = {
+      ...currentSlip,
+      items: updatedItems,
+      totalStake,
+      totalPotentialWin
+    };
+
+    setCurrentSlip(updatedSlip);
+    setBettingSlips(prev => prev.map(s => s.id === currentSlip.id ? updatedSlip : s));
+  };
 
   // Virtual balance mutation (reuse existing endpoint)
   const initializeVirtualBalanceMutation = useMutation({
@@ -558,10 +700,13 @@ export default function VirtualSportsbook() {
                                 size="sm" 
                                 className="justify-center h-8 font-mono text-xs"
                                 onClick={() => {
-                                  toast({
-                                    title: "Bet Placed",
-                                    description: `${game.awayTeam} ${spread.away > 0 ? '+' : ''}${spread.away} (-110)`,
-                                  });
+                                  addToBettingSlip(
+                                    game.gameId, 
+                                    `${game.awayTeam} @ ${game.homeTeam}`, 
+                                    "spread", 
+                                    `${game.awayTeam} ${spread.away > 0 ? '+' : ''}${spread.away}`, 
+                                    -110
+                                  );
                                 }}
                               >
                                 {spread.away > 0 ? '+' : ''}{spread.away} -110
@@ -571,10 +716,13 @@ export default function VirtualSportsbook() {
                                 size="sm" 
                                 className="justify-center h-8 font-mono text-xs"
                                 onClick={() => {
-                                  toast({
-                                    title: "Bet Placed",
-                                    description: `${game.homeTeam} ${spread.home > 0 ? '+' : ''}${spread.home} (-110)`,
-                                  });
+                                  addToBettingSlip(
+                                    game.gameId, 
+                                    `${game.awayTeam} @ ${game.homeTeam}`, 
+                                    "spread", 
+                                    `${game.homeTeam} ${spread.home > 0 ? '+' : ''}${spread.home}`, 
+                                    -110
+                                  );
                                 }}
                               >
                                 {spread.home > 0 ? '+' : ''}{spread.home} -110
@@ -616,10 +764,13 @@ export default function VirtualSportsbook() {
                                 size="sm" 
                                 className="justify-center h-8 font-mono text-xs"
                                 onClick={() => {
-                                  toast({
-                                    title: "Bet Placed",
-                                    description: `${game.awayTeam} ML ${moneyline.away > 0 ? '+' : ''}${moneyline.away}`,
-                                  });
+                                  addToBettingSlip(
+                                    game.gameId, 
+                                    `${game.awayTeam} @ ${game.homeTeam}`, 
+                                    "moneyline", 
+                                    `${game.awayTeam} ML`, 
+                                    moneyline.away
+                                  );
                                 }}
                               >
                                 {moneyline.away > 0 ? '+' : ''}{moneyline.away}
@@ -629,10 +780,13 @@ export default function VirtualSportsbook() {
                                 size="sm" 
                                 className="justify-center h-8 font-mono text-xs"
                                 onClick={() => {
-                                  toast({
-                                    title: "Bet Placed",
-                                    description: `${game.homeTeam} ML ${moneyline.home > 0 ? '+' : ''}${moneyline.home}`,
-                                  });
+                                  addToBettingSlip(
+                                    game.gameId, 
+                                    `${game.awayTeam} @ ${game.homeTeam}`, 
+                                    "moneyline", 
+                                    `${game.homeTeam} ML`, 
+                                    moneyline.home
+                                  );
                                 }}
                               >
                                 {moneyline.home > 0 ? '+' : ''}{moneyline.home}
@@ -670,10 +824,13 @@ export default function VirtualSportsbook() {
                                 size="sm" 
                                 className="justify-center h-8 font-mono text-xs"
                                 onClick={() => {
-                                  toast({
-                                    title: "Bet Placed",
-                                    description: `Over ${total.line} ${total.over > 0 ? '+' : ''}${total.over}`,
-                                  });
+                                  addToBettingSlip(
+                                    game.gameId, 
+                                    `${game.awayTeam} @ ${game.homeTeam}`, 
+                                    "total", 
+                                    `Over ${total.line}`, 
+                                    total.over
+                                  );
                                 }}
                               >
                                 O{total.line} {total.over > 0 ? '+' : ''}{total.over}
@@ -683,10 +840,13 @@ export default function VirtualSportsbook() {
                                 size="sm" 
                                 className="justify-center h-8 font-mono text-xs"
                                 onClick={() => {
-                                  toast({
-                                    title: "Bet Placed",
-                                    description: `Under ${total.line} ${total.under > 0 ? '+' : ''}${total.under}`,
-                                  });
+                                  addToBettingSlip(
+                                    game.gameId, 
+                                    `${game.awayTeam} @ ${game.homeTeam}`, 
+                                    "total", 
+                                    `Under ${total.line}`, 
+                                    total.under
+                                  );
                                 }}
                               >
                                 U{total.line} {total.under > 0 ? '+' : ''}{total.under}
@@ -736,10 +896,13 @@ export default function VirtualSportsbook() {
                             size="sm" 
                             className="text-xs p-2 h-auto"
                             onClick={() => {
-                              toast({
-                                title: "Bet Placed",
-                                description: `${randomBatter1} Hits Over 1.5 (+140)`,
-                              });
+                              addToBettingSlip(
+                                game.gameId, 
+                                `${game.awayTeam} @ ${game.homeTeam}`, 
+                                "prop", 
+                                `${randomBatter1} Hits Over 1.5`, 
+                                140
+                              );
                             }}
                           >
                             <div className="text-center">
@@ -755,10 +918,13 @@ export default function VirtualSportsbook() {
                             size="sm" 
                             className="text-xs p-2 h-auto"
                             onClick={() => {
-                              toast({
-                                title: "Bet Placed",
-                                description: `${randomBatter2} RBIs Over 0.5 (+165)`,
-                              });
+                              addToBettingSlip(
+                                game.gameId, 
+                                `${game.awayTeam} @ ${game.homeTeam}`, 
+                                "prop", 
+                                `${randomBatter2} RBIs Over 0.5`, 
+                                165
+                              );
                             }}
                           >
                             <div className="text-center">
@@ -774,10 +940,13 @@ export default function VirtualSportsbook() {
                             size="sm" 
                             className="text-xs p-2 h-auto"
                             onClick={() => {
-                              toast({
-                                title: "Bet Placed",
-                                description: `${randomBatter1} Home Run (+350)`,
-                              });
+                              addToBettingSlip(
+                                game.gameId, 
+                                `${game.awayTeam} @ ${game.homeTeam}`, 
+                                "prop", 
+                                `${randomBatter1} Home Run`, 
+                                350
+                              );
                             }}
                           >
                             <div className="text-center">
@@ -793,10 +962,13 @@ export default function VirtualSportsbook() {
                             size="sm" 
                             className="text-xs p-2 h-auto"
                             onClick={() => {
-                              toast({
-                                title: "Bet Placed",
-                                description: `${homePitcher} Innings Pitched O5.5 (-120)`,
-                              });
+                              addToBettingSlip(
+                                game.gameId, 
+                                `${game.awayTeam} @ ${game.homeTeam}`, 
+                                "prop", 
+                                `${homePitcher} Innings O5.5`, 
+                                -120
+                              );
                             }}
                           >
                             <div className="text-center">
@@ -812,10 +984,13 @@ export default function VirtualSportsbook() {
                             size="sm" 
                             className="text-xs p-2 h-auto"
                             onClick={() => {
-                              toast({
-                                title: "Bet Placed",
-                                description: `${awayPitcher} Walks Under 2.5 (-115)`,
-                              });
+                              addToBettingSlip(
+                                game.gameId, 
+                                `${game.awayTeam} @ ${game.homeTeam}`, 
+                                "prop", 
+                                `${awayPitcher} Walks U2.5`, 
+                                -115
+                              );
                             }}
                           >
                             <div className="text-center">
