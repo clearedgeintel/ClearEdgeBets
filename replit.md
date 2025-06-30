@@ -125,6 +125,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Implemented comprehensive parlay betting functionality in Virtual Sportsbook
+  - Added parlay toggle allowing users to combine multiple bets into single high-payout wager
+  - Implemented parlay odds calculation by multiplying individual American odds
+  - Created parlay stake input with real-time payout calculations
+  - Enhanced betting slip to support both individual and parlay bet modes
+  - Added visual indicators showing combined odds, leg count, and parlay-specific UI elements
+  - Place Bets button adapts to show individual vs parlay betting with appropriate stake amounts
 - June 30, 2025: Restructured navigation with dedicated Virtual Sportsbook section
   - Created standalone Virtual Sportsbook section between Home and Baseball in sidebar navigation
   - Moved Virtual Betting, Weekly Leaderboard, and Groups features into Virtual Sportsbook section

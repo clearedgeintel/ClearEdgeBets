@@ -66,6 +66,10 @@ interface BettingSlip {
   totalPotentialWin: number;
   createdAt: Date;
   status: 'draft' | 'placed' | 'settled';
+  betType: 'individual' | 'parlay';
+  parlayOdds?: number;
+  parlayStake?: number;
+  parlayPayout?: number;
 }
 
 export default function VirtualSportsbook() {
@@ -79,6 +83,8 @@ export default function VirtualSportsbook() {
   const [bettingSlips, setBettingSlips] = useState<BettingSlip[]>([]);
   const [currentSlip, setCurrentSlip] = useState<BettingSlip | null>(null);
   const [showBettingSlip, setShowBettingSlip] = useState(false);
+  const [isParlayMode, setIsParlayMode] = useState(false);
+  const [parlayStake, setParlayStake] = useState<number>(10);
 
   // Helper functions for betting slip management
   const createNewBettingSlip = (): BettingSlip => {
@@ -88,9 +94,43 @@ export default function VirtualSportsbook() {
       totalStake: 0,
       totalPotentialWin: 0,
       createdAt: new Date(),
-      status: 'draft'
+      status: 'draft',
+      betType: isParlayMode ? 'parlay' : 'individual',
+      parlayOdds: 0,
+      parlayStake: 0,
+      parlayPayout: 0
     };
     return newSlip;
+  };
+
+  // Calculate parlay odds by multiplying all individual odds
+  const calculateParlayOdds = (items: BettingSlipItem[]): number => {
+    if (items.length === 0) return 0;
+    
+    // Convert American odds to decimal odds, multiply them, then convert back
+    let combinedDecimalOdds = 1;
+    items.forEach(item => {
+      const decimalOdds = item.odds > 0 
+        ? (item.odds / 100) + 1 
+        : (100 / Math.abs(item.odds)) + 1;
+      combinedDecimalOdds *= decimalOdds;
+    });
+    
+    // Convert back to American odds
+    const americanOdds = combinedDecimalOdds >= 2 
+      ? Math.round((combinedDecimalOdds - 1) * 100)
+      : Math.round(-100 / (combinedDecimalOdds - 1));
+    
+    return americanOdds;
+  };
+
+  // Calculate parlay payout
+  const calculateParlayPayout = (stake: number, odds: number): number => {
+    if (odds > 0) {
+      return stake + (stake * odds / 100);
+    } else {
+      return stake + (stake * 100 / Math.abs(odds));
+    }
   };
 
   const addToBettingSlip = (gameId: string, matchup: string, betType: string, selection: string, odds: number) => {
@@ -788,21 +828,98 @@ export default function VirtualSportsbook() {
               ))}
             </div>
             
+            {/* Parlay Toggle */}
+            {currentSlip.items.length > 1 && (
+              <div className="px-4 py-3 border-t bg-blue-50/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="parlayToggle"
+                        checked={isParlayMode}
+                        onChange={(e) => {
+                          setIsParlayMode(e.target.checked);
+                          if (currentSlip) {
+                            currentSlip.betType = e.target.checked ? 'parlay' : 'individual';
+                            currentSlip.parlayOdds = e.target.checked ? calculateParlayOdds(currentSlip.items) : 0;
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <Label htmlFor="parlayToggle" className="font-medium cursor-pointer">
+                        Parlay Bet
+                      </Label>
+                    </div>
+                    {isParlayMode && (
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                        {currentSlip.items.length} legs
+                      </Badge>
+                    )}
+                  </div>
+                  {isParlayMode && (
+                    <div className="text-right">
+                      <div className="text-sm font-semibold text-blue-700">
+                        {calculateParlayOdds(currentSlip.items) > 0 ? '+' : ''}{calculateParlayOdds(currentSlip.items)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Combined odds
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {isParlayMode && (
+                  <div className="mt-3 pt-3 border-t border-blue-200">
+                    <div className="flex items-center gap-3">
+                      <Label htmlFor="parlayStake" className="text-sm font-medium">
+                        Parlay Stake:
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">$</span>
+                        <Input
+                          id="parlayStake"
+                          type="number"
+                          placeholder="10"
+                          value={parlayStake}
+                          onChange={(e) => setParlayStake(parseFloat(e.target.value) || 0)}
+                          className="w-20 px-2 py-1 text-sm"
+                          min="0"
+                          step="1"
+                        />
+                      </div>
+                      {parlayStake > 0 && (
+                        <div className="text-sm text-green-600 font-medium">
+                          Potential Win: ${calculateParlayPayout(parlayStake, calculateParlayOdds(currentSlip.items)).toFixed(2)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Betting Slip Summary */}
             <div className="p-4 bg-muted/50 border-t">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <div className="font-semibold">Total</div>
+                  <div className="font-semibold">
+                    {isParlayMode ? 'Parlay Total' : 'Individual Bets Total'}
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     {currentSlip.items.length} bets selected
+                    {isParlayMode && <span className="ml-1 text-blue-600">• Parlay</span>}
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-bold">
-                    Stake: ${currentSlip.totalStake.toFixed(2)}
+                    Stake: ${isParlayMode ? parlayStake.toFixed(2) : currentSlip.totalStake.toFixed(2)}
                   </div>
                   <div className="text-sm text-green-600 font-medium">
-                    Potential Win: ${currentSlip.totalPotentialWin.toFixed(2)}
+                    Potential Win: ${isParlayMode 
+                      ? calculateParlayPayout(parlayStake, calculateParlayOdds(currentSlip.items)).toFixed(2)
+                      : currentSlip.totalPotentialWin.toFixed(2)
+                    }
                   </div>
                 </div>
               </div>
@@ -810,19 +927,28 @@ export default function VirtualSportsbook() {
               <div className="flex gap-2">
                 <Button 
                   className="flex-1 bg-green-600 hover:bg-green-700"
-                  disabled={currentSlip.totalStake === 0}
+                  disabled={isParlayMode ? parlayStake === 0 : currentSlip.totalStake === 0}
                   onClick={() => {
-                    // TODO: Implement place bets functionality
+                    const totalStake = isParlayMode ? parlayStake : currentSlip.totalStake;
+                    const betDescription = isParlayMode 
+                      ? `Parlay bet (${currentSlip.items.length} legs)` 
+                      : `${currentSlip.items.length} individual bets`;
+                    
                     toast({
                       title: "Bets Placed!",
-                      description: `${currentSlip.items.length} bets placed for $${currentSlip.totalStake.toFixed(2)}`,
+                      description: `${betDescription} placed for $${totalStake.toFixed(2)}`,
                     });
                     setCurrentSlip(null);
                     setBettingSlips(prev => prev.filter(s => s.id !== currentSlip.id));
+                    setIsParlayMode(false);
+                    setParlayStake(10);
                   }}
                 >
                   <TrendingUp className="h-4 w-4 mr-2" />
-                  Place Bets (${currentSlip.totalStake.toFixed(2)})
+                  {isParlayMode 
+                    ? `Place Parlay ($${parlayStake.toFixed(2)})` 
+                    : `Place Bets ($${currentSlip.totalStake.toFixed(2)})`
+                  }
                 </Button>
                 <Button 
                   variant="outline"
