@@ -411,7 +411,12 @@ export default function GameCard({ game }: GameCardProps) {
         <div className="mt-4 pt-4 border-t border-border">
           <Collapsible open={propsOpen} onOpenChange={setPropsOpen}>
             <CollapsibleTrigger className="flex items-center justify-between w-full text-left mb-3">
-              <span className="font-medium text-foreground">Player Props & Specials</span>
+              <div className="flex items-center space-x-2">
+                <span className="font-medium text-foreground">Player Props & Specials</span>
+                <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
+                  PRO
+                </Badge>
+              </div>
               {propsOpen ? (
                 <ChevronUp className="h-4 w-4 text-muted-foreground" />
               ) : (
@@ -420,22 +425,37 @@ export default function GameCard({ game }: GameCardProps) {
             </CollapsibleTrigger>
             
             <CollapsibleContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {mockProps.map((prop, index) => (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    className="bg-muted hover:bg-primary hover:text-white p-3 h-auto justify-between border-border"
-                    onClick={() => handleAddBet("prop", `${prop.player} ${prop.line}`, prop.odds)}
-                  >
-                    <div className="text-left">
-                      <p className="font-medium text-sm text-foreground">{prop.player} {prop.line}</p>
-                      <p className="text-xs text-muted-foreground">{prop.description}</p>
-                    </div>
-                    <span className="font-bold text-foreground">{formatOdds(prop.odds)}</span>
-                  </Button>
-                ))}
-              </div>
+              {user?.subscriptionTier === "free" ? (
+                <div className="bg-muted/50 rounded-lg p-6 text-center border-2 border-dashed border-muted-foreground/20">
+                  <Lock className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="font-medium text-foreground mb-2">Premium Feature</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Player props and special bets are available for Pro and Elite members
+                  </p>
+                  <Link to="/subscribe">
+                    <Button size="sm" className="bg-primary text-white hover:bg-primary/90">
+                      Upgrade to Pro
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {mockProps.map((prop, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      className="bg-muted hover:bg-primary hover:text-white p-3 h-auto justify-between border-border"
+                      onClick={() => handleAddBet("prop", `${prop.player} ${prop.line}`, prop.odds)}
+                    >
+                      <div className="text-left">
+                        <p className="font-medium text-sm text-foreground">{prop.player} {prop.line}</p>
+                        <p className="text-xs text-muted-foreground">{prop.description}</p>
+                      </div>
+                      <span className="font-bold text-foreground">{formatOdds(prop.odds)}</span>
+                    </Button>
+                  ))}
+                </div>
+              )}
             </CollapsibleContent>
           </Collapsible>
         </div>
