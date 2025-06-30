@@ -317,9 +317,9 @@ export async function fetchCFLGames(targetDate?: string): Promise<CFLGame[]> {
     const month = dateToUse.getMonth() + 1; // getMonth() returns 0-11
     const year = dateToUse.getFullYear();
     
-    console.log(`CFL API: Target date: ${targetDate}, Parsed: ${dateToUse}, Month: ${month}, Year: ${year}`);
+    console.log(`CFL API: Target date: ${targetDate}, Parsed: ${dateToUse}, Day: ${day}, Month: ${month}, Year: ${year}`);
     
-    const url = `https://americanfootballapi.p.rapidapi.com/api/american-football/matches/31/${month}/${year}`;
+    const url = `https://americanfootballapi.p.rapidapi.com/api/american-football/matches/${day}/${month}/${year}`;
     console.log("Making RapidAPI call to:", url);
     
     const response = await fetch(url, {
