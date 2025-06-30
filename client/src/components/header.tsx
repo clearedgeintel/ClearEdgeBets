@@ -28,17 +28,13 @@ export default function Header() {
           <div className="flex items-center space-x-8">
             <Link href="/" className="flex items-center space-x-3">
               <img 
-                src="/new-logo.png" 
-                alt="BetEdge" 
-                className="h-10 w-auto"
+                src="/clearedge-logo-new.png" 
+                alt="ClearEdge Bets" 
+                className="h-12 w-auto"
                 onError={(e) => {
                   e.currentTarget.src = "/logo.svg";
                 }}
               />
-              <div className="flex flex-col">
-                <span className="text-lg font-bold text-foreground">BetEdge</span>
-                <span className="text-xs text-muted-foreground -mt-1">SPORTS INTELLIGENCE</span>
-              </div>
             </Link>
             <nav className="hidden md:flex space-x-8">
               {navigation.map((item) => (

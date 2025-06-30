@@ -125,15 +125,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
-- June 30, 2025: Complete platform rebrand to "BetEdge" with new visual identity
-  - Replaced "ClearEdge Bets" branding with modern "BetEdge" identity throughout platform
-  - Updated logo and brand messaging to "Sports Intelligence" tagline
+- June 30, 2025: Complete visual rebrand with new ClearEdge Bets analytics-focused logo
+  - Implemented new professional logo featuring analytics chart, baseball, and football elements
+  - Updated color palette to match logo: deep navy blue backgrounds with bright analytics green accents
+  - Maintained dark theme aesthetic with no gradients for clean, professional appearance
+  - Updated all branding elements: header logo, footer copyright, welcome messages, dashboard titles
+  - Enhanced CSS variables to reflect navy blue (hsl(220, 30%, 6%)) and analytics green (hsl(138, 75%, 45%))
+  - Logo prominently displays "CLEAREDGE BETS" with sports analytics visual identity
   - Created comprehensive feature assessment document against user requirements
   - Confirmed Free Tier is 100% complete: daily games, top 3 picks, AI reasoning, mobile-first UI
   - Identified Pro Tier gaps: missing email/Telegram alerts and odds comparison functionality
   - Documented Elite Tier implementation needs: live line movement, prop finder, parlay builder
-  - Maintained dark theme aesthetic with clean, professional appearance
-  - Updated header, footer, and home page with new BetEdge branding elements
 - June 30, 2025: Enhanced betting interface with comprehensive result displays
   - Added game results to Games page showing final scores when available
   - Enhanced Daily Picks page with WIN/LOSS/PUSH result badges for settled picks

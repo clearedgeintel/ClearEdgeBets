@@ -143,10 +143,10 @@ export default function Home() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-center">
-              Welcome to BetEdge! 
+              Welcome to ClearEdge Bets! 
             </DialogTitle>
             <DialogDescription className="text-center text-lg mt-4">
-              Get the edge with AI-powered sports intelligence
+              Get the clear edge with AI-powered sports analytics
             </DialogDescription>
           </DialogHeader>
           
@@ -245,7 +245,7 @@ export default function Home() {
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                   <div>
-                    <h2 className="text-2xl font-bold text-foreground">BetEdge MLB Dashboard</h2>
+                    <h2 className="text-2xl font-bold text-foreground">ClearEdge MLB Dashboard</h2>
                     <p className="text-gray-600 mt-1">
                       Today's MLB Games • <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     </p>
