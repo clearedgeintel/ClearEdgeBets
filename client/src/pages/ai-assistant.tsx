@@ -294,15 +294,15 @@ export default function AIAssistant() {
                       <Button
                         key={q.id}
                         variant="ghost"
-                        className="w-full justify-start p-3 h-auto text-left"
+                        className="w-full justify-start p-3 h-auto text-left whitespace-normal"
                         onClick={() => handleQuickQuestion(q.question)}
                       >
-                        <div className="space-y-1">
+                        <div className="space-y-1 w-full">
                           <div className="flex items-center space-x-2">
-                            <Icon className="h-4 w-4 text-purple-600" />
+                            <Icon className="h-4 w-4 text-purple-600 flex-shrink-0" />
                             <span className="text-xs font-medium text-purple-600">{q.category}</span>
                           </div>
-                          <p className="text-sm text-foreground">{q.question}</p>
+                          <p className="text-sm text-foreground break-words">{q.question}</p>
                         </div>
                       </Button>
                     );
