@@ -64,6 +64,40 @@ function generateGamesForDate(dateString: string) {
   } else { // Tuesday-Friday - normal schedule
     gameCount = ((seed * 13) % 6) + 8; // 8-13 games
   }
+
+  // Real MLB pitchers by team (2024-2025 season)
+  const mlbPitchers = {
+    "ATL": ["Spencer Strider", "Max Fried", "Charlie Morton", "Bryce Elder", "AJ Smith-Shawver"],
+    "MIA": ["Sandy Alcantara", "Jesus Luzardo", "Braxton Garrett", "Johnny Cueto", "Ryan Weathers"],
+    "NYM": ["Jacob deGrom", "Kodai Senga", "Justin Verlander", "Jose Quintana", "Tylor Megill"],
+    "PHI": ["Zack Wheeler", "Aaron Nola", "Ranger Suarez", "Cristopher Sanchez", "Taijuan Walker"],
+    "WSH": ["Josiah Gray", "MacKenzie Gore", "Patrick Corbin", "Trevor Williams", "Jake Irvin"],
+    "CHC": ["Justin Steele", "Jameson Taillon", "Marcus Stroman", "Jordan Wicks", "Javier Assad"],
+    "CIN": ["Hunter Greene", "Nick Lodolo", "Graham Ashcraft", "Andrew Abbott", "Brandon Williamson"],
+    "MIL": ["Corbin Burnes", "Freddy Peralta", "Brandon Woodruff", "Adrian Houser", "Colin Rea"],
+    "PIT": ["Paul Skenes", "Mitch Keller", "Jared Jones", "Bailey Falter", "Marco Gonzales"],
+    "STL": ["Sonny Gray", "Kyle Gibson", "Miles Mikolas", "Andre Pallante", "Steven Matz"],
+    "ARI": ["Zac Gallen", "Merrill Kelly", "Eduardo Rodriguez", "Brandon Pfaadt", "Ryne Nelson"],
+    "COL": ["German Marquez", "Kyle Freeland", "Austin Gomber", "Ryan Feltner", "Ty Blach"],
+    "LAD": ["Yoshinobu Yamamoto", "Tyler Glasnow", "Walker Buehler", "Julio Urias", "Bobby Miller"],
+    "SD": ["Dylan Cease", "Joe Musgrove", "Yu Darvish", "Michael King", "Matt Waldron"],
+    "SF": ["Logan Webb", "Blake Snell", "Robbie Ray", "Kyle Harrison", "Jordan Hicks"],
+    "BAL": ["Grayson Rodriguez", "Kyle Bradish", "John Means", "Dean Kremer", "Cole Irvin"],
+    "BOS": ["Brayan Bello", "Kutter Crawford", "Tanner Houck", "Nick Pivetta", "Garrett Whitlock"],
+    "NYY": ["Gerrit Cole", "Carlos Rodon", "Nestor Cortes", "Marcus Stroman", "Luis Gil"],
+    "TB": ["Shane Baz", "Zack Littell", "Ryan Pepiot", "Taj Bradley", "Aaron Civale"],
+    "TOR": ["Kevin Gausman", "Jose Berrios", "Chris Bassitt", "Yusei Kikuchi", "Bowden Francis"],
+    "CWS": ["Garrett Crochet", "Erick Fedde", "Chris Flexen", "Jonathan Cannon", "Davis Martin"],
+    "CLE": ["Shane Bieber", "Triston McKenzie", "Logan Allen", "Tanner Bibee", "Cal Quantrill"],
+    "DET": ["Tarik Skubal", "Casey Mize", "Matt Manning", "Reese Olson", "Jack Flaherty"],
+    "KC": ["Seth Lugo", "Brady Singer", "Michael Wacha", "Cole Ragans", "Jordan Lyles"],
+    "MIN": ["Pablo Lopez", "Joe Ryan", "Bailey Ober", "Kenta Maeda", "Chris Paddack"],
+    "HOU": ["Framber Valdez", "Cristian Javier", "Ronel Blanco", "Hunter Brown", "Justin Verlander"],
+    "LAA": ["Tyler Anderson", "Patrick Sandoval", "Griffin Canning", "Jose Suarez", "Reid Detmers"],
+    "OAK": ["Paul Blackburn", "JP Sears", "Mason Miller", "Mitch Spence", "Luis Medina"],
+    "SEA": ["Logan Gilbert", "George Kirby", "Luis Castillo", "Bryce Miller", "Bryan Woo"],
+    "TEX": ["Jacob deGrom", "Nathan Eovaldi", "Andrew Heaney", "Jon Gray", "Dane Dunning"]
+  };
   
   const teams = [
     { name: "Atlanta Braves", code: "ATL" },
@@ -124,6 +158,23 @@ function generateGamesForDate(dateString: string) {
     
     const gameId = `${awayTeam.code} @ ${homeTeam.code}`;
     
+    // Get starting pitchers for both teams
+    const awayPitchers = (mlbPitchers as any)[awayTeam.code] || ["TBD"];
+    const homePitchers = (mlbPitchers as any)[homeTeam.code] || ["TBD"];
+    
+    // Select pitcher based on date seed for consistency
+    const awayPitcher = awayPitchers[(seed + i * 3) % awayPitchers.length];
+    const homePitcher = homePitchers[(seed + i * 5) % homePitchers.length];
+    
+    // Generate realistic pitcher stats
+    const awayWins = Math.floor(Math.random() * 8) + 5;
+    const awayLosses = Math.floor(Math.random() * 6) + 2;
+    const awayERA = (Math.random() * 2.5 + 2.8).toFixed(2);
+    
+    const homeWins = Math.floor(Math.random() * 8) + 5;
+    const homeLosses = Math.floor(Math.random() * 6) + 2;
+    const homeERA = (Math.random() * 2.5 + 2.8).toFixed(2);
+    
     games.push({
       gameId,
       awayTeam: awayTeam.name,
@@ -132,6 +183,10 @@ function generateGamesForDate(dateString: string) {
       homeTeamCode: homeTeam.code,
       gameTime: gameTime.toISOString(),
       venue: `${homeTeam.name} Stadium`,
+      awayPitcher: awayPitcher,
+      homePitcher: homePitcher,
+      awayPitcherStats: `${awayWins}-${awayLosses}, ${awayERA} ERA`,
+      homePitcherStats: `${homeWins}-${homeLosses}, ${homeERA} ERA`,
       odds: {
         moneyline: { 
           away: -110 + (seed + i * 3) % 40 - 20, 
@@ -406,6 +461,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             homeTeamCode: gameData.homeTeamCode,
             gameTime: gameData.gameTime,
             venue: gameData.venue,
+            awayPitcher: gameData.awayPitcher,
+            homePitcher: gameData.homePitcher,
+            awayPitcherStats: gameData.awayPitcherStats,
+            homePitcherStats: gameData.homePitcherStats,
             status: "scheduled"
           });
         }
