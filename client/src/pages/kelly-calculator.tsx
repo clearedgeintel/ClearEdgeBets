@@ -54,61 +54,7 @@ export default function KellyCalculator() {
     setResult(null);
   };
 
-  // Check if user has Pro or Elite access
-  const hasAccess = user && (user.subscriptionTier === 'pro' || user.subscriptionTier === 'elite');
 
-  if (!hasAccess) {
-    return (
-      <div className="p-8 space-y-8">
-        <div className="text-center">
-          <Calculator className="mx-auto h-16 w-16 text-blue-400 mb-4" />
-          <h1 className="text-3xl font-bold text-white mb-2">Kelly Calculator</h1>
-          <p className="text-gray-400 mb-6">
-            Optimize your bet sizing with mathematical precision using the Kelly Criterion
-          </p>
-          <Badge className="bg-blue-600 text-white mb-6">
-            <TrendingUp className="w-3 h-3 mr-1" />
-            Pro Feature
-          </Badge>
-        </div>
-
-        <Card className="bg-gray-800 border-gray-700 max-w-2xl mx-auto">
-          <CardHeader className="text-center">
-            <CardTitle className="text-white">Upgrade to Pro Required</CardTitle>
-            <CardDescription className="text-gray-400">
-              The Kelly Calculator helps you determine optimal bet sizes based on your edge and bankroll management strategy.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-              <div>
-                <Calculator className="h-8 w-8 text-blue-400 mx-auto mb-2" />
-                <h3 className="font-semibold text-white">Mathematical Precision</h3>
-                <p className="text-sm text-gray-400">Calculate exact bet sizes using the Kelly Criterion formula</p>
-              </div>
-              <div>
-                <TrendingUp className="h-8 w-8 text-green-400 mx-auto mb-2" />
-                <h3 className="font-semibold text-white">Bankroll Management</h3>
-                <p className="text-sm text-gray-400">Protect your funds while maximizing long-term growth</p>
-              </div>
-              <div>
-                <DollarSign className="h-8 w-8 text-yellow-400 mx-auto mb-2" />
-                <h3 className="font-semibold text-white">Expected Value</h3>
-                <p className="text-sm text-gray-400">See the mathematical edge of each betting opportunity</p>
-              </div>
-            </div>
-            <div className="text-center pt-4">
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <a href="/subscribe" className="flex items-center">
-                  Upgrade to Pro - $25/month
-                </a>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="p-8 space-y-8">
@@ -120,7 +66,7 @@ export default function KellyCalculator() {
         </p>
         <Badge className="bg-blue-600 text-white">
           <TrendingUp className="w-3 h-3 mr-1" />
-          Pro Feature
+          Free Tool
         </Badge>
       </div>
 

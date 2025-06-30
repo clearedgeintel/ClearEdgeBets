@@ -125,6 +125,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Moved Kelly Calculator from Pro tier to Free tier
+  - Relocated Kelly Calculator from Pro Features to Free Features in sidebar navigation
+  - Removed subscription access restrictions from Kelly Calculator page
+  - Updated badge from "Pro Feature" to "Free Tool" 
+  - All users now have access to mathematical bet sizing optimization tool
+  - Fixed calculation infinity issues in Virtual Sportsbook betting interface
 - June 30, 2025: Fixed all green color elements to maintain patriotic red, white, and blue theme
   - Updated AI picks section CSS from green gradient to solid blue background (#1E40AF)
   - Removed all gradients per user preference for clean, professional appearance
