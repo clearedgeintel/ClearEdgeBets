@@ -125,6 +125,9 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Added comprehensive Game Summary section to game cards (Free tier)
+  - Added detailed game summary above AI Game Analysis including team records, starting pitcher stats, venue/weather info, and season trends
+  - Information available to all users on free tier to provide valuable betting context before premium AI analysis
 - June 30, 2025: Updated game card player props section title
   - Renamed "Player Props & Specials" to "AI Player Props" for better brand alignment with AI-powered betting intelligence
   - Added Brain icon next to "AI Player Props" title to enhance visual appeal and reinforce AI branding

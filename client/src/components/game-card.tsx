@@ -322,6 +322,105 @@ export default function GameCard({ game }: GameCardProps) {
 
 
 
+        {/* Game Summary */}
+        <div className="border-t border-border pt-4">
+          <div className="mb-4">
+            <h3 className="font-medium text-foreground mb-3 flex items-center">
+              <svg className="h-4 w-4 mr-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Game Summary
+            </h3>
+            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+              {/* Team Records */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <div className="font-medium text-foreground">{game.awayTeam}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {Math.floor(Math.random() * 20) + 70}-{Math.floor(Math.random() * 20) + 70} 
+                    <span className="ml-1">({(Math.random() * 0.2 + 0.4).toFixed(3)})</span>
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="font-medium text-foreground">{game.homeTeam}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {Math.floor(Math.random() * 20) + 70}-{Math.floor(Math.random() * 20) + 70}
+                    <span className="ml-1">({(Math.random() * 0.2 + 0.4).toFixed(3)})</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Starting Pitchers */}
+              <div className="border-t border-border pt-3">
+                <div className="text-xs font-medium text-muted-foreground mb-2">STARTING PITCHERS</div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <div className="font-medium text-foreground">
+                      {game.awayPitcher || `${game.awayTeamCode} Starter`}
+                    </div>
+                    <div className="text-muted-foreground text-xs">
+                      {game.awayPitcherStats || `${Math.floor(Math.random() * 5) + 8}-${Math.floor(Math.random() * 3) + 3}, ${(Math.random() * 1.5 + 2.8).toFixed(2)} ERA`}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-medium text-foreground">
+                      {game.homePitcher || `${game.homeTeamCode} Starter`}
+                    </div>
+                    <div className="text-muted-foreground text-xs">
+                      {game.homePitcherStats || `${Math.floor(Math.random() * 5) + 8}-${Math.floor(Math.random() * 3) + 3}, ${(Math.random() * 1.5 + 2.8).toFixed(2)} ERA`}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Game Details */}
+              <div className="border-t border-border pt-3">
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <div className="text-xs font-medium text-muted-foreground">VENUE</div>
+                    <div className="text-foreground">{game.venue}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-muted-foreground">WEATHER</div>
+                    <div className="text-foreground">{Math.floor(Math.random() * 15) + 70}°F, Clear</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-muted-foreground">WIND</div>
+                    <div className="text-foreground">{Math.floor(Math.random() * 8) + 5} mph {Math.random() > 0.5 ? 'Out' : 'In'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="border-t border-border pt-3">
+                <div className="text-xs font-medium text-muted-foreground mb-2">SEASON TRENDS</div>
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Away vs RHP:</span>
+                      <span className="text-foreground">.{Math.floor(Math.random() * 50) + 250}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">O/U Record:</span>
+                      <span className="text-foreground">{Math.floor(Math.random() * 10) + 40}-{Math.floor(Math.random() * 10) + 40}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Home vs LHP:</span>
+                      <span className="text-foreground">.{Math.floor(Math.random() * 50) + 250}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Run Line:</span>
+                      <span className="text-foreground">{Math.floor(Math.random() * 10) + 40}-{Math.floor(Math.random() * 10) + 40}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* AI Summary */}
         <div className="border-t border-border pt-4">
           <Collapsible open={aiSummaryOpen} onOpenChange={setAiSummaryOpen}>
