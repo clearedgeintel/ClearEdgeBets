@@ -19,7 +19,8 @@ import {
   CreditCard,
   AlertCircle,
   CheckCircle,
-  XCircle
+  XCircle,
+  Ticket
 } from "lucide-react";
 import Header from "@/components/header";
 import { apiRequest } from "@/lib/queryClient";
@@ -266,6 +267,12 @@ export default function AdminPanel() {
                 <Button className="bg-blue-600 hover:bg-blue-700">
                   <Users className="w-4 h-4 mr-2" />
                   User Management
+                </Button>
+              </Link>
+              <Link href="/admin/referrals">
+                <Button className="bg-green-600 hover:bg-green-700">
+                  <Ticket className="w-4 h-4 mr-2" />
+                  Referral Codes
                 </Button>
               </Link>
             </div>
