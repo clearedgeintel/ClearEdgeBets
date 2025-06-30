@@ -560,8 +560,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Merge real odds with games
       const gamesWithRealOdds = mergeRealOddsWithGames(gamesWithOdds, realOdds);
       
-      // Create formatted response directly from generated data
-      const formattedGames = gamesWithRealOdds.map((gameData) => {
+      // Store games in database first, then create formatted response  
+      const formattedGames = await Promise.all(gamesWithRealOdds.map(async (gameData) => {
+        // Store game in database if it doesn't exist
+        let existingGame = await storage.getGame(gameData.gameId);
+        if (!existingGame) {
+          await storage.createGame({
+            gameId: gameData.gameId,
+            awayTeam: gameData.awayTeam,
+            homeTeam: gameData.homeTeam,
+            awayTeamCode: gameData.awayTeamCode,
+            homeTeamCode: gameData.homeTeamCode,
+            gameTime: gameData.gameTime,
+            venue: gameData.venue,
+            awayPitcher: gameData.awayPitcher,
+            homePitcher: gameData.homePitcher,
+            awayPitcherStats: gameData.awayPitcherStats,
+            homePitcherStats: gameData.homePitcherStats,
+            status: "scheduled",
+            result: null
+          });
+        }
         // Format odds array
         const oddsArray = [];
         
@@ -604,16 +623,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Generate AI summary
-        const confidence = Math.floor(Math.random() * 25) + 70;
-        const aiSummary = {
-          id: Math.floor(Math.random() * 1000000),
-          gameId: gameData.gameId,
-          summary: `Based on recent performance and pitching matchups, ${gameData.awayTeam} vs ${gameData.homeTeam} presents solid betting opportunities. ${gameData.awayPitcher} brings strong pitching for the away team, while ${gameData.homePitcher} anchors the home rotation. Weather and venue factors at ${gameData.venue} should be considered.`,
-          confidence: confidence,
-          valuePlays: JSON.stringify([]),
-          createdAt: new Date().toISOString()
-        };
+        // Fetch or generate AI summary
+        let aiSummary = null;
+        try {
+          // Try to get existing AI summary from database
+          const existingSummary = await storage.getAiSummary(gameData.gameId);
+          if (existingSummary) {
+            aiSummary = {
+              id: existingSummary.id,
+              gameId: existingSummary.gameId,
+              summary: existingSummary.summary,
+              confidence: existingSummary.confidence,
+              valuePlays: existingSummary.valuePlays,
+              createdAt: existingSummary.createdAt
+            };
+          } else {
+            // Generate new AI analysis if none exists
+            const analysisData: GameAnalysisData = {
+              awayTeam: gameData.awayTeam,
+              homeTeam: gameData.homeTeam,
+              awayPitcher: gameData.awayPitcher,
+              homePitcher: gameData.homePitcher,
+              awayPitcherStats: gameData.awayPitcherStats,
+              homePitcherStats: gameData.homePitcherStats,
+              venue: gameData.venue,
+              gameTime: gameData.gameTime,
+              moneylineOdds: gameData.odds.moneyline ? {
+                away: gameData.odds.moneyline.away,
+                home: gameData.odds.moneyline.home
+              } : undefined,
+              total: gameData.odds.total ? {
+                line: gameData.odds.total.line,
+                overOdds: gameData.odds.total.over,
+                underOdds: gameData.odds.total.under
+              } : undefined,
+              runLine: gameData.odds.spread ? {
+                awaySpread: gameData.odds.spread.away,
+                homeSpread: gameData.odds.spread.home,
+                awayOdds: gameData.odds.spread.awayOdds,
+                homeOdds: gameData.odds.spread.homeOdds
+              } : undefined
+            };
+
+            const analysis = await generateGameAnalysis(analysisData);
+            
+            // Store the new analysis
+            const newSummary = await storage.createAiSummary({
+              gameId: gameData.gameId,
+              summary: analysis.summary,
+              confidence: analysis.confidence,
+              valuePlays: analysis.valuePlays
+            });
+
+            aiSummary = {
+              id: newSummary.id,
+              gameId: newSummary.gameId,
+              summary: newSummary.summary,
+              confidence: newSummary.confidence,
+              valuePlays: newSummary.valuePlays,
+              createdAt: newSummary.createdAt
+            };
+          }
+        } catch (error) {
+          console.error("Error handling AI summary for game", gameData.gameId, error);
+          // Fallback to basic summary if AI generation fails
+          aiSummary = {
+            id: Math.floor(Math.random() * 1000000),
+            gameId: gameData.gameId,
+            summary: `Analysis pending for ${gameData.awayTeam} @ ${gameData.homeTeam}. Check back later for detailed insights.`,
+            confidence: 0,
+            valuePlays: [],
+            createdAt: new Date().toISOString()
+          };
+        }
 
         return {
           id: Math.floor(Math.random() * 1000000),
@@ -632,7 +714,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           odds: oddsArray,
           aiSummary: aiSummary
         };
-      });
+      }));
 
       res.json(formattedGames);
     } catch (error) {
@@ -2524,6 +2606,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Mark paid error:', error);
       res.status(500).json({ error: 'Failed to mark commission as paid' });
+    }
+  });
+
+  // Generate missing AI summaries for current games
+  app.post('/api/admin/generate-missing-summaries', async (req: Request, res: Response) => {
+    try {
+      const games = await fetch('http://localhost:5000/api/games').then(r => r.json());
+      let generatedCount = 0;
+      
+      for (const game of games) {
+        const existingSummary = await storage.getAiSummary(game.gameId);
+        if (!existingSummary) {
+          // Generate new AI analysis
+          const analysisData: GameAnalysisData = {
+            awayTeam: game.awayTeam,
+            homeTeam: game.homeTeam,
+            awayPitcher: game.awayPitcher,
+            homePitcher: game.homePitcher,
+            awayPitcherStats: game.awayPitcherStats,
+            homePitcherStats: game.homePitcherStats,
+            venue: game.venue,
+            gameTime: game.gameTime,
+          };
+
+          try {
+            const analysis = await generateGameAnalysis(analysisData);
+            await storage.createAiSummary({
+              gameId: game.gameId,
+              summary: analysis.summary,
+              confidence: analysis.confidence,
+              valuePlays: analysis.valuePlays
+            });
+            console.log(`Generated AI summary for ${game.gameId}`);
+            generatedCount++;
+          } catch (error) {
+            console.error(`Failed to generate AI summary for ${game.gameId}:`, error);
+          }
+        }
+      }
+      
+      res.json({ success: true, message: `Generated ${generatedCount} new AI summaries` });
+    } catch (error) {
+      console.error("Error generating missing summaries:", error);
+      res.status(500).json({ error: "Failed to generate missing summaries" });
     }
   });
 

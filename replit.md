@@ -150,6 +150,8 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- June 30, 2025: Fixed AI game summary issue - database had summaries for mock games but API now returns real MLB games with different IDs
+- June 30, 2025: Successfully implemented comprehensive mobile navigation optimization with hamburger menu and slide-out navigation
 - June 30, 2025: Expanded AI assistant question library from 6 to 20 comprehensive betting questions
   - Added 14 new quick questions covering advanced betting strategies and market intelligence
   - New categories include: parlays, public action, sharp spots, player props, team motivation
