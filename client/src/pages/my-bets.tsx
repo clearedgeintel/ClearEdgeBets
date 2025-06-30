@@ -63,41 +63,7 @@ export default function MyBets() {
     },
   });
 
-  // Mutation to simulate game results for testing
-  const simulateGamesMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/simulate-game-results");
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Game results simulated",
-        description: "Final scores have been added to games for testing.",
-      });
-    },
-  });
 
-  // Mutation to resolve pending bets
-  const resolveBetsMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/resolve-bets");
-      return response.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/bets"] });
-      toast({
-        title: "Bets resolved",
-        description: data.message || "Pending bets have been updated with results.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Resolution failed",
-        description: "Unable to resolve pending bets. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
 
   // Handlers for editing bets
   const startEditing = (bet: any) => {
@@ -188,33 +154,12 @@ export default function MyBets() {
           </div>
           <div className="flex gap-2">
             <Button
-              onClick={() => simulateGamesMutation.mutate()}
-              disabled={simulateGamesMutation.isPending}
+              onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/bets"] })}
               variant="outline"
               size="sm"
             >
-              {simulateGamesMutation.isPending ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Simulating...
-                </>
-              ) : (
-                "Simulate Games"
-              )}
-            </Button>
-            <Button
-              onClick={() => resolveBetsMutation.mutate()}
-              disabled={resolveBetsMutation.isPending}
-              size="sm"
-            >
-              {resolveBetsMutation.isPending ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Resolving...
-                </>
-              ) : (
-                "Resolve Bets"
-              )}
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
             </Button>
           </div>
         </div>

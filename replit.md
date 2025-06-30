@@ -125,6 +125,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Removed development/testing functions from production interface
+  - Eliminated "Simulate Games" and "Resolve Bets" buttons from My Bets page
+  - These were development utilities inappropriate for production sports betting platform
+  - Replaced with simple "Refresh" button for manual data updates
+  - Production bet resolution should happen automatically via real sports APIs
+  - Enhanced professional appearance by removing testing/debugging controls
 - June 30, 2025: Integrated Betting Slip functionality into My Bets page
   - Moved betting slip from sidebar to dedicated tab in My Bets page
   - Created tabbed interface: Betting Slip, Pending Bets, and Betting History
