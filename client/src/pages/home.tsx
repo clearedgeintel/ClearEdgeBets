@@ -409,7 +409,7 @@ export default function Home() {
                             <Badge 
                               className={`${
                                 pick.result === 'win' 
-                                  ? 'bg-green-600 text-white border-green-500' 
+                                  ? 'bg-blue-600 text-white border-blue-500' 
                                   : pick.result === 'loss' 
                                     ? 'bg-red-600 text-white border-red-500' 
                                     : 'bg-yellow-600 text-white border-yellow-500'
@@ -422,10 +422,10 @@ export default function Home() {
                             variant="secondary" 
                             className={`${
                               index === 0 
-                                ? 'bg-green-500 text-white' 
+                                ? 'bg-blue-500 text-white' 
                                 : index === 1 
                                   ? 'bg-yellow-500 text-gray-900' 
-                                  : 'bg-orange-500 text-white'
+                                  : 'bg-red-500 text-white'
                             } border-0 font-bold`}
                           >
                             {pick.confidence ? `${pick.confidence}% Confidence` : "Hot"}
@@ -452,7 +452,7 @@ export default function Home() {
                           <p className="text-lg font-bold text-yellow-300 mb-1">{pick.selection}</p>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <p className="text-sm text-green-300 font-semibold">
+                              <p className="text-sm text-blue-300 font-semibold">
                                 Value Play
                               </p>
                               {pick.odds && (
