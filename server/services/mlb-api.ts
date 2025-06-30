@@ -14,6 +14,10 @@ export interface MLBGameData {
   awayScore?: number;
   homeScore?: number;
   isCompleted: boolean;
+  awayPitcher?: string;
+  homePitcher?: string;
+  awayPitcherStats?: string;
+  homePitcherStats?: string;
 }
 
 export interface MLBScoreboardResponse {
@@ -174,6 +178,124 @@ export async function fetchTodaysMLBGames(): Promise<MLBGameData[]> {
 export async function fetchMLBGamesForDate(dateString: string): Promise<MLBGameData[]> {
   const date = new Date(dateString);
   return fetchMLBScoreboard(date.getFullYear(), date.getMonth() + 1, date.getDate());
+}
+
+// Fetch detailed game information including pitcher data
+export async function fetchMLBGameDetails(year: number, month: number, day: number): Promise<MLBGameData[]> {
+  if (!process.env.RAPIDAPI_KEY) {
+    throw new Error('RAPIDAPI_KEY environment variable is required');
+  }
+
+  try {
+    const response = await fetch(
+      `https://major-league-baseball-mlb.p.rapidapi.com/scoreboard?year=${year}&month=${month.toString().padStart(2, '0')}&day=${day.toString().padStart(2, '0')}`,
+      {
+        method: 'GET',
+        headers: {
+          'x-rapidapi-host': 'major-league-baseball-mlb.p.rapidapi.com',
+          'x-rapidapi-key': process.env.RAPIDAPI_KEY,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`MLB API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data || !data.events) {
+      console.log("MLB API returned unexpected format - no events array found");
+      return [];
+    }
+    
+    return data.events.map((event: any) => {
+      if (!event.competitions || event.competitions.length === 0) {
+        return null;
+      }
+      
+      const competition = event.competitions[0];
+      const awayCompetitor = competition.competitors?.find((c: any) => c.homeAway === 'away');
+      const homeCompetitor = competition.competitors?.find((c: any) => c.homeAway === 'home');
+      
+      if (!awayCompetitor || !homeCompetitor) {
+        return null;
+      }
+      
+      const awayTeam = awayCompetitor.team.displayName;
+      const homeTeam = homeCompetitor.team.displayName;
+      const awayCode = awayCompetitor.team.abbreviation;
+      const homeCode = homeCompetitor.team.abbreviation;
+      
+      // Extract pitcher information if available
+      let awayPitcher = '';
+      let homePitcher = '';
+      let awayPitcherStats = '';
+      let homePitcherStats = '';
+      
+      // Check if pitcher data is available in the competition details
+      if (competition.situation?.pitcher) {
+        awayPitcher = competition.situation.pitcher.displayName || '';
+        awayPitcherStats = `${competition.situation.pitcher.era || 'N/A'} ERA`;
+      }
+      
+      // Look for probable pitchers in probables array
+      if (awayCompetitor.probables && awayCompetitor.probables.length > 0) {
+        const probablePitcher = awayCompetitor.probables[0];
+        if (probablePitcher.athlete) {
+          awayPitcher = probablePitcher.athlete.displayName || probablePitcher.athlete.fullName || '';
+          // Add pitcher stats if available
+          if (probablePitcher.athlete.statistics) {
+            const stats = probablePitcher.athlete.statistics;
+            awayPitcherStats = `${stats.era || 'N/A'} ERA, ${stats.whip || 'N/A'} WHIP`;
+          } else {
+            awayPitcherStats = 'Stats TBD';
+          }
+        }
+      }
+      
+      if (homeCompetitor.probables && homeCompetitor.probables.length > 0) {
+        const probablePitcher = homeCompetitor.probables[0];
+        if (probablePitcher.athlete) {
+          homePitcher = probablePitcher.athlete.displayName || probablePitcher.athlete.fullName || '';
+          // Add pitcher stats if available
+          if (probablePitcher.athlete.statistics) {
+            const stats = probablePitcher.athlete.statistics;
+            homePitcherStats = `${stats.era || 'N/A'} ERA, ${stats.whip || 'N/A'} WHIP`;
+          } else {
+            homePitcherStats = 'Stats TBD';
+          }
+        }
+      }
+      
+      return {
+        gameId: `${awayCode}@${homeCode}`,
+        gameDate: event.date,
+        awayTeam: awayTeam,
+        homeTeam: homeTeam,
+        awayTeamCode: awayCode,
+        homeTeamCode: homeCode,
+        gameTime: new Date(event.date).toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        }),
+        venue: competition.venue.fullName,
+        status: competition.status.type.detail,
+        inning: competition.status.period ? `Inning ${competition.status.period}` : undefined,
+        awayScore: awayCompetitor.score ? parseInt(awayCompetitor.score) : undefined,
+        homeScore: homeCompetitor.score ? parseInt(homeCompetitor.score) : undefined,
+        isCompleted: competition.status.type.completed,
+        awayPitcher: awayPitcher || undefined,
+        homePitcher: homePitcher || undefined,
+        awayPitcherStats: awayPitcherStats || undefined,
+        homePitcherStats: homePitcherStats || undefined
+      };
+    }).filter((game: any) => game !== null) as MLBGameData[];
+  } catch (error) {
+    console.error('Error fetching MLB game details:', error);
+    throw error;
+  }
 }
 
 // Check if a specific game result is available

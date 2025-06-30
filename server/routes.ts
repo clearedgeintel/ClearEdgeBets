@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { fetchTodaysGames } from "./services/odds";
 import { fetchCFLGames, generateMockCFLPublicPercentage, type CFLGame } from "./services/cfl";
-import { fetchMLBGamesForDate, getGameResult } from "./services/mlb-api";
+import { fetchMLBGamesForDate, fetchMLBGameDetails, getGameResult } from "./services/mlb-api";
 import { generateGameAnalysis, generateDailyDigest, type GameAnalysisData } from "./services/openai";
 import { insertBetSchema, insertGameSchema, insertOddsSchema, insertUserSchema } from "@shared/schema";
 import Stripe from "stripe";
@@ -33,10 +33,10 @@ function convertMLBGameToGameFormat(mlbGame: any, targetDate: string) {
     homeTeamCode: mlbGame.homeTeamCode,
     gameTime: mlbGame.gameTime,
     venue: mlbGame.venue,
-    awayPitcher: `Pitcher ${mlbGame.awayTeamCode}`,
-    homePitcher: `Pitcher ${mlbGame.homeTeamCode}`,
-    awayPitcherStats: "3.25 ERA, 1.18 WHIP",
-    homePitcherStats: "3.45 ERA, 1.22 WHIP",
+    awayPitcher: mlbGame.awayPitcher || 'TBD',
+    homePitcher: mlbGame.homePitcher || 'TBD',
+    awayPitcherStats: mlbGame.awayPitcherStats || 'Stats TBD',
+    homePitcherStats: mlbGame.homePitcherStats || 'Stats TBD',
     status: "scheduled",
     odds: {
       moneyline: { away: awayOdds, home: homeOdds },
@@ -51,6 +51,8 @@ function convertMLBGameToGameFormat(mlbGame: any, targetDate: string) {
     publicPercentage: Math.floor(Math.random() * 40) + 30 // 30-70%
   };
 }
+
+
 
 function generateCFLPickReasoning(game: CFLGame, pickType: number): string {
   const reasonings = [
@@ -484,12 +486,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { date } = req.query;
       const targetDate = date as string || new Date().toISOString().split('T')[0];
       
-      // Try to fetch real MLB games first
+      // Try to fetch real MLB games with pitcher details first
       let realMLBGames = [];
       try {
-        const { fetchMLBGamesForDate } = await import("./services/mlb-api.js");
-        realMLBGames = await fetchMLBGamesForDate(targetDate);
-        console.log(`Fetched ${realMLBGames.length} real MLB games for ${targetDate}`);
+        const date = new Date(targetDate);
+        realMLBGames = await fetchMLBGameDetails(
+          date.getFullYear(), 
+          date.getMonth() + 1, 
+          date.getDate()
+        );
+        console.log(`Fetched ${realMLBGames.length} real MLB games with pitcher details for ${targetDate}`);
       } catch (error) {
         console.log("Failed to fetch real MLB games, using generated data:", error);
       }

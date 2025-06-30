@@ -125,6 +125,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Integrated authentic MLB pitcher data from RapidAPI
+  - Fixed pitcher display to show real starting pitchers instead of placeholder names
+  - Now displays actual scheduled pitchers: Matt Waldron vs. Zack Wheeler (SD@PHI), Erick Fedde vs. Andrew Heaney (STL@PIT)
+  - Updated MLB API service to extract pitcher information from "probables" array in competition data
+  - Removed mock pitcher name generation in favor of authentic API data
+  - Platform now shows complete real game information: teams, venues, game times, and starting pitchers
 - June 30, 2025: Integrated real MLB game data to replace generated matchups
   - Connected games API to authentic MLB data from RapidAPI instead of random team generators
   - Now displays actual MLB games scheduled for today: SD@PHI, STL@PIT, NYY@TOR, CIN@BOS, ATH@TB, BAL@TEX, KC@SEA, SF@ARI
