@@ -406,6 +406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { date } = req.query;
       const targetDate = date ? String(date) : new Date().toISOString().split('T')[0];
+      console.log(`CFL Route: Query date: ${date}, Target date: ${targetDate}`);
       
       const cflGames = await fetchCFLGames(targetDate);
       console.log(`CFL Route: Got ${cflGames.length} raw CFL games from service`);
