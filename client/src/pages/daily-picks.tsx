@@ -142,7 +142,14 @@ export default function DailyPicks() {
           <Target className="h-8 w-8 text-blue-600" />
           <div>
             <h1 className="text-3xl font-bold text-foreground">Daily Expert Picks</h1>
-            <p className="text-muted-foreground">AI-powered betting recommendations</p>
+            <p className="text-muted-foreground">
+              {new Date().toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })} • AI-powered betting recommendations
+            </p>
           </div>
         </div>
         <Button 
@@ -169,6 +176,56 @@ export default function DailyPicks() {
               <Sparkles className="h-4 w-4" />
               {generatePicksMutation.isPending ? "Generating..." : "Generate Daily Picks"}
             </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Results Recap */}
+      {picks && picks.length > 0 && picks.some(pick => pick.result) && (
+        <Card className="mb-6 bg-muted/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Today's Results Recap
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-foreground">
+                  {picks.filter(pick => pick.result).length}
+                </div>
+                <div className="text-sm text-muted-foreground">Settled</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-500">
+                  {picks.filter(pick => pick.result === 'win').length}
+                </div>
+                <div className="text-sm text-muted-foreground">Wins</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-500">
+                  {picks.filter(pick => pick.result === 'loss').length}
+                </div>
+                <div className="text-sm text-muted-foreground">Losses</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-yellow-500">
+                  {picks.filter(pick => pick.result === 'push').length}
+                </div>
+                <div className="text-sm text-muted-foreground">Pushes</div>
+              </div>
+            </div>
+            {picks.filter(pick => pick.result).length > 0 && (
+              <div className="mt-4 text-center">
+                <div className="text-lg font-semibold text-foreground">
+                  Win Rate: {Math.round((picks.filter(pick => pick.result === 'win').length / picks.filter(pick => pick.result && pick.result !== 'push').length) * 100) || 0}%
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {picks.filter(pick => pick.result === 'win').length} wins out of {picks.filter(pick => pick.result && pick.result !== 'push').length} decisive picks
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

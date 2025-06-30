@@ -377,14 +377,13 @@ export default function CFLGames() {
 
       {/* Coming Soon Notice */}
       <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="p-6 text-center">
-          <Trophy className="h-8 w-8 text-primary mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-foreground mb-2">Full CFL Coverage Coming Soon</h3>
-          <p className="text-muted-foreground mb-4">
-            We're working on comprehensive CFL betting intelligence with AI analysis, 
-            player props, and advanced statistics for the 2025 season.
+        <CardContent className="p-3 text-center">
+          <Trophy className="h-5 w-5 text-primary mx-auto mb-2" />
+          <h3 className="text-sm font-semibold text-foreground mb-1">Full CFL Coverage Coming Soon</h3>
+          <p className="text-xs text-muted-foreground mb-2">
+            Comprehensive CFL betting intelligence with AI analysis coming for 2025 season.
           </p>
-          <Button variant="outline">
+          <Button variant="outline" size="sm" className="text-xs">
             Get Notified
           </Button>
         </CardContent>

@@ -458,11 +458,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
 
-      // Filter games by target date
+      // Filter games by target date (with timezone flexibility)
       const filteredGames = formattedGames.filter(game => {
-        const gameDate = new Date(game.gameTime).toISOString().split('T')[0];
-        console.log(`CFL Filtering: Game ${game.gameId} date ${gameDate} vs target ${targetDate} = ${gameDate === targetDate}`);
-        return gameDate === targetDate;
+        const gameDate = new Date(game.gameTime);
+        const gameDateUTC = gameDate.toISOString().split('T')[0];
+        
+        // Also check local North American time zones where CFL games are played
+        const gameTimeET = new Date(gameDate.getTime() - (4 * 60 * 60 * 1000)); // EDT (UTC-4)
+        const gameTimeCT = new Date(gameDate.getTime() - (5 * 60 * 60 * 1000)); // CDT (UTC-5)  
+        const gameTimeMT = new Date(gameDate.getTime() - (6 * 60 * 60 * 1000)); // MDT (UTC-6)
+        const gameTimePT = new Date(gameDate.getTime() - (7 * 60 * 60 * 1000)); // PDT (UTC-7)
+        
+        const gameDateET = gameTimeET.toISOString().split('T')[0];
+        const gameDateCT = gameTimeCT.toISOString().split('T')[0];
+        const gameDateMT = gameTimeMT.toISOString().split('T')[0];
+        const gameDatePT = gameTimePT.toISOString().split('T')[0];
+        
+        const matches = gameDateUTC === targetDate || 
+                       gameDateET === targetDate || 
+                       gameDateCT === targetDate || 
+                       gameDateMT === targetDate || 
+                       gameDatePT === targetDate;
+        
+        console.log(`CFL Filtering: Game ${game.gameId} UTC: ${gameDateUTC}, ET: ${gameDateET}, CT: ${gameDateCT}, MT: ${gameDateMT}, PT: ${gameDatePT} vs target ${targetDate} = ${matches}`);
+        return matches;
       });
       
       console.log(`CFL Final: ${filteredGames.length} games after filtering from ${formattedGames.length} total`);
