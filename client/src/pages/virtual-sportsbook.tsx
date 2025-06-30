@@ -58,11 +58,7 @@ export default function VirtualSportsbook() {
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: async (credentials: { username: string; password: string }) => {
-      return await apiRequest("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials),
-      });
+      return await apiRequest("POST", "/api/login", credentials);
     },
     onSuccess: (data: any) => {
       setIsAuthenticated(true);
@@ -97,9 +93,7 @@ export default function VirtualSportsbook() {
   // Reset balance mutation
   const resetBalanceMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("/api/user/balance/reset", {
-        method: "POST",
-      });
+      return await apiRequest("POST", "/api/user/balance/reset");
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
