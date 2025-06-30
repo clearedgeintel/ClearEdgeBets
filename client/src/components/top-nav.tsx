@@ -11,16 +11,19 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Bell, User, Settings, LogOut, Crown, Zap, Shield, ChevronDown } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Bell, User, Settings, LogOut, Crown, Zap, Shield, ChevronDown, Menu } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
 import LoginForm from "@/components/auth/login-form";
 import RegisterForm from "@/components/auth/register-form";
+import Sidebar from "@/components/sidebar";
 
 export default function TopNav() {
   const { user, logout } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const getTierBadge = (tier: string) => {
     switch (tier) {
@@ -51,17 +54,48 @@ export default function TopNav() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3">
-            <img 
-              src="/clearedge-logo-new.png" 
-              alt="ClearEdge Bets" 
-              className="h-8 w-auto"
-            />
-            <span className="text-xl font-bold text-foreground hidden sm:block">
-              ClearEdge Bets
-            </span>
-          </Link>
+          {/* Mobile Menu + Logo */}
+          <div className="flex items-center space-x-3">
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden">
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button size="sm" variant="outline" className="bg-background shadow-sm border hover:bg-accent">
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-80 overflow-y-auto">
+                  <div className="h-full overflow-y-auto">
+                    <div className="p-4 border-b border-border bg-background">
+                      <div className="flex items-center space-x-3">
+                        <img 
+                          src="/clearedge-logo-new.png" 
+                          alt="ClearEdge Bets" 
+                          className="h-8 w-auto"
+                        />
+                        <span className="text-lg font-bold text-foreground">
+                          ClearEdge Bets
+                        </span>
+                      </div>
+                    </div>
+                    <Sidebar isMobileSheet={true} onNavigate={() => setMobileMenuOpen(false)} />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+            
+            {/* Logo */}
+            <Link href="/" className="flex items-center space-x-3">
+              <img 
+                src="/clearedge-logo-new.png" 
+                alt="ClearEdge Bets" 
+                className="h-8 w-auto"
+              />
+              <span className="text-xl font-bold text-foreground hidden sm:block">
+                ClearEdge Bets
+              </span>
+            </Link>
+          </div>
 
           {/* Center - Status */}
           <div className="hidden md:flex items-center space-x-4">

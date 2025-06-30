@@ -41,7 +41,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import LoginForm from "@/components/auth/login-form";
 import BettingSlip from "@/components/betting-slip";
 
-export default function Sidebar() {
+interface SidebarProps {
+  isMobileSheet?: boolean;
+  onNavigate?: () => void;
+}
+
+export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarProps = {}) {
   const [location] = useLocation();
   const { bets } = useBettingSlip();
   const { user, hasAccess } = useAuth();
@@ -423,7 +428,10 @@ export default function Sidebar() {
               ? "bg-gray-800 text-white"
               : "text-gray-300 hover:bg-gray-800 hover:text-white"
           }`}
-          onClick={() => setMobileOpen(false)}
+          onClick={() => {
+            if (isMobileSheet && onNavigate) onNavigate();
+            setMobileOpen(false);
+          }}
         >
           <Home className={`h-5 w-5 ${location === "/" ? "text-white" : "text-gray-400 group-hover:text-white"}`} />
           <div className="flex-1">
@@ -479,7 +487,10 @@ export default function Sidebar() {
                             ? "text-gray-500 cursor-not-allowed"
                             : "text-gray-300 hover:bg-gray-800 hover:text-white"
                         }`}
-                        onClick={() => setMobileOpen(false)}
+                        onClick={() => {
+                          if (isMobileSheet && onNavigate) onNavigate();
+                          setMobileOpen(false);
+                        }}
                       >
                         <Icon className={`h-4 w-4 ${
                           item.current ? "text-white" : 
@@ -553,7 +564,10 @@ export default function Sidebar() {
                                 ? "bg-blue-600 text-white"
                                 : "text-gray-300 hover:bg-gray-800 hover:text-white"
                             }`}
-                            onClick={() => setMobileOpen(false)}
+                            onClick={() => {
+                              if (isMobileSheet && onNavigate) onNavigate();
+                              setMobileOpen(false);
+                            }}
                           >
                             <Icon className={`h-4 w-4 ${
                               item.current ? "text-white" : "text-blue-400 group-hover:text-white"
@@ -650,7 +664,10 @@ export default function Sidebar() {
                                 ? "bg-yellow-600/20 text-yellow-400"
                                 : "text-gray-300 hover:bg-gray-800 hover:text-white"
                             }`}
-                            onClick={() => setMobileOpen(false)}
+                            onClick={() => {
+                              if (isMobileSheet && onNavigate) onNavigate();
+                              setMobileOpen(false);
+                            }}
                           >
                             <Icon className={`h-4 w-4 ${item.current ? "text-yellow-400" : "text-gray-400 group-hover:text-white"}`} />
                             <div className="flex-1">
