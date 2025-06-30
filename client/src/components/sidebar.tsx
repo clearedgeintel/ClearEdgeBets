@@ -60,7 +60,7 @@ export default function Sidebar() {
       icon: HomePlate,
       expanded: baseballExpanded,
       setExpanded: setBaseballExpanded,
-      active: location === "/" || location.startsWith("/baseball") || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets" || location === "/virtual-sportsbook" || location === "/performance-tracking",
+      active: location === "/" || location.startsWith("/baseball") || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets" || location === "/virtual-sportsbook" || location === "/weekly-leaderboard" || location === "/performance-tracking",
       freeItems: [
         { 
           name: "Games", 
@@ -82,6 +82,13 @@ export default function Sidebar() {
           icon: CircleDot,
           current: location === "/virtual-sportsbook",
           description: "Practice betting with $1,000 virtual money"
+        },
+        { 
+          name: "Weekly Leaderboard", 
+          href: "/weekly-leaderboard", 
+          icon: Trophy,
+          current: location === "/weekly-leaderboard",
+          description: "Compete with other users weekly"
         }
       ],
       proItems: [

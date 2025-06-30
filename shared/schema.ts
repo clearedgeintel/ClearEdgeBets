@@ -44,6 +44,25 @@ export const referralCodes = pgTable("referral_codes", {
   expiresAt: timestamp("expires_at"),
 });
 
+export const weeklyLeaderboard = pgTable("weekly_leaderboard", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  weekStart: timestamp("week_start").notNull(), // Monday of the week
+  weekEnd: timestamp("week_end").notNull(), // Sunday of the week
+  totalBets: integer("total_bets").default(0),
+  wonBets: integer("won_bets").default(0),
+  lostBets: integer("lost_bets").default(0),
+  winRate: decimal("win_rate", { precision: 5, scale: 2 }).default("0.00"), // percentage
+  totalStaked: decimal("total_staked", { precision: 10, scale: 2 }).default("0.00"),
+  totalWinnings: decimal("total_winnings", { precision: 10, scale: 2 }).default("0.00"),
+  netProfit: decimal("net_profit", { precision: 10, scale: 2 }).default("0.00"),
+  profitMargin: decimal("profit_margin", { precision: 5, scale: 2 }).default("0.00"), // percentage
+  rank: integer("rank").default(0),
+  points: integer("points").default(0), // scoring system: win=3pts, place=1pt
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const games = pgTable("games", {
   id: serial("id").primaryKey(),
   gameId: text("game_id").notNull().unique(),
@@ -231,6 +250,12 @@ export const insertReferralCodeSchema = createInsertSchema(referralCodes).omit({
   createdAt: true,
 });
 
+export const insertWeeklyLeaderboardSchema = createInsertSchema(weeklyLeaderboard).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertGame = z.infer<typeof insertGameSchema>;
@@ -251,3 +276,5 @@ export type InsertPerformanceTracking = z.infer<typeof insertPerformanceTracking
 export type PerformanceTracking = typeof performanceTracking.$inferSelect;
 export type InsertReferralCode = z.infer<typeof insertReferralCodeSchema>;
 export type ReferralCode = typeof referralCodes.$inferSelect;
+export type InsertWeeklyLeaderboard = z.infer<typeof insertWeeklyLeaderboardSchema>;
+export type WeeklyLeaderboard = typeof weeklyLeaderboard.$inferSelect;

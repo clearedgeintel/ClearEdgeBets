@@ -1,6 +1,6 @@
-import { users, games, odds, aiSummaries, bets, props, dailyPicks, consensusData, performanceTracking, referralCodes, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode } from "@shared/schema";
+import { users, games, odds, aiSummaries, bets, props, dailyPicks, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, gte, lte, desc, lt } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -97,6 +97,13 @@ export interface IStorage {
       accuracy: number;
     }>;
   }>;
+
+  // Weekly Leaderboard methods
+  getCurrentWeekLeaderboard(): Promise<Array<WeeklyLeaderboard & { user: User }>>;
+  getWeeklyLeaderboard(weekStart: Date): Promise<Array<WeeklyLeaderboard & { user: User }>>;
+  updateUserWeeklyStats(userId: number, betResult: 'win' | 'loss', stakeAmount: number, winAmount?: number): Promise<void>;
+  resetWeeklyLeaderboard(): Promise<void>;
+  getUserWeeklyStats(userId: number): Promise<WeeklyLeaderboard | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -916,6 +923,177 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return user;
+  }
+
+  // Weekly Leaderboard methods
+  async getCurrentWeekLeaderboard(): Promise<Array<WeeklyLeaderboard & { user: User }>> {
+    const weekStart = this.getWeekStart(new Date());
+    return this.getWeeklyLeaderboard(weekStart);
+  }
+
+  async getWeeklyLeaderboard(weekStart: Date): Promise<Array<WeeklyLeaderboard & { user: User }>> {
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+
+    const leaderboardData = await db
+      .select({
+        leaderboard: weeklyLeaderboard,
+        user: users
+      })
+      .from(weeklyLeaderboard)
+      .innerJoin(users, eq(weeklyLeaderboard.userId, users.id))
+      .where(
+        and(
+          gte(weeklyLeaderboard.weekStart, weekStart),
+          lte(weeklyLeaderboard.weekEnd, weekEnd)
+        )
+      )
+      .orderBy(desc(weeklyLeaderboard.points), desc(weeklyLeaderboard.netProfit));
+
+    return leaderboardData.map(row => ({
+      ...row.leaderboard,
+      user: row.user
+    }));
+  }
+
+  async updateUserWeeklyStats(userId: number, betResult: 'win' | 'loss', stakeAmount: number, winAmount: number = 0): Promise<void> {
+    const weekStart = this.getWeekStart(new Date());
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+
+    // Get existing weekly stats or create new entry
+    let [weeklyStats] = await db
+      .select()
+      .from(weeklyLeaderboard)
+      .where(
+        and(
+          eq(weeklyLeaderboard.userId, userId),
+          gte(weeklyLeaderboard.weekStart, weekStart),
+          lte(weeklyLeaderboard.weekEnd, weekEnd)
+        )
+      );
+
+    if (!weeklyStats) {
+      // Create new weekly entry
+      [weeklyStats] = await db
+        .insert(weeklyLeaderboard)
+        .values({
+          userId,
+          weekStart,
+          weekEnd,
+          totalBets: 0,
+          wonBets: 0,
+          lostBets: 0,
+          winRate: "0.00",
+          totalStaked: "0.00",
+          totalWinnings: "0.00",
+          netProfit: "0.00",
+          profitMargin: "0.00",
+          rank: 0,
+          points: 0
+        })
+        .returning();
+    }
+
+    // Calculate new stats
+    const newTotalBets = (weeklyStats.totalBets || 0) + 1;
+    const newWonBets = (weeklyStats.wonBets || 0) + (betResult === 'win' ? 1 : 0);
+    const newLostBets = (weeklyStats.lostBets || 0) + (betResult === 'loss' ? 1 : 0);
+    const newTotalStaked = parseFloat(weeklyStats.totalStaked || "0") + stakeAmount;
+    const newTotalWinnings = parseFloat(weeklyStats.totalWinnings || "0") + (betResult === 'win' ? winAmount : 0);
+    const newNetProfit = newTotalWinnings - newTotalStaked;
+    const newWinRate = newTotalBets > 0 ? (newWonBets / newTotalBets) * 100 : 0;
+    const newProfitMargin = newTotalStaked > 0 ? (newNetProfit / newTotalStaked) * 100 : 0;
+    const newPoints = (newWonBets * 3) + (newLostBets * 0); // 3 points for win, 0 for loss
+
+    // Update weekly stats
+    await db
+      .update(weeklyLeaderboard)
+      .set({
+        totalBets: newTotalBets,
+        wonBets: newWonBets,
+        lostBets: newLostBets,
+        winRate: newWinRate.toFixed(2),
+        totalStaked: newTotalStaked.toFixed(2),
+        totalWinnings: newTotalWinnings.toFixed(2),
+        netProfit: newNetProfit.toFixed(2),
+        profitMargin: newProfitMargin.toFixed(2),
+        points: newPoints,
+        updatedAt: new Date()
+      })
+      .where(eq(weeklyLeaderboard.id, weeklyStats.id));
+
+    // Update ranks for all users in this week
+    await this.updateWeeklyRanks(weekStart);
+  }
+
+  async resetWeeklyLeaderboard(): Promise<void> {
+    const currentWeekStart = this.getWeekStart(new Date());
+    
+    // Archive current week's data (optional - keep for historical purposes)
+    // Delete entries older than 8 weeks to keep database clean
+    const eightWeeksAgo = new Date(currentWeekStart);
+    eightWeeksAgo.setDate(eightWeeksAgo.getDate() - 56);
+    
+    await db
+      .delete(weeklyLeaderboard)
+      .where(lt(weeklyLeaderboard.weekStart, eightWeeksAgo));
+  }
+
+  async getUserWeeklyStats(userId: number): Promise<WeeklyLeaderboard | undefined> {
+    const weekStart = this.getWeekStart(new Date());
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+
+    const [weeklyStats] = await db
+      .select()
+      .from(weeklyLeaderboard)
+      .where(
+        and(
+          eq(weeklyLeaderboard.userId, userId),
+          gte(weeklyLeaderboard.weekStart, weekStart),
+          lte(weeklyLeaderboard.weekEnd, weekEnd)
+        )
+      );
+
+    return weeklyStats;
+  }
+
+  private getWeekStart(date: Date): Date {
+    const weekStart = new Date(date);
+    const day = weekStart.getDay();
+    const diff = weekStart.getDate() - day + (day === 0 ? -6 : 1); // Monday
+    weekStart.setDate(diff);
+    weekStart.setHours(0, 0, 0, 0);
+    return weekStart;
+  }
+
+  private async updateWeeklyRanks(weekStart: Date): Promise<void> {
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+
+    const leaderboardEntries = await db
+      .select()
+      .from(weeklyLeaderboard)
+      .where(
+        and(
+          gte(weeklyLeaderboard.weekStart, weekStart),
+          lte(weeklyLeaderboard.weekEnd, weekEnd)
+        )
+      )
+      .orderBy(desc(weeklyLeaderboard.points), desc(weeklyLeaderboard.netProfit));
+
+    // Update ranks
+    for (let i = 0; i < leaderboardEntries.length; i++) {
+      await db
+        .update(weeklyLeaderboard)
+        .set({ rank: i + 1 })
+        .where(eq(weeklyLeaderboard.id, leaderboardEntries[i].id));
+    }
   }
 }
 

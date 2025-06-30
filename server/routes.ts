@@ -1045,6 +1045,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               result === "push" ? parseFloat(bet.stake.toString()) : 0;
             
             await storage.updateBetResult(bet.id, result, actualWin);
+            
+            // Update weekly leaderboard stats for virtual betting
+            const stakeAmount = parseFloat(bet.stake.toString());
+            const winAmount = result === "win" ? actualWin : 0;
+            const betResult = result === "win" ? "win" : "loss";
+            
+            if (bet.userId) {
+              try {
+                await storage.updateUserWeeklyStats(bet.userId, betResult, stakeAmount, winAmount);
+              } catch (error) {
+                console.error("Error updating weekly stats:", error);
+              }
+            }
+            
             resolvedCount++;
           }
         }
@@ -2455,6 +2469,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Mark paid error:', error);
       res.status(500).json({ error: 'Failed to mark commission as paid' });
+    }
+  });
+
+  // Weekly Leaderboard endpoints
+  app.get("/api/weekly-leaderboard", async (req, res) => {
+    try {
+      const leaderboard = await storage.getCurrentWeekLeaderboard();
+      res.json(leaderboard);
+    } catch (error) {
+      console.error("Error fetching weekly leaderboard:", error);
+      res.status(500).json({ error: "Failed to fetch weekly leaderboard" });
+    }
+  });
+
+  app.get("/api/weekly-leaderboard/:weekStart", async (req, res) => {
+    try {
+      const { weekStart } = req.params;
+      const weekStartDate = new Date(weekStart);
+      const leaderboard = await storage.getWeeklyLeaderboard(weekStartDate);
+      res.json(leaderboard);
+    } catch (error) {
+      console.error("Error fetching historical weekly leaderboard:", error);
+      res.status(500).json({ error: "Failed to fetch historical weekly leaderboard" });
+    }
+  });
+
+  app.get("/api/user/:userId/weekly-stats", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const weeklyStats = await storage.getUserWeeklyStats(parseInt(userId));
+      res.json(weeklyStats || {
+        totalBets: 0,
+        wonBets: 0,
+        lostBets: 0,
+        winRate: "0.00",
+        totalStaked: "0.00",
+        totalWinnings: "0.00",
+        netProfit: "0.00",
+        profitMargin: "0.00",
+        rank: 0,
+        points: 0
+      });
+    } catch (error) {
+      console.error("Error fetching user weekly stats:", error);
+      res.status(500).json({ error: "Failed to fetch user weekly stats" });
+    }
+  });
+
+  app.post("/api/admin/reset-weekly-leaderboard", async (req, res) => {
+    try {
+      await storage.resetWeeklyLeaderboard();
+      res.json({ success: true, message: "Weekly leaderboard reset successfully" });
+    } catch (error) {
+      console.error("Error resetting weekly leaderboard:", error);
+      res.status(500).json({ error: "Failed to reset weekly leaderboard" });
     }
   });
 
