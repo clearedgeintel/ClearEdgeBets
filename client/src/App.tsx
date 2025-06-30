@@ -19,6 +19,11 @@ import CFLPicks from "@/pages/cfl-picks";
 import PerformanceTracking from "@/pages/performance-tracking";
 import GolfTournaments from "@/pages/golf-tournaments";
 import AuthPage from "@/pages/auth";
+import PerformanceAnalytics from "@/pages/performance-analytics";
+import CustomStrategies from "@/pages/custom-strategies";
+import ExpertConsultation from "@/pages/expert-consultation";
+import EarlyAccess from "@/pages/early-access";
+import WhiteLabel from "@/pages/white-label";
 
 function Router() {
   return (
@@ -36,6 +41,11 @@ function Router() {
         <Route path="/cfl/:section" component={CFLHub} />
         <Route path="/golf/tournaments" component={GolfTournaments} />
         <Route path="/performance" component={PerformanceTracking} />
+        <Route path="/analytics" component={PerformanceAnalytics} />
+        <Route path="/strategies" component={CustomStrategies} />
+        <Route path="/consultation" component={ExpertConsultation} />
+        <Route path="/early-access" component={EarlyAccess} />
+        <Route path="/white-label" component={WhiteLabel} />
         <Route path="/auth" component={AuthPage} />
         <Route component={NotFound} />
       </Switch>

@@ -23,7 +23,10 @@ import {
   Trophy,
   Calendar,
   Flag,
-  BarChart3
+  BarChart3,
+  Users,
+  Building,
+  Award
 } from "lucide-react";
 import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -165,6 +168,45 @@ export default function Sidebar() {
     description: "System analytics and management"
   }] : [];
 
+  // Elite tier features navigation
+  const eliteNavigation = user && hasAccess("elite") ? [
+    { 
+      name: "Performance Analytics", 
+      href: "/analytics", 
+      icon: BarChart3,
+      current: location === "/analytics",
+      description: "Advanced betting performance insights"
+    },
+    { 
+      name: "Custom Strategies", 
+      href: "/strategies", 
+      icon: Target,
+      current: location === "/strategies",
+      description: "Create and manage betting strategies"
+    },
+    { 
+      name: "Expert Consultation", 
+      href: "/consultation", 
+      icon: Users,
+      current: location === "/consultation",
+      description: "1-on-1 sessions with betting experts"
+    },
+    { 
+      name: "Early Access", 
+      href: "/early-access", 
+      icon: Zap,
+      current: location === "/early-access",
+      description: "Beta features and new releases"
+    },
+    { 
+      name: "White Label", 
+      href: "/white-label", 
+      icon: Building,
+      current: location === "/white-label",
+      description: "Brand customization options"
+    }
+  ] : [];
+
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-gray-900 text-white">
       {/* Header */}
@@ -272,6 +314,41 @@ export default function Sidebar() {
             </div>
           );
         })}
+        
+        {/* Elite Tier Features */}
+        {eliteNavigation.length > 0 && (
+          <div className="mt-6 pt-4 border-t border-gray-700">
+            <div className="px-3 mb-3">
+              <div className="flex items-center space-x-2">
+                <Award className="h-4 w-4 text-yellow-600" />
+                <span className="text-sm font-semibold text-yellow-600">Elite Features</span>
+              </div>
+            </div>
+            {eliteNavigation.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors group ${
+                    item.current
+                      ? "bg-yellow-600/20 text-yellow-400"
+                      : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  }`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <Icon className={`h-4 w-4 ${item.current ? "text-yellow-400" : "text-gray-400 group-hover:text-white"}`} />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">{item.name}</div>
+                    <div className="text-xs text-gray-400 group-hover:text-gray-300">
+                      {item.description}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
         
         {/* Admin Navigation */}
         {adminNavigation.map((item) => {
