@@ -59,6 +59,7 @@ interface GameCardProps {
 }
 
 export default function GameCard({ game }: GameCardProps) {
+  const [gameSummaryOpen, setGameSummaryOpen] = useState(false);
   const [aiSummaryOpen, setAiSummaryOpen] = useState(false);
   const [propsOpen, setPropsOpen] = useState(false);
   const { addBet } = useBettingSlip();
@@ -323,15 +324,24 @@ export default function GameCard({ game }: GameCardProps) {
 
 
         {/* Game Summary */}
-        <div className="border-t border-border pt-4">
-          <div className="mb-4">
-            <h3 className="font-medium text-foreground mb-3 flex items-center">
-              <svg className="h-4 w-4 mr-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Game Summary
-            </h3>
-            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+        <div className={`border-t border-border pt-4 ${gameSummaryOpen ? 'bg-primary/5 rounded-lg p-3 -m-3' : ''}`}>
+          <Collapsible open={gameSummaryOpen} onOpenChange={setGameSummaryOpen}>
+            <CollapsibleTrigger className="flex items-center justify-between w-full text-left mb-3">
+              <div className="flex items-center space-x-2">
+                <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="font-medium text-foreground">Game Summary</span>
+              </div>
+              {gameSummaryOpen ? (
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              )}
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent className="mt-3">
+              <div className="bg-muted/50 rounded-lg p-4 space-y-3">
               {/* Team Records */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center">
@@ -417,12 +427,13 @@ export default function GameCard({ game }: GameCardProps) {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
 
         {/* AI Summary */}
-        <div className="border-t border-border pt-4">
+        <div className={`border-t border-border pt-4 ${aiSummaryOpen ? 'bg-primary/5 rounded-lg p-3 -m-3' : ''}`}>
           <Collapsible open={aiSummaryOpen} onOpenChange={setAiSummaryOpen}>
             <CollapsibleTrigger className="flex items-center justify-between w-full text-left">
               <div className="flex items-center space-x-2">
@@ -516,7 +527,7 @@ export default function GameCard({ game }: GameCardProps) {
 
 
         {/* Props Section */}
-        <div className="mt-4 pt-4 border-t border-border">
+        <div className={`mt-4 pt-4 border-t border-border ${propsOpen ? 'bg-primary/5 rounded-lg p-3 -m-3' : ''}`}>
           <Collapsible open={propsOpen} onOpenChange={setPropsOpen}>
             <CollapsibleTrigger className="flex items-center justify-between w-full text-left mb-3">
               <div className="flex items-center space-x-2">
