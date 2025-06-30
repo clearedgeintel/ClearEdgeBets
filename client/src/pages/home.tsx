@@ -87,13 +87,22 @@ export default function Home() {
     return true;
   });
 
-  // Get top AI picks
+  // Get top AI picks with detailed game info
   const topPicks = games
     .filter(game => game.aiSummary && game.aiSummary.valuePlays.length > 0)
     .flatMap(game => 
       game.aiSummary!.valuePlays.map(play => ({
         ...play,
-        game: `${game.awayTeam} vs ${game.homeTeam}`,
+        gameInfo: {
+          awayTeam: game.awayTeam,
+          homeTeam: game.homeTeam,
+          awayTeamCode: game.awayTeamCode,
+          homeTeamCode: game.homeTeamCode,
+          gameTime: game.gameTime,
+          venue: game.venue,
+          awayPitcher: game.awayPitcher,
+          homePitcher: game.homePitcher,
+        },
         gameId: game.gameId
       }))
     )
@@ -283,9 +292,9 @@ export default function Home() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {topPicks.map((pick, index) => (
                     <div key={index} className="bg-white/10 backdrop-blur rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-3">
                         <span className="text-sm font-medium opacity-90">
-                          {index === 0 ? "Best Value" : index === 1 ? "Sharp Play" : "Prop Special"}
+                          {index === 0 ? "Best Value" : index === 1 ? "Sharp Play" : "AI Special"}
                         </span>
                         <Badge 
                           variant="secondary" 
@@ -297,11 +306,41 @@ export default function Home() {
                                 : 'bg-orange-500 text-white'
                           } border-0 font-bold`}
                         >
-                          {pick.expectedValue > 0 ? `+EV ${pick.expectedValue.toFixed(1)}%` : "🔥 Hot"}
+                          {pick.expectedValue > 0 ? `+EV ${pick.expectedValue.toFixed(1)}%` : "Hot"}
                         </Badge>
                       </div>
-                      <p className="font-bold text-sm">{pick.game}</p>
-                      <p className="text-sm opacity-90">{pick.selection}</p>
+                      
+                      {/* Game Matchup */}
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between text-sm font-bold">
+                          <span>{pick.gameInfo.awayTeamCode}</span>
+                          <span className="opacity-75">@</span>
+                          <span>{pick.gameInfo.homeTeamCode}</span>
+                        </div>
+                        <div className="text-xs opacity-75 mt-1">
+                          {pick.gameInfo.gameTime} • {pick.gameInfo.venue}
+                        </div>
+                      </div>
+                      
+                      {/* Pick Details */}
+                      <div className="border-t border-white/20 pt-3">
+                        <p className="text-sm font-bold text-yellow-300">{pick.selection}</p>
+                        <p className="text-xs opacity-90 mt-1">{pick.reasoning}</p>
+                      </div>
+                      
+                      {/* Pitchers (if available) */}
+                      {(pick.gameInfo.awayPitcher || pick.gameInfo.homePitcher) && (
+                        <div className="mt-2 pt-2 border-t border-white/20">
+                          <div className="text-xs opacity-75">
+                            {pick.gameInfo.awayPitcher && (
+                              <div>{pick.gameInfo.awayTeamCode}: {pick.gameInfo.awayPitcher}</div>
+                            )}
+                            {pick.gameInfo.homePitcher && (
+                              <div>{pick.gameInfo.homeTeamCode}: {pick.gameInfo.homePitcher}</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

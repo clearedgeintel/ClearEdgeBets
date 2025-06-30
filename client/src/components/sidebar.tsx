@@ -190,8 +190,28 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Sports Navigation */}
+      {/* Main Navigation */}
       <nav className="flex-1 px-4 space-y-2">
+        {/* Home Link */}
+        <Link
+          href="/"
+          className={`flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors group ${
+            location === "/"
+              ? "bg-primary text-white"
+              : "text-gray-300 hover:bg-gray-800 hover:text-white"
+          }`}
+          onClick={() => setMobileOpen(false)}
+        >
+          <Home className={`h-5 w-5 ${location === "/" ? "text-white" : "text-gray-400 group-hover:text-white"}`} />
+          <div className="flex-1">
+            <div className="font-medium">Home</div>
+            <div className="text-xs text-gray-400 group-hover:text-gray-300">
+              Dashboard and daily insights
+            </div>
+          </div>
+        </Link>
+
+        {/* Sports Navigation */}
         {sportsNavigation.map((sport) => {
           const SportIcon = sport.icon;
           return (

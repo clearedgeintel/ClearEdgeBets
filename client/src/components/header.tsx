@@ -14,19 +14,12 @@ export default function Header() {
   const { bets } = useBettingSlip();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navigation = [
-    { name: "Home", href: "/", current: location === "/" },
-    { name: "Daily Picks", href: "/daily-picks", current: location === "/daily-picks" },
-    { name: "Daily Digest", href: "/daily-digest", current: location === "/daily-digest" },
-    { name: "My Bets", href: "/my-bets", current: location === "/my-bets" },
-  ];
-
   return (
     <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-8">
-            <Link href="/" className="flex items-center space-x-3">
+          <div className="flex items-center">
+            <Link href="/" className="flex items-center">
               <img 
                 src={`/clearedge-logo-final.png?v=${Date.now()}`}
                 alt="ClearEdge Bets" 
@@ -36,21 +29,6 @@ export default function Header() {
                 }}
               />
             </Link>
-            <nav className="hidden md:flex space-x-8">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`${
-                    item.current
-                      ? "text-primary font-semibold"
-                      : "text-gray-600 hover:text-primary font-medium"
-                  } transition-colors text-sm`}
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </nav>
           </div>
           
           <div className="flex items-center space-x-3">
@@ -81,38 +59,7 @@ export default function Header() {
               <span className="text-sm font-medium text-green-700">Live</span>
             </div>
 
-            {/* Mobile Menu */}
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="md:hidden">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-80">
-                <div className="flex flex-col space-y-4 mt-8">
-                  {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`${
-                        item.current
-                          ? "text-primary font-medium"
-                          : "text-gray-600"
-                      } text-lg py-2`}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                  <div className="pt-4 border-t border-gray-200">
-                    <Button className="w-full bg-primary text-white hover:bg-blue-700">
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                      Betting Slip ({bets.length})
-                    </Button>
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
+
           </div>
         </div>
       </div>
