@@ -78,7 +78,7 @@ export default function AdminUsers() {
 
   const createUserMutation = useMutation({
     mutationFn: async (userData: typeof formData) => {
-      return apiRequest("/api/admin/users", "POST", userData);
+      return apiRequest("POST", "/api/admin/users", userData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
@@ -108,7 +108,7 @@ export default function AdminUsers() {
 
   const updateTierMutation = useMutation({
     mutationFn: async ({ userId, tier, isAdmin }: { userId: number; tier: string; isAdmin?: boolean }) => {
-      return apiRequest(`/api/admin/users/${userId}/tier`, "PATCH", { tier, isAdmin });
+      return apiRequest("PATCH", `/api/admin/users/${userId}/tier`, { tier, isAdmin });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });

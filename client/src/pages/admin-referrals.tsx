@@ -44,7 +44,7 @@ export default function AdminReferrals() {
 
   const createReferralCodeMutation = useMutation({
     mutationFn: async (codeData: typeof formData) => {
-      return apiRequest("/api/admin/referral-codes", "POST", codeData);
+      return apiRequest("POST", "/api/admin/referral-codes", codeData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/referral-codes"] });
