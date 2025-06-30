@@ -272,6 +272,12 @@ function processCFLApiData(apiData: any): CFLGame[] {
   
   for (const event of apiData.events) {
     try {
+      // Filter to only include actual CFL games
+      if (event.tournament?.name !== 'CFL') {
+        console.log(`Skipping non-CFL game: ${event.awayTeam?.name} @ ${event.homeTeam?.name} (${event.tournament?.name})`);
+        continue;
+      }
+      
       // Map RapidAPI format to our CFLGame format
       const gameTime = new Date(event.startTimestamp * 1000).toISOString();
       const awayTeam = event.awayTeam?.name || 'Unknown Away Team';
