@@ -119,6 +119,7 @@ export default function Home() {
         expectedValue: pick.confidence, // Use confidence as expected value display
         confidence: pick.confidence,
         result: pick.result, // Add result for display
+        odds: pick.odds, // Add odds from the pick data
         gameInfo: game ? {
           awayTeam: game.awayTeam,
           homeTeam: game.homeTeam,
@@ -409,9 +410,16 @@ export default function Home() {
                           <p className="text-xs text-white/90 uppercase tracking-wide font-bold">🎯 AI PICK</p>
                           <p className="text-lg font-bold text-yellow-300 mb-1">{pick.selection}</p>
                           <div className="flex items-center justify-between">
-                            <p className="text-sm text-green-300 font-semibold">
-                              Value Play
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm text-green-300 font-semibold">
+                                Value Play
+                              </p>
+                              {pick.odds && (
+                                <span className="text-sm font-bold text-white bg-yellow-500 px-2 py-0.5 rounded">
+                                  {pick.odds > 0 ? `+${pick.odds}` : pick.odds}
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs bg-white/20 px-2 py-1 rounded-full text-white">
                               +EV {pick.expectedValue?.toFixed(1) || "0.0"}%
                             </p>
