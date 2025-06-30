@@ -179,9 +179,23 @@ export default function DailyPicks() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">{pick.selection}</CardTitle>
-                <Badge variant="outline" className="capitalize">
-                  {pick.pickType}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="capitalize">
+                    {pick.pickType}
+                  </Badge>
+                  {pick.result && (
+                    <Badge 
+                      variant={pick.result === 'win' ? 'default' : pick.result === 'loss' ? 'destructive' : 'secondary'}
+                      className={
+                        pick.result === 'win' ? 'bg-green-500 text-white' :
+                        pick.result === 'loss' ? 'bg-red-500 text-white' :
+                        'bg-yellow-500 text-white'
+                      }
+                    >
+                      {pick.result === 'win' ? 'WIN' : pick.result === 'loss' ? 'LOSS' : 'PUSH'}
+                    </Badge>
+                  )}
+                </div>
               </div>
               <CardDescription className="flex items-center gap-2">
                 <span className="font-mono">{formatOdds(pick.odds)}</span>

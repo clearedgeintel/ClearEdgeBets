@@ -176,6 +176,11 @@ export default function GameCard({ game }: GameCardProps) {
           <div className="text-right">
             <p className="text-sm text-gray-600">{game.gameTime}</p>
             <p className="text-xs text-gray-500">{game.venue}</p>
+            {game.status === "final" && (
+              <div className="mt-1 text-sm font-semibold text-foreground">
+                Final: {game.awayTeamCode} {game.awayScore || 0} - {game.homeScore || 0} {game.homeTeamCode}
+              </div>
+            )}
           </div>
         </div>
 

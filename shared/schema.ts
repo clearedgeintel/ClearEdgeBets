@@ -29,6 +29,8 @@ export const games = pgTable("games", {
   awayPitcherStats: text("away_pitcher_stats"),
   homePitcherStats: text("home_pitcher_stats"),
   status: text("status").notNull().default("scheduled"),
+  awayScore: integer("away_score"),
+  homeScore: integer("home_score"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
