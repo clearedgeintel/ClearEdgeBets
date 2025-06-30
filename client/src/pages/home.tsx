@@ -99,9 +99,6 @@ export default function Home() {
     .sort((a, b) => (b.confidence || 0) - (a.confidence || 0)) // Sort by confidence
     .slice(0, 3) // Take top 3
     .map((pick, index) => {
-      // Find the corresponding game data
-      const game = games.find(g => g.gameId === pick.gameId);
-      
       // Extract team info from gameId format "Team A @ Team B"
       const gameIdParts = pick.gameId.split(' @ ');
       const awayTeamFull = gameIdParts[0] || '';
@@ -110,6 +107,13 @@ export default function Home() {
       // Create team codes by taking last word of team name
       const awayTeamCode = awayTeamFull.split(' ').pop() || 'TBD';
       const homeTeamCode = homeTeamFull.split(' ').pop() || 'TBD';
+      
+      // Find the corresponding game data by matching team names
+      const game = games.find(g => 
+        (g.awayTeam?.includes(awayTeamCode) && g.homeTeam?.includes(homeTeamCode)) ||
+        g.gameId === pick.gameId ||
+        g.awayTeamCode === awayTeamCode && g.homeTeamCode === homeTeamCode
+      );
       
       return {
         selection: pick.selection,
@@ -130,8 +134,8 @@ export default function Home() {
           homeTeam: homeTeamFull,
           awayTeamCode: awayTeamCode,
           homeTeamCode: homeTeamCode,
-          gameTime: pick.gameTime || 'TBD',
-          venue: pick.venue || 'Stadium TBD',
+          gameTime: '7:05 PM',
+          venue: 'MLB Stadium',
           awayPitcher: null,
           homePitcher: null,
         },
