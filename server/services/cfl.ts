@@ -262,53 +262,89 @@ function generateRealisticCFLOdds(awayTeam: string, homeTeam: string) {
   };
 }
 
-export async function fetchCFLGames(targetDate?: string): Promise<CFLGame[]> {
-  // Generate CFL games for a date range around today to support date navigation
-  const today = new Date();
+function processCFLApiData(apiData: any): CFLGame[] {
+  if (!apiData || !apiData.events) {
+    console.log("No events in API response");
+    return [];
+  }
+
   const games: CFLGame[] = [];
   
-  // Generate games for a 7-day window around today (for date navigation)
-  for (let dayOffset = -3; dayOffset <= 3; dayOffset++) {
-    const gameDate = new Date(today);
-    gameDate.setDate(today.getDate() + dayOffset);
-    const gameDateStr = gameDate.toISOString().split('T')[0];
-    const dayOfWeek = gameDate.getDay();
-    
-    // For testing: Generate CFL games for more days, with more games on weekends
-    const shouldHaveGames = dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0 || dayOfWeek === 1; // Fri, Sat, Sun, Mon
-    if (shouldHaveGames) {
-      const gameCount = dayOfWeek === 6 ? 3 : 2; // More games on Saturday
+  for (const event of apiData.events) {
+    try {
+      // Map RapidAPI format to our CFLGame format
+      const gameTime = new Date(event.startTimestamp * 1000).toISOString();
+      const awayTeam = event.awayTeam?.name || 'Unknown Away Team';
+      const homeTeam = event.homeTeam?.name || 'Unknown Home Team';
+      const awayTeamCode = event.awayTeam?.nameCode || 'UNK';
+      const homeTeamCode = event.homeTeam?.nameCode || 'UNK';
       
-      const matchups = [
-        { away: 'Hamilton Tiger-Cats', home: 'Toronto Argonauts', awayCode: 'HAM', homeCode: 'TOR', venue: 'BMO Field' },
-        { away: 'Calgary Stampeders', home: 'BC Lions', awayCode: 'CGY', homeCode: 'BC', venue: 'BC Place' },
-        { away: 'Ottawa REDBLACKS', home: 'Saskatchewan Roughriders', awayCode: 'OTT', homeCode: 'SSK', venue: 'Mosaic Stadium' },
-        { away: 'Montreal Alouettes', home: 'Winnipeg Blue Bombers', awayCode: 'MTL', homeCode: 'WPG', venue: 'Princess Auto Stadium' },
-        { away: 'Edmonton Elks', home: 'Hamilton Tiger-Cats', awayCode: 'EDM', homeCode: 'HAM', venue: 'Tim Hortons Field' }
-      ];
+      const game: CFLGame = {
+        gameId: `cfl_${event.id}`,
+        awayTeam,
+        homeTeam,
+        awayTeamCode,
+        homeTeamCode,
+        gameTime,
+        venue: event.venue?.name || 'Unknown Venue',
+        week: event.roundInfo?.round || 1,
+        season: event.season?.year?.toString() || '2025',
+        odds: generateRealisticCFLOdds(awayTeamCode, homeTeamCode)
+      };
       
-      for (let i = 0; i < Math.min(gameCount, matchups.length); i++) {
-        const matchup = matchups[(dayOffset + i + 3) % matchups.length]; // Rotate matchups
-        const gameTime = `${gameDateStr}T${19 + i}:00:00.000Z`; // Start at 7 PM, then 8 PM, 9 PM
-        
-        games.push({
-          gameId: `cfl_2025_${matchup.awayCode}@${matchup.homeCode}_${gameDateStr}`,
-          awayTeam: matchup.away,
-          homeTeam: matchup.home,
-          awayTeamCode: matchup.awayCode,
-          homeTeamCode: matchup.homeCode,
-          gameTime: gameTime,
-          venue: matchup.venue,
-          week: 4,
-          season: '2025',
-          odds: generateRealisticCFLOdds(matchup.awayCode, matchup.homeCode)
-        });
-      }
+      games.push(game);
+    } catch (error) {
+      console.error("Error processing CFL game:", error, event);
     }
   }
   
-  console.log(`Generated ${games.length} CFL games for date range`);
   return games;
+}
+
+export async function fetchCFLGames(targetDate?: string): Promise<CFLGame[]> {
+  console.log("fetchCFLGames called - using RapidAPI");
+  
+  if (!process.env.RAPIDAPI_KEY) {
+    console.error("RAPIDAPI_KEY not found in environment");
+    return [];
+  }
+  
+  try {
+    // Use RapidAPI American Football API for authentic CFL data
+    const currentYear = new Date().getFullYear();
+    const url = `https://americanfootballapi.p.rapidapi.com/api/american-football/matches/31/7/${currentYear}`;
+    console.log("Making RapidAPI call to:", url);
+    
+    const response = await fetch(url, {
+      headers: {
+        'x-rapidapi-host': 'americanfootballapi.p.rapidapi.com',
+        'x-rapidapi-key': process.env.RAPIDAPI_KEY
+      }
+    });
+
+    console.log("RapidAPI response status:", response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("RapidAPI error response:", errorText);
+      throw new Error(`RapidAPI CFL request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("RapidAPI CFL data fetched successfully, events:", data.events?.length || 0);
+    
+    // Process the API response into our CFLGame format
+    const games = processCFLApiData(data);
+    console.log(`Processed ${games.length} authentic CFL games from RapidAPI`);
+    
+    return games;
+  } catch (error: any) {
+    console.error("Error fetching CFL data from RapidAPI:", error);
+    console.log("Error details:", error.message);
+    
+    // Return empty array on error to show "No games today" message  
+    return [];
+  }
 }
 
 export function generateMockCFLPublicPercentage() {
