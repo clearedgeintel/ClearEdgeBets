@@ -29,6 +29,11 @@ export const referralCodes = pgTable("referral_codes", {
   isActive: boolean("is_active").default(true),
   rewardTier: text("reward_tier"), // what tier to grant
   rewardDuration: integer("reward_duration"), // days of access
+  commissionPercentage: integer("commission_percentage").default(0), // percentage commission for referrer (0-100)
+  totalCommissionEarned: integer("total_commission_earned").default(0), // total commission earned in cents
+  totalReferrals: integer("total_referrals").default(0), // count of successful referrals
+  lastPayoutAt: timestamp("last_payout_at"), // when commission was last paid out
+  payoutStatus: text("payout_status").default("pending"), // pending, processing, paid
   createdAt: timestamp("created_at").defaultNow(),
   expiresAt: timestamp("expires_at"),
 });

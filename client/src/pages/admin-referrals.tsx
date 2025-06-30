@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Ticket, Crown, Award, Calendar } from "lucide-react";
+import { Plus, Ticket, Crown, Award, Calendar, DollarSign } from "lucide-react";
 
 interface ReferralCode {
   id: number;
@@ -23,6 +23,11 @@ interface ReferralCode {
   isActive: boolean;
   createdAt: string;
   expiresAt?: string;
+  commissionPercentage: number;
+  totalCommissionEarned: number;
+  totalReferrals: number;
+  lastPayoutAt?: string;
+  payoutStatus: string;
 }
 
 export default function AdminReferrals() {
@@ -32,7 +37,8 @@ export default function AdminReferrals() {
     rewardTier: "pro",
     rewardDuration: 30,
     maxUses: 100,
-    expiresAt: ""
+    expiresAt: "",
+    commissionPercentage: 10
   });
   
   const queryClient = useQueryClient();
@@ -54,7 +60,8 @@ export default function AdminReferrals() {
         rewardTier: "pro",
         rewardDuration: 30,
         maxUses: 100,
-        expiresAt: ""
+        expiresAt: "",
+        commissionPercentage: 10
       });
       toast({
         title: "Success",
@@ -65,6 +72,26 @@ export default function AdminReferrals() {
       toast({
         title: "Error",
         description: error.message || "Failed to create referral code",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const markPaidMutation = useMutation({
+    mutationFn: async (code: string) => {
+      return apiRequest("POST", `/api/admin/referral-codes/${code}/mark-paid`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/referral-codes"] });
+      toast({
+        title: "Success",
+        description: "Commission marked as paid successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to mark commission as paid",
         variant: "destructive",
       });
     },
@@ -179,6 +206,21 @@ export default function AdminReferrals() {
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="commissionPercentage" className="text-right text-gray-300">
+                  Commission %
+                </Label>
+                <Input
+                  id="commissionPercentage"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formData.commissionPercentage}
+                  onChange={(e) => setFormData({ ...formData, commissionPercentage: parseInt(e.target.value) || 0 })}
+                  className="col-span-3 bg-gray-800 border-gray-600 text-white"
+                  placeholder="10"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="expiresAt" className="text-right text-gray-300">
                   Expires (optional)
                 </Label>
@@ -204,6 +246,54 @@ export default function AdminReferrals() {
         </Dialog>
       </div>
 
+      {/* Commission Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-300">Total Commissions Earned</CardTitle>
+            <DollarSign className="h-4 w-4 text-green-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-400">
+              ${((referralCodes.reduce((sum, code) => sum + (code.totalCommissionEarned || 0), 0)) / 100).toFixed(2)}
+            </div>
+            <p className="text-xs text-gray-500">
+              From {referralCodes.reduce((sum, code) => sum + (code.totalReferrals || 0), 0)} successful referrals
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-300">Pending Payouts</CardTitle>
+            <Calendar className="h-4 w-4 text-yellow-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-400">
+              ${((referralCodes.filter(code => code.payoutStatus === 'pending').reduce((sum, code) => sum + (code.totalCommissionEarned || 0), 0)) / 100).toFixed(2)}
+            </div>
+            <p className="text-xs text-gray-500">
+              {referralCodes.filter(code => code.payoutStatus === 'pending' && (code.totalCommissionEarned || 0) > 0).length} codes awaiting payout
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-300">Active Codes</CardTitle>
+            <Ticket className="h-4 w-4 text-blue-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-400">
+              {referralCodes.filter(code => code.isActive).length}
+            </div>
+            <p className="text-xs text-gray-500">
+              {referralCodes.length - referralCodes.filter(code => code.isActive).length} inactive codes
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card className="bg-gray-800 border-gray-700">
         <CardHeader>
           <CardTitle className="text-white flex items-center">
@@ -227,10 +317,11 @@ export default function AdminReferrals() {
                 <TableRow className="border-gray-700">
                   <TableHead className="text-gray-300">Code</TableHead>
                   <TableHead className="text-gray-300">Reward</TableHead>
+                  <TableHead className="text-gray-300">Commission</TableHead>
                   <TableHead className="text-gray-300">Usage</TableHead>
+                  <TableHead className="text-gray-300">Earnings</TableHead>
                   <TableHead className="text-gray-300">Status</TableHead>
-                  <TableHead className="text-gray-300">Created</TableHead>
-                  <TableHead className="text-gray-300">Expires</TableHead>
+                  <TableHead className="text-gray-300">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -246,7 +337,22 @@ export default function AdminReferrals() {
                       </div>
                     </TableCell>
                     <TableCell className="text-gray-300">
-                      {code.usageCount} / {code.maxUses}
+                      <div className="flex items-center space-x-1">
+                        <span className="text-green-400 font-semibold">{code.commissionPercentage || 0}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-gray-300">
+                      {code.usageCount || 0} / {code.maxUses || '∞'}
+                    </TableCell>
+                    <TableCell className="text-gray-300">
+                      <div className="flex items-center space-x-1">
+                        <span className="text-green-400 font-semibold">
+                          ${((code.totalCommissionEarned || 0) / 100).toFixed(2)}
+                        </span>
+                        <span className="text-gray-500 text-xs">
+                          ({code.totalReferrals || 0} refs)
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {code.isActive ? (
@@ -262,6 +368,26 @@ export default function AdminReferrals() {
                           {new Date(code.createdAt).toLocaleDateString()}
                         </span>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {code.payoutStatus === 'pending' && (code.totalCommissionEarned || 0) > 0 ? (
+                        <Button
+                          size="sm"
+                          onClick={() => markPaidMutation.mutate(code.code)}
+                          disabled={markPaidMutation.isPending}
+                          className="bg-green-600 hover:bg-green-700 text-xs"
+                        >
+                          <DollarSign className="w-3 h-3 mr-1" />
+                          {markPaidMutation.isPending ? "Processing..." : "Mark Paid"}
+                        </Button>
+                      ) : code.payoutStatus === 'paid' ? (
+                        <Badge className="bg-green-800 text-green-200">
+                          <DollarSign className="w-3 h-3 mr-1" />
+                          Paid
+                        </Badge>
+                      ) : (
+                        <span className="text-gray-500 text-sm">No earnings</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-gray-400">
                       {code.expiresAt ? (

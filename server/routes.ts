@@ -2323,7 +2323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: 'Admin access required' });
       }
 
-      const { code, rewardTier, rewardDuration, maxUses, expiresAt } = req.body;
+      const { code, rewardTier, rewardDuration, maxUses, expiresAt, commissionPercentage } = req.body;
       
       if (!code || !rewardTier) {
         return res.status(400).json({ error: 'Code and reward tier are required' });
@@ -2334,7 +2334,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         rewardTier,
         rewardDuration: rewardDuration || null,
         maxUses: maxUses || null,
-        expiresAt: expiresAt ? new Date(expiresAt) : null
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        commissionPercentage: commissionPercentage || 0
       });
 
       res.status(201).json(referralCode);
@@ -2366,6 +2367,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Validate referral error:', error);
       res.status(500).json({ error: 'Failed to validate referral code' });
+    }
+  });
+
+  // Add commission tracking for successful referrals
+  app.post('/api/admin/referral-codes/:code/track-commission', async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      const { code } = req.params;
+      const { subscriptionAmount } = req.body; // Amount in cents
+      
+      const referralCode = await storage.getReferralCode(code.toUpperCase());
+      if (!referralCode) {
+        return res.status(404).json({ error: 'Referral code not found' });
+      }
+
+      const commissionAmount = Math.round((subscriptionAmount * referralCode.commissionPercentage) / 100);
+      
+      await storage.updateReferralCodeCommission(code.toUpperCase(), commissionAmount);
+      
+      res.json({ 
+        success: true, 
+        commissionAmount,
+        commissionPercentage: referralCode.commissionPercentage 
+      });
+    } catch (error) {
+      console.error('Track commission error:', error);
+      res.status(500).json({ error: 'Failed to track commission' });
+    }
+  });
+
+  // Mark commission as paid
+  app.post('/api/admin/referral-codes/:code/mark-paid', async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      const { code } = req.params;
+      
+      await storage.markReferralCodePaid(code.toUpperCase());
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Mark paid error:', error);
+      res.status(500).json({ error: 'Failed to mark commission as paid' });
     }
   });
 

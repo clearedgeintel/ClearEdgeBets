@@ -26,6 +26,8 @@ export interface IStorage {
   getReferralCode(code: string): Promise<ReferralCode | undefined>;
   getAllReferralCodes(): Promise<ReferralCode[]>;
   updateReferralCodeUsage(code: string): Promise<ReferralCode>;
+  updateReferralCodeCommission(code: string, commissionAmount: number): Promise<ReferralCode>;
+  markReferralCodePaid(code: string): Promise<ReferralCode>;
   
   // Admin methods
   getAdminStats(): Promise<{
@@ -783,6 +785,32 @@ export class DatabaseStorage implements IStorage {
       .update(referralCodes)
       .set({ 
         usageCount: sql`${referralCodes.usageCount} + 1`
+      })
+      .where(eq(referralCodes.code, code))
+      .returning();
+    return referralCode;
+  }
+
+  async updateReferralCodeCommission(code: string, commissionAmount: number): Promise<ReferralCode> {
+    const [referralCode] = await db
+      .update(referralCodes)
+      .set({ 
+        totalCommissionEarned: sql`${referralCodes.totalCommissionEarned} + ${commissionAmount}`,
+        totalReferrals: sql`${referralCodes.totalReferrals} + 1`,
+        usageCount: sql`${referralCodes.usageCount} + 1`
+      })
+      .where(eq(referralCodes.code, code))
+      .returning();
+    return referralCode;
+  }
+
+  async markReferralCodePaid(code: string): Promise<ReferralCode> {
+    const [referralCode] = await db
+      .update(referralCodes)
+      .set({ 
+        payoutStatus: 'paid',
+        lastPayoutAt: new Date(),
+        totalCommissionEarned: 0 // Reset commission after payout
       })
       .where(eq(referralCodes.code, code))
       .returning();

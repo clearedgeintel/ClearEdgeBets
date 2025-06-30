@@ -125,6 +125,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Enhanced referral system with commission percentage tracking and payout management
+  - Added commission percentage configuration to referral code creation (0-100%)
+  - Implemented commission tracking database fields: totalCommissionEarned, totalReferrals, payoutStatus, lastPayoutAt
+  - Built comprehensive commission dashboard showing total earnings, pending payouts, and active codes
+  - Added payout management system with "Mark Paid" functionality for commission processing
+  - Created commission calculation API endpoints for tracking subscription-based earnings
+  - Enhanced admin interface with real-time commission summaries and payout status tracking
+  - Perfect for monetizing referral programs and tracking affiliate commissions
 - June 30, 2025: Implemented comprehensive admin user management system with referral codes
   - Created dedicated admin users page (/admin/users) with full user management interface
   - Added admin API endpoints for user creation, tier assignment, and referral code management
