@@ -316,17 +316,17 @@ export default function Home() {
 
             {/* Top AI Picks */}
             {displayPicks.length > 0 && (
-              <div className="ai-card animate-fade-in-up">
+              <div className="ai-card animate-fade-in-up bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 rounded-xl border border-blue-500/30">
                 <div className="flex items-center space-x-3 mb-4">
-                  <Star className="h-5 w-5 text-yellow-300" />
-                  <h3 className="text-xl font-bold">Today's Top AI Picks</h3>
-                  <div className="badge">
+                  <Star className="h-5 w-5 text-blue-200" />
+                  <h3 className="text-xl font-bold text-white">Today's Top AI Picks</h3>
+                  <div className="badge bg-blue-500/30 text-blue-100 border-blue-400/30">
                     Updated {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} ET
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {displayPicks.map((pick, index) => (
-                    <div key={index} className="bg-white/15 backdrop-blur rounded-lg p-4 border border-white/20 hover:bg-white/20 transition-all duration-200">
+                    <div key={index} className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-blue-400/30 hover:bg-white/15 hover:border-blue-300/50 transition-all duration-200 shadow-lg">
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-sm font-medium text-white">
                           {index === 0 ? "Best Value" : index === 1 ? "Sharp Play" : "AI Special"}
