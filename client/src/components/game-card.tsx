@@ -174,8 +174,21 @@ export default function GameCard({ game }: GameCardProps) {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-sm text-gray-600">{game.gameTime}</p>
-            <p className="text-xs text-gray-500">{game.venue}</p>
+            <p className="text-sm text-foreground">
+              {new Date(game.gameTime).toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short', 
+                day: 'numeric'
+              })}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {new Date(game.gameTime).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+              })}
+            </p>
+            <p className="text-xs text-muted-foreground">{game.venue}</p>
             {game.status === "final" && (
               <div className="mt-1 text-sm font-semibold text-foreground">
                 Final: {game.awayTeamCode} {game.awayScore || 0} - {game.homeScore || 0} {game.homeTeamCode}
@@ -316,7 +329,25 @@ export default function GameCard({ game }: GameCardProps) {
             </CollapsibleTrigger>
             
             <CollapsibleContent className="mt-3">
-              {game.aiSummary ? (
+              {!user ? (
+                <div className="bg-muted rounded-lg p-4 text-center">
+                  <Lock className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                  <h4 className="text-sm font-semibold text-foreground mb-2">Premium Feature</h4>
+                  <p className="text-muted-foreground text-sm mb-3">
+                    AI-powered game analysis with confidence scoring and betting insights is available to premium subscribers.
+                  </p>
+                  <Link href="/login">
+                    <Button size="sm" className="mr-2">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link href="/subscribe">
+                    <Button size="sm" variant="outline">
+                      Upgrade
+                    </Button>
+                  </Link>
+                </div>
+              ) : game.aiSummary ? (
                 <div className="bg-muted rounded-lg p-4">
                   <p className="text-foreground text-sm leading-relaxed mb-3">
                     {game.aiSummary.summary}
