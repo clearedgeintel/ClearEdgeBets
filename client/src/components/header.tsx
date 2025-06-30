@@ -22,16 +22,23 @@ export default function Header() {
   ];
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+    <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-8">
-            <Link href="/" className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-3">
               <img 
-                src="/clearedge-logo.png" 
-                alt="ClearEdge Bets" 
-                className="h-8 w-auto"
+                src="/new-logo.png" 
+                alt="BetEdge" 
+                className="h-10 w-auto"
+                onError={(e) => {
+                  e.currentTarget.src = "/logo.svg";
+                }}
               />
+              <div className="flex flex-col">
+                <span className="text-lg font-bold text-foreground">BetEdge</span>
+                <span className="text-xs text-muted-foreground -mt-1">SPORTS INTELLIGENCE</span>
+              </div>
             </Link>
             <nav className="hidden md:flex space-x-8">
               {navigation.map((item) => (

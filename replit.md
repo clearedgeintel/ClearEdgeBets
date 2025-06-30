@@ -125,6 +125,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Complete platform rebrand to "BetEdge" with new visual identity
+  - Replaced "ClearEdge Bets" branding with modern "BetEdge" identity throughout platform
+  - Updated logo and brand messaging to "Sports Intelligence" tagline
+  - Created comprehensive feature assessment document against user requirements
+  - Confirmed Free Tier is 100% complete: daily games, top 3 picks, AI reasoning, mobile-first UI
+  - Identified Pro Tier gaps: missing email/Telegram alerts and odds comparison functionality
+  - Documented Elite Tier implementation needs: live line movement, prop finder, parlay builder
+  - Maintained dark theme aesthetic with clean, professional appearance
+  - Updated header, footer, and home page with new BetEdge branding elements
 - June 30, 2025: Enhanced betting interface with comprehensive result displays
   - Added game results to Games page showing final scores when available
   - Enhanced Daily Picks page with WIN/LOSS/PUSH result badges for settled picks

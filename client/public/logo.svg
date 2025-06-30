@@ -1,0 +1,15 @@
+<svg width="200" height="48" viewBox="0 0 200 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Edge symbol -->
+  <rect x="0" y="12" width="4" height="24" fill="#22c55e" rx="2"/>
+  <rect x="8" y="8" width="4" height="32" fill="#22c55e" rx="2"/>
+  <rect x="16" y="4" width="4" height="40" fill="#22c55e" rx="2"/>
+  <rect x="24" y="16" width="4" height="16" fill="#0ea5e9" rx="2"/>
+  
+  <!-- Text -->
+  <text x="40" y="20" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#f8fafc">
+    BetEdge
+  </text>
+  <text x="40" y="34" font-family="Arial, sans-serif" font-size="10" font-weight="normal" fill="#94a3b8">
+    SPORTS INTELLIGENCE
+  </text>
+</svg>
