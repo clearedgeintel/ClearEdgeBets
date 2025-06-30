@@ -5,41 +5,41 @@
 @tailwind utilities;
 
 :root {
-  /* Professional ClearEdge Bets Theme */
-  --primary: #00E676;
-  --secondary: #2196F3;
-  --background: #0D1117;
-  --surface: #1C1F26;
-  --accent: #FF4081;
-  --text-primary: #F5F5F5;
-  --text-muted: #9E9E9E;
-  --hot: #FFB300;
+  /* Patriotic Red White Blue Theme */
+  --primary: #1E40AF;     /* Patriotic Blue */
+  --secondary: #DC2626;   /* Patriotic Red */
+  --background: #0F172A;  /* Dark Navy Base */
+  --surface: #1E293B;     /* Slate Dark */
+  --accent: #DC2626;      /* Patriotic Red */
+  --text-primary: #F8FAFC;
+  --text-muted: #CBD5E1;
+  --hot: #DC2626;         /* Red for hot picks */
   
   /* Tailwind compatibility */
-  --foreground: #F5F5F5;
-  --card: #1C1F26;
-  --card-foreground: #F5F5F5;
-  --popover: #1C1F26;
-  --popover-foreground: #F5F5F5;
-  --primary-foreground: #0D1117;
-  --secondary-foreground: #F5F5F5;
-  --muted: #2A2D34;
-  --muted-foreground: #9E9E9E;
-  --accent-foreground: #F5F5F5;
-  --destructive: #F44336;
-  --destructive-foreground: #F5F5F5;
-  --border: #2A2D34;
-  --input: #2A2D34;
-  --ring: #00E676;
+  --foreground: #F8FAFC;
+  --card: #1E293B;
+  --card-foreground: #F8FAFC;
+  --popover: #1E293B;
+  --popover-foreground: #F8FAFC;
+  --primary-foreground: #F8FAFC;
+  --secondary-foreground: #F8FAFC;
+  --muted: #334155;
+  --muted-foreground: #CBD5E1;
+  --accent-foreground: #F8FAFC;
+  --destructive: #DC2626;
+  --destructive-foreground: #F8FAFC;
+  --border: #334155;
+  --input: #334155;
+  --ring: #1E40AF;
   --radius: 0.75rem;
-  --warning: #FFB300;
+  --warning: #DC2626;
   
-  /* Chart colors */
-  --chart-1: #00E676;
-  --chart-2: #2196F3;
-  --chart-3: #FFA726;
-  --chart-4: #FFFFFF;
-  --chart-5: #FF4081;
+  /* Chart colors - Patriotic theme */
+  --chart-1: #1E40AF;     /* Blue */
+  --chart-2: #DC2626;     /* Red */
+  --chart-3: #F8FAFC;     /* White */
+  --chart-4: #3B82F6;     /* Light Blue */
+  --chart-5: #EF4444;     /* Light Red */
 }
 
 .dark {

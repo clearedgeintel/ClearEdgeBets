@@ -281,13 +281,13 @@ export default function Home() {
           {/* Subscribe Call-to-Action */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
             <Link href="/subscribe">
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-white px-8 py-3">
+              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3">
                 <Crown className="h-5 w-5 mr-2" />
                 Upgrade to Pro
               </Button>
             </Link>
             <Link href="/subscribe">
-              <Button variant="outline" size="lg" className="px-8 py-3">
+              <Button variant="outline" size="lg" className="px-8 py-3 border-red-600 text-red-600 hover:bg-red-600 hover:text-white">
                 View All Plans
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
@@ -297,7 +297,7 @@ export default function Home() {
 
         {/* Welcome Banner for New Users */}
         {isNewUser && (
-          <div className="bg-accent rounded-xl shadow-lg p-6 mb-6">
+          <div className="bg-gradient-to-r from-blue-600 to-red-600 rounded-xl shadow-lg p-6 mb-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold mb-2 text-white">Welcome, {user?.username}!</h2>
@@ -317,7 +317,7 @@ export default function Home() {
               </div>
               <div className="flex flex-col gap-2">
                 <Link href="/subscribe">
-                  <Button className="bg-white text-accent hover:bg-gray-100">
+                  <Button className="bg-white text-blue-600 hover:bg-gray-100">
                     Upgrade Now
                   </Button>
                 </Link>
@@ -337,23 +337,23 @@ export default function Home() {
           <main className="space-y-6">
 
             {/* Baseball Section Header */}
-            <Card className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 border-green-200 dark:border-green-800">
+            <Card className="bg-gradient-to-r from-blue-900/80 to-red-900/80 border-blue-500">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                       <span className="text-white font-bold text-sm">⚾</span>
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-foreground">Major League Baseball</h3>
-                      <p className="text-muted-foreground text-sm">
-                        <span className="font-medium text-green-600">{games.length} games</span> today with complete AI analysis
+                      <h3 className="text-xl font-bold text-white">Major League Baseball</h3>
+                      <p className="text-blue-200 text-sm">
+                        <span className="font-medium text-white">{games.length} games</span> today with complete AI analysis
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <Link href="/todays-games">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="border-white text-white hover:bg-white hover:text-blue-900">
                         <ArrowRight className="h-4 w-4 mr-2" />
                         View All Games
                       </Button>
@@ -466,7 +466,7 @@ export default function Home() {
 
             {/* MLB News Section */}
             <Card>
-              <CardHeader>
+              <CardHeader className="bg-gradient-to-r from-red-600 to-blue-600 text-white">
                 <CardTitle className="flex items-center">
                   <Newspaper className="h-5 w-5 mr-2" />
                   Latest MLB News
@@ -538,8 +538,13 @@ export default function Home() {
 
             {/* Baseball Games List */}
             <Card>
+              <CardHeader className="bg-gradient-to-r from-blue-600 to-red-600 text-white">
+                <CardTitle className="flex items-center">
+                  <Clock className="h-5 w-5 mr-2" />
+                  Today's MLB Games
+                </CardTitle>
+              </CardHeader>
               <CardContent className="p-6">
-                <h4 className="text-lg font-semibold mb-4 text-foreground">Today's MLB Games</h4>
                 {filteredGames.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -564,14 +569,24 @@ export default function Home() {
                             <div className="text-right">
                               <div className="font-medium text-foreground">{game.awayTeam}</div>
                               {game.awayPitcher && (
-                                <div className="text-xs text-muted-foreground">{game.awayPitcher}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {game.awayPitcher}
+                                  {game.awayPitcherStats && (
+                                    <span className="text-blue-400 ml-1">({game.awayPitcherStats})</span>
+                                  )}
+                                </div>
                               )}
                             </div>
                             <span className="text-muted-foreground">@</span>
                             <div className="text-left">
                               <div className="font-medium text-foreground">{game.homeTeam}</div>
                               {game.homePitcher && (
-                                <div className="text-xs text-muted-foreground">{game.homePitcher}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {game.homePitcher}
+                                  {game.homePitcherStats && (
+                                    <span className="text-blue-400 ml-1">({game.homePitcherStats})</span>
+                                  )}
+                                </div>
                               )}
                             </div>
                           </div>

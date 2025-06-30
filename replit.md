@@ -125,6 +125,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Complete patriotic red, white, and blue rebrand with enhanced game information
+  - Implemented patriotic color scheme: blue (#1E40AF), red (#DC2626), white (#F8FAFC) with dark navy base
+  - Added card headers with patriotic gradients for "Today's MLB Games" and "Latest MLB News" sections
+  - Enhanced pitcher information display with records and ERA statistics in blue text (e.g., "6-6, 3.72 ERA")
+  - Updated hero section buttons, welcome banner, and baseball section header with patriotic styling
+  - Maintained dark theme foundation while achieving strong American patriotic visual identity
 - June 30, 2025: Streamlined home page layout with prominent MLB news placement
   - Removed duplicate MLB news from sidebar and moved to main content area for better visibility
   - Eliminated platform analytics section and games filter tabs (All/Early/Late) for cleaner design
