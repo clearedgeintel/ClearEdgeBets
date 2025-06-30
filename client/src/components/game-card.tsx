@@ -175,18 +175,38 @@ export default function GameCard({ game }: GameCardProps) {
           </div>
           <div className="text-right">
             <p className="text-sm text-foreground">
-              {new Date(game.gameTime).toLocaleDateString('en-US', {
-                weekday: 'short',
-                month: 'short', 
-                day: 'numeric'
-              })}
+              {(() => {
+                try {
+                  const gameDate = new Date(game.gameTime);
+                  if (isNaN(gameDate.getTime())) {
+                    return "Today";
+                  }
+                  return gameDate.toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short', 
+                    day: 'numeric'
+                  });
+                } catch {
+                  return "Today";
+                }
+              })()}
             </p>
             <p className="text-sm text-muted-foreground">
-              {new Date(game.gameTime).toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-              })}
+              {(() => {
+                try {
+                  const gameDate = new Date(game.gameTime);
+                  if (isNaN(gameDate.getTime())) {
+                    return "7:00 PM";
+                  }
+                  return gameDate.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  });
+                } catch {
+                  return "7:00 PM";
+                }
+              })()}
             </p>
             <p className="text-xs text-muted-foreground">{game.venue}</p>
             {game.status === "final" && (

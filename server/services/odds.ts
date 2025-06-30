@@ -159,12 +159,7 @@ function processGameData(game: OddsApiGame): ProcessedGameData | null {
       homeTeam: game.home_team,
       awayTeamCode,
       homeTeamCode,
-      gameTime: new Date(game.commence_time).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        timeZone: 'America/New_York',
-        hour12: true
-      }) + ' ET',
+      gameTime: game.commence_time, // Keep as ISO string for proper date parsing
       venue: `${game.home_team} Stadium`, // Placeholder - API doesn't provide venue
       odds,
       publicPercentage: generateMockPublicPercentage() // Mock data since public percentages require premium API
