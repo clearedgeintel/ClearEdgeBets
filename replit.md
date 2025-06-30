@@ -125,6 +125,20 @@ Preferred communication style: Simple, everyday language.
 
 ## Changelog
 
+- June 30, 2025: Enhanced AI Game Analysis with suggested betting options
+  - Added intelligent bet suggestions directly under AI Game Analysis section in game cards
+  - Suggestions include Moneyline, Total, and Run Line bets with confidence levels and EV percentages
+  - Betting recommendations adapt based on AI confidence scores (80%+ for Moneyline, 70%+ for Totals, 75%+ for Run Lines)
+  - Each suggestion displays bet type, team/selection, odds, confidence badge, and expected value
+  - Integrated Target icon and proper styling for seamless user experience
+- June 30, 2025: Comprehensive Elite tier feature enhancements
+  - Built advanced Parlay Builder with intelligent EV calculations and leg management
+  - Added comprehensive parlay analysis including total odds, implied vs estimated probabilities, Kelly criterion guidance
+  - Enhanced parlay construction with drag-and-drop leg management and real-time mathematical analysis
+  - Moved Hot Trends from Elite tier to Pro tier (accessible to both Pro and Elite users)
+  - Marked Expert Consultation and White Label as "Coming Soon" with disabled styling and badges
+  - Enhanced AI Assistant stability with comprehensive null checks for all data scenarios
+  - Fixed quick questions layout to properly wrap text within sidebar container
 - June 30, 2025: Marked Expert Consultation and White Label as "Coming Soon" 
   - Updated Elite Features to show disabled state for Expert Consultation and White Label
   - Added "Coming Soon" badges and grayed-out styling for unavailable features

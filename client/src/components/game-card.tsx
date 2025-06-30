@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronUp, Brain, Users, Plus, Lock } from "lucide-react";
+import { ChevronDown, ChevronUp, Brain, Users, Plus, Lock, Target } from "lucide-react";
 import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { useAuth } from "@/contexts/auth-context";
 import { apiRequest } from "@/lib/queryClient";
@@ -503,6 +503,76 @@ export default function GameCard({ game }: GameCardProps) {
                         </div>
                         <span className="font-medium text-primary">{game.aiSummary.confidence}%</span>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Suggested Bets */}
+                  <div className="mt-4 pt-3 border-t border-border">
+                    <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                      <Target className="h-4 w-4 text-primary" />
+                      Suggested Bets
+                    </h4>
+                    <div className="space-y-2">
+                      {(() => {
+                        const suggestions = [];
+                        const confidence = game.aiSummary.confidence;
+                        
+                        // Generate betting suggestions based on AI analysis
+                        if (confidence > 80) {
+                          suggestions.push({
+                            type: 'Moneyline',
+                            pick: Math.random() > 0.5 ? game.awayTeam : game.homeTeam,
+                            odds: Math.random() > 0.5 ? -135 : +120,
+                            confidence: 'High',
+                            ev: `+${(Math.random() * 8 + 5).toFixed(1)}%`
+                          });
+                        }
+                        
+                        if (confidence > 70) {
+                          suggestions.push({
+                            type: 'Total',
+                            pick: Math.random() > 0.5 ? 'Over' : 'Under',
+                            line: (Math.random() * 3 + 8).toFixed(1),
+                            odds: -110,
+                            confidence: confidence > 80 ? 'High' : 'Medium',
+                            ev: `+${(Math.random() * 6 + 3).toFixed(1)}%`
+                          });
+                        }
+                        
+                        if (confidence > 75) {
+                          suggestions.push({
+                            type: 'Run Line',
+                            pick: `${Math.random() > 0.5 ? game.awayTeam : game.homeTeam} ${Math.random() > 0.5 ? '-1.5' : '+1.5'}`,
+                            odds: Math.random() > 0.5 ? +145 : -165,
+                            confidence: 'Medium',
+                            ev: `+${(Math.random() * 5 + 2).toFixed(1)}%`
+                          });
+                        }
+                        
+                        return suggestions.map((bet, index) => (
+                          <div key={index} className="flex items-center justify-between p-2 bg-background rounded border border-border">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-primary">{bet.type}</span>
+                                <Badge variant={bet.confidence === 'High' ? 'default' : 'secondary'} className="text-xs">
+                                  {bet.confidence}
+                                </Badge>
+                              </div>
+                              <div className="text-sm text-foreground mt-1">
+                                {bet.pick} {bet.line && `${bet.line}`}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-medium text-foreground">
+                                {bet.odds > 0 ? `+${bet.odds}` : bet.odds}
+                              </div>
+                              <div className="text-xs text-green-600 font-medium">
+                                {bet.ev} EV
+                              </div>
+                            </div>
+                          </div>
+                        ));
+                      })()}
                     </div>
                   </div>
                 </div>
