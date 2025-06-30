@@ -262,54 +262,51 @@ function generateRealisticCFLOdds(awayTeam: string, homeTeam: string) {
   };
 }
 
-export async function fetchCFLGames(): Promise<CFLGame[]> {
-  // Simple CFL schedule that works - always generate games for testing
+export async function fetchCFLGames(targetDate?: string): Promise<CFLGame[]> {
+  // Generate CFL games for a date range around today to support date navigation
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
-  
   const games: CFLGame[] = [];
   
-  // Always generate some CFL games for testing
-  games.push({
-    gameId: 'cfl_2025_HAM@TOR',
-    awayTeam: 'Hamilton Tiger-Cats',
-    homeTeam: 'Toronto Argonauts',
-    awayTeamCode: 'HAM',
-    homeTeamCode: 'TOR',
-    gameTime: `${todayStr}T19:00:00.000Z`,
-    venue: 'BMO Field',
-    week: 4,
-    season: '2025',
-    odds: generateRealisticCFLOdds('HAM', 'TOR')
-  });
+  // Generate games for a 7-day window around today (for date navigation)
+  for (let dayOffset = -3; dayOffset <= 3; dayOffset++) {
+    const gameDate = new Date(today);
+    gameDate.setDate(today.getDate() + dayOffset);
+    const gameDateStr = gameDate.toISOString().split('T')[0];
+    const dayOfWeek = gameDate.getDay();
+    
+    // CFL games typically on weekends (Friday/Saturday/Sunday)
+    if (dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) {
+      const gameCount = dayOfWeek === 6 ? 3 : 2; // More games on Saturday
+      
+      const matchups = [
+        { away: 'Hamilton Tiger-Cats', home: 'Toronto Argonauts', awayCode: 'HAM', homeCode: 'TOR', venue: 'BMO Field' },
+        { away: 'Calgary Stampeders', home: 'BC Lions', awayCode: 'CGY', homeCode: 'BC', venue: 'BC Place' },
+        { away: 'Ottawa REDBLACKS', home: 'Saskatchewan Roughriders', awayCode: 'OTT', homeCode: 'SSK', venue: 'Mosaic Stadium' },
+        { away: 'Montreal Alouettes', home: 'Winnipeg Blue Bombers', awayCode: 'MTL', homeCode: 'WPG', venue: 'Princess Auto Stadium' },
+        { away: 'Edmonton Elks', home: 'Hamilton Tiger-Cats', awayCode: 'EDM', homeCode: 'HAM', venue: 'Tim Hortons Field' }
+      ];
+      
+      for (let i = 0; i < Math.min(gameCount, matchups.length); i++) {
+        const matchup = matchups[(dayOffset + i + 3) % matchups.length]; // Rotate matchups
+        const gameTime = `${gameDateStr}T${19 + i}:00:00.000Z`; // Start at 7 PM, then 8 PM, 9 PM
+        
+        games.push({
+          gameId: `cfl_2025_${matchup.awayCode}@${matchup.homeCode}_${gameDateStr}`,
+          awayTeam: matchup.away,
+          homeTeam: matchup.home,
+          awayTeamCode: matchup.awayCode,
+          homeTeamCode: matchup.homeCode,
+          gameTime: gameTime,
+          venue: matchup.venue,
+          week: 4,
+          season: '2025',
+          odds: generateRealisticCFLOdds(matchup.awayCode, matchup.homeCode)
+        });
+      }
+    }
+  }
   
-  games.push({
-    gameId: 'cfl_2025_CGY@BC',
-    awayTeam: 'Calgary Stampeders', 
-    homeTeam: 'BC Lions',
-    awayTeamCode: 'CGY',
-    homeTeamCode: 'BC',
-    gameTime: `${todayStr}T22:00:00.000Z`,
-    venue: 'BC Place',
-    week: 4,
-    season: '2025',
-    odds: generateRealisticCFLOdds('CGY', 'BC')
-  });
-  
-  games.push({
-    gameId: 'cfl_2025_OTT@SSK',
-    awayTeam: 'Ottawa REDBLACKS',
-    homeTeam: 'Saskatchewan Roughriders',
-    awayTeamCode: 'OTT',
-    homeTeamCode: 'SSK',
-    gameTime: `${todayStr}T20:30:00.000Z`,
-    venue: 'Mosaic Stadium',  
-    week: 4,
-    season: '2025',
-    odds: generateRealisticCFLOdds('OTT', 'SSK')
-  });
-  
-  console.log(`Generated ${games.length} CFL games for ${todayStr}`);
+  console.log(`Generated ${games.length} CFL games for date range`);
   return games;
 }
 
