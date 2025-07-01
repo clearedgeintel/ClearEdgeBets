@@ -42,7 +42,7 @@ interface DailyPick {
 export default function DailyPicks() {
   const queryClient = useQueryClient();
   const { addBet } = useBettingSlip();
-  const { bets, updateBet, clearBet, getTotalStake, getTotalPotentialWin } = useBettingSlipContext();
+  const { bets, updateBet, clearBet, clearAllBets, getTotalStake, getTotalPotentialWin } = useBettingSlipContext();
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -121,6 +121,37 @@ export default function DailyPicks() {
       toast({
         title: "Result updated",
         description: "Pick result has been updated successfully.",
+      });
+    },
+  });
+
+  const placeBetsMutation = useMutation({
+    mutationFn: async (betsToPlace: typeof bets) => {
+      const promises = betsToPlace.map(bet => 
+        apiRequest("POST", "/api/bets", {
+          gameId: bet.gameId,
+          betType: bet.betType,
+          selection: bet.selection,
+          odds: bet.odds,
+          stake: bet.stake.toString(),
+          potentialWin: bet.potentialWin.toString(),
+        })
+      );
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/my-bets"] });
+      clearAllBets();
+      toast({
+        title: "Bets placed successfully!",
+        description: `${bets.length} bet(s) have been placed for $${getTotalStake().toFixed(2)}`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to place bets",
+        description: "There was an error placing your bets. Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -275,9 +306,10 @@ export default function DailyPicks() {
                   </div>
                   <Button 
                     className="bg-blue-600 hover:bg-blue-700"
-                    disabled={getTotalStake() === 0}
+                    disabled={getTotalStake() === 0 || placeBetsMutation.isPending}
+                    onClick={() => placeBetsMutation.mutate(bets)}
                   >
-                    Place Bets (${getTotalStake().toFixed(2)})
+                    {placeBetsMutation.isPending ? "Placing Bets..." : `Place Bets ($${getTotalStake().toFixed(2)})`}
                   </Button>
                 </div>
               </div>
