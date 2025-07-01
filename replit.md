@@ -150,6 +150,12 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 1, 2025: Enhanced Virtual Sportsbook with date picker and day display functionality
+  - Added comprehensive header with day display showing selected date (e.g., "Games for Tuesday, July 1")
+  - Integrated interactive date picker using Calendar component with popover trigger
+  - Updated games query to dynamically fetch games for selected date with proper API parameters
+  - Enhanced user experience with responsive design that stacks on mobile, side-by-side on desktop
+  - Date picker seamlessly integrates with existing games API and provides intuitive navigation
 - July 1, 2025: Fixed game time display issue - all games were showing fallback "7:00 PM" time
   - Resolved undefined odds data causing API errors in spread and total odds processing
   - Added safety checks for odds.spread.awayOdds and odds.total.over before calling toString()

@@ -9,7 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { DollarSign, TrendingUp, TrendingDown, RotateCcw, Target, Trophy, BarChart3, LogIn, Brain, Calculator, Trash2, Plus, Minus, Receipt, X } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DollarSign, TrendingUp, TrendingDown, RotateCcw, Target, Trophy, BarChart3, LogIn, Brain, Calculator, Trash2, Plus, Minus, Receipt, X, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 
 interface BalanceData {
   balance: number;
@@ -76,6 +79,7 @@ export default function VirtualSportsbook() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user, isLoading: authLoading } = useAuth();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [aiBetSlip, setAiBetSlip] = useState<AIBetRecommendation[] | null>(null);
   const [isGeneratingAIBets, setIsGeneratingAIBets] = useState(false);
   
@@ -266,10 +270,20 @@ export default function VirtualSportsbook() {
     enabled: !!user,
   });
 
-  // Fetch today's games for betting
+  // Fetch games for selected date
   const { data: games, isLoading: gamesLoading } = useQuery<Game[]>({
-    queryKey: ["/api/games"],
-    retry: false,
+    queryKey: ["/api/games", format(selectedDate, "yyyy-MM-dd")],
+    queryFn: async () => {
+      const dateParam = format(selectedDate, "yyyy-MM-dd");
+      const response = await fetch(`/api/games?date=${dateParam}`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   // Reset balance mutation
@@ -474,13 +488,44 @@ export default function VirtualSportsbook() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Header with Date Picker */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">
-          Welcome to Virtual Sportsbook, {user.username}!
-        </h1>
-        <p className="text-muted-foreground">
-          Practice your betting skills with simulated money. Start with $1,000 and track your performance!
-        </p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              Virtual Sportsbook
+            </h1>
+            <p className="text-muted-foreground">
+              Practice your betting skills with simulated money. Start with $1,000 and track your performance!
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <div className="text-sm text-muted-foreground">Games for</div>
+              <div className="text-lg font-semibold">
+                {format(selectedDate, "EEEE, MMMM d")}
+              </div>
+            </div>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-48 justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {format(selectedDate, "PPP")}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
       </div>
 
       {/* Balance Overview */}
