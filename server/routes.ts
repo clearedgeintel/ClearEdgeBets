@@ -599,7 +599,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        if (gameData.odds.total) {
+        if (gameData.odds.total && gameData.odds.total.over !== undefined && gameData.odds.total.line !== undefined) {
           oddsArray.push({
             id: Math.floor(Math.random() * 1000000),
             gameId: gameData.gameId,
@@ -612,7 +612,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        if (gameData.odds.spread) {
+        if (gameData.odds.spread && gameData.odds.spread.away !== undefined && gameData.odds.spread.awayOdds !== undefined) {
           oddsArray.push({
             id: Math.floor(Math.random() * 1000000),
             gameId: gameData.gameId,

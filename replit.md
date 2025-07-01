@@ -150,6 +150,11 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 1, 2025: Fixed game time display issue - all games were showing fallback "7:00 PM" time
+  - Resolved undefined odds data causing API errors in spread and total odds processing
+  - Added safety checks for odds.spread.awayOdds and odds.total.over before calling toString()
+  - Games now display authentic scheduled times from MLB API (3:07 PM, 6:35 PM, 6:40 PM, etc.)
+  - Fixed games API endpoint to return complete data without fallback errors
 - June 30, 2025: Fixed AI game summary issue - database had summaries for mock games but API now returns real MLB games with different IDs
 - June 30, 2025: Successfully implemented comprehensive mobile navigation optimization with hamburger menu and slide-out navigation
 - June 30, 2025: Expanded AI assistant question library from 6 to 20 comprehensive betting questions
