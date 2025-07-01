@@ -197,9 +197,16 @@ Return your analysis in JSON format with an array of picks. Each pick should inc
 - pickType: "moneyline", "total", "spread", or "prop"
 - selection: Detailed description of the bet
 - odds: The betting odds (American format)
-- reasoning: 2-3 sentence explanation focusing on edge/value
+- reasoning: Detailed 100-150 word analysis focusing on pitching matchups, team trends, and specific betting edge. Include specific statistical insights and why this pick offers value.
 - confidence: Number from 1-100
 - expectedValue: Estimated edge percentage (can be negative)
+
+**REASONING REQUIREMENTS:**
+- Start with pitching analysis (starter quality, recent form, matchup advantages)
+- Include team offensive/defensive trends supporting the pick
+- Explain the specific edge or value opportunity
+- Mention relevant situational factors (home/away, streaks, weather, etc.)
+- Be specific and detailed like professional betting analysis
 
 Focus on picks with genuine edge and value. Avoid public favorites unless there's clear contrarian value.`;
 
@@ -208,7 +215,7 @@ Focus on picks with genuine edge and value. Avoid public favorites unless there'
       messages: [
         {
           role: "system",
-          content: "You are an expert MLB betting analyst. Always respond with valid JSON containing an array of daily picks."
+          content: "You are an expert MLB betting analyst. Always respond with valid JSON containing an array of daily picks with detailed reasoning."
         },
         {
           role: "user",
@@ -216,7 +223,7 @@ Focus on picks with genuine edge and value. Avoid public favorites unless there'
         }
       ],
       response_format: { type: "json_object" },
-      max_tokens: 2000,
+      max_tokens: 4000,
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{"picks": []}');
