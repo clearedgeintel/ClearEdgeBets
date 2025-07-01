@@ -424,6 +424,13 @@ export default function Home() {
                   <Star className="h-5 w-5 text-white" />
                   <h3 className="text-xl font-bold text-white">Today's Top MLB AI Picks</h3>
                   <div className="badge bg-white/20 text-white border-white/30">
+                    {new Date().toLocaleDateString('en-US', { 
+                      weekday: 'short', 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })}
+                  </div>
+                  <div className="badge bg-white/20 text-white border-white/30">
                     Updated {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} ET
                   </div>
                 </div>
