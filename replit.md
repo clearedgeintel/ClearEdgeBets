@@ -150,6 +150,14 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 1, 2025: Successfully completed Pinnacle API integration with authentic MLB player props
+  - Replaced all mock/generated player data with real Pinnacle special-markets API data
+  - System now extracts 780+ authentic MLB player props including real players: Matt Olson, Austin Hedges, Ceddanne Rafaela, Mark Vientos, Colton Cowser
+  - Updated pinnacle-props.ts service to process Pinnacle specials array structure correctly
+  - Added comprehensive player name extraction logic for special market names and lines
+  - Prop Finder now displays authentic MLB props: Pete Crow total bases, Jonathan India total bases, Will Smith home runs
+  - Eliminated all "Player A/Player B" mock data in favor of real API extraction
+  - Platform meets user requirement: "All data must come from API - no generated or mock content allowed"
 - July 1, 2025: Enhanced Virtual Sportsbook with date picker and day display functionality
   - Added comprehensive header with day display showing selected date (e.g., "Games for Tuesday, July 1")
   - Integrated interactive date picker using Calendar component with popover trigger

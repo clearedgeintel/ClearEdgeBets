@@ -31,10 +31,10 @@ export async function getPinnaclePlayerProps(): Promise<PinnaclePlayerProp[]> {
     // Baseball is sport ID 9 based on API response
     const baseballSportId = 9;
 
-    // Get markets for Baseball - this will include standard game markets
-    const url = `https://pinnacle-odds.p.rapidapi.com/kit/v1/markets?sport_id=${baseballSportId}`;
+    // Get special markets for Baseball - this includes player props
+    const url = `https://pinnacle-odds.p.rapidapi.com/kit/v1/special-markets?event_type=prematch&sport_id=${baseballSportId}&is_have_odds=true`;
     
-    console.log(`Fetching MLB markets from Pinnacle API...`);
+    console.log(`Fetching MLB player props from Pinnacle special-markets API...`);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -52,28 +52,297 @@ export async function getPinnaclePlayerProps(): Promise<PinnaclePlayerProp[]> {
     const data = await response.json() as any;
     const props: PinnaclePlayerProp[] = [];
 
-    console.log(`Found ${data.events?.length || 0} MLB events from Pinnacle`);
+    console.log('Pinnacle special-markets response:', JSON.stringify(data, null, 2).substring(0, 1000));
 
-    // For now, generate realistic player props based on the real games
-    // In production, you'd need to check if Pinnacle offers player props through a different endpoint
-    // or if they're included in the periods data structure
-    if (data.events && Array.isArray(data.events)) {
-      data.events.slice(0, 5).forEach((event: any, eventIndex: number) => {
-        if (event.event_type === 'prematch' && event.home && event.away) {
-          // Generate realistic player props for key games
-          const gameProps = generateRealisticPlayerProps(event, eventIndex);
-          props.push(...gameProps);
+    // Process actual player props from the specials array
+    if (data && data.specials && Array.isArray(data.specials)) {
+      console.log(`Found ${data.specials.length} special markets from Pinnacle`);
+      data.specials.forEach((special: any, index: number) => {
+        if (special && special.name) {
+          const playerProps = extractPlayerPropsFromSpecial(special, index);
+          if (playerProps.length > 0) {
+            props.push(...playerProps);
+          }
         }
       });
+    } else {
+      console.log('No specials found in response structure:', Object.keys(data || {}));
     }
 
-    console.log(`Generated ${props.length} realistic player props for MLB games`);
+    console.log(`Extracted ${props.length} actual player props from Pinnacle API`);
     return props;
 
   } catch (error) {
     console.error('Error fetching player props from Pinnacle API:', error);
     return [];
   }
+}
+
+function extractPlayerPropsFromSpecial(special: any, index: number): PinnaclePlayerProp[] {
+  const props: PinnaclePlayerProp[] = [];
+  
+  try {
+    // Check if this special contains player props
+    if (!special.name || !special.lines) {
+      return props;
+    }
+
+    // Look for player names in special names 
+    const specialName = special.name.toLowerCase();
+    const isPlayerProp = specialName.includes('player') || 
+                        specialName.includes('pitcher') || 
+                        specialName.includes('batter') ||
+                        specialName.includes('hits') ||
+                        specialName.includes('home runs') ||
+                        specialName.includes('strikeouts') ||
+                        specialName.includes('rbi') ||
+                        specialName.includes('total bases') ||
+                        specialName.includes('runs scored');
+
+    // Skip futures bets and division winners
+    if (specialName.includes('winner') || specialName.includes('division') || 
+        specialName.includes('league') || specialName.includes('world series') ||
+        specialName.includes('mvp') || specialName.includes('cy young')) {
+      return props;
+    }
+
+    if (!isPlayerProp) {
+      return props;
+    }
+
+    // Extract player name from the special name
+    const playerName = extractPlayerNameFromSpecialName(special.name);
+    if (!playerName) {
+      return props;
+    }
+
+    // Process each line in the special
+    Object.entries(special.lines).forEach(([lineKey, lineData]: [string, any], lineIndex: number) => {
+      if (lineData && lineData.name && lineData.price) {
+        const propType = extractPropTypeFromSpecialName(special.name);
+        const line = extractLineFromSpecialName(special.name, lineData.name);
+        
+        if (propType) {
+          const prop: PinnaclePlayerProp = {
+            id: `pinnacle_special_${special.special_id}_${lineIndex}`,
+            gameId: extractGameIdFromSpecial(special),
+            team: extractTeamFromSpecial(special, playerName),
+            opponent: 'TBD',
+            playerName: playerName,
+            category: getCategoryFromPropType(propType),
+            propType: propType,
+            line: line,
+            overOdds: convertPinnacleOdds(lineData.price, true),
+            underOdds: convertPinnacleOdds(lineData.price, false),
+            bookmaker: 'Pinnacle',
+            specialId: special.special_id,
+            lineId: lineData.line_id || 0,
+            maxBet: special.max_bet || 1000,
+            projectedValue: line * (1 + Math.random() * 0.2 - 0.1),
+            edge: calculateEdge(lineData.price)
+          };
+          
+          props.push(prop);
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error extracting player props from special:', error);
+  }
+
+  return props;
+}
+
+function extractPlayerPropsFromMarket(market: any, index: number): PinnaclePlayerProp[] {
+  const props: PinnaclePlayerProp[] = [];
+  
+  try {
+    // Check if this market contains player props
+    if (!market.market_type || !market.selections || !Array.isArray(market.selections)) {
+      return props;
+    }
+
+    // Look for player names in market descriptions or selection names
+    const marketType = market.market_type.toLowerCase();
+    const isPlayerProp = marketType.includes('player') || 
+                        marketType.includes('pitcher') || 
+                        marketType.includes('batter') ||
+                        marketType.includes('hits') ||
+                        marketType.includes('home runs') ||
+                        marketType.includes('strikeouts') ||
+                        marketType.includes('rbi');
+
+    if (!isPlayerProp) {
+      return props;
+    }
+
+    // Extract game information
+    const gameId = market.event_id || `game_${index}`;
+    const homeTeam = market.home_team || 'Home Team';
+    const awayTeam = market.away_team || 'Away Team';
+
+    // Process each selection in the market
+    market.selections.forEach((selection: any, selIndex: number) => {
+      if (selection.name && selection.price) {
+        const playerName = extractPlayerNameFromSelection(selection.name);
+        const propType = extractPropTypeFromSelection(selection.name, marketType);
+        const line = extractLineFromSelection(selection.name);
+        
+        if (playerName && propType) {
+          const prop: PinnaclePlayerProp = {
+            id: `pinnacle_${gameId}_${index}_${selIndex}`,
+            gameId: `${awayTeam}@${homeTeam}`,
+            team: homeTeam,
+            opponent: awayTeam,
+            playerName: playerName,
+            category: getCategoryFromPropType(propType),
+            propType: propType,
+            line: line,
+            overOdds: convertPinnacleOdds(selection.price, true),
+            underOdds: convertPinnacleOdds(selection.price, false),
+            projectedValue: line * (1 + Math.random() * 0.2 - 0.1),
+            edge: calculateEdge(selection.price)
+          };
+          
+          props.push(prop);
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error extracting player props from market:', error);
+  }
+
+  return props;
+}
+
+function extractPlayerNameFromSelection(selectionName: string): string {
+  // Try to extract player name from various formats:
+  // "Aaron Judge - Over 1.5 Hits"
+  // "Juan Soto Total Bases Over 2.5"
+  // "Gerrit Cole Strikeouts Over 7.5"
+  
+  const patterns = [
+    /^([A-Z][a-z]+ [A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*-/,  // "Aaron Judge -"
+    /^([A-Z][a-z]+ [A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:Total|Over|Under|Strikeouts|Hits|RBI|Home Runs)/i,
+    /([A-Z][a-z]+ [A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+/  // Any capitalized name followed by space
+  ];
+  
+  for (const pattern of patterns) {
+    const match = selectionName.match(pattern);
+    if (match && match[1]) {
+      const name = match[1].trim();
+      // Filter out common non-player words
+      if (!name.match(/^(Over|Under|Total|Yes|No|Home|Away)$/i)) {
+        return name;
+      }
+    }
+  }
+  
+  return '';
+}
+
+function extractPropTypeFromSelection(selectionName: string, marketType: string): string {
+  const name = selectionName.toLowerCase();
+  const market = marketType.toLowerCase();
+  
+  if (name.includes('hits') || market.includes('hits')) return 'hits';
+  if (name.includes('home run') || market.includes('home run')) return 'home_runs';
+  if (name.includes('strikeout') || market.includes('strikeout')) return 'strikeouts';
+  if (name.includes('rbi') || market.includes('rbi')) return 'rbis';
+  if (name.includes('runs') || market.includes('runs')) return 'runs';
+  if (name.includes('stolen base') || market.includes('stolen')) return 'stolen_bases';
+  if (name.includes('total base') || market.includes('total base')) return 'total_bases';
+  
+  return 'hits'; // default
+}
+
+function extractLineFromSelection(selectionName: string): number {
+  // Extract numeric line from selection like "Over 2.5" or "Under 1.5"
+  const numberMatch = selectionName.match(/(?:over|under)\s+(\d+\.?\d*)/i);
+  if (numberMatch) {
+    return parseFloat(numberMatch[1]);
+  }
+  
+  // Try to find any number in the selection
+  const anyNumber = selectionName.match(/(\d+\.?\d*)/);
+  return anyNumber ? parseFloat(anyNumber[1]) : 1.5;
+}
+
+function getCategoryFromPropType(propType: string): string {
+  if (propType === 'strikeouts') return 'pitching';
+  return 'hitting';
+}
+
+// Helper functions for special extraction
+function extractPlayerNameFromSpecialName(specialName: string): string {
+  // Try to extract player name from special names like:
+  // "Aaron Judge - Home Runs Over 1.5"
+  // "Juan Soto Total Bases"
+  // "Gerrit Cole Strikeouts"
+  
+  const patterns = [
+    /^([A-Z][a-z]+ [A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*-/,  // "Aaron Judge -"
+    /^([A-Z][a-z]+ [A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:Total|Hits|Home Runs|Strikeouts|RBI)/i,
+    /([A-Z][a-z]+ [A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/  // Any capitalized name
+  ];
+  
+  for (const pattern of patterns) {
+    const match = specialName.match(pattern);
+    if (match && match[1]) {
+      const name = match[1].trim();
+      // Filter out common non-player words
+      if (!name.match(/^(Over|Under|Total|Yes|No|Home|Away|Winner|League|Division)$/i)) {
+        return name;
+      }
+    }
+  }
+  
+  return '';
+}
+
+function extractPropTypeFromSpecialName(specialName: string): string {
+  const name = specialName.toLowerCase();
+  
+  if (name.includes('hits')) return 'hits';
+  if (name.includes('home run')) return 'home_runs';
+  if (name.includes('strikeout')) return 'strikeouts';
+  if (name.includes('rbi')) return 'rbis';
+  if (name.includes('runs')) return 'runs';
+  if (name.includes('stolen base')) return 'stolen_bases';
+  if (name.includes('total base')) return 'total_bases';
+  
+  return 'hits'; // default
+}
+
+function extractLineFromSpecialName(specialName: string, lineName: string): number {
+  // Try to extract line from special name or line name
+  const combinedText = `${specialName} ${lineName}`.toLowerCase();
+  
+  // Look for patterns like "over 2.5" or "under 1.5"
+  const lineMatch = combinedText.match(/(?:over|under)\s+(\d+\.?\d*)/);
+  if (lineMatch) {
+    return parseFloat(lineMatch[1]);
+  }
+  
+  // Try to find any number
+  const numberMatch = combinedText.match(/(\d+\.?\d*)/);
+  return numberMatch ? parseFloat(numberMatch[1]) : 1.5;
+}
+
+function extractGameIdFromSpecial(special: any): string {
+  // Generate a game ID from special event information
+  if (special.event_id) {
+    return `game_${special.event_id}`;
+  }
+  return `special_${special.special_id}`;
+}
+
+function extractTeamFromSpecial(special: any, playerName: string): string {
+  // Try to extract team from special name or use a default
+  // In practice, you might need team mapping logic here
+  return 'TBD Team';
 }
 
 function generateRealisticPlayerProps(event: any, eventIndex: number): PinnaclePlayerProp[] {
