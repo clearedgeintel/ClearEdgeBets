@@ -2068,6 +2068,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return gameResults.join('-');
   }
 
+  // Helper function to round numbers cleanly
+  function roundToTwoDecimals(num: number): number {
+    return Math.round(num * 100) / 100;
+  }
+
   // Prop Finder endpoint for Elite tier
   app.get("/api/prop-finder", async (req, res) => {
     try {
@@ -2089,13 +2094,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         line: prop.line,
         overOdds: prop.overOdds,
         underOdds: prop.underOdds,
-        expectedValue: prop.edge || 0,
-        impliedProb: calculateImpliedProbability(prop.overOdds),
-        projectedProb: calculateImpliedProbability(prop.overOdds) + (prop.edge || 0),
-        confidence: Math.min(95, Math.max(50, 70 + (prop.edge || 0))),
+        expectedValue: roundToTwoDecimals(prop.edge || 0),
+        impliedProb: roundToTwoDecimals(calculateImpliedProbability(prop.overOdds)),
+        projectedProb: roundToTwoDecimals(calculateImpliedProbability(prop.overOdds) + (prop.edge || 0)),
+        confidence: Math.round(Math.min(95, Math.max(50, 70 + (prop.edge || 0)))),
         lastGames: generateRecentGames(prop.propType),
-        seasonAvg: prop.projectedValue || prop.line,
-        vsOpponent: (prop.projectedValue || prop.line) * (1 + Math.random() * 0.2 - 0.1),
+        seasonAvg: roundToTwoDecimals(prop.projectedValue || prop.line),
+        vsOpponent: roundToTwoDecimals((prop.projectedValue || prop.line) * (1 + Math.random() * 0.2 - 0.1)),
         weather: "Clear, 75°F",
         venue: "MLB Stadium",
         gameTime: new Date().toISOString()

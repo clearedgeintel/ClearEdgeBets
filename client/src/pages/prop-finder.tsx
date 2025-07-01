@@ -255,11 +255,11 @@ export default function PropFinder() {
                       <div className="text-sm space-y-1">
                         <div>
                           <span className="text-muted-foreground">Season Avg: </span>
-                          <span className="font-medium">{prop.seasonAvg}</span>
+                          <span className="font-medium">{prop.seasonAvg.toFixed(2)}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">vs {prop.awayTeam === prop.playerName ? prop.homeTeam : prop.awayTeam}: </span>
-                          <span className="font-medium">{prop.vsOpponent}</span>
+                          <span className="font-medium">{prop.vsOpponent.toFixed(2)}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">L5 Games: </span>
@@ -280,7 +280,7 @@ export default function PropFinder() {
                         Add to Slip
                       </Button>
                       <div className="text-xs text-center text-muted-foreground">
-                        Confidence: {prop.confidence}%
+                        Confidence: {prop.confidence.toFixed(1)}%
                       </div>
                     </div>
                   </div>

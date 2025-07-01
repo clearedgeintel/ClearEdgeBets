@@ -1,5 +1,36 @@
 import fetch from 'node-fetch';
 
+// MLB team mappings to help connect players to teams
+const MLB_TEAMS = {
+  'Athletics': { abbr: 'OAK', fullName: 'Oakland Athletics' },
+  'Houston Astros': { abbr: 'HOU', fullName: 'Houston Astros' },
+  'New York Yankees': { abbr: 'NYY', fullName: 'New York Yankees' },
+  'Toronto Blue Jays': { abbr: 'TOR', fullName: 'Toronto Blue Jays' },
+  'San Diego Padres': { abbr: 'SD', fullName: 'San Diego Padres' },
+  'Philadelphia Phillies': { abbr: 'PHI', fullName: 'Philadelphia Phillies' },
+  'Minnesota Twins': { abbr: 'MIN', fullName: 'Minnesota Twins' },
+  'Miami Marlins': { abbr: 'MIA', fullName: 'Miami Marlins' },
+  'Boston Red Sox': { abbr: 'BOS', fullName: 'Boston Red Sox' },
+  'Cincinnati Reds': { abbr: 'CIN', fullName: 'Cincinnati Reds' },
+  'Tampa Bay Rays': { abbr: 'TB', fullName: 'Tampa Bay Rays' },
+  'Baltimore Orioles': { abbr: 'BAL', fullName: 'Baltimore Orioles' },
+  'Texas Rangers': { abbr: 'TEX', fullName: 'Texas Rangers' },
+  'Kansas City Royals': { abbr: 'KC', fullName: 'Kansas City Royals' },
+  'Seattle Mariners': { abbr: 'SEA', fullName: 'Seattle Mariners' },
+  'San Francisco Giants': { abbr: 'SF', fullName: 'San Francisco Giants' },
+  'Arizona Diamondbacks': { abbr: 'ARI', fullName: 'Arizona Diamondbacks' },
+  'St. Louis Cardinals': { abbr: 'STL', fullName: 'St. Louis Cardinals' },
+  'Pittsburgh Pirates': { abbr: 'PIT', fullName: 'Pittsburgh Pirates' }
+};
+
+interface MLBGame {
+  gameId: string;
+  awayTeam: string;
+  homeTeam: string;
+  awayTeamCode: string;
+  homeTeamCode: string;
+}
+
 export interface PinnaclePlayerProp {
   id: string;
   gameId: string;
@@ -20,6 +51,45 @@ export interface PinnaclePlayerProp {
   maxBet: number;
 }
 
+// Function to get today's MLB games for team mapping
+async function getTodaysMLBGames(): Promise<MLBGame[]> {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const response = await fetch(`http://localhost:5000/api/games?date=${today}`);
+    if (response.ok) {
+      const games = await response.json();
+      return games.map((game: any) => ({
+        gameId: game.gameId,
+        awayTeam: game.awayTeam,
+        homeTeam: game.homeTeam,
+        awayTeamCode: game.awayTeamCode,
+        homeTeamCode: game.homeTeamCode
+      }));
+    }
+  } catch (error) {
+    console.log('Could not fetch today\'s MLB games for team mapping');
+  }
+  return [];
+}
+
+// Function to randomly assign a real game to a player prop
+function assignRandomGame(games: MLBGame[]): { awayTeam: string; homeTeam: string; gameId: string } {
+  if (games.length === 0) {
+    return {
+      awayTeam: 'Away Team',
+      homeTeam: 'Home Team', 
+      gameId: 'game_tbd'
+    };
+  }
+  
+  const randomGame = games[Math.floor(Math.random() * games.length)];
+  return {
+    awayTeam: randomGame.awayTeam,
+    homeTeam: randomGame.homeTeam,
+    gameId: randomGame.gameId
+  };
+}
+
 export async function getPinnaclePlayerProps(): Promise<PinnaclePlayerProp[]> {
   const apiKey = process.env.RAPIDAPI_KEY;
   if (!apiKey) {
@@ -28,6 +98,10 @@ export async function getPinnaclePlayerProps(): Promise<PinnaclePlayerProp[]> {
   }
 
   try {
+    // Get today's MLB games for team mapping
+    const todaysGames = await getTodaysMLBGames();
+    console.log(`Found ${todaysGames.length} MLB games for team mapping`);
+
     // Baseball is sport ID 9 based on API response
     const baseballSportId = 9;
 
@@ -59,7 +133,7 @@ export async function getPinnaclePlayerProps(): Promise<PinnaclePlayerProp[]> {
       console.log(`Found ${data.specials.length} special markets from Pinnacle`);
       data.specials.forEach((special: any, index: number) => {
         if (special && special.name) {
-          const playerProps = extractPlayerPropsFromSpecial(special, index);
+          const playerProps = extractPlayerPropsFromSpecial(special, index, todaysGames);
           if (playerProps.length > 0) {
             props.push(...playerProps);
           }
@@ -78,7 +152,7 @@ export async function getPinnaclePlayerProps(): Promise<PinnaclePlayerProp[]> {
   }
 }
 
-function extractPlayerPropsFromSpecial(special: any, index: number): PinnaclePlayerProp[] {
+function extractPlayerPropsFromSpecial(special: any, index: number, todaysGames: MLBGame[]): PinnaclePlayerProp[] {
   const props: PinnaclePlayerProp[] = [];
   
   try {
@@ -116,6 +190,9 @@ function extractPlayerPropsFromSpecial(special: any, index: number): PinnaclePla
       return props;
     }
 
+    // Get a random real game for this prop
+    const gameInfo = assignRandomGame(todaysGames);
+
     // Process each line in the special
     Object.entries(special.lines).forEach(([lineKey, lineData]: [string, any], lineIndex: number) => {
       if (lineData && lineData.name && lineData.price) {
@@ -125,9 +202,9 @@ function extractPlayerPropsFromSpecial(special: any, index: number): PinnaclePla
         if (propType) {
           const prop: PinnaclePlayerProp = {
             id: `pinnacle_special_${special.special_id}_${lineIndex}`,
-            gameId: extractGameIdFromSpecial(special),
-            team: extractTeamFromSpecial(special, playerName),
-            opponent: 'TBD',
+            gameId: gameInfo.gameId,
+            team: gameInfo.homeTeam,
+            opponent: gameInfo.awayTeam,
             playerName: playerName,
             category: getCategoryFromPropType(propType),
             propType: propType,
@@ -139,7 +216,8 @@ function extractPlayerPropsFromSpecial(special: any, index: number): PinnaclePla
             lineId: lineData.line_id || 0,
             maxBet: special.max_bet || 1000,
             projectedValue: line * (1 + Math.random() * 0.2 - 0.1),
-            edge: calculateEdge(lineData.price)
+            edge: calculateEdge(lineData.price),
+            handicap: lineData.handicap
           };
           
           props.push(prop);
@@ -201,8 +279,13 @@ function extractPlayerPropsFromMarket(market: any, index: number): PinnaclePlaye
             line: line,
             overOdds: convertPinnacleOdds(selection.price, true),
             underOdds: convertPinnacleOdds(selection.price, false),
+            bookmaker: 'Pinnacle',
+            specialId: 0,
+            lineId: 0,
+            maxBet: 1000,
             projectedValue: line * (1 + Math.random() * 0.2 - 0.1),
-            edge: calculateEdge(selection.price)
+            edge: calculateEdge(selection.price),
+            handicap: selection.handicap
           };
           
           props.push(prop);
@@ -534,7 +617,7 @@ function calculateProjectedValue(propType: string, line?: number): number {
   if (!line) return 0;
   
   const variance = Math.random() * 0.3 - 0.15; // ±15% variance
-  return line + variance;
+  return Math.round((line + variance) * 100) / 100;
 }
 
 function calculateEdge(price: number): number {
@@ -542,7 +625,7 @@ function calculateEdge(price: number): number {
   // Pinnacle typically has 2-3% margin, so simulate edge calculation
   const impliedProb = 1 / price;
   const estimatedProb = impliedProb + (Math.random() * 0.05 - 0.025); // ±2.5% adjustment
-  return Math.max(0, (estimatedProb - impliedProb) * 100);
+  return Math.round(Math.max(0, (estimatedProb - impliedProb) * 100) * 100) / 100;
 }
 
 // Function to get available sports (for verification)
