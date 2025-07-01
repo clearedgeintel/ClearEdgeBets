@@ -202,6 +202,8 @@ export default function Home() {
           venue: game.venue,
           awayPitcher: game.awayPitcher,
           homePitcher: game.homePitcher,
+          awayPitcherStats: game.awayPitcherStats,
+          homePitcherStats: game.homePitcherStats,
         } : {
           awayTeam: awayTeamFull,
           homeTeam: homeTeamFull,
@@ -211,6 +213,8 @@ export default function Home() {
           venue: 'MLB Stadium',
           awayPitcher: null,
           homePitcher: null,
+          awayPitcherStats: null,
+          homePitcherStats: null,
         },
         gameId: pick.gameId
       };
@@ -484,6 +488,27 @@ export default function Home() {
                             day: 'numeric' 
                           })} • {pick.gameInfo.gameTime} • {pick.gameInfo.venue}
                         </div>
+                        {/* Pitcher Information */}
+                        {(pick.gameInfo.awayPitcher || pick.gameInfo.homePitcher) && (
+                          <div className="text-xs text-blue-300 mt-2 space-y-1">
+                            {pick.gameInfo.awayPitcher && (
+                              <div>
+                                <span className="font-semibold">{pick.gameInfo.awayPitcher}</span>
+                                {pick.gameInfo.awayPitcherStats && (
+                                  <span className="text-white/70 ml-1">{pick.gameInfo.awayPitcherStats}</span>
+                                )}
+                              </div>
+                            )}
+                            {pick.gameInfo.homePitcher && (
+                              <div>
+                                <span className="font-semibold">{pick.gameInfo.homePitcher}</span>
+                                {pick.gameInfo.homePitcherStats && (
+                                  <span className="text-white/70 ml-1">{pick.gameInfo.homePitcherStats}</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                       
                       {/* Pick Details */}
