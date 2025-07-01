@@ -19,11 +19,11 @@ interface Bet {
   betType: string;
   selection: string;
   odds: number;
-  stake: number;
-  potentialWin: number;
+  stake: string | number;  // Database returns strings, local bets use numbers
+  potentialWin: string | number;  // Database returns strings, local bets use numbers
   status: string;
-  result?: string;
-  actualWin?: number;
+  result?: string | null;
+  actualWin?: number | null;
   placedAt: string;
 }
 
@@ -75,7 +75,7 @@ export default function MyBets() {
   const startEditing = (bet: any) => {
     setEditingBet(bet.id);
     setEditValues({
-      stake: bet.stake.toString(),
+      stake: typeof bet.stake === 'string' ? bet.stake : bet.stake.toString(),
       selection: bet.selection
     });
   };
@@ -147,11 +147,12 @@ export default function MyBets() {
     return odds > 0 ? `+${odds}` : `${odds}`;
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: string | number) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
-    }).format(amount);
+    }).format(numAmount);
   };
 
   return (
@@ -506,10 +507,10 @@ export default function MyBets() {
                           <span className="text-muted-foreground">
                             Stake: <span className="font-medium text-foreground">{formatCurrency(bet.stake)}</span>
                           </span>
-                          {bet.actualWin !== undefined && (
+                          {bet.actualWin !== undefined && bet.actualWin !== null && (
                             <span className="text-muted-foreground">
-                              Result: <span className={`font-medium ${bet.actualWin > 0 ? 'text-secondary' : 'text-red-600'}`}>
-                                {formatCurrency(bet.actualWin)}
+                              Result: <span className={`font-medium ${bet.actualWin! > 0 ? 'text-secondary' : 'text-red-600'}`}>
+                                {formatCurrency(bet.actualWin!)}
                               </span>
                             </span>
                           )}
