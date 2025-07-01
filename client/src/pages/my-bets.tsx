@@ -37,6 +37,9 @@ export default function MyBets() {
   const { data: serverBets = [] } = useQuery<Bet[]>({
     queryKey: ["/api/bets"],
   });
+  
+  // Debug logging
+  console.log("Server bets from API:", serverBets);
 
   // Mutation to place bets from betting slip
   const placeBetsMutation = useMutation({
