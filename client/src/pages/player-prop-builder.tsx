@@ -65,6 +65,21 @@ export default function PlayerPropBuilder() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
+  // Fetch available player props for selected date
+  const { data: playerProps = [], isLoading: propsLoading, error } = useQuery({
+    queryKey: ['/api/player-props', format(selectedDate, 'yyyy-MM-dd')],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest('GET', `/api/player-props?date=${format(selectedDate, 'yyyy-MM-dd')}`);
+        return Array.isArray(response) ? response : [];
+      } catch (error) {
+        console.error('Error fetching player props:', error);
+        return [];
+      }
+    },
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
   // Check Elite access
   const hasEliteAccess = hasAccess('elite');
 
@@ -130,13 +145,6 @@ export default function PlayerPropBuilder() {
       </div>
     );
   }
-
-  // Fetch available player props for selected date
-  const { data: playerProps = [], isLoading: propsLoading } = useQuery({
-    queryKey: ['/api/player-props', format(selectedDate, 'yyyy-MM-dd')],
-    queryFn: () => apiRequest('GET', `/api/player-props?date=${format(selectedDate, 'yyyy-MM-dd')}`),
-    refetchInterval: 30000, // Refresh every 30 seconds
-  });
 
   // Calculate parlay analysis
   const calculateParlayAnalysis = (selections: PropSelection[]): ParlayAnalysis => {
@@ -269,14 +277,14 @@ export default function PlayerPropBuilder() {
   };
 
   // Filter props based on search and category
-  const filteredProps = (playerProps as PlayerProp[]).filter((prop: PlayerProp) => {
+  const filteredProps = Array.isArray(playerProps) ? playerProps.filter((prop: PlayerProp) => {
     const matchesSearch = prop.playerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          prop.propType.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || prop.category === selectedCategory;
     const matchesBookmaker = selectedBookmaker === 'all' || prop.bookmaker === selectedBookmaker;
     
     return matchesSearch && matchesCategory && matchesBookmaker;
-  });
+  }) : [];
 
   const getRecommendationColor = (recommendation: string) => {
     switch (recommendation) {
