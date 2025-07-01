@@ -28,6 +28,8 @@ interface Game {
   awayPitcherStats?: string;
   homePitcherStats?: string;
   status: string;
+  awayScore?: number;
+  homeScore?: number;
   odds: Array<{
     id: number;
     gameId: string;
