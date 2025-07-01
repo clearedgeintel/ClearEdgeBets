@@ -548,37 +548,49 @@ export default function GameCard({ game }: GameCardProps) {
                         // Generate betting suggestions based on actual AI analysis
                         if (confidence > 80 && analysis.favoredTeam) {
                           const isAway = analysis.favoredTeam === game.awayTeam;
-                          suggestions.push({
-                            type: 'Moneyline',
-                            pick: analysis.favoredTeam,
-                            odds: isAway ? -135 : -125,
-                            confidence: 'High',
-                            ev: `+${(confidence * 0.12).toFixed(1)}%`
-                          });
+                          const actualOdds = isAway ? moneylineOdds?.awayOdds : moneylineOdds?.homeOdds;
+                          if (actualOdds) {
+                            // Calculate if this is a value bet (AI favors underdog)
+                            const isUnderdog = actualOdds > 0;
+                            const evMultiplier = isUnderdog ? 0.15 : 0.08; // Higher EV for underdog picks
+                            suggestions.push({
+                              type: 'Moneyline',
+                              pick: analysis.favoredTeam,
+                              odds: actualOdds,
+                              confidence: 'High',
+                              ev: `+${(confidence * evMultiplier).toFixed(1)}%`
+                            });
+                          }
                         }
                         
-                        if (confidence > 70 && analysis.totalDirection) {
-                          const line = game.odds?.total?.line || '9.5';
-                          suggestions.push({
-                            type: 'Total',
-                            pick: analysis.totalDirection === 'over' ? 'Over' : 'Under',
-                            line: line,
-                            odds: -110,
-                            confidence: confidence > 80 ? 'High' : 'Medium',
-                            ev: `+${(confidence * 0.08).toFixed(1)}%`
-                          });
+                        if (confidence > 70 && analysis.totalDirection && totalOdds) {
+                          const line = totalOdds.total || '9.5';
+                          const actualOdds = analysis.totalDirection === 'over' ? totalOdds.overOdds : totalOdds.underOdds;
+                          if (actualOdds) {
+                            suggestions.push({
+                              type: 'Total',
+                              pick: analysis.totalDirection === 'over' ? 'Over' : 'Under',
+                              line: line,
+                              odds: actualOdds,
+                              confidence: confidence > 80 ? 'High' : 'Medium',
+                              ev: `+${(confidence * 0.08).toFixed(1)}%`
+                            });
+                          }
                         }
                         
                         if (confidence > 75 && analysis.favoredTeam) {
                           const isAway = analysis.favoredTeam === game.awayTeam;
-                          const spread = isAway ? '-1.5' : '+1.5';
-                          suggestions.push({
-                            type: 'Run Line',
-                            pick: `${analysis.favoredTeam} ${spread}`,
-                            odds: isAway ? +145 : -165,
-                            confidence: 'Medium',
-                            ev: `+${(confidence * 0.06).toFixed(1)}%`
-                          });
+                          const actualSpread = isAway ? spreadOdds?.awaySpread : spreadOdds?.homeSpread;
+                          const actualSpreadOdds = isAway ? spreadOdds?.awaySpreadOdds : spreadOdds?.homeSpreadOdds;
+                          if (actualSpread && actualSpreadOdds) {
+                            suggestions.push({
+                              type: 'Run Line',
+                              pick: `${analysis.favoredTeam} ${actualSpread}`,
+                              odds: actualSpreadOdds,
+                              confidence: 'Medium',
+                              ev: `+${(confidence * 0.06).toFixed(1)}%`
+                            });
+                          }
                         }
                         
                         return suggestions.map((bet, index) => (

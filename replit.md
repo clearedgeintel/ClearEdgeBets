@@ -150,6 +150,12 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 1, 2025: CRITICAL FIX - Resolved disconnect between AI analysis and suggested bets
+  - Fixed suggested bets to actually analyze AI summary text instead of using Math.random() selections
+  - Suggested bets now use real odds from game data instead of hardcoded values
+  - Added intelligent Expected Value calculation that recognizes when AI favors underdogs
+  - Eliminated inconsistency where analysis favored Yankees but suggested bets picked Toronto
+  - AI suggested bets now genuinely reflect the actual game analysis content
 - July 1, 2025: Successfully completed Pinnacle API integration with authentic MLB player props
   - Replaced all mock/generated player data with real Pinnacle special-markets API data
   - System now extracts 780+ authentic MLB player props including real players: Matt Olson, Austin Hedges, Ceddanne Rafaela, Mark Vientos, Colton Cowser
