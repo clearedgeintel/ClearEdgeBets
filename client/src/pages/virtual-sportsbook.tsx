@@ -1178,7 +1178,7 @@ export default function VirtualSportsbook() {
                               <Button 
                                 variant={awayBetState.isSelected ? "default" : "outline"} 
                                 size="sm" 
-                                className={`justify-center h-8 font-mono text-xs ${
+                                className={`justify-center h-6 px-2 font-mono text-xs ${
                                   awayBetState.isSelected 
                                     ? "bg-blue-600 text-white border-blue-600" 
                                     : ""
@@ -1199,7 +1199,7 @@ export default function VirtualSportsbook() {
                               <Button 
                                 variant={homeBetState.isSelected ? "default" : "outline"} 
                                 size="sm" 
-                                className={`justify-center h-8 font-mono text-xs ${
+                                className={`justify-center h-6 px-2 font-mono text-xs ${
                                   homeBetState.isSelected 
                                     ? "bg-blue-600 text-white border-blue-600" 
                                     : ""
@@ -1257,7 +1257,7 @@ export default function VirtualSportsbook() {
                               <Button 
                                 variant={awayMLBetState.isSelected ? "default" : "outline"} 
                                 size="sm" 
-                                className={`justify-center h-8 font-mono text-xs ${
+                                className={`justify-center h-6 px-2 font-mono text-xs ${
                                   awayMLBetState.isSelected 
                                     ? "bg-blue-600 text-white border-blue-600" 
                                     : ""
@@ -1278,7 +1278,7 @@ export default function VirtualSportsbook() {
                               <Button 
                                 variant={homeMLBetState.isSelected ? "default" : "outline"} 
                                 size="sm" 
-                                className={`justify-center h-8 font-mono text-xs ${
+                                className={`justify-center h-6 px-2 font-mono text-xs ${
                                   homeMLBetState.isSelected 
                                     ? "bg-blue-600 text-white border-blue-600" 
                                     : ""
@@ -1332,7 +1332,7 @@ export default function VirtualSportsbook() {
                               <Button 
                                 variant={overBetState.isSelected ? "default" : "outline"} 
                                 size="sm" 
-                                className={`justify-center h-8 font-mono text-xs ${
+                                className={`justify-center h-6 px-2 font-mono text-xs ${
                                   overBetState.isSelected 
                                     ? "bg-blue-600 text-white border-blue-600" 
                                     : ""
@@ -1353,7 +1353,7 @@ export default function VirtualSportsbook() {
                               <Button 
                                 variant={underBetState.isSelected ? "default" : "outline"} 
                                 size="sm" 
-                                className={`justify-center h-8 font-mono text-xs ${
+                                className={`justify-center h-6 px-2 font-mono text-xs ${
                                   underBetState.isSelected 
                                     ? "bg-blue-600 text-white border-blue-600" 
                                     : ""
@@ -1395,7 +1395,7 @@ export default function VirtualSportsbook() {
                             key={`strikeouts-${game.gameId}`}
                             variant="outline" 
                             size="sm" 
-                            className="text-xs p-2 h-auto"
+                            className="text-xs p-1 h-auto"
                             onClick={() => {
                               toast({
                                 title: "Bet Placed",
@@ -1414,7 +1414,7 @@ export default function VirtualSportsbook() {
                             key={`hits-${game.gameId}`}
                             variant="outline" 
                             size="sm" 
-                            className="text-xs p-2 h-auto"
+                            className="text-xs p-1 h-auto"
                             onClick={() => {
                               addToBettingSlip(
                                 game.gameId, 
@@ -1436,7 +1436,7 @@ export default function VirtualSportsbook() {
                             key={`rbis-${game.gameId}`}
                             variant="outline" 
                             size="sm" 
-                            className="text-xs p-2 h-auto"
+                            className="text-xs p-1 h-auto"
                             onClick={() => {
                               addToBettingSlip(
                                 game.gameId, 
@@ -1458,7 +1458,7 @@ export default function VirtualSportsbook() {
                             key={`homerun-${game.gameId}`}
                             variant="outline" 
                             size="sm" 
-                            className="text-xs p-2 h-auto"
+                            className="text-xs p-1 h-auto"
                             onClick={() => {
                               addToBettingSlip(
                                 game.gameId, 
@@ -1480,7 +1480,7 @@ export default function VirtualSportsbook() {
                             key={`innings-${game.gameId}`}
                             variant="outline" 
                             size="sm" 
-                            className="text-xs p-2 h-auto"
+                            className="text-xs p-1 h-auto"
                             onClick={() => {
                               addToBettingSlip(
                                 game.gameId, 
@@ -1502,7 +1502,7 @@ export default function VirtualSportsbook() {
                             key={`walks-${game.gameId}`}
                             variant="outline" 
                             size="sm" 
-                            className="text-xs p-2 h-auto"
+                            className="text-xs p-1 h-auto"
                             onClick={() => {
                               addToBettingSlip(
                                 game.gameId, 
