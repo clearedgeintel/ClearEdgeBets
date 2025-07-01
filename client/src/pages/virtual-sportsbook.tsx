@@ -82,6 +82,35 @@ export default function VirtualSportsbook() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [aiBetSlip, setAiBetSlip] = useState<AIBetRecommendation[] | null>(null);
   const [isGeneratingAIBets, setIsGeneratingAIBets] = useState(false);
+
+  // Mutation to save bets to database
+  const saveBetsMutation = useMutation({
+    mutationFn: async (betsToSave: { gameId: string; betType: string; selection: string; odds: number; stake: number; potentialWin: number; }[]) => {
+      const promises = betsToSave.map(bet => 
+        apiRequest("POST", "/api/bets", {
+          gameId: bet.gameId,
+          betType: bet.betType,
+          selection: bet.selection,
+          odds: bet.odds,
+          stake: bet.stake,
+          potentialWin: bet.potentialWin,
+          status: "pending"
+        })
+      );
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bets"] });
+    },
+    onError: (error) => {
+      console.error("Error saving bets:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save bets. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
   
   // Betting slip state management
   const [bettingSlips, setBettingSlips] = useState<BettingSlip[]>([]);
@@ -981,27 +1010,44 @@ export default function VirtualSportsbook() {
               <div className="flex gap-2">
                 <Button 
                   className="flex-1 bg-green-600 hover:bg-green-700"
-                  disabled={isParlayMode ? parlayStake === 0 : currentSlip.totalStake === 0}
+                  disabled={isParlayMode ? parlayStake === 0 : currentSlip.totalStake === 0 || saveBetsMutation.isPending}
                   onClick={() => {
                     const totalStake = isParlayMode ? parlayStake : currentSlip.totalStake;
                     const betDescription = isParlayMode 
                       ? `Parlay bet (${currentSlip.items.length} legs)` 
                       : `${currentSlip.items.length} individual bets`;
                     
-                    toast({
-                      title: "Bets Placed!",
-                      description: `${betDescription} placed for $${totalStake.toFixed(2)}`,
+                    // Prepare bets for saving to database
+                    const betsToSave = currentSlip.items.map(item => ({
+                      gameId: item.gameId,
+                      betType: isParlayMode ? 'parlay' : item.betType,
+                      selection: item.selection,
+                      odds: isParlayMode ? calculateParlayOdds(currentSlip.items) : item.odds,
+                      stake: isParlayMode ? parlayStake / currentSlip.items.length : item.stake,
+                      potentialWin: isParlayMode ? calculateParlayPayout(parlayStake, calculateParlayOdds(currentSlip.items)) : item.potentialWin
+                    }));
+
+                    // Save bets to database
+                    saveBetsMutation.mutate(betsToSave, {
+                      onSuccess: () => {
+                        toast({
+                          title: "Bets Placed!",
+                          description: `${betDescription} placed for $${totalStake.toFixed(2)}`,
+                        });
+                        setCurrentSlip(null);
+                        setBettingSlips(prev => prev.filter(s => s.id !== currentSlip.id));
+                        setIsParlayMode(false);
+                        setParlayStake(10);
+                      }
                     });
-                    setCurrentSlip(null);
-                    setBettingSlips(prev => prev.filter(s => s.id !== currentSlip.id));
-                    setIsParlayMode(false);
-                    setParlayStake(10);
                   }}
                 >
                   <TrendingUp className="h-4 w-4 mr-2" />
-                  {isParlayMode 
-                    ? `Place Parlay ($${parlayStake.toFixed(2)})` 
-                    : `Place Bets ($${currentSlip.totalStake.toFixed(2)})`
+                  {saveBetsMutation.isPending 
+                    ? "Placing Bets..." 
+                    : isParlayMode 
+                      ? `Place Parlay ($${parlayStake.toFixed(2)})` 
+                      : `Place Bets ($${currentSlip.totalStake.toFixed(2)})`
                   }
                 </Button>
                 <Button 
