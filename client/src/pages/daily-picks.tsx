@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { useBettingSlip } from "@/hooks/use-betting-slip";
+import { useBettingSlip as useBettingSlipContext } from "@/contexts/betting-slip-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -16,8 +17,12 @@ import {
   Crown, 
   Lock, 
   Sparkles,
-  TrendingUp
+  TrendingUp,
+  ShoppingCart,
+  X,
+  Edit2
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface DailyPick {
   id: number;
@@ -37,6 +42,7 @@ interface DailyPick {
 export default function DailyPicks() {
   const queryClient = useQueryClient();
   const { addBet } = useBettingSlip();
+  const { bets, updateBet, clearBet, getTotalStake, getTotalPotentialWin } = useBettingSlipContext();
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -191,6 +197,93 @@ export default function DailyPicks() {
             )}
           </Button>
         </div>
+
+        {/* Betting Slip Display */}
+        {bets.length > 0 && (
+          <Card className="mb-6 border-blue-200 dark:border-blue-800">
+            <CardHeader className="bg-blue-50 dark:bg-blue-950/20">
+              <CardTitle className="flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5" />
+                Your Betting Slip
+                <Badge variant="secondary" className="ml-auto">
+                  {bets.length} {bets.length === 1 ? 'bet' : 'bets'}
+                </Badge>
+              </CardTitle>
+              <CardDescription>
+                Review and manage your selected bets. Set stakes and place your bets when ready.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y">
+                {bets.map((bet) => (
+                  <div key={`${bet.gameId}-${bet.betType}-${bet.selection}`} className="p-4 hover:bg-muted/50">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">{bet.selection}</div>
+                        <div className="text-xs text-muted-foreground">{bet.gameId}</div>
+                        <div className="text-xs text-blue-600 font-medium">
+                          {bet.odds > 0 ? '+' : ''}{bet.odds} odds
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground">Stake</div>
+                          <Input
+                            type="number"
+                            value={bet.stake}
+                            onChange={(e) => {
+                              const newStake = parseFloat(e.target.value) || 0;
+                              const newPotentialWin = bet.odds > 0 
+                                ? newStake * (bet.odds / 100)
+                                : newStake * (100 / Math.abs(bet.odds));
+                              updateBet(bet.gameId, bet.betType, bet.selection, {
+                                stake: newStake,
+                                potentialWin: newPotentialWin
+                              });
+                            }}
+                            className="w-20 h-8 text-xs"
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground">Potential Win</div>
+                          <div className="text-xs font-semibold text-blue-600">
+                            ${bet.potentialWin.toFixed(2)}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => clearBet(bet.gameId, bet.betType, bet.selection)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="p-4 border-t bg-muted/20">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-sm font-semibold">Total Stake: ${getTotalStake().toFixed(2)}</div>
+                    <div className="text-sm text-blue-600 font-semibold">
+                      Potential Win: ${getTotalPotentialWin().toFixed(2)}
+                    </div>
+                  </div>
+                  <Button 
+                    className="bg-blue-600 hover:bg-blue-700"
+                    disabled={getTotalStake() === 0}
+                  >
+                    Place Bets (${getTotalStake().toFixed(2)})
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {picksLoading ? (
           <div className="space-y-4">
