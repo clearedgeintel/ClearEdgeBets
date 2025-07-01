@@ -3599,8 +3599,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { category, bookmaker, gameId, date } = req.query;
       const targetDate = date ? String(date) : format(new Date(), 'yyyy-MM-dd');
       
-      // Generate comprehensive player props for games on the specified date
-      const games = generateGamesForDate(targetDate);
+      // Use same real MLB games that the main games endpoint uses
+      const gamesResponse = await fetch(`http://localhost:5000/api/games`);
+      let games: any[] = [];
+      
+      if (gamesResponse.ok) {
+        games = await gamesResponse.json();
+        console.log(`Using ${games.length} real MLB games for player props generation`);
+      } else {
+        // Fallback to generated games if API call fails
+        games = generateGamesForDate(targetDate);
+      }
+      
       const playerPropsList = [];
       
       // Enhanced prop generation for each game
@@ -3769,6 +3779,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Helper function to get random hitter names for realistic props
   function getRandomHitter(team: string) {
     const hitters = {
+      // Full team names (from real MLB API)
+      'New York Yankees': ['Aaron Judge', 'Juan Soto', 'Gleyber Torres', 'Anthony Volpe'],
+      'Toronto Blue Jays': ['Vladimir Guerrero Jr.', 'Bo Bichette', 'George Springer', 'Daulton Varsho'],
+      'San Diego Padres': ['Manny Machado', 'Jake Cronenworth', 'Ha-seong Kim', 'Xander Bogaerts'],
+      'Philadelphia Phillies': ['Bryce Harper', 'Trea Turner', 'Nick Castellanos', 'Alec Bohm'],
+      'St. Louis Cardinals': ['Paul Goldschmidt', 'Nolan Arenado', 'Brendan Donovan', 'Masyn Winn'],
+      'Pittsburgh Pirates': ['Ke\'Bryan Hayes', 'Bryan Reynolds', 'Andrew McCutchen', 'Termarr Johnson'],
+      'Cincinnati Reds': ['Elly De La Cruz', 'Christian Encarnacion-Strand', 'TJ Friedl', 'Spencer Steer'],
+      'Boston Red Sox': ['Rafael Devers', 'Trevor Story', 'Jarren Duran', 'Tyler O\'Neill'],
+      'Atlanta Braves': ['Ronald Acuña Jr.', 'Matt Olson', 'Ozzie Albies', 'Austin Riley'],
+      'Tampa Bay Rays': ['Randy Arozarena', 'Wander Franco', 'Isaac Paredes', 'Brandon Lowe'],
+      'Baltimore Orioles': ['Gunnar Henderson', 'Adley Rutschman', 'Anthony Santander', 'Jordan Westburg'],
+      'Texas Rangers': ['Corey Seager', 'Nathaniel Lowe', 'Adolis García', 'Marcus Semien'],
+      'Kansas City Royals': ['Bobby Witt Jr.', 'Salvador Perez', 'Vinnie Pasquantino', 'MJ Melendez'],
+      'Seattle Mariners': ['Julio Rodríguez', 'Cal Raleigh', 'Eugenio Suárez', 'George Kirby'],
+      'San Francisco Giants': ['Matt Chapman', 'LaMonte Wade Jr.', 'Mike Yastrzemski', 'Patrick Bailey'],
+      'Arizona Diamondbacks': ['Christian Walker', 'Ketel Marte', 'Corbin Carroll', 'Lourdes Gurriel Jr.'],
+      'Minnesota Twins': ['Carlos Correa', 'Byron Buxton', 'Max Kepler', 'Alex Kirilloff'],
+      'Miami Marlins': ['Jazz Chisholm Jr.', 'Jorge Soler', 'Jesús Sánchez', 'Jake Burger'],
+      'Detroit Tigers': ['Riley Greene', 'Spencer Torkelson', 'Colt Keith', 'Kerry Carpenter'],
+      'Washington Nationals': ['CJ Abrams', 'Luis García Jr.', 'Keibert Ruiz', 'Jesse Winker'],
+      'Cleveland Guardians': ['José Ramírez', 'Steven Kwan', 'Josh Naylor', 'Andrés Giménez'],
+      'Chicago White Sox': ['Luis Robert Jr.', 'Eloy Jiménez', 'Andrew Vaughn', 'Yoán Moncada'],
+      'Houston Astros': ['Alex Bregman', 'Kyle Tucker', 'José Altuve', 'Yordan Alvarez'],
+      'Los Angeles Angels': ['Mike Trout', 'Anthony Rendon', 'Taylor Ward', 'Logan O\'Hoppe'],
+      'Oakland Athletics': ['Brent Rooker', 'Shea Langeliers', 'Lawrence Butler', 'JJ Bleday'],
+      'Chicago Cubs': ['Cody Bellinger', 'Dansby Swanson', 'Ian Happ', 'Nico Hoerner'],
+      'Milwaukee Brewers': ['Christian Yelich', 'William Contreras', 'Willy Adames', 'Jackson Chourio'],
+      'Colorado Rockies': ['Ryan McMahon', 'Ezequiel Tovar', 'Brendan Rodgers', 'Charlie Blackmon'],
+      'Los Angeles Dodgers': ['Mookie Betts', 'Freddie Freeman', 'Will Smith', 'Max Muncy'],
+      'New York Mets': ['Francisco Lindor', 'Pete Alonso', 'Brandon Nimmo', 'Jeff McNeil'],
+      
+      // Legacy team codes (fallback)
       'NYY': ['Aaron Judge', 'Juan Soto', 'Gleyber Torres', 'Anthony Volpe'],
       'TOR': ['Vladimir Guerrero Jr.', 'Bo Bichette', 'George Springer', 'Daulton Varsho'],
       'SD': ['Manny Machado', 'Jake Cronenworth', 'Ha-seong Kim', 'Xander Bogaerts'],
