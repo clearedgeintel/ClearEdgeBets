@@ -243,7 +243,7 @@ export default function MyBets() {
         </div>
 
         {/* Bets Tabs */}
-        <Tabs defaultValue="slip" className="space-y-6">
+        <Tabs defaultValue="pending" className="space-y-6">
           <TabsList>
             <TabsTrigger value="slip">
               <ShoppingCart className="h-4 w-4 mr-2" />

@@ -10,7 +10,7 @@ import { fetchMLBGamesForDate, fetchMLBGameDetails, getGameResult } from "./serv
 import { fetchRealMLBOdds, mergeRealOddsWithGames } from "./services/realOdds";
 import { fetchMLBNews, generateMockMLBNews } from "./services/mlb-news";
 import { generateGameAnalysis, generateDailyDigest, type GameAnalysisData } from "./services/openai";
-import { fetchRealPlayerProps, getPlayerPropsForGame } from "./services/player-props";
+import { getPlayerPropsForGame } from "./services/player-props";
 import { insertBetSchema, insertGameSchema, insertOddsSchema, insertUserSchema } from "@shared/schema";
 import Stripe from "stripe";
 import bcrypt from "bcrypt";
