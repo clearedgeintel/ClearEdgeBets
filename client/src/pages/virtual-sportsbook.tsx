@@ -119,16 +119,14 @@ export default function VirtualSportsbook() {
   const [isParlayMode, setIsParlayMode] = useState(false);
   const [parlayStake, setParlayStake] = useState<number>(10);
   
-  // Track selected bets and changed odds
+  // Track selected bets
   const [selectedBets, setSelectedBets] = useState<Set<string>>(new Set());
-  const [changedOdds, setChangedOdds] = useState<Map<string, number>>(new Map());
 
-  // Helper function to check if bet is selected and get display odds
+  // Helper function to check if bet is selected
   const getBetState = (gameId: string, betType: string, selection: string, originalOdds: number) => {
     const betKey = `${gameId}_${betType}_${selection}`;
     const isSelected = selectedBets.has(betKey);
-    const displayOdds = changedOdds.get(betKey) || originalOdds;
-    return { isSelected, displayOdds, betKey };
+    return { isSelected, displayOdds: originalOdds, betKey };
   };
 
   // Helper functions for betting slip management
@@ -232,17 +230,6 @@ export default function VirtualSportsbook() {
       newSet.add(betKey);
       return newSet;
     });
-    
-    // Generate new odds for this selection (simulate market movement)
-    const oddsChange = Math.random() > 0.5 ? 
-      Math.floor(Math.random() * 20) + 5 : // Increase odds by 5-25
-      -(Math.floor(Math.random() * 15) + 5); // Decrease odds by 5-20
-    const newOdds = odds + oddsChange;
-    setChangedOdds(prev => {
-      const newMap = new Map(prev);
-      newMap.set(betKey, newOdds);
-      return newMap;
-    });
 
     setCurrentSlip(updatedSlip);
     setBettingSlips(prev => prev.map(s => s.id === slip!.id ? updatedSlip : s));
@@ -292,11 +279,7 @@ export default function VirtualSportsbook() {
         newSet.delete(betKey);
         return newSet;
       });
-      setChangedOdds(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(betKey);
-        return newMap;
-      });
+
     }
 
     const updatedItems = currentSlip.items.filter(item => item.id !== betId);
@@ -1080,9 +1063,8 @@ export default function VirtualSportsbook() {
                           description: `${betDescription} placed for $${totalStake.toFixed(2)}`,
                         });
                         
-                        // Clear all selected bets and changed odds
+                        // Clear all selected bets
                         setSelectedBets(new Set());
-                        setChangedOdds(new Map());
                         
                         setCurrentSlip(null);
                         setBettingSlips(prev => prev.filter(s => s.id !== currentSlip.id));
