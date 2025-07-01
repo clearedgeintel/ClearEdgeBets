@@ -1,0 +1,108 @@
+_app-4918782428e2a88f.js:38 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+_app-4918782428e2a88f.js:38 [LaunchDarkly] LaunchDarkly client initialized
+/~:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+framework-2b48410e6526bf16.js:1 Unrecognized feature: 'ambient-light-sensor'.
+_ @ framework-2b48410e6526bf16.js:1
+framework-2b48410e6526bf16.js:1 Unrecognized feature: 'battery'.
+_ @ framework-2b48410e6526bf16.js:1
+framework-2b48410e6526bf16.js:1 Unrecognized feature: 'execution-while-not-rendered'.
+_ @ framework-2b48410e6526bf16.js:1
+framework-2b48410e6526bf16.js:1 Unrecognized feature: 'execution-while-out-of-viewport'.
+_ @ framework-2b48410e6526bf16.js:1
+framework-2b48410e6526bf16.js:1 Unrecognized feature: 'layout-animations'.
+_ @ framework-2b48410e6526bf16.js:1
+framework-2b48410e6526bf16.js:1 Unrecognized feature: 'legacy-image-formats'.
+_ @ framework-2b48410e6526bf16.js:1
+framework-2b48410e6526bf16.js:1 Unrecognized feature: 'navigation-override'.
+_ @ framework-2b48410e6526bf16.js:1
+framework-2b48410e6526bf16.js:1 Unrecognized feature: 'oversized-images'.
+_ @ framework-2b48410e6526bf16.js:1
+framework-2b48410e6526bf16.js:1 Unrecognized feature: 'publickey-credentials'.
+_ @ framework-2b48410e6526bf16.js:1
+framework-2b48410e6526bf16.js:1 Unrecognized feature: 'speaker-selection'.
+_ @ framework-2b48410e6526bf16.js:1
+framework-2b48410e6526bf16.js:1 Unrecognized feature: 'unoptimized-images'.
+_ @ framework-2b48410e6526bf16.js:1
+framework-2b48410e6526bf16.js:1 Unrecognized feature: 'unsized-media'.
+_ @ framework-2b48410e6526bf16.js:1
+framework-2b48410e6526bf16.js:1 Unrecognized feature: 'pointer-lock'.
+_ @ framework-2b48410e6526bf16.js:1
+framework-2b48410e6526bf16.js:1 Allow attribute will take precedence over 'allowfullscreen'.
+_ @ framework-2b48410e6526bf16.js:1
+framework-2b48410e6526bf16.js:1 Allow attribute will take precedence over 'allowpaymentrequest'.
+_ @ framework-2b48410e6526bf16.js:1
+stallwart.build.js:1 stallwart: failed ping 1
+/graphql:1  Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+analytics.google.com/g/collect?v=2&tid=G-MPJY3F1YEL&gtm=45je56u2h2v9135634466za200&_p=1751399726302&gcd=13l3l3l3l2l1&npa=0&dma=0&tag_exp=101509157~103116026~103200004~103233427~103308216~103308218~103351869~103351871~104684208~104684211~104718208~104839054~104839056~104885886~104885888~104908318~104908320&ul=en-us&sr=1920x1080&cid=1159577508.1751399642&ecid=1274766184&ir=1&uaa=x86&uab=64&uafvl=Not)A%253BBrand%3B8.0.0.0%7CChromium%3B138.0.7204.96%7CGoogle%2520Chrome%3B138.0.7204.96&uamb=0&uam=&uap=Windows&uapv=15.0.0&uaw=0&are=1&frm=0&pscdl=noapi&_eu=EBAIAAQ&_s=13&dl=https%3A%2F%2Freplit.com%2F~&dp=%2F%40timhull1%2FClearEdgeBets&dt=replEnvironmentDesktop&sid=1751399643&sct=1&seg=1&_tu=wAQ&en=File%20reconnected%20status%20two&_ee=1&ep.event_category=All&ep.value=0&tfd=771050:1  Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+/graphql:1  Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+5701-4774d9fa85f58422.js:1 WebSocket connection to 'wss://eval.janeway.platform.replit.com/wsv2/v2.public.Q2dZSXhKbVJ3d1lTQmdqanRaSERCaUlIYW1GdVpYZGhlVEFBT28wQ0NpUTRZakZtTkRVNU9DMDVNelU0TFRRek9XSXRPRFV5WWkweU4yUTRORGcyTmpGbFlXUVNBMjVwZUJvWmNtVndiR2wwTFhKbGNHd3RabWxzWlhNdGFtRnVaWGRoZVNJTlEyeGxZWEpGWkdkbFFtVjBjeW9JZEdsdGFIVnNiREZDVndvYWNtVndiR2wwTFhKbGNHd3RZbXh2WTJ0ekxXcGhibVYzWVhrU0dISmxjR3hwZEMxeVpYQnNMVzFsZEdFdGFtRnVaWGRoZVJvZmNtVndiR2wwTFcxaGNtZGhjbWx1WlMxaWJHOWphM010YW1GdVpYZGhlVW9IQ0t2NGl4VVFBVkFBV2c5cGJuUmxiblJmWW5WemFXNWxjM05hR205dVltOWhjbVJwYm1kZmNtO...6SlRKR09FRmlaRkZ1WVRKTFYwVkRaV2R2TkhWUWRXTk1kV2hOV0dzbE1rWTVOa2xWTTIxc1lqWmhhVXhuYVdOSVNXMVliM2hRYjBSRVltVnVObUUwYkdJeE4xQjRTWHB2UkhSblpFWnJiWFpvYW1SYVFtbFlkWE42TkhaWFVFVlpSMnRUUTJwaU5tWnRORlZLUTBWTVdXZHViVzk1WVVoMUpUSkNNR1ZMU21WTlkxRnVOV3hxWVRWQ1NETTVXRlEyYkdSM1EwOTJkM1JOY1ZWRmVFUldjM0VsTWtJbE1rWnNlVU5sTlVSalZtMVJSRFpoU1RkeFRXUTRVR3B1UmtsV05IQlphVnBRWm1VelVteEJiRGhFVG05UkpUTkVKVE5Fv9V3SNofzmWAIs4-9qjaFJpRKldMNY11yQweXoXeAx_WFHMLelV6HKsVpbsz8k9gCZpYbdAx9i0Stj04Yn45CQ.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: 
+(anonymous) @ 5701-4774d9fa85f58422.js:1
+[Violation] Potential permissions policy violation: payment is not allowed in this document.
+[Violation] Potential permissions policy violation: payment is not allowed in this document.
+_app-4918782428e2a88f.js:38 onClick is deprecated, please use onPress
+(anonymous) @ _app-4918782428e2a88f.js:38
+_app-4918782428e2a88f.js:38 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ _app-4918782428e2a88f.js:38
+_app-4918782428e2a88f.js:38 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ _app-4918782428e2a88f.js:38
+/my-deployments:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+workspace_iframe.html:32 Unrecognized feature: 'ambient-light-sensor'.
+workspace_iframe.html:32 Unrecognized feature: 'battery'.
+workspace_iframe.html:32 Unrecognized feature: 'execution-while-not-rendered'.
+workspace_iframe.html:32 Unrecognized feature: 'execution-while-out-of-viewport'.
+workspace_iframe.html:32 Unrecognized feature: 'layout-animations'.
+workspace_iframe.html:32 Unrecognized feature: 'legacy-image-formats'.
+workspace_iframe.html:32 Unrecognized feature: 'navigation-override'.
+workspace_iframe.html:32 Unrecognized feature: 'oversized-images'.
+workspace_iframe.html:32 Unrecognized feature: 'publickey-credentials'.
+workspace_iframe.html:32 Unrecognized feature: 'speaker-selection'.
+workspace_iframe.html:32 Unrecognized feature: 'unoptimized-images'.
+workspace_iframe.html:32 Unrecognized feature: 'unsized-media'.
+workspace_iframe.html:32 Allow attribute will take precedence over 'allowfullscreen'.
+workspace_iframe.html:32 Allow attribute will take precedence over 'allowpaymentrequest'.
+Console.js:61 Sidebar bets: Array(0)
+Console.js:61 Sidebar bets: Array(0)
+8b1f4598-9358-439b-852b-27d848661ead-00-29ujy1h23l22u.janeway.replit.dev/api/auth/me:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+Console.js:61 Sidebar bets: Array(0)

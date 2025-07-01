@@ -530,16 +530,17 @@ export default function GameCard({ game }: GameCardProps) {
                           }
                           
                           // Determine total direction from analysis
-                          if (summary.includes('high-scoring') || summary.includes('offensive') || 
+                          // Check for UNDER signals first (stronger priority)
+                          if (summary.includes('stay under the run total') || summary.includes('low-scoring affair') ||
+                              summary.includes('under the run total') || summary.includes('low-scoring') ||
+                              summary.includes('neutralize') || summary.includes('suppress runs') ||
+                              summary.includes('difficulty for hitters') || summary.includes('strong pitching') ||
+                              summary.includes('pitching dominance') || summary.includes('likely for the game to stay under') ||
+                              summary.includes('considering a low-scoring')) {
+                            analysis.totalDirection = 'under';
+                          } else if (summary.includes('high-scoring') || summary.includes('offensive') || 
                               summary.includes('run production') || summary.includes('over')) {
                             analysis.totalDirection = 'over';
-                          } else if (summary.includes('low-scoring') || summary.includes('pitching') || 
-                                   summary.includes('suppress runs') || summary.includes('under') ||
-                                   summary.includes('difficulty for hitters') || summary.includes('strong pitching') ||
-                                   summary.includes('low total runs game') || summary.includes('suppress runs') ||
-                                   summary.includes('stay under the run total') || summary.includes('low-scoring affair') ||
-                                   summary.includes('neutralize') || summary.includes('under the run total')) {
-                            analysis.totalDirection = 'under';
                           }
                           
                           return analysis;
@@ -547,11 +548,7 @@ export default function GameCard({ game }: GameCardProps) {
                         
                         const analysis = analyzeSummaryForRecommendations();
                         
-                        // Debug logging to check analysis
-                        console.log('Analysis for game:', game.gameId);
-                        console.log('Summary:', summary);
-                        console.log('Favored team:', analysis.favoredTeam);
-                        console.log('Total direction:', analysis.totalDirection);
+
                         
                         // Generate betting suggestions based on actual AI analysis
                         if (confidence > 80 && analysis.favoredTeam) {
