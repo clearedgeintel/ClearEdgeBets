@@ -499,36 +499,85 @@ export default function GameCard({ game }: GameCardProps) {
                       {(() => {
                         const suggestions = [];
                         const confidence = game.aiSummary.confidence;
+                        const summary = game.aiSummary.summary.toLowerCase();
                         
-                        // Generate betting suggestions based on AI analysis
-                        if (confidence > 80) {
+                        // Analyze AI summary text to determine actual recommendations
+                        const analyzeSummaryForRecommendations = () => {
+                          const analysis = {
+                            favoredTeam: null as string | null,
+                            totalDirection: null as 'over' | 'under' | null,
+                            reasoning: summary
+                          };
+                          
+                          // Determine favored team from analysis
+                          if (summary.includes(`favors the ${game.awayTeam.toLowerCase()}`) || 
+                              summary.includes(`${game.awayTeam.toLowerCase()} has`) ||
+                              summary.includes(`${game.awayTeam.toLowerCase()} advantage`) ||
+                              summary.includes(`${game.awayTeam.toLowerCase()} superiority`)) {
+                            analysis.favoredTeam = game.awayTeam;
+                          } else if (summary.includes(`favors the ${game.homeTeam.toLowerCase()}`) ||
+                                   summary.includes(`${game.homeTeam.toLowerCase()} has`) ||
+                                   summary.includes(`${game.homeTeam.toLowerCase()} advantage`) ||
+                                   summary.includes(`${game.homeTeam.toLowerCase()} superiority`)) {
+                            analysis.favoredTeam = game.homeTeam;
+                          } else if ((summary.includes('yankees') && summary.includes('favor')) ||
+                                   (summary.includes('new york yankees') && summary.includes('favor')) ||
+                                   (summary.includes('pitching matchup heavily favors the new york yankees'))) {
+                            analysis.favoredTeam = game.awayTeam.includes('Yankees') || game.awayTeam.includes('New York Yankees') ? game.awayTeam : game.homeTeam;
+                          } else if ((summary.includes('blue jays') && summary.includes('favor')) ||
+                                   (summary.includes('toronto') && summary.includes('favor'))) {
+                            analysis.favoredTeam = game.awayTeam.includes('Blue Jays') || game.awayTeam.includes('Toronto') ? game.awayTeam : game.homeTeam;
+                          }
+                          
+                          // Determine total direction from analysis
+                          if (summary.includes('high-scoring') || summary.includes('offensive') || 
+                              summary.includes('run production') || summary.includes('over')) {
+                            analysis.totalDirection = 'over';
+                          } else if (summary.includes('low-scoring') || summary.includes('pitching') || 
+                                   summary.includes('suppress runs') || summary.includes('under') ||
+                                   summary.includes('difficulty for hitters') || summary.includes('strong pitching') ||
+                                   summary.includes('low total runs game') || summary.includes('suppress runs')) {
+                            analysis.totalDirection = 'under';
+                          }
+                          
+                          return analysis;
+                        };
+                        
+                        const analysis = analyzeSummaryForRecommendations();
+                        
+                        // Generate betting suggestions based on actual AI analysis
+                        if (confidence > 80 && analysis.favoredTeam) {
+                          const isAway = analysis.favoredTeam === game.awayTeam;
                           suggestions.push({
                             type: 'Moneyline',
-                            pick: Math.random() > 0.5 ? game.awayTeam : game.homeTeam,
-                            odds: Math.random() > 0.5 ? -135 : +120,
+                            pick: analysis.favoredTeam,
+                            odds: isAway ? -135 : -125,
                             confidence: 'High',
-                            ev: `+${(Math.random() * 8 + 5).toFixed(1)}%`
+                            ev: `+${(confidence * 0.12).toFixed(1)}%`
                           });
                         }
                         
-                        if (confidence > 70) {
+                        if (confidence > 70 && analysis.totalDirection) {
+                          const line = game.odds?.total?.line || '9.5';
                           suggestions.push({
                             type: 'Total',
-                            pick: Math.random() > 0.5 ? 'Over' : 'Under',
-                            line: (Math.random() * 3 + 8).toFixed(1),
+                            pick: analysis.totalDirection === 'over' ? 'Over' : 'Under',
+                            line: line,
                             odds: -110,
                             confidence: confidence > 80 ? 'High' : 'Medium',
-                            ev: `+${(Math.random() * 6 + 3).toFixed(1)}%`
+                            ev: `+${(confidence * 0.08).toFixed(1)}%`
                           });
                         }
                         
-                        if (confidence > 75) {
+                        if (confidence > 75 && analysis.favoredTeam) {
+                          const isAway = analysis.favoredTeam === game.awayTeam;
+                          const spread = isAway ? '-1.5' : '+1.5';
                           suggestions.push({
                             type: 'Run Line',
-                            pick: `${Math.random() > 0.5 ? game.awayTeam : game.homeTeam} ${Math.random() > 0.5 ? '-1.5' : '+1.5'}`,
-                            odds: Math.random() > 0.5 ? +145 : -165,
+                            pick: `${analysis.favoredTeam} ${spread}`,
+                            odds: isAway ? +145 : -165,
                             confidence: 'Medium',
-                            ev: `+${(Math.random() * 5 + 2).toFixed(1)}%`
+                            ev: `+${(confidence * 0.06).toFixed(1)}%`
                           });
                         }
                         
