@@ -3596,10 +3596,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Player Props API endpoints
   app.get('/api/player-props', async (req: Request, res: Response) => {
     try {
-      const { category, bookmaker, gameId } = req.query;
+      const { category, bookmaker, gameId, date } = req.query;
+      const targetDate = date ? String(date) : format(new Date(), 'yyyy-MM-dd');
       
-      // Generate comprehensive player props for all current games
-      const games = await storage.getGames();
+      // Generate comprehensive player props for games on the specified date
+      const games = generateGamesForDate(targetDate);
       const playerPropsList = [];
       
       // Enhanced prop generation for each game

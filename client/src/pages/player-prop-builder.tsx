@@ -7,7 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, TrendingUp, Target, Calculator, Plus, X, Search, DollarSign, Trophy, Zap } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AlertCircle, TrendingUp, Target, Calculator, Plus, X, Search, DollarSign, Trophy, Zap, CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { format, addDays, subDays } from "date-fns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
@@ -59,6 +62,8 @@ export default function PlayerPropBuilder() {
   const [selectedBookmaker, setSelectedBookmaker] = useState<string>("all");
   const [parlayStake, setParlayStake] = useState<number>(10);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   // Check Elite access
   const hasEliteAccess = hasAccess('elite');
@@ -126,9 +131,10 @@ export default function PlayerPropBuilder() {
     );
   }
 
-  // Fetch available player props
+  // Fetch available player props for selected date
   const { data: playerProps = [], isLoading: propsLoading } = useQuery({
-    queryKey: ['/api/player-props'],
+    queryKey: ['/api/player-props', format(selectedDate, 'yyyy-MM-dd')],
+    queryFn: () => apiRequest('GET', `/api/player-props?date=${format(selectedDate, 'yyyy-MM-dd')}`),
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
@@ -308,6 +314,59 @@ export default function PlayerPropBuilder() {
             <Zap className="h-4 w-4 mr-1" />
             Elite Feature
           </Badge>
+        </div>
+
+        {/* Date Navigation */}
+        <div className="flex items-center justify-between bg-card rounded-lg p-4 border">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedDate(subDays(selectedDate, 1))}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous Day
+            </Button>
+            
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-64 justify-start">
+                  <CalendarIcon className="h-4 w-4 mr-2" />
+                  {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      setSelectedDate(date);
+                      setIsCalendarOpen(false);
+                    }
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+            >
+              Next Day
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+
+          <div className="text-sm text-muted-foreground">
+            {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') && "Today's"}
+            {format(selectedDate, 'yyyy-MM-dd') === format(addDays(new Date(), 1), 'yyyy-MM-dd') && "Tomorrow's"}
+            {format(selectedDate, 'yyyy-MM-dd') !== format(new Date(), 'yyyy-MM-dd') && 
+             format(selectedDate, 'yyyy-MM-dd') !== format(addDays(new Date(), 1), 'yyyy-MM-dd') && 
+             format(selectedDate, 'EEE, MMM d')} Player Props
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
