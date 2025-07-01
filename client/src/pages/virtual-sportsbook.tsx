@@ -1055,6 +1055,10 @@ export default function VirtualSportsbook() {
                       potentialWin: isParlayMode ? calculateParlayPayout(parlayStake, calculateParlayOdds(currentSlip.items)) : item.potentialWin
                     }));
 
+                    // Debug logging
+                    console.log("Bets to save:", betsToSave);
+                    console.log("Current slip items:", currentSlip.items);
+                    
                     // Save bets to database
                     saveBetsMutation.mutate(betsToSave, {
                       onSuccess: () => {
