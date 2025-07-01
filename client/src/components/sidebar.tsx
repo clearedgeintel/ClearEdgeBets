@@ -31,7 +31,8 @@ import {
   Brain,
   Calculator,
   CircleDot,
-  Shield
+  Shield,
+  HelpCircle
 } from "lucide-react";
 import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -720,6 +721,26 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
             </Link>
           );
         })}
+        {/* Help Section */}
+        <div className="mt-6 pt-4 border-t border-gray-700">
+          <Link
+            href="/help"
+            className={`flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors group ${
+              location === "/help"
+                ? "bg-gray-800 text-white"
+                : "text-gray-300 hover:bg-gray-800 hover:text-white"
+            }`}
+            onClick={() => setMobileOpen(false)}
+          >
+            <HelpCircle className={`h-5 w-5 ${location === "/help" ? "text-white" : "text-gray-400 group-hover:text-white"}`} />
+            <div className="flex-1">
+              <div className="font-medium">Help & Guide</div>
+              <div className="text-xs text-gray-400 group-hover:text-gray-300">
+                Platform features and best practices
+              </div>
+            </div>
+          </Link>
+        </div>
       </nav>
 
       <Separator className="bg-gray-700" />

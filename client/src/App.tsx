@@ -39,6 +39,7 @@ import WeeklyLeaderboard from "@/pages/weekly-leaderboard";
 import Groups from "@/pages/groups";
 import StripeSetup from "@/pages/stripe-setup";
 import PlayerPropBuilder from "@/pages/player-prop-builder";
+import Help from "@/pages/help";
 
 function Router() {
   return (
@@ -76,6 +77,7 @@ function Router() {
         <Route path="/ai-assistant" component={AIAssistant} />
         <Route path="/kelly-calculator" component={KellyCalculator} />
         <Route path="/player-prop-builder" component={PlayerPropBuilder} />
+        <Route path="/help" component={Help} />
         <Route path="/auth" component={AuthPage} />
         <Route component={NotFound} />
       </Switch>

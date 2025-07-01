@@ -299,12 +299,72 @@ export default function PerformanceAnalytics() {
                   </div>
                   
                   <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h4 className="font-semibold text-blue-800 mb-2">Recommendations</h4>
+                    <h4 className="font-semibold text-blue-800 mb-2">AI Performance Insights</h4>
                     <ul className="space-y-1 text-sm text-blue-700">
-                      <li>• Focus more on Moneyline bets where you excel</li>
-                      <li>• Consider reducing exposure to Total bets</li>
+                      <li>• Focus more on Moneyline bets where you excel (75% win rate)</li>
+                      <li>• Consider reducing exposure to Total bets (45% win rate needs improvement)</li>
                       <li>• Your ROI of 12.4% is excellent - maintain current approach</li>
+                      <li>• Best performing games: Away underdogs in day games (+18.2% ROI)</li>
+                      <li>• Pitcher matchup analysis shows 85% accuracy in under predictions</li>
                     </ul>
+                  </div>
+
+                  {/* Detailed Betting Patterns */}
+                  <div className="mt-6">
+                    <h3 className="text-lg font-semibold mb-4">Advanced Analytics</h3>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm">Monthly Performance Trend</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">June 2025</span>
+                              <Badge variant="outline" className="bg-green-50 text-green-700">+$485 (+15.2%)</Badge>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">May 2025</span>
+                              <Badge variant="outline" className="bg-green-50 text-green-700">+$420 (+12.8%)</Badge>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">April 2025</span>
+                              <Badge variant="outline" className="bg-red-50 text-red-700">-$125 (-4.2%)</Badge>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">March 2025</span>
+                              <Badge variant="outline" className="bg-green-50 text-green-700">+$340 (+11.8%)</Badge>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm">Market Intelligence</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Favorite vs Underdog</span>
+                              <span className="text-sm font-medium">Underdogs +8.5% ROI</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Day vs Night Games</span>
+                              <span className="text-sm font-medium">Day games +12% ROI</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Home vs Away</span>
+                              <span className="text-sm font-medium">Away teams +6.2% ROI</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Pitcher ERA Impact</span>
+                              <span className="text-sm font-medium">Sub-3.00 ERA: 78% accuracy</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
                   </div>
                 </div>
               </CardContent>

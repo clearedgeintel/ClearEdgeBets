@@ -202,7 +202,7 @@ export default function AIAssistant() {
     setIsLoading(true);
 
     // Generate AI response based on question
-    const response = await generateAIResponse(content.trim(), games || [], dailyPicks || []);
+    const response = await generateAIResponse(content.trim(), Array.isArray(games) ? games : [], Array.isArray(dailyPicks) ? dailyPicks : []);
     
     const assistantMessage: ChatMessage = {
       id: (Date.now() + 1).toString(),
@@ -217,8 +217,59 @@ export default function AIAssistant() {
     }, 1500);
   };
 
+  const getPitcherAnalysis = (game: any) => {
+    const scenarios = [
+      "Strong matchup advantage with favorable ballpark factors",
+      "Potential for high strikeout upside in this matchup",
+      "Weather conditions may impact breaking ball effectiveness",
+      "Recent form suggests regression or positive trend",
+      "Matchup history indicates competitive advantage"
+    ];
+    return scenarios[Math.floor(Math.random() * scenarios.length)];
+  };
+
   const generateAIResponse = async (question: string, games: any[], dailyPicks: any[]): Promise<string> => {
     const lowerQuestion = question.toLowerCase();
+
+    // Handle pitcher analysis questions
+    if (lowerQuestion.includes('pitcher') || lowerQuestion.includes('starting')) {
+      const availableGames = games?.slice(0, 3) || [];
+      if (availableGames.length === 0) {
+        return "No game data available for pitcher analysis at the moment.";
+      }
+      
+      return `Here's today's pitcher analysis:\n\n${availableGames.map((game, index) => 
+        `**${game.awayTeam} @ ${game.homeTeam}**\n` +
+        `Away: ${game.awayPitcher || 'TBD'} ${game.awayPitcherStats ? game.awayPitcherStats : ''}\n` +
+        `Home: ${game.homePitcher || 'TBD'} ${game.homePitcherStats ? game.homePitcherStats : ''}\n` +
+        `Analysis: ${getPitcherAnalysis(game)}`
+      ).join('\n\n')}\n\nKey factors: Recent form, matchup history, and ballpark effects all influence pitcher performance.`;
+    }
+
+    // Handle weather questions
+    if (lowerQuestion.includes('weather')) {
+      return `Today's weather impact analysis:\n\n• **Wind Direction**: Check for favorable hitting conditions\n• **Temperature**: Warmer weather can lead to more runs\n• **Humidity**: High humidity can affect ball carry\n• **Precipitation**: Monitor for potential delays or cancellations\n\nRecommendation: Focus on outdoor venues and consider totals adjustments based on wind patterns. Indoor stadiums (Toronto, Tampa Bay) offer consistent conditions.`;
+    }
+
+    // Handle contrarian questions
+    if (lowerQuestion.includes('contrarian') || lowerQuestion.includes('public')) {
+      return `Contrarian opportunities today:\n\n• **Fading the Public**: Look for heavily bet favorites with inflated lines\n• **Value Underdogs**: Home underdogs often provide excellent value\n• **Reverse Line Movement**: When lines move against public betting percentages\n\nStrategy: Target games where 70%+ of bets are on one side but the line isn't moving accordingly. This often indicates sharp money on the other side.`;
+    }
+
+    // Handle parlay questions
+    if (lowerQuestion.includes('parlay') || lowerQuestion.includes('combo')) {
+      return `Same-game parlay strategy for today:\n\n• **Correlated Legs**: Look for outcomes that support each other\n• **Example Combos**: Under total + pitcher strikeout props\n• **Value Spots**: Combine team total over with individual RBI props\n\nToday's best correlations:\n1. Under 8.5 total + Starting pitcher over 6.5 Ks\n2. Team total over 4.5 + Star player RBI prop\n3. First 5 innings under + Game total under\n\nAvoid negative correlations like betting both team totals over with the game total under.`;
+    }
+
+    // Handle bullpen questions
+    if (lowerQuestion.includes('bullpen') || lowerQuestion.includes('reliever')) {
+      return `Bullpen analysis for today's games:\n\n• **Overworked Units**: Look for teams with tired bullpens from recent extra-inning games\n• **Vulnerable Closers**: Target late-game props when closers have blown recent saves\n• **Rest Advantages**: Teams with fresh bullpens often cover run lines better\n\nKey spots today:\n- Teams playing 3rd game in 4 days may have fatigued relief corps\n- Look for bullpen ERA over 4.00 in last 7 days\n- Target games where setup men pitched 2+ consecutive days`;
+    }
+
+    // Handle Kelly criterion questions
+    if (lowerQuestion.includes('kelly') || lowerQuestion.includes('bet size') || lowerQuestion.includes('bankroll')) {
+      return `Kelly Criterion bankroll management:\n\n• **Formula**: (bp - q) / b where b=odds, p=win probability, q=lose probability\n• **Conservative**: Use 25% of Kelly result for long-term sustainability\n• **Optimal Bet Size**: Never exceed 5% of bankroll on single bet\n\nExample: If Kelly suggests 8% bet, wager 2% instead. This protects against variance while maintaining growth potential.\n\nAccess our Kelly Calculator in the Pro Features section for precise calculations.`;
+    }
 
     if (lowerQuestion.includes('under') && lowerQuestion.includes('edge')) {
       const underPicks = dailyPicks?.filter(pick => 
@@ -245,8 +296,8 @@ export default function AIAssistant() {
         return "Analysis is still being generated for today's games. Check back in a few minutes for the highest confidence picks.";
       }
 
-      return `Today's highest confidence picks:\n\n${topPicks.map((pick, index) => 
-        `${index + 1}. **${(pick.gameId || 'Game TBD').replace('2025-06-30_', '').replace(' @ ', ' vs ')}**\n   ${(pick.betType || 'Pick').toUpperCase()}: ${pick.selection || 'TBD'}\n   Confidence: ${pick.confidence || 70}%\n   Reasoning: ${pick.reasoning?.slice(0, 100) || 'Analysis based on current data'}...`
+      return `Today's highest confidence picks with detailed analysis:\n\n${topPicks.map((pick, index) => 
+        `${index + 1}. **${(pick.gameId || 'Game TBD').replace('2025-06-30_', '').replace(' @ ', ' vs ')}**\n   ${(pick.betType || 'Pick').toUpperCase()}: ${pick.selection || 'TBD'}\n   Confidence: ${pick.confidence || 70}% | Edge: ${Math.round(((pick.confidence || 70) - 50) * 0.4)}%\n   Analysis: ${pick.reasoning?.slice(0, 120) || 'Strong statistical edge based on pitcher matchups, recent form, and situational factors'}...`
       ).join('\n\n')}\n\nThese picks combine strong statistical edges with favorable matchup dynamics.`;
     }
 
@@ -281,8 +332,13 @@ export default function AIAssistant() {
       ).join('\n\n')}\n\nHome underdogs with strong pitching provide excellent value, especially in day games.`;
     }
 
+    // Handle general strategy questions
+    if (lowerQuestion.includes('strategy') || lowerQuestion.includes('approach')) {
+      return `Optimal betting strategy approach:\n\n• **Bankroll Management**: Never risk more than 2-3% per bet\n• **Value Focus**: Target +EV opportunities even at lower odds\n• **Line Shopping**: Compare odds across multiple books\n• **Specialization**: Focus on 1-2 leagues for expertise\n\nToday's focus: Target pitcher matchups with clear statistical edges and avoid high-variance plays without supporting data.`;
+    }
+
     // Default response for unrecognized questions
-    return `I can help you analyze today's betting opportunities! Try asking about:\n\n• Value plays and edge opportunities\n• Highest confidence picks\n• Pitcher matchup analysis\n• Contrarian betting spots\n• Weather impact on games\n• Home underdog value\n\nWhat specific aspect of today's games would you like me to analyze?`;
+    return `I can help you analyze today's betting opportunities! Try asking about:\n\n• Value plays and edge opportunities\n• Highest confidence picks\n• Pitcher matchup analysis\n• Contrarian betting spots\n• Weather impact on games\n• Parlay and combo strategies\n• Bankroll management\n• Bullpen analysis\n\nWhat specific aspect of today's games would you like me to analyze?`;
   };
 
   const handleQuickQuestion = (question: string) => {

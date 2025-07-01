@@ -17,7 +17,7 @@ interface HotTrend {
   trend: "hot" | "cold" | "neutral";
   confidence: number;
   roi: number;
-  examples: string[];
+  examples: Array<{text: string; date: string}>;
   lastUpdated: string;
 }
 
@@ -32,7 +32,8 @@ export default function HotTrends() {
       });
       const response = await fetch(`/api/hot-trends?${params}`);
       if (!response.ok) throw new Error('Failed to fetch hot trends');
-      return response.json() as HotTrend[];
+      const data = await response.json();
+      return data as HotTrend[];
     }
   });
 
@@ -174,9 +175,16 @@ export default function HotTrends() {
                     <h4 className="text-sm font-medium mb-3">Recent Examples:</h4>
                     <div className="space-y-2">
                       {trend.examples.map((example, index) => (
-                        <div key={index} className="flex items-center gap-2 text-sm">
-                          <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
-                          <span>{example}</span>
+                        <div key={index} className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
+                            <span>{typeof example === 'string' ? example : example.text}</span>
+                          </div>
+                          {typeof example === 'object' && example.date && (
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(example.date).toLocaleDateString()}
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>
