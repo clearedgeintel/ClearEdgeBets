@@ -150,11 +150,24 @@ export default function Home() {
       const homeTeamCode = homeTeamFull.split(' ').pop() || 'TBD';
       
       // Find the corresponding game data by matching team names
-      const game = games.find(g => 
-        (g.awayTeam?.includes(awayTeamCode) && g.homeTeam?.includes(homeTeamCode)) ||
-        g.gameId === pick.gameId ||
-        g.awayTeamCode === awayTeamCode && g.homeTeamCode === homeTeamCode
-      );
+      const game = games.find(g => {
+        // Direct match by gameId
+        if (g.gameId === pick.gameId) return true;
+        
+        // Match by full team names
+        if (g.awayTeam === awayTeamFull && g.homeTeam === homeTeamFull) return true;
+        
+        // Match by team codes
+        if (g.awayTeamCode === awayTeamCode && g.homeTeamCode === homeTeamCode) return true;
+        
+        // Partial match by team name inclusion (e.g., "Yankees" in "New York Yankees")
+        const awayMatch = g.awayTeam?.toLowerCase().includes(awayTeamCode.toLowerCase()) || 
+                         awayTeamFull.toLowerCase().includes(g.awayTeam?.toLowerCase() || '');
+        const homeMatch = g.homeTeam?.toLowerCase().includes(homeTeamCode.toLowerCase()) ||
+                         homeTeamFull.toLowerCase().includes(g.homeTeam?.toLowerCase() || '');
+        
+        return awayMatch && homeMatch;
+      });
       
       return {
         selection: pick.selection,

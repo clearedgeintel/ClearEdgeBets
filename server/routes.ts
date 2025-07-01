@@ -1016,15 +1016,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/daily-picks/generate", async (req, res) => {
     try {
-      // Use fresh game generation instead of storage to get current games
+      // Use real MLB games from API instead of generated ones
       const today = new Date();
       const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
       const todayString = localDate.toISOString().split('T')[0];
       
-      const freshGames = generateGamesForDate(todayString);
+      // Directly call the games API to get the same real data that's working
+      const gamesResponse = await fetch(`http://localhost:5000/api/games`);
+      let realGames: any[] = [];
+      
+      if (gamesResponse.ok) {
+        realGames = await gamesResponse.json();
+        console.log(`Using ${realGames.length} real MLB games for daily picks generation`);
+      } else {
+        // Fallback to generated games if API call fails
+        realGames = generateGamesForDate(todayString);
+      }
+
       const { generateDailyPicks } = await import("./services/openai.js");
       
-      const gameData = freshGames.map(game => {
+      const gameData = realGames.map((game: any) => {
         return {
           awayTeam: game.awayTeam,
           homeTeam: game.homeTeam,
