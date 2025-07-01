@@ -530,7 +530,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/games", async (req, res) => {
     try {
       const { date } = req.query;
-      const targetDate = date as string || new Date().toISOString().split('T')[0];
+      // Use Eastern Time for default date to match user's timezone
+      const easternTime = new Date().toLocaleString("en-US", {timeZone: "America/New_York"});
+      const defaultDate = new Date(easternTime).toISOString().split('T')[0];
+      const targetDate = date as string || defaultDate;
       
       // Try to fetch real MLB games with pitcher details first
       let realMLBGames: any[] = [];
@@ -1005,7 +1008,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Daily picks endpoints
   app.get("/api/daily-picks", async (req, res) => {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      // Use Eastern Time to get the correct date for US users
+      const easternTime = new Date().toLocaleString("en-US", {timeZone: "America/New_York"});
+      const today = new Date(easternTime).toISOString().split('T')[0];
       const picks = await storage.getDailyPicks(today);
       res.json(picks);
     } catch (error) {
@@ -1016,10 +1021,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/daily-picks/generate", async (req, res) => {
     try {
-      // Use real MLB games from API instead of generated ones
-      const today = new Date();
-      const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
-      const todayString = localDate.toISOString().split('T')[0];
+      // Use Eastern Time to get the correct date for US users
+      const easternTime = new Date().toLocaleString("en-US", {timeZone: "America/New_York"});
+      const todayString = new Date(easternTime).toISOString().split('T')[0];
       
       // Directly call the games API to get the same real data that's working
       const gamesResponse = await fetch(`http://localhost:5000/api/games`);
