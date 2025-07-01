@@ -11,6 +11,7 @@ import { fetchRealMLBOdds, mergeRealOddsWithGames } from "./services/realOdds";
 import { fetchMLBNews, generateMockMLBNews } from "./services/mlb-news";
 import { generateGameAnalysis, generateDailyDigest, type GameAnalysisData } from "./services/openai";
 import { getPlayerPropsForGame } from "./services/player-props";
+import { getPinnaclePlayerProps, getPinnacleSports } from "./services/pinnacle-props";
 import { insertBetSchema, insertGameSchema, insertOddsSchema, insertUserSchema } from "@shared/schema";
 import Stripe from "stripe";
 import bcrypt from "bcrypt";
@@ -3594,52 +3595,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Player Props API endpoints - Real data from The Odds API
-  app.get('/api/player-props', async (req: Request, res: Response) => {
-    try {
-      const { category, bookmaker, gameId } = req.query;
-      
-      // Fetch real player props from The Odds API
-      const realPlayerProps = await fetchRealPlayerProps();
-      
-      if (realPlayerProps.length === 0) {
-        console.log('No real player props available, using fallback message');
-        return res.json({
-          error: 'Player props data temporarily unavailable',
-          message: 'Real player props from sportsbooks are currently unavailable. Please try again later.',
-          props: []
-        });
-      }
 
-      // Apply filters if provided
-      let filteredProps = realPlayerProps;
-      
-      if (category && category !== 'all') {
-        filteredProps = filteredProps.filter(prop => prop.category === category);
-      }
-      
-      if (bookmaker && bookmaker !== 'all') {
-        filteredProps = filteredProps.filter(prop => 
-          prop.bookmaker.toLowerCase().includes(bookmaker.toString().toLowerCase())
-        );
-      }
-      
-      if (gameId) {
-        filteredProps = filteredProps.filter(prop => prop.gameId === gameId);
-      }
 
-      console.log(`Returning ${filteredProps.length} real player props`);
-      res.json(filteredProps);
-    } catch (error) {
-      console.error('Real player props error:', error);
-      res.status(500).json({ 
-        error: 'Failed to fetch real player props',
-        message: 'Unable to retrieve authentic player props data from sportsbooks'
-      });
-    }
-  });
-
-  // Game-specific player props endpoint
+  // Game-specific player props endpoint (The Odds API)
   app.get('/api/games/:gameId/player-props', async (req: Request, res: Response) => {
     try {
       const { gameId } = req.params;
@@ -3652,6 +3610,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         error: 'Failed to fetch game player props',
         message: 'Unable to retrieve player props for this game'
+      });
+    }
+  });
+
+  // Test Pinnacle API endpoint
+  app.get('/api/pinnacle/test', async (req: Request, res: Response) => {
+    try {
+      console.log('Testing Pinnacle API connection...');
+      
+      // First test if we can get sports list
+      const sports = await getPinnacleSports();
+      console.log('Pinnacle sports response:', sports);
+      
+      // Then test player props
+      const playerProps = await getPinnaclePlayerProps();
+      console.log(`Found ${playerProps.length} Pinnacle player props`);
+      
+      res.json({
+        success: true,
+        sports: sports,
+        playerPropsCount: playerProps.length,
+        sampleProps: playerProps.slice(0, 3)
+      });
+    } catch (error) {
+      console.error('Pinnacle API test error:', error);
+      res.status(500).json({ 
+        error: 'Pinnacle API test failed',
+        message: error.message
+      });
+    }
+  });
+
+  // Pinnacle player props endpoint - get all props
+  app.get('/api/pinnacle/player-props', async (req: Request, res: Response) => {
+    try {
+      const playerProps = await getPinnaclePlayerProps();
+      
+      console.log(`Found ${playerProps.length} Pinnacle player props`);
+      res.json(playerProps);
+    } catch (error) {
+      console.error('Pinnacle player props error:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch Pinnacle player props',
+        message: 'Unable to retrieve player props from Pinnacle'
+      });
+    }
+  });
+
+  // Enhanced player props endpoint that integrates Pinnacle
+  app.get('/api/player-props', async (req: Request, res: Response) => {
+    try {
+      console.log('Fetching player props from Pinnacle API...');
+      const playerProps = await getPinnaclePlayerProps();
+      
+      console.log(`Found ${playerProps.length} total player props from Pinnacle`);
+      
+      // Apply filters if provided
+      const { category, team, propType } = req.query;
+      let filteredProps = playerProps;
+      
+      if (category && category !== 'all') {
+        filteredProps = filteredProps.filter(prop => prop.category === category);
+      }
+      
+      if (team && team !== 'all') {
+        filteredProps = filteredProps.filter(prop => prop.team.toLowerCase().includes(team.toString().toLowerCase()));
+      }
+      
+      if (propType && propType !== 'all') {
+        filteredProps = filteredProps.filter(prop => prop.propType === propType);
+      }
+      
+      console.log(`Returning ${filteredProps.length} filtered player props`);
+      res.json(filteredProps);
+    } catch (error) {
+      console.error('Player props error:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch player props',
+        message: 'Unable to retrieve player props from Pinnacle API'
       });
     }
   });

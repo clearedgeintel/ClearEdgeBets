@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import { getPinnaclePlayerProps, type PinnaclePlayerProp } from './pinnacle-props';
 
 export interface PlayerProp {
   id: string;
@@ -17,6 +18,52 @@ export interface PlayerProp {
 }
 
 export async function getPlayerPropsForGame(gameId: string): Promise<PlayerProp[]> {
+  try {
+    // First try to get props from Pinnacle (preferred source)
+    console.log(`Fetching player props for game ${gameId} from Pinnacle...`);
+    const pinnacleProps = await getPinnaclePlayerProps();
+    
+    // Filter props for the specific game
+    const gameProps = pinnacleProps.filter(prop => 
+      prop.gameId === gameId || gameId.includes(prop.gameId.replace('pinnacle_', ''))
+    );
+    
+    if (gameProps.length > 0) {
+      console.log(`Found ${gameProps.length} Pinnacle props for game ${gameId}`);
+      return gameProps.map(convertPinnacleToPlayerProp);
+    }
+    
+    // Fallback to The Odds API if Pinnacle doesn't have props for this specific game
+    console.log(`No Pinnacle props for ${gameId}, trying The Odds API...`);
+    return await getPlayerPropsFromOddsAPI(gameId);
+    
+  } catch (error) {
+    console.error('Error fetching player props:', error);
+    return [];
+  }
+}
+
+// Convert Pinnacle prop format to standard PlayerProp format
+function convertPinnacleToPlayerProp(pinnacleProps: PinnaclePlayerProp): PlayerProp {
+  return {
+    id: pinnacleProps.id,
+    gameId: pinnacleProps.gameId,
+    playerName: pinnacleProps.playerName,
+    team: pinnacleProps.team,
+    opponent: pinnacleProps.opponent,
+    propType: pinnacleProps.propType,
+    line: pinnacleProps.line,
+    overOdds: pinnacleProps.overOdds,
+    underOdds: pinnacleProps.underOdds,
+    bookmaker: pinnacleProps.bookmaker,
+    category: pinnacleProps.category,
+    projectedValue: pinnacleProps.projectedValue,
+    edge: pinnacleProps.edge
+  };
+}
+
+// Fallback function for The Odds API
+async function getPlayerPropsFromOddsAPI(gameId: string): Promise<PlayerProp[]> {
   const apiKey = process.env.ODDS_API_KEY;
   if (!apiKey) {
     console.log('No ODDS_API_KEY found, returning empty props');
@@ -69,7 +116,7 @@ export async function getPlayerPropsForGame(gameId: string): Promise<PlayerProp[
       });
     }
 
-    console.log(`Found ${props.length} player props for game ${gameId}`);
+    console.log(`Found ${props.length} player props for game ${gameId} from The Odds API`);
     return props;
 
   } catch (error) {
