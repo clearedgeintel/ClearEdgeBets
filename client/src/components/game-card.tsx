@@ -536,7 +536,9 @@ export default function GameCard({ game }: GameCardProps) {
                           } else if (summary.includes('low-scoring') || summary.includes('pitching') || 
                                    summary.includes('suppress runs') || summary.includes('under') ||
                                    summary.includes('difficulty for hitters') || summary.includes('strong pitching') ||
-                                   summary.includes('low total runs game') || summary.includes('suppress runs')) {
+                                   summary.includes('low total runs game') || summary.includes('suppress runs') ||
+                                   summary.includes('stay under the run total') || summary.includes('low-scoring affair') ||
+                                   summary.includes('neutralize') || summary.includes('under the run total')) {
                             analysis.totalDirection = 'under';
                           }
                           
@@ -544,6 +546,12 @@ export default function GameCard({ game }: GameCardProps) {
                         };
                         
                         const analysis = analyzeSummaryForRecommendations();
+                        
+                        // Debug logging to check analysis
+                        console.log('Analysis for game:', game.gameId);
+                        console.log('Summary:', summary);
+                        console.log('Favored team:', analysis.favoredTeam);
+                        console.log('Total direction:', analysis.totalDirection);
                         
                         // Generate betting suggestions based on actual AI analysis
                         if (confidence > 80 && analysis.favoredTeam) {
