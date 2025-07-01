@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -120,79 +120,20 @@ export default function GameCard({ game }: GameCardProps) {
     }
   };
 
-  // MLB Player Roster Mapping
-  const mlbRosters: Record<string, string[]> = {
-    "New York Yankees": ["Aaron Judge", "Gleyber Torres", "Anthony Rizzo", "Giancarlo Stanton", "Juan Soto"],
-    "Boston Red Sox": ["Rafael Devers", "Xander Bogaerts", "Trevor Story", "Alex Verdugo", "Jarren Duran"],
-    "Toronto Blue Jays": ["Vladimir Guerrero Jr.", "Bo Bichette", "George Springer", "Teoscar Hernandez", "Matt Chapman"],
-    "Baltimore Orioles": ["Cedric Mullins", "Trey Mancini", "Anthony Santander", "Ryan Mountcastle", "Austin Hays"],
-    "Tampa Bay Rays": ["Randy Arozarena", "Wander Franco", "Yandy Diaz", "Manuel Margot", "Brandon Lowe"],
-    "Houston Astros": ["Jose Altuve", "Alex Bregman", "Yordan Alvarez", "Kyle Tucker", "Carlos Correa"],
-    "Seattle Mariners": ["Julio Rodriguez", "Cal Raleigh", "Eugenio Suarez", "Ty France", "Jesse Winker"],
-    "Los Angeles Angels": ["Mike Trout", "Shohei Ohtani", "Anthony Rendon", "Taylor Ward", "Jared Walsh"],
-    "Oakland Athletics": ["Matt Olson", "Ramon Laureano", "Elvis Andrus", "Jed Lowrie", "Sean Murphy"],
-    "Texas Rangers": ["Corey Seager", "Marcus Semien", "Nathaniel Lowe", "Adolis Garcia", "Jonah Heim"],
-    "Minnesota Twins": ["Byron Buxton", "Carlos Correa", "Max Kepler", "Jorge Polanco", "Luis Arraez"],
-    "Cleveland Guardians": ["Jose Ramirez", "Franmil Reyes", "Amed Rosario", "Oscar Mercado", "Josh Naylor"],
-    "Detroit Tigers": ["Miguel Cabrera", "Jonathan Schoop", "Robbie Grossman", "Jeimer Candelario", "Riley Greene"],
-    "Kansas City Royals": ["Salvador Perez", "Andrew Benintendi", "Whit Merrifield", "Jorge Soler", "Hunter Dozier"],
-    "Chicago White Sox": ["Tim Anderson", "Jose Abreu", "Luis Robert", "Eloy Jimenez", "Yoan Moncada"],
-    "Atlanta Braves": ["Ronald Acuna Jr.", "Freddie Freeman", "Ozzie Albies", "Dansby Swanson", "Austin Riley"],
-    "New York Mets": ["Pete Alonso", "Francisco Lindor", "Jeff McNeil", "Starling Marte", "Eduardo Escobar"],
-    "Philadelphia Phillies": ["Bryce Harper", "Nick Castellanos", "Jean Segura", "Rhys Hoskins", "Kyle Schwarber"],
-    "Miami Marlins": ["Jazz Chisholm Jr.", "Jorge Soler", "Jesus Aguilar", "Garrett Cooper", "Avisail Garcia"],
-    "Washington Nationals": ["Juan Soto", "Josh Bell", "Nelson Cruz", "Keibert Ruiz", "Cesar Hernandez"],
-    "Milwaukee Brewers": ["Christian Yelich", "Willy Adames", "Andrew McCutchen", "Rowdy Tellez", "Hunter Renfroe"],
-    "St. Louis Cardinals": ["Paul Goldschmidt", "Nolan Arenado", "Tyler O'Neill", "Dylan Carlson", "Yadier Molina"],
-    "Chicago Cubs": ["Ian Happ", "Nico Hoerner", "Patrick Wisdom", "Willson Contreras", "Seiya Suzuki"],
-    "Cincinnati Reds": ["Joey Votto", "Jonathan India", "Nick Senzel", "Tyler Stephenson", "Jesse Winker"],
-    "Pittsburgh Pirates": ["Ke'Bryan Hayes", "Bryan Reynolds", "Rodolfo Castro", "Ben Gamel", "Michael Chavis"],
-    "Los Angeles Dodgers": ["Mookie Betts", "Freddie Freeman", "Trea Turner", "Justin Turner", "Will Smith"],
-    "San Diego Padres": ["Manny Machado", "Fernando Tatis Jr.", "Juan Soto", "Jake Cronenworth", "Ha-seong Kim"],
-    "San Francisco Giants": ["Brandon Crawford", "Mike Yastrzemski", "Joc Pederson", "Thairo Estrada", "LaMonte Wade Jr."],
-    "Colorado Rockies": ["C.J. Cron", "Ryan McMahon", "Charlie Blackmon", "Kris Bryant", "Jose Iglesias"],
-    "Arizona Diamondbacks": ["Ketel Marte", "Christian Walker", "Daulton Varsho", "David Peralta", "Josh Rojas"]
-  };
+  // Fetch real player props for this game
+  const { data: realPlayerProps = [], isLoading: propsLoading } = useQuery({
+    queryKey: [`/api/games/${game.gameId}/player-props`],
+    enabled: propsOpen, // Only fetch when the section is opened
+  });
 
-  // Get real players for the teams
-  const getPlayersForTeam = (teamName: string): string[] => {
-    return mlbRosters[teamName] || ["Star Player", "Team Captain", "Key Hitter"];
-  };
-
-  const awayPlayers = getPlayersForTeam(game.awayTeam);
-  const homePlayers = getPlayersForTeam(game.homeTeam);
-
-  // Generate authentic player props
-  const playerProps = [
-    {
-      player: awayPlayers[0],
-      propType: "Hits",
-      line: "2+ Hits",
-      odds: Math.floor(Math.random() * 50) + 140,
-      description: `Season avg: .${Math.floor(Math.random() * 100) + 250}`
-    },
-    {
-      player: game.homePitcher || homePlayers[1],
-      propType: "Strikeouts", 
-      line: `${Math.floor(Math.random() * 3) + 7}+ Strikeouts`,
-      odds: Math.floor(Math.random() * 60) + 110,
-      description: `Season avg: ${(Math.random() * 2 + 8).toFixed(1)} K/9`
-    },
-    {
-      player: homePlayers[0],
-      propType: "Home Run",
-      line: "To Hit HR",
-      odds: Math.floor(Math.random() * 150) + 250,
-      description: `${Math.floor(Math.random() * 8) + 3} HR in last 10 games`
-    },
-    {
-      player: awayPlayers[1],
-      propType: "RBIs",
-      line: "2+ RBIs",
-      odds: Math.floor(Math.random() * 80) + 180,
-      description: `${Math.floor(Math.random() * 15) + 45} RBIs this season`
-    }
-  ];
+  // Format real player props for display
+  const playerProps = realPlayerProps.slice(0, 4).map((prop: any) => ({
+    player: prop.playerName,
+    propType: prop.propType,
+    line: `${prop.line}+ ${prop.propType}`,
+    odds: prop.overOdds,
+    description: `vs ${prop.opponent} • ${prop.bookmaker}`
+  }));
 
   return (
     <Card className="overflow-hidden">

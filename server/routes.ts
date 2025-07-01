@@ -10,6 +10,7 @@ import { fetchMLBGamesForDate, fetchMLBGameDetails, getGameResult } from "./serv
 import { fetchRealMLBOdds, mergeRealOddsWithGames } from "./services/realOdds";
 import { fetchMLBNews, generateMockMLBNews } from "./services/mlb-news";
 import { generateGameAnalysis, generateDailyDigest, type GameAnalysisData } from "./services/openai";
+import { fetchRealPlayerProps, getPlayerPropsForGame } from "./services/player-props";
 import { insertBetSchema, insertGameSchema, insertOddsSchema, insertUserSchema } from "@shared/schema";
 import Stripe from "stripe";
 import bcrypt from "bcrypt";
@@ -3593,186 +3594,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Player Props API endpoints
+  // Player Props API endpoints - Real data from The Odds API
   app.get('/api/player-props', async (req: Request, res: Response) => {
     try {
-      const { category, bookmaker, gameId, date } = req.query;
-      const targetDate = date ? String(date) : format(new Date(), 'yyyy-MM-dd');
+      const { category, bookmaker, gameId } = req.query;
       
-      // Use same real MLB games that the main games endpoint uses
-      const gamesResponse = await fetch(`http://localhost:5000/api/games`);
-      let games: any[] = [];
+      // Fetch real player props from The Odds API
+      const realPlayerProps = await fetchRealPlayerProps();
       
-      if (gamesResponse.ok) {
-        games = await gamesResponse.json();
-        console.log(`Using ${games.length} real MLB games for player props generation`);
-      } else {
-        // Fallback to generated games if API call fails
-        games = generateGamesForDate(targetDate);
+      if (realPlayerProps.length === 0) {
+        console.log('No real player props available, using fallback message');
+        return res.json({
+          error: 'Player props data temporarily unavailable',
+          message: 'Real player props from sportsbooks are currently unavailable. Please try again later.',
+          props: []
+        });
       }
-      
-      const playerPropsList = [];
-      
-      // Enhanced prop generation for each game
-      games.slice(0, 8).forEach((game, gameIndex) => {
-        const gameProps = [
-          // Hitting Props - Multiple players per game
-          {
-            id: `prop_${gameIndex}_1`,
-            gameId: game.gameId,
-            playerName: getRandomHitter(game.awayTeam),
-            team: game.awayTeam,
-            opponent: game.homeTeam,
-            propType: "hits",
-            line: 1.5,
-            overOdds: -110 + Math.floor(Math.random() * 20) - 10,
-            underOdds: -110 + Math.floor(Math.random() * 20) - 10,
-            bookmaker: "DraftKings",
-            category: "hitting",
-            projectedValue: 1.8,
-            edge: 8.5 + Math.random() * 10
-          },
-          {
-            id: `prop_${gameIndex}_2`,
-            gameId: game.gameId,
-            playerName: getRandomHitter(game.homeTeam),
-            team: game.homeTeam,
-            opponent: game.awayTeam,
-            propType: "total_bases",
-            line: 2.5,
-            overOdds: 105 + Math.floor(Math.random() * 20),
-            underOdds: -125 + Math.floor(Math.random() * 20),
-            bookmaker: "FanDuel",
-            category: "hitting",
-            projectedValue: 2.8,
-            edge: 12.3 + Math.random() * 8
-          },
-          {
-            id: `prop_${gameIndex}_3`,
-            gameId: game.gameId,
-            playerName: getRandomHitter(game.awayTeam),
-            team: game.awayTeam,
-            opponent: game.homeTeam,
-            propType: "runs_rbis",
-            line: 1.5,
-            overOdds: 120 + Math.floor(Math.random() * 30),
-            underOdds: -145 + Math.floor(Math.random() * 20),
-            bookmaker: "Underdog",
-            category: "hitting",
-            projectedValue: 1.9,
-            edge: 15.7 + Math.random() * 12
-          },
-          // Pitching Props
-          {
-            id: `prop_${gameIndex}_4`,
-            gameId: game.gameId,
-            playerName: game.awayPitcher || "TBD Pitcher",
-            team: game.awayTeam,
-            opponent: game.homeTeam,
-            propType: "strikeouts",
-            line: 6.5,
-            overOdds: -105 + Math.floor(Math.random() * 15),
-            underOdds: -115 + Math.floor(Math.random() * 15),
-            bookmaker: "DraftKings",
-            category: "pitching",
-            projectedValue: 7.2,
-            edge: 11.8 + Math.random() * 7
-          },
-          {
-            id: `prop_${gameIndex}_5`,
-            gameId: game.gameId,
-            playerName: game.homePitcher || "TBD Pitcher",
-            team: game.homeTeam,
-            opponent: game.awayTeam,
-            propType: "earned_runs",
-            line: 2.5,
-            overOdds: 110 + Math.floor(Math.random() * 25),
-            underOdds: -130 + Math.floor(Math.random() * 20),
-            bookmaker: "PrizePicks",
-            category: "pitching",
-            projectedValue: 2.1,
-            edge: 9.4 + Math.random() * 6
-          },
-          // Additional batting props
-          {
-            id: `prop_${gameIndex}_6`,
-            gameId: game.gameId,
-            playerName: getRandomHitter(game.homeTeam),
-            team: game.homeTeam,
-            opponent: game.awayTeam,
-            propType: "home_runs",
-            line: 0.5,
-            overOdds: 250 + Math.floor(Math.random() * 100),
-            underOdds: -300 + Math.floor(Math.random() * 50),
-            bookmaker: "BetMGM",
-            category: "hitting",
-            projectedValue: 0.8,
-            edge: 18.2 + Math.random() * 15
-          },
-          {
-            id: `prop_${gameIndex}_7`,
-            gameId: game.gameId,
-            playerName: getRandomHitter(game.awayTeam),
-            team: game.awayTeam,
-            opponent: game.homeTeam,
-            propType: "stolen_bases",
-            line: 0.5,
-            overOdds: 180 + Math.floor(Math.random() * 70),
-            underOdds: -220 + Math.floor(Math.random() * 40),
-            bookmaker: "Caesars",
-            category: "hitting",
-            projectedValue: 0.6,
-            edge: 13.5 + Math.random() * 12
-          },
-          // Special props
-          {
-            id: `prop_${gameIndex}_8`,
-            gameId: game.gameId,
-            playerName: "First Batter",
-            team: game.awayTeam,
-            opponent: game.homeTeam,
-            propType: "to_reach_base",
-            line: 0.5,
-            overOdds: -120 + Math.floor(Math.random() * 20),
-            underOdds: 100 + Math.floor(Math.random() * 20),
-            bookmaker: "FanDuel",
-            category: "special",
-            projectedValue: 0.55,
-            edge: 7.8 + Math.random() * 8
-          },
-          {
-            id: `prop_${gameIndex}_9`,
-            gameId: game.gameId,
-            playerName: "Game Total",
-            team: "Both Teams",
-            opponent: "",
-            propType: "first_inning_runs",
-            line: 0.5,
-            overOdds: 140 + Math.floor(Math.random() * 30),
-            underOdds: -160 + Math.floor(Math.random() * 20),
-            bookmaker: "Underdog",
-            category: "special",
-            projectedValue: 0.65,
-            edge: 11.2 + Math.random() * 9
-          }
-        ];
-        
-        playerPropsList.push(...gameProps);
-      });
 
       // Apply filters if provided
-      let filteredProps = playerPropsList;
+      let filteredProps = realPlayerProps;
+      
       if (category && category !== 'all') {
         filteredProps = filteredProps.filter(prop => prop.category === category);
       }
+      
+      if (bookmaker && bookmaker !== 'all') {
+        filteredProps = filteredProps.filter(prop => 
+          prop.bookmaker.toLowerCase().includes(bookmaker.toString().toLowerCase())
+        );
+      }
+      
       if (gameId) {
         filteredProps = filteredProps.filter(prop => prop.gameId === gameId);
       }
 
+      console.log(`Returning ${filteredProps.length} real player props`);
       res.json(filteredProps);
     } catch (error) {
-      console.error('Player props error:', error);
-      res.status(500).json({ error: 'Failed to fetch player props' });
+      console.error('Real player props error:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch real player props',
+        message: 'Unable to retrieve authentic player props data from sportsbooks'
+      });
+    }
+  });
+
+  // Game-specific player props endpoint
+  app.get('/api/games/:gameId/player-props', async (req: Request, res: Response) => {
+    try {
+      const { gameId } = req.params;
+      const gameProps = await getPlayerPropsForGame(gameId);
+      
+      console.log(`Found ${gameProps.length} real player props for game ${gameId}`);
+      res.json(gameProps);
+    } catch (error) {
+      console.error('Game player props error:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch game player props',
+        message: 'Unable to retrieve player props for this game'
+      });
     }
   });
 
