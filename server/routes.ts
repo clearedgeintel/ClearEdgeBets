@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
-import { playerProps } from "@shared/schema";
+import { playerProps, playerPropParlays } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { fetchTodaysGames } from "./services/odds";
 import { fetchCFLGames, generateMockCFLPublicPercentage, type CFLGame } from "./services/cfl";
@@ -3604,24 +3604,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { selections, analysis, stake, potentialPayout } = req.body;
       
-      // For demo purposes, use a default user ID (in production, get from session)
+      // For demo purposes, use a default user ID (in production, get from session)  
       const userId = 1; // Replace with authenticated user ID
       
-      const parlay = await db.execute(`
+      // Build the SQL query string with escaped values
+      const insertSQL = `
         INSERT INTO player_prop_parlays 
         (user_id, selections, analysis, stake, potential_payout, total_odds, placed_at)
-        VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        VALUES (${userId}, '${JSON.stringify(selections).replace(/'/g, "''")}', '${JSON.stringify(analysis).replace(/'/g, "''")}', ${Math.round(stake * 100)}, ${Math.round(potentialPayout * 100)}, ${analysis.totalOdds}, NOW())
         RETURNING *
-      `, [
-        userId,
-        JSON.stringify(selections),
-        JSON.stringify(analysis),
-        Math.round(stake * 100), // Convert to cents
-        Math.round(potentialPayout * 100), // Convert to cents
-        analysis.totalOdds
-      ]);
+      `;
 
-      res.json({ success: true, parlay: parlay.rows[0] });
+      // Use a simple string execution that works with our current setup
+      const result = await db.execute(insertSQL);
+      
+      res.json({ success: true, parlay: result[0] });
     } catch (error) {
       console.error('Save parlay error:', error);
       res.status(500).json({ error: 'Failed to save parlay' });
