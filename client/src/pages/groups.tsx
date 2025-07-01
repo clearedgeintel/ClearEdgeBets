@@ -69,10 +69,7 @@ export default function Groups() {
 
   const createGroupMutation = useMutation({
     mutationFn: async (groupData: typeof newGroup) => {
-      return await apiRequest('/api/groups', {
-        method: 'POST',
-        body: JSON.stringify(groupData),
-      });
+      return await apiRequest('POST', '/api/groups', groupData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
@@ -94,10 +91,7 @@ export default function Groups() {
 
   const joinGroupMutation = useMutation({
     mutationFn: async ({ groupId, inviteCode }: { groupId: number; inviteCode: string }) => {
-      return await apiRequest(`/api/groups/${groupId}/join`, {
-        method: 'POST',
-        body: JSON.stringify({ inviteCode }),
-      });
+      return await apiRequest('POST', `/api/groups/${groupId}/join`, { inviteCode });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
