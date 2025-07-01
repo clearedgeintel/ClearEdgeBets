@@ -940,6 +940,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin endpoint to fetch all bets
+  app.get("/api/admin/bets", async (req, res) => {
+    try {
+      const allBets = await storage.getUserBets(); // Get all bets without userId filter
+      res.json(allBets);
+    } catch (error) {
+      console.error("Error fetching admin bets:", error);
+      res.status(500).json({ error: "Failed to fetch bets" });
+    }
+  });
+
   // Place a new bet
   app.post("/api/bets", async (req, res) => {
     try {

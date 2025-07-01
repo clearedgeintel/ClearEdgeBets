@@ -100,8 +100,8 @@ export default function TicketDashboard() {
 
   // Fetch bets
   const { data: bets = [], isLoading: betsLoading } = useQuery({
-    queryKey: ["/api/bets"],
-    queryFn: () => apiRequest("/api/bets")
+    queryKey: ["/api/admin/bets"],
+    queryFn: () => apiRequest("/api/admin/bets")
   });
 
   // Mock dashboard stats
