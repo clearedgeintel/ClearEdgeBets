@@ -37,8 +37,8 @@ interface PropBet {
 export default function PropFinder() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedPropType, setSelectedPropType] = useState("all");
-  const [minEV, setMinEV] = useState(5);
-  const [showPositiveEVOnly, setShowPositiveEVOnly] = useState(true);
+  const [minEV, setMinEV] = useState(0);
+  const [showPositiveEVOnly, setShowPositiveEVOnly] = useState(false);
   const [searchPlayer, setSearchPlayer] = useState("");
 
   const { data: propBets, isLoading } = useQuery({
