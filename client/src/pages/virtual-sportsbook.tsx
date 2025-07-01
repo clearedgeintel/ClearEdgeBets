@@ -915,7 +915,7 @@ export default function VirtualSportsbook() {
                             const stake = parseFloat(e.target.value) || 0;
                             updateBetStake(bet.id, stake);
                           }}
-                          className="w-20 px-2 py-1 text-sm border rounded text-right"
+                          className="w-20 px-2 py-1 text-sm border rounded text-right bg-background text-foreground border-border"
                           min="0"
                           step="1"
                         />
@@ -994,7 +994,7 @@ export default function VirtualSportsbook() {
                           placeholder="10"
                           value={parlayStake}
                           onChange={(e) => setParlayStake(parseFloat(e.target.value) || 0)}
-                          className="w-20 px-2 py-1 text-sm"
+                          className="w-20 px-2 py-1 text-sm bg-background text-foreground border-border"
                           min="0"
                           step="1"
                         />
