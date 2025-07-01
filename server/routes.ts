@@ -1,6 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { playerProps } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import { fetchTodaysGames } from "./services/odds";
 import { fetchCFLGames, generateMockCFLPublicPercentage, type CFLGame } from "./services/cfl";
 import { fetchMLBGamesForDate, fetchMLBGameDetails, getGameResult } from "./services/mlb-api";
@@ -3561,6 +3564,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Cancel subscription error:", error);
       res.status(500).json({ error: "Failed to cancel subscription" });
+    }
+  });
+
+  // Player Props API endpoints
+  app.get('/api/player-props', async (req: Request, res: Response) => {
+    try {
+      const { category, bookmaker, gameId } = req.query;
+      
+      // Use proper Drizzle ORM syntax
+      const result = await db.select().from(playerProps).where(eq(playerProps.isActive, true));
+      
+      // Transform decimal values for frontend
+      const transformedProps = result.map((row) => ({
+        id: row.id,
+        gameId: row.gameId,
+        playerName: row.playerName,
+        team: row.team,
+        opponent: row.opponent,
+        propType: row.propType,
+        line: parseFloat(row.line),
+        overOdds: row.overOdds,
+        underOdds: row.underOdds,
+        bookmaker: row.bookmaker,
+        category: row.category,
+        projectedValue: row.projectedValue ? parseFloat(row.projectedValue) : null,
+        edge: row.edge ? parseFloat(row.edge) : null
+      }));
+
+      res.json(transformedProps);
+    } catch (error) {
+      console.error('Player props error:', error);
+      res.status(500).json({ error: 'Failed to fetch player props' });
+    }
+  });
+
+  // Save player prop parlay
+  app.post('/api/player-prop-parlays', async (req: Request, res: Response) => {
+    try {
+      const { selections, analysis, stake, potentialPayout } = req.body;
+      
+      // For demo purposes, use a default user ID (in production, get from session)
+      const userId = 1; // Replace with authenticated user ID
+      
+      const parlay = await db.execute(`
+        INSERT INTO player_prop_parlays 
+        (user_id, selections, analysis, stake, potential_payout, total_odds, placed_at)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        RETURNING *
+      `, [
+        userId,
+        JSON.stringify(selections),
+        JSON.stringify(analysis),
+        Math.round(stake * 100), // Convert to cents
+        Math.round(potentialPayout * 100), // Convert to cents
+        analysis.totalOdds
+      ]);
+
+      res.json({ success: true, parlay: parlay.rows[0] });
+    } catch (error) {
+      console.error('Save parlay error:', error);
+      res.status(500).json({ error: 'Failed to save parlay' });
+    }
+  });
+
+  // Get user's saved parlays
+  app.get('/api/my-parlays', async (req: Request, res: Response) => {
+    try {
+      // For demo purposes, use a default user ID
+      const userId = 1;
+      
+      const result = await db.execute(`
+        SELECT * FROM player_prop_parlays 
+        WHERE user_id = $1 
+        ORDER BY created_at DESC
+      `, [userId]);
+
+      // Transform data for frontend
+      const parlays = result.rows.map((row: any) => ({
+        ...row,
+        stake: row.stake / 100, // Convert from cents
+        potentialPayout: row.potential_payout / 100, // Convert from cents
+        actualPayout: row.actual_payout ? row.actual_payout / 100 : null
+      }));
+
+      res.json(parlays);
+    } catch (error) {
+      console.error('Get parlays error:', error);
+      res.status(500).json({ error: 'Failed to fetch parlays' });
+    }
+  });
+
+  // Update player props (admin only - for refreshing odds)
+  app.post('/api/admin/refresh-props', async (req: Request, res: Response) => {
+    try {
+      // This would integrate with The Odds API or OpticOdds in production
+      // For now, just update the last_updated timestamp
+      await db.execute(`
+        UPDATE player_props 
+        SET last_updated = NOW()
+        WHERE is_active = true
+      `);
+
+      res.json({ success: true, message: 'Props refreshed successfully' });
+    } catch (error) {
+      console.error('Refresh props error:', error);
+      res.status(500).json({ error: 'Failed to refresh props' });
     }
   });
 

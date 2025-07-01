@@ -38,6 +38,7 @@ import VirtualSportsbook from "@/pages/virtual-sportsbook";
 import WeeklyLeaderboard from "@/pages/weekly-leaderboard";
 import Groups from "@/pages/groups";
 import StripeSetup from "@/pages/stripe-setup";
+import PlayerPropBuilder from "@/pages/player-prop-builder";
 
 function Router() {
   return (
@@ -74,6 +75,7 @@ function Router() {
         <Route path="/hot-trends" component={HotTrends} />
         <Route path="/ai-assistant" component={AIAssistant} />
         <Route path="/kelly-calculator" component={KellyCalculator} />
+        <Route path="/player-prop-builder" component={PlayerPropBuilder} />
         <Route path="/auth" component={AuthPage} />
         <Route component={NotFound} />
       </Switch>

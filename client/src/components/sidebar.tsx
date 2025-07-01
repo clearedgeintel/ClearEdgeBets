@@ -183,6 +183,14 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           requiresElite: true
         },
         { 
+          name: "DFS Prop Builder", 
+          href: "/player-prop-builder", 
+          icon: Target,
+          current: location === "/player-prop-builder",
+          description: "Build player prop parlays up to 6 picks",
+          requiresElite: true
+        },
+        { 
           name: "Custom Strategies", 
           href: "/strategies", 
           icon: Target,

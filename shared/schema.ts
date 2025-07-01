@@ -279,6 +279,86 @@ export type ReferralCode = typeof referralCodes.$inferSelect;
 export type InsertWeeklyLeaderboard = z.infer<typeof insertWeeklyLeaderboardSchema>;
 export type WeeklyLeaderboard = typeof weeklyLeaderboard.$inferSelect;
 
+// Player props table for DFS betting
+export const playerProps = pgTable("player_props", {
+  id: serial("id").primaryKey(),
+  gameId: text("game_id").notNull(),
+  playerName: text("player_name").notNull(),
+  team: text("team").notNull(),
+  opponent: text("opponent").notNull(),
+  propType: text("prop_type").notNull(), // hits, home_runs, strikeouts, etc.
+  line: decimal("line", { precision: 10, scale: 2 }).notNull(),
+  overOdds: integer("over_odds").notNull(),
+  underOdds: integer("under_odds").notNull(),
+  bookmaker: text("bookmaker").notNull(), // draftkings, fanduel, underdog, prizepicks
+  category: text("category").notNull(), // hitting, pitching, general
+  projectedValue: decimal("projected_value", { precision: 10, scale: 2 }),
+  edge: decimal("edge", { precision: 10, scale: 4 }), // calculated edge percentage
+  isActive: boolean("is_active").default(true),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Player prop parlays table
+export const playerPropParlays = pgTable("player_prop_parlays", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: text("name"), // optional parlay name
+  selections: jsonb("selections").notNull(), // array of prop selections
+  analysis: jsonb("analysis").notNull(), // parlay analysis data
+  stake: integer("stake").notNull(), // stake in cents
+  potentialPayout: integer("potential_payout").notNull(), // potential payout in cents
+  totalOdds: integer("total_odds").notNull(), // combined american odds
+  status: text("status").default("pending"), // pending, won, lost, pushed
+  result: text("result"), // final result details
+  actualPayout: integer("actual_payout"), // actual payout in cents
+  placedAt: timestamp("placed_at"),
+  settledAt: timestamp("settled_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Prop bet tracking table for individual prop bets (non-parlay)
+export const propBets = pgTable("prop_bets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  propId: integer("prop_id").notNull().references(() => playerProps.id),
+  selection: text("selection").notNull(), // over or under
+  odds: integer("odds").notNull(),
+  stake: integer("stake").notNull(), // stake in cents
+  potentialWin: integer("potential_win").notNull(), // potential win in cents
+  status: text("status").default("pending"), // pending, won, lost, pushed
+  result: text("result"), // final result
+  actualWin: integer("actual_win"), // actual win in cents
+  placedAt: timestamp("placed_at").defaultNow(),
+  settledAt: timestamp("settled_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Insert schemas for player props
+export const insertPlayerPropSchema = createInsertSchema(playerProps).omit({
+  id: true,
+  createdAt: true,
+  lastUpdated: true,
+});
+
+export const insertPlayerPropParlaySchema = createInsertSchema(playerPropParlays).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPropBetSchema = createInsertSchema(propBets).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for player props
+export type InsertPlayerProp = z.infer<typeof insertPlayerPropSchema>;
+export type PlayerProp = typeof playerProps.$inferSelect;
+export type InsertPlayerPropParlay = z.infer<typeof insertPlayerPropParlaySchema>;
+export type PlayerPropParlay = typeof playerPropParlays.$inferSelect;
+export type InsertPropBet = z.infer<typeof insertPropBetSchema>;
+export type PropBet = typeof propBets.$inferSelect;
+
 // Groups table for betting groups
 export const groups = pgTable("groups", {
   id: serial("id").primaryKey(),
