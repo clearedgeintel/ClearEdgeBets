@@ -118,6 +118,18 @@ export default function VirtualSportsbook() {
   const [showBettingSlip, setShowBettingSlip] = useState(false);
   const [isParlayMode, setIsParlayMode] = useState(false);
   const [parlayStake, setParlayStake] = useState<number>(10);
+  
+  // Track selected bets and changed odds
+  const [selectedBets, setSelectedBets] = useState<Set<string>>(new Set());
+  const [changedOdds, setChangedOdds] = useState<Map<string, number>>(new Map());
+
+  // Helper function to check if bet is selected and get display odds
+  const getBetState = (gameId: string, betType: string, selection: string, originalOdds: number) => {
+    const betKey = `${gameId}_${betType}_${selection}`;
+    const isSelected = selectedBets.has(betKey);
+    const displayOdds = changedOdds.get(betKey) || originalOdds;
+    return { isSelected, displayOdds, betKey };
+  };
 
   // Helper functions for betting slip management
   const createNewBettingSlip = (): BettingSlip => {
@@ -176,6 +188,18 @@ export default function VirtualSportsbook() {
   };
 
   const addToBettingSlip = (gameId: string, matchup: string, betType: string, selection: string, odds: number) => {
+    const betKey = `${gameId}_${betType}_${selection}`;
+    
+    // Check if bet is already selected
+    if (selectedBets.has(betKey)) {
+      toast({
+        title: "Bet Already Selected",
+        description: "This bet is already in your betting slip.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     let slip = currentSlip;
     
     // Create new slip if none exists
@@ -183,20 +207,6 @@ export default function VirtualSportsbook() {
       slip = createNewBettingSlip();
       setCurrentSlip(slip);
       setBettingSlips(prev => [...prev, slip!]);
-    }
-
-    // Check if bet already exists in slip
-    const existingBetIndex = slip.items.findIndex(
-      item => item.gameId === gameId && item.betType === betType && item.selection === selection
-    );
-
-    if (existingBetIndex >= 0) {
-      toast({
-        title: "Bet Already Added",
-        description: "This bet is already in your betting slip.",
-        variant: "destructive",
-      });
-      return;
     }
 
     const newBet: BettingSlipItem = {
@@ -216,9 +226,28 @@ export default function VirtualSportsbook() {
       items: [...slip.items, newBet]
     };
 
+    // Add to selected bets set
+    setSelectedBets(prev => {
+      const newSet = new Set(prev);
+      newSet.add(betKey);
+      return newSet;
+    });
+    
+    // Generate new odds for this selection (simulate market movement)
+    const oddsChange = Math.random() > 0.5 ? 
+      Math.floor(Math.random() * 20) + 5 : // Increase odds by 5-25
+      -(Math.floor(Math.random() * 15) + 5); // Decrease odds by 5-20
+    const newOdds = odds + oddsChange;
+    setChangedOdds(prev => {
+      const newMap = new Map(prev);
+      newMap.set(betKey, newOdds);
+      return newMap;
+    });
+
     setCurrentSlip(updatedSlip);
     setBettingSlips(prev => prev.map(s => s.id === slip!.id ? updatedSlip : s));
-    setShowBettingSlip(true);
+    // Remove auto-show betting slip
+    // setShowBettingSlip(true);
 
     toast({
       title: "Added to Betting Slip",
@@ -253,6 +282,22 @@ export default function VirtualSportsbook() {
 
   const removeBetFromSlip = (betId: string) => {
     if (!currentSlip) return;
+
+    // Find the bet being removed to clear its selected state
+    const removedBet = currentSlip.items.find(item => item.id === betId);
+    if (removedBet) {
+      const betKey = `${removedBet.gameId}_${removedBet.betType}_${removedBet.selection}`;
+      setSelectedBets(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(betKey);
+        return newSet;
+      });
+      setChangedOdds(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(betKey);
+        return newMap;
+      });
+    }
 
     const updatedItems = currentSlip.items.filter(item => item.id !== betId);
     
@@ -1034,6 +1079,11 @@ export default function VirtualSportsbook() {
                           title: "Bets Placed!",
                           description: `${betDescription} placed for $${totalStake.toFixed(2)}`,
                         });
+                        
+                        // Clear all selected bets and changed odds
+                        setSelectedBets(new Set());
+                        setChangedOdds(new Map());
+                        
                         setCurrentSlip(null);
                         setBettingSlips(prev => prev.filter(s => s.id !== currentSlip.id));
                         setIsParlayMode(false);
@@ -1132,39 +1182,54 @@ export default function VirtualSportsbook() {
                             spread.home = -spread.away; // Home team gets opposite
                           }
                           
+                          const awaySpreadSelection = `${game.awayTeam} ${spread.away > 0 ? '+' : ''}${spread.away}`;
+                          const homeSpreadSelection = `${game.homeTeam} ${spread.home > 0 ? '+' : ''}${spread.home}`;
+                          const awayBetState = getBetState(game.gameId, "spread", awaySpreadSelection, -110);
+                          const homeBetState = getBetState(game.gameId, "spread", homeSpreadSelection, -110);
+
                           return (
                             <>
                               <Button 
-                                variant="outline" 
+                                variant={awayBetState.isSelected ? "default" : "outline"} 
                                 size="sm" 
-                                className="justify-center h-8 font-mono text-xs"
+                                className={`justify-center h-8 font-mono text-xs ${
+                                  awayBetState.isSelected 
+                                    ? "bg-blue-600 text-white border-blue-600" 
+                                    : ""
+                                }`}
+                                disabled={awayBetState.isSelected}
                                 onClick={() => {
                                   addToBettingSlip(
                                     game.gameId, 
                                     `${game.awayTeam} @ ${game.homeTeam}`, 
                                     "spread", 
-                                    `${game.awayTeam} ${spread.away > 0 ? '+' : ''}${spread.away}`, 
+                                    awaySpreadSelection, 
                                     -110
                                   );
                                 }}
                               >
-                                {spread.away > 0 ? '+' : ''}{spread.away} -110
+                                {spread.away > 0 ? '+' : ''}{spread.away} {awayBetState.displayOdds > 0 ? '+' : ''}{awayBetState.displayOdds}
                               </Button>
                               <Button 
-                                variant="outline" 
+                                variant={homeBetState.isSelected ? "default" : "outline"} 
                                 size="sm" 
-                                className="justify-center h-8 font-mono text-xs"
+                                className={`justify-center h-8 font-mono text-xs ${
+                                  homeBetState.isSelected 
+                                    ? "bg-blue-600 text-white border-blue-600" 
+                                    : ""
+                                }`}
+                                disabled={homeBetState.isSelected}
                                 onClick={() => {
                                   addToBettingSlip(
                                     game.gameId, 
                                     `${game.awayTeam} @ ${game.homeTeam}`, 
                                     "spread", 
-                                    `${game.homeTeam} ${spread.home > 0 ? '+' : ''}${spread.home}`, 
+                                    homeSpreadSelection, 
                                     -110
                                   );
                                 }}
                               >
-                                {spread.home > 0 ? '+' : ''}{spread.home} -110
+                                {spread.home > 0 ? '+' : ''}{spread.home} {homeBetState.displayOdds > 0 ? '+' : ''}{homeBetState.displayOdds}
                               </Button>
                             </>
                           );
@@ -1196,39 +1261,54 @@ export default function VirtualSportsbook() {
                             }
                           })();
                           
+                          const awayMLSelection = `${game.awayTeam} ML`;
+                          const homeMLSelection = `${game.homeTeam} ML`;
+                          const awayMLBetState = getBetState(game.gameId, "moneyline", awayMLSelection, moneyline.away);
+                          const homeMLBetState = getBetState(game.gameId, "moneyline", homeMLSelection, moneyline.home);
+
                           return (
                             <>
                               <Button 
-                                variant="outline" 
+                                variant={awayMLBetState.isSelected ? "default" : "outline"} 
                                 size="sm" 
-                                className="justify-center h-8 font-mono text-xs"
+                                className={`justify-center h-8 font-mono text-xs ${
+                                  awayMLBetState.isSelected 
+                                    ? "bg-blue-600 text-white border-blue-600" 
+                                    : ""
+                                }`}
+                                disabled={awayMLBetState.isSelected}
                                 onClick={() => {
                                   addToBettingSlip(
                                     game.gameId, 
                                     `${game.awayTeam} @ ${game.homeTeam}`, 
                                     "moneyline", 
-                                    `${game.awayTeam} ML`, 
+                                    awayMLSelection, 
                                     moneyline.away
                                   );
                                 }}
                               >
-                                {moneyline.away > 0 ? '+' : ''}{moneyline.away}
+                                {awayMLBetState.displayOdds > 0 ? '+' : ''}{awayMLBetState.displayOdds}
                               </Button>
                               <Button 
-                                variant="outline" 
+                                variant={homeMLBetState.isSelected ? "default" : "outline"} 
                                 size="sm" 
-                                className="justify-center h-8 font-mono text-xs"
+                                className={`justify-center h-8 font-mono text-xs ${
+                                  homeMLBetState.isSelected 
+                                    ? "bg-blue-600 text-white border-blue-600" 
+                                    : ""
+                                }`}
+                                disabled={homeMLBetState.isSelected}
                                 onClick={() => {
                                   addToBettingSlip(
                                     game.gameId, 
                                     `${game.awayTeam} @ ${game.homeTeam}`, 
                                     "moneyline", 
-                                    `${game.homeTeam} ML`, 
+                                    homeMLSelection, 
                                     moneyline.home
                                   );
                                 }}
                               >
-                                {moneyline.home > 0 ? '+' : ''}{moneyline.home}
+                                {homeMLBetState.displayOdds > 0 ? '+' : ''}{homeMLBetState.displayOdds}
                               </Button>
                             </>
                           );
@@ -1256,39 +1336,54 @@ export default function VirtualSportsbook() {
                             };
                           })();
                           
+                          const overSelection = `Over ${total.line}`;
+                          const underSelection = `Under ${total.line}`;
+                          const overBetState = getBetState(game.gameId, "total", overSelection, total.over);
+                          const underBetState = getBetState(game.gameId, "total", underSelection, total.under);
+
                           return (
                             <>
                               <Button 
-                                variant="outline" 
+                                variant={overBetState.isSelected ? "default" : "outline"} 
                                 size="sm" 
-                                className="justify-center h-8 font-mono text-xs"
+                                className={`justify-center h-8 font-mono text-xs ${
+                                  overBetState.isSelected 
+                                    ? "bg-blue-600 text-white border-blue-600" 
+                                    : ""
+                                }`}
+                                disabled={overBetState.isSelected}
                                 onClick={() => {
                                   addToBettingSlip(
                                     game.gameId, 
                                     `${game.awayTeam} @ ${game.homeTeam}`, 
                                     "total", 
-                                    `Over ${total.line}`, 
+                                    overSelection, 
                                     total.over
                                   );
                                 }}
                               >
-                                O{total.line} {total.over > 0 ? '+' : ''}{total.over}
+                                O{total.line} {overBetState.displayOdds > 0 ? '+' : ''}{overBetState.displayOdds}
                               </Button>
                               <Button 
-                                variant="outline" 
+                                variant={underBetState.isSelected ? "default" : "outline"} 
                                 size="sm" 
-                                className="justify-center h-8 font-mono text-xs"
+                                className={`justify-center h-8 font-mono text-xs ${
+                                  underBetState.isSelected 
+                                    ? "bg-blue-600 text-white border-blue-600" 
+                                    : ""
+                                }`}
+                                disabled={underBetState.isSelected}
                                 onClick={() => {
                                   addToBettingSlip(
                                     game.gameId, 
                                     `${game.awayTeam} @ ${game.homeTeam}`, 
                                     "total", 
-                                    `Under ${total.line}`, 
+                                    underSelection, 
                                     total.under
                                   );
                                 }}
                               >
-                                U{total.line} {total.under > 0 ? '+' : ''}{total.under}
+                                U{total.line} {underBetState.displayOdds > 0 ? '+' : ''}{underBetState.displayOdds}
                               </Button>
                             </>
                           );
