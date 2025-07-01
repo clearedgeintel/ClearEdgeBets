@@ -168,7 +168,24 @@ export default function Home() {
           homeTeam: game.homeTeam,
           awayTeamCode: game.awayTeamCode,
           homeTeamCode: game.homeTeamCode,
-          gameTime: game.gameTime,
+          gameTime: (() => {
+            try {
+              // Handle both ISO timestamps and already formatted times
+              if (game.gameTime.includes('T')) {
+                const gameDate = new Date(game.gameTime);
+                return isNaN(gameDate.getTime()) ? "TBD" : gameDate.toLocaleTimeString('en-US', {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true
+                });
+              } else {
+                // Already formatted time string
+                return game.gameTime;
+              }
+            } catch {
+              return "TBD";
+            }
+          })(),
           venue: game.venue,
           awayPitcher: game.awayPitcher,
           homePitcher: game.homePitcher,
