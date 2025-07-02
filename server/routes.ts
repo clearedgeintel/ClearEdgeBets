@@ -1140,6 +1140,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Convert stake to cents for storage
       const stakeInCents = Math.round(parseFloat(stake) * 100);
       
+      // Check if user has sufficient virtual balance
+      const currentBalance = await storage.getUserVirtualBalance(userId);
+      if (currentBalance < stakeInCents) {
+        return res.status(400).json({ error: "Insufficient virtual balance" });
+      }
+      
       // Calculate potential win in cents
       let potentialWinInCents;
       if (odds > 0) {
@@ -1147,6 +1153,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         potentialWinInCents = Math.round((stakeInCents * 100) / Math.abs(odds));
       }
+
+      // Deduct stake from virtual balance
+      const newBalance = currentBalance - stakeInCents;
+      await storage.updateVirtualBalance(userId, newBalance);
 
       const virtualBet = await storage.createVirtualBet({
         userId,

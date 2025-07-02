@@ -507,10 +507,25 @@ export default function MyBets() {
                           <span className="text-muted-foreground">
                             Stake: <span className="font-medium text-foreground">{formatCurrency(bet.stake)}</span>
                           </span>
-                          {bet.actualWin !== undefined && bet.actualWin !== null && (
+                          {bet.result && bet.status === 'settled' && (
                             <span className="text-muted-foreground">
-                              Result: <span className={`font-medium ${bet.actualWin! > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {formatCurrency(bet.actualWin!)}
+                              Profit/Loss: <span className={`font-medium ${
+                                bet.result === 'win' 
+                                  ? (bet.actualWin && parseFloat(bet.actualWin.toString()) > parseFloat(bet.stake.toString())) 
+                                    ? 'text-green-600' 
+                                    : 'text-red-600'
+                                  : bet.result === 'loss' 
+                                    ? 'text-red-600' 
+                                    : 'text-muted-foreground'
+                              }`}>
+                                {bet.result === 'win' 
+                                  ? bet.actualWin 
+                                    ? `+${formatCurrency(parseFloat(bet.actualWin.toString()) - parseFloat(bet.stake.toString()))}`
+                                    : '+$0.00'
+                                  : bet.result === 'loss' 
+                                    ? `-${formatCurrency(bet.stake)}`
+                                    : '$0.00'
+                                }
                               </span>
                             </span>
                           )}
