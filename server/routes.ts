@@ -1112,7 +1112,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const virtualBets = await storage.getUserVirtualBets(userId);
-      res.json(virtualBets);
+      
+      // Convert cents back to dollars for frontend display
+      const convertedBets = virtualBets.map(bet => ({
+        ...bet,
+        stake: (parseInt(bet.stake.toString()) / 100).toFixed(2),
+        potentialWin: (parseInt(bet.potentialWin.toString()) / 100).toFixed(2),
+        actualWin: bet.actualWin ? (parseInt(bet.actualWin.toString()) / 100).toFixed(2) : null
+      }));
+      
+      res.json(convertedBets);
     } catch (error) {
       console.error("Error fetching virtual bets:", error);
       res.status(500).json({ error: "Failed to fetch virtual bets" });
