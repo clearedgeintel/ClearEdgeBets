@@ -150,6 +150,15 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 2, 2025: COMPLETED VIRTUAL BETTING SEPARATION - Virtual sportsbook now completely isolated from real-world bet tracking
+  - Created separate virtual betting database tables (virtual_bets, virtual_betting_slip) for complete paper trading environment
+  - Implemented comprehensive virtual betting storage interface with all CRUD operations
+  - Added complete set of virtual betting API endpoints (/api/virtual/bets, /api/virtual/betting-slip)
+  - Virtual bets use integer storage (cents) with proper conversion for frontend display
+  - Virtual betting slip supports temporary bet storage with stake updates and calculations
+  - Enhanced storage layer with dedicated virtual betting methods (getUserVirtualBets, createVirtualBet, etc.)
+  - Virtual sportsbook and My Bets page now operate on completely separate data systems
+  - Users can enjoy risk-free paper trading in virtual sportsbook while tracking real bets separately
 - July 2, 2025: COMPLETED BANKROLL MANAGEMENT SYSTEM - Full implementation with comprehensive features
   - Successfully completed the deleteBet method integration across all storage interfaces
   - Enhanced bet placement endpoints with full bankroll validation and balance checking

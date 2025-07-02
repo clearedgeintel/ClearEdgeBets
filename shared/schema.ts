@@ -558,3 +558,44 @@ export const tickets = pgTable("tickets", {
 export const insertTicketSchema = createInsertSchema(tickets);
 export type InsertTicket = z.infer<typeof insertTicketSchema>;
 export type Ticket = typeof tickets.$inferSelect;
+
+// Virtual Bets - Separate paper trading environment
+export const virtualBets = pgTable("virtual_bets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  gameId: text("game_id").notNull(),
+  betType: text("bet_type").notNull(),
+  selection: text("selection").notNull(),
+  odds: integer("odds").notNull(),
+  stake: integer("stake").notNull(), // in cents
+  potentialWin: integer("potential_win").notNull(), // in cents
+  status: text("status").notNull().default("pending"),
+  result: text("result"),
+  actualWin: integer("actual_win"), // in cents
+  placedAt: timestamp("placed_at").defaultNow(),
+  settledAt: timestamp("settled_at"),
+  notes: text("notes"),
+  confidence: integer("confidence"),
+});
+
+// Virtual Betting Slip - Temporary storage for unsaved virtual bets
+export const virtualBettingSlip = pgTable("virtual_betting_slip", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  gameId: text("game_id").notNull(),
+  betType: text("bet_type").notNull(),
+  selection: text("selection").notNull(),
+  odds: integer("odds").notNull(),
+  stake: integer("stake").default(0), // in cents
+  potentialWin: integer("potential_win").default(0), // in cents
+  addedAt: timestamp("added_at").defaultNow(),
+});
+
+// Type exports for virtual betting
+export const insertVirtualBetSchema = createInsertSchema(virtualBets);
+export type InsertVirtualBet = z.infer<typeof insertVirtualBetSchema>;
+export type VirtualBet = typeof virtualBets.$inferSelect;
+
+export const insertVirtualBettingSlipSchema = createInsertSchema(virtualBettingSlip);
+export type InsertVirtualBettingSlip = z.infer<typeof insertVirtualBettingSlipSchema>;
+export type VirtualBettingSlip = typeof virtualBettingSlip.$inferSelect;

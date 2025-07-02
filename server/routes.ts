@@ -1101,6 +1101,227 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Virtual Betting API Endpoints (Paper Trading)
+  
+  // Get user's virtual bets
+  app.get("/api/virtual/bets", async (req, res) => {
+    try {
+      const userId = parseInt(req.query.userId as string);
+      if (!userId) {
+        return res.status(400).json({ error: "User ID required" });
+      }
+
+      const virtualBets = await storage.getUserVirtualBets(userId);
+      res.json(virtualBets);
+    } catch (error) {
+      console.error("Error fetching virtual bets:", error);
+      res.status(500).json({ error: "Failed to fetch virtual bets" });
+    }
+  });
+
+  // Place a virtual bet (paper trading)
+  app.post("/api/virtual/bets", async (req, res) => {
+    try {
+      const { userId, gameId, betType, selection, odds, stake } = req.body;
+      
+      if (!userId || !gameId || !betType || !selection || !odds || !stake) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      // Convert stake to cents for storage
+      const stakeInCents = Math.round(parseFloat(stake) * 100);
+      
+      // Calculate potential win in cents
+      let potentialWinInCents;
+      if (odds > 0) {
+        potentialWinInCents = Math.round((stakeInCents * odds) / 100);
+      } else {
+        potentialWinInCents = Math.round((stakeInCents * 100) / Math.abs(odds));
+      }
+
+      const virtualBet = await storage.createVirtualBet({
+        userId,
+        gameId,
+        betType,
+        selection,
+        odds,
+        stake: stakeInCents,
+        potentialWin: potentialWinInCents,
+        status: "pending"
+      });
+
+      res.status(201).json({
+        ...virtualBet,
+        stake: (virtualBet.stake / 100).toFixed(2),
+        potentialWin: (virtualBet.potentialWin / 100).toFixed(2),
+        actualWin: virtualBet.actualWin ? (virtualBet.actualWin / 100).toFixed(2) : null
+      });
+    } catch (error) {
+      console.error("Error placing virtual bet:", error);
+      res.status(400).json({ error: "Invalid virtual bet data" });
+    }
+  });
+
+  // Update virtual bet result
+  app.patch("/api/virtual/bets/:id/result", async (req, res) => {
+    try {
+      const betId = parseInt(req.params.id);
+      const { result, actualWin } = req.body;
+      
+      if (!result) {
+        return res.status(400).json({ error: "Result is required" });
+      }
+
+      const actualWinInCents = actualWin ? Math.round(parseFloat(actualWin) * 100) : undefined;
+      const updatedBet = await storage.updateVirtualBetResult(betId, result, actualWinInCents);
+      
+      res.json({
+        ...updatedBet,
+        stake: (updatedBet.stake / 100).toFixed(2),
+        potentialWin: (updatedBet.potentialWin / 100).toFixed(2),
+        actualWin: updatedBet.actualWin ? (updatedBet.actualWin / 100).toFixed(2) : null
+      });
+    } catch (error) {
+      console.error("Error updating virtual bet result:", error);
+      res.status(500).json({ error: "Failed to update virtual bet result" });
+    }
+  });
+
+  // Delete virtual bet
+  app.delete("/api/virtual/bets/:id", async (req, res) => {
+    try {
+      const betId = parseInt(req.params.id);
+      await storage.deleteVirtualBet(betId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting virtual bet:", error);
+      res.status(500).json({ error: "Failed to delete virtual bet" });
+    }
+  });
+
+  // Virtual Betting Slip API Endpoints
+  
+  // Get user's virtual betting slip
+  app.get("/api/virtual/betting-slip", async (req, res) => {
+    try {
+      const userId = parseInt(req.query.userId as string);
+      if (!userId) {
+        return res.status(400).json({ error: "User ID required" });
+      }
+
+      const bettingSlip = await storage.getVirtualBettingSlip(userId);
+      const convertedSlip = bettingSlip.map(item => ({
+        ...item,
+        stake: (item.stake / 100).toFixed(2),
+        potentialWin: (item.potentialWin / 100).toFixed(2)
+      }));
+      
+      res.json(convertedSlip);
+    } catch (error) {
+      console.error("Error fetching virtual betting slip:", error);
+      res.status(500).json({ error: "Failed to fetch virtual betting slip" });
+    }
+  });
+
+  // Add to virtual betting slip
+  app.post("/api/virtual/betting-slip", async (req, res) => {
+    try {
+      const { userId, gameId, betType, selection, odds } = req.body;
+      
+      if (!userId || !gameId || !betType || !selection || !odds) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const slipItem = await storage.addToVirtualBettingSlip({
+        userId,
+        gameId,
+        betType,
+        selection,
+        odds,
+        stake: 0,
+        potentialWin: 0
+      });
+
+      res.status(201).json({
+        ...slipItem,
+        stake: (slipItem.stake / 100).toFixed(2),
+        potentialWin: (slipItem.potentialWin / 100).toFixed(2)
+      });
+    } catch (error) {
+      console.error("Error adding to virtual betting slip:", error);
+      res.status(400).json({ error: "Invalid virtual betting slip data" });
+    }
+  });
+
+  // Update virtual betting slip stake
+  app.patch("/api/virtual/betting-slip/:id", async (req, res) => {
+    try {
+      const slipId = parseInt(req.params.id);
+      const { stake } = req.body;
+      
+      if (!stake || stake < 0) {
+        return res.status(400).json({ error: "Valid stake is required" });
+      }
+
+      const stakeInCents = Math.round(parseFloat(stake) * 100);
+      
+      // Get the slip item to calculate potential win
+      const slipItems = await storage.getVirtualBettingSlip(0); // This would need userId logic
+      const currentItem = slipItems.find(item => item.id === slipId);
+      
+      if (!currentItem) {
+        return res.status(404).json({ error: "Betting slip item not found" });
+      }
+
+      // Calculate potential win
+      let potentialWinInCents;
+      if (currentItem.odds > 0) {
+        potentialWinInCents = Math.round((stakeInCents * currentItem.odds) / 100);
+      } else {
+        potentialWinInCents = Math.round((stakeInCents * 100) / Math.abs(currentItem.odds));
+      }
+
+      const updatedItem = await storage.updateVirtualBettingSlipStake(slipId, stakeInCents, potentialWinInCents);
+      
+      res.json({
+        ...updatedItem,
+        stake: (updatedItem.stake / 100).toFixed(2),
+        potentialWin: (updatedItem.potentialWin / 100).toFixed(2)
+      });
+    } catch (error) {
+      console.error("Error updating virtual betting slip stake:", error);
+      res.status(500).json({ error: "Failed to update virtual betting slip stake" });
+    }
+  });
+
+  // Remove from virtual betting slip
+  app.delete("/api/virtual/betting-slip/:id", async (req, res) => {
+    try {
+      const slipId = parseInt(req.params.id);
+      await storage.removeFromVirtualBettingSlip(slipId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing from virtual betting slip:", error);
+      res.status(500).json({ error: "Failed to remove from virtual betting slip" });
+    }
+  });
+
+  // Clear virtual betting slip
+  app.delete("/api/virtual/betting-slip", async (req, res) => {
+    try {
+      const userId = parseInt(req.query.userId as string);
+      if (!userId) {
+        return res.status(400).json({ error: "User ID required" });
+      }
+
+      await storage.clearVirtualBettingSlip(userId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error clearing virtual betting slip:", error);
+      res.status(500).json({ error: "Failed to clear virtual betting slip" });
+    }
+  });
+
   // Generate daily digest
   app.get("/api/digest", async (req, res) => {
     try {

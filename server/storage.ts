@@ -1,4 +1,4 @@
-import { users, games, odds, aiSummaries, bets, props, dailyPicks, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, tickets, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship, type Ticket, type InsertTicket } from "@shared/schema";
+import { users, games, odds, aiSummaries, bets, props, dailyPicks, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, tickets, virtualBets, virtualBettingSlip, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship, type Ticket, type InsertTicket, type VirtualBet, type InsertVirtualBet, type VirtualBettingSlip, type InsertVirtualBettingSlip } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, gte, lte, desc, lt } from "drizzle-orm";
 
@@ -62,11 +62,24 @@ export interface IStorage {
   getAiSummary(gameId: string): Promise<AiSummary | undefined>;
   createAiSummary(summary: InsertAiSummary): Promise<AiSummary>;
 
-  // Bet methods
+  // Bet methods (real-world bets)
   getUserBets(userId?: number): Promise<Bet[]>;
   createBet(bet: InsertBet): Promise<Bet>;
   updateBetResult(betId: number, result: string, actualWin?: number): Promise<Bet>;
   deleteBet(betId: number): Promise<void>;
+
+  // Virtual Bet methods (paper trading)
+  getUserVirtualBets(userId: number): Promise<VirtualBet[]>;
+  createVirtualBet(bet: InsertVirtualBet): Promise<VirtualBet>;
+  updateVirtualBetResult(betId: number, result: string, actualWin?: number): Promise<VirtualBet>;
+  deleteVirtualBet(betId: number): Promise<void>;
+
+  // Virtual Betting Slip methods
+  getVirtualBettingSlip(userId: number): Promise<VirtualBettingSlip[]>;
+  addToVirtualBettingSlip(slip: InsertVirtualBettingSlip): Promise<VirtualBettingSlip>;
+  updateVirtualBettingSlipStake(slipId: number, stake: number, potentialWin: number): Promise<VirtualBettingSlip>;
+  removeFromVirtualBettingSlip(slipId: number): Promise<void>;
+  clearVirtualBettingSlip(userId: number): Promise<void>;
 
   // Props methods
   getPropsByGameId(gameId: string): Promise<Prop[]>;
@@ -1441,6 +1454,73 @@ export class DatabaseStorage implements IStorage {
             OR (${friendships.userId1} = ${userId2} AND ${friendships.userId2} = ${userId1})`
       );
     return !!friendship;
+  }
+
+  // Virtual Bet methods (paper trading)
+  async getUserVirtualBets(userId: number): Promise<VirtualBet[]> {
+    return await db.select().from(virtualBets).where(eq(virtualBets.userId, userId));
+  }
+
+  async createVirtualBet(bet: InsertVirtualBet): Promise<VirtualBet> {
+    const [virtualBet] = await db
+      .insert(virtualBets)
+      .values(bet)
+      .returning();
+    return virtualBet;
+  }
+
+  async updateVirtualBetResult(betId: number, result: string, actualWin?: number): Promise<VirtualBet> {
+    const [bet] = await db
+      .update(virtualBets)
+      .set({
+        result,
+        actualWin: actualWin || null,
+        status: "settled",
+        settledAt: new Date()
+      })
+      .where(eq(virtualBets.id, betId))
+      .returning();
+    return bet;
+  }
+
+  async deleteVirtualBet(betId: number): Promise<void> {
+    await db
+      .delete(virtualBets)
+      .where(eq(virtualBets.id, betId));
+  }
+
+  // Virtual Betting Slip methods
+  async getVirtualBettingSlip(userId: number): Promise<VirtualBettingSlip[]> {
+    return await db.select().from(virtualBettingSlip).where(eq(virtualBettingSlip.userId, userId));
+  }
+
+  async addToVirtualBettingSlip(slip: InsertVirtualBettingSlip): Promise<VirtualBettingSlip> {
+    const [slipItem] = await db
+      .insert(virtualBettingSlip)
+      .values(slip)
+      .returning();
+    return slipItem;
+  }
+
+  async updateVirtualBettingSlipStake(slipId: number, stake: number, potentialWin: number): Promise<VirtualBettingSlip> {
+    const [slipItem] = await db
+      .update(virtualBettingSlip)
+      .set({ stake, potentialWin })
+      .where(eq(virtualBettingSlip.id, slipId))
+      .returning();
+    return slipItem;
+  }
+
+  async removeFromVirtualBettingSlip(slipId: number): Promise<void> {
+    await db
+      .delete(virtualBettingSlip)
+      .where(eq(virtualBettingSlip.id, slipId));
+  }
+
+  async clearVirtualBettingSlip(userId: number): Promise<void> {
+    await db
+      .delete(virtualBettingSlip)
+      .where(eq(virtualBettingSlip.userId, userId));
   }
 }
 
