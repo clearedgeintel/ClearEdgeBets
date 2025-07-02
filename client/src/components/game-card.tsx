@@ -179,21 +179,7 @@ export default function GameCard({ game }: GameCardProps) {
               })()}
             </p>
             <p className="text-sm text-muted-foreground">
-              {(() => {
-                try {
-                  const gameDate = new Date(game.gameTime);
-                  if (isNaN(gameDate.getTime())) {
-                    return "7:00 PM";
-                  }
-                  return gameDate.toLocaleTimeString('en-US', {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true
-                  });
-                } catch {
-                  return "7:00 PM";
-                }
-              })()}
+              {game.gameTime || "7:00 PM"}
             </p>
             <p className="text-xs text-muted-foreground">{game.venue}</p>
             <LiveScore 
