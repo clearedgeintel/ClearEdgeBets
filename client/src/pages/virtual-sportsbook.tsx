@@ -104,7 +104,9 @@ export default function VirtualSportsbook() {
       return Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/virtual/bets"] });
+      // Invalidate both the specific user's virtual bets and the balance
+      const virtualUserId = user?.id || 999;
+      queryClient.invalidateQueries({ queryKey: ["/api/virtual/bets", virtualUserId] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
     },
     onError: (error) => {
@@ -362,13 +364,16 @@ export default function VirtualSportsbook() {
     queryKey: ["/api/virtual/bets", user?.id || 999],
     queryFn: async () => {
       const virtualUserId = user?.id || 999;
+      console.log("Fetching virtual bets for user:", virtualUserId);
       const response = await fetch(`/api/virtual/bets?userId=${virtualUserId}`, {
         credentials: "include",
       });
       if (!response.ok) {
         throw new Error(`${response.status}: ${response.statusText}`);
       }
-      return response.json();
+      const data = await response.json();
+      console.log("Virtual bets fetched:", data);
+      return data;
     },
   });
 
@@ -720,102 +725,118 @@ export default function VirtualSportsbook() {
         </Button>
       </div>
 
-      {/* My Virtual Betting Slips */}
+      {/* My Virtual Bets */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5" />
-            My Virtual Betting Slips
+            My Virtual Bets
             <Badge variant="secondary" className="ml-auto">
-              {bettingSlips.length} {bettingSlips.length === 1 ? 'slip' : 'slips'}
+              {virtualBets?.length || 0} {virtualBets?.length === 1 ? 'bet' : 'bets'}
             </Badge>
           </CardTitle>
           <CardDescription>
-            Track all your virtual betting slips and their performance. This is separate from live money picks.
+            Track all your virtual bets and their profit/loss results. This is your complete betting history for paper trading.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {bettingSlips.length > 0 ? (
+          {virtualBets && virtualBets.length > 0 ? (
             <div className="space-y-4">
-              {bettingSlips.map((slip) => (
-                <div key={slip.id} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <div className="font-semibold">Betting Slip #{slip.id.split('-')[1]}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Created: {slip.createdAt.toLocaleDateString()} at {slip.createdAt.toLocaleTimeString()}
+              {virtualBets.map((bet: any) => {
+                const stakeAmount = parseFloat(bet.stake);
+                const potentialWinAmount = parseFloat(bet.potentialWin);
+                const actualWinAmount = bet.actualWin ? parseFloat(bet.actualWin) : 0;
+                
+                // Calculate profit/loss
+                let profitLoss = 0;
+                if (bet.status === 'settled') {
+                  if (bet.result === 'win') {
+                    profitLoss = actualWinAmount; // Pure profit (not including stake back)
+                  } else if (bet.result === 'loss') {
+                    profitLoss = -stakeAmount; // Loss is negative stake
+                  } else if (bet.result === 'push') {
+                    profitLoss = 0; // Push means no profit/loss
+                  }
+                }
+                
+                return (
+                  <div key={bet.id} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="font-semibold">{bet.selection}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {bet.gameId.replace(/_/g, ' vs ')} • {bet.betType}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {bet.placedAt ? new Date(bet.placedAt).toLocaleDateString() : 'Unknown'} • Odds: {bet.odds > 0 ? '+' : ''}{bet.odds}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge 
+                          variant={
+                            bet.status === 'settled' 
+                              ? bet.result === 'win' 
+                                ? 'default' 
+                                : bet.result === 'loss' 
+                                  ? 'destructive' 
+                                  : 'secondary'
+                              : 'outline'
+                          }
+                        >
+                          {bet.status === 'settled' 
+                            ? bet.result?.toUpperCase() || 'SETTLED'
+                            : bet.status.toUpperCase()
+                          }
+                        </Badge>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <Badge 
-                        variant={slip.status === 'placed' ? 'default' : slip.status === 'settled' ? 'secondary' : 'outline'}
-                      >
-                        {slip.status.charAt(0).toUpperCase() + slip.status.slice(1)}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    {slip.items.map((bet) => (
-                      <div key={bet.id} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded">
-                        <div className="flex-1">
-                          <div className="font-medium">{bet.selection}</div>
-                          <div className="text-xs text-muted-foreground">{bet.matchup}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-medium">${bet.stake.toFixed(2)}</div>
-                          <div className="text-xs text-blue-600">Win: ${bet.potentialWin.toFixed(2)}</div>
-                        </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <div className="text-muted-foreground">Stake</div>
+                        <div className="font-medium">${stakeAmount.toFixed(2)}</div>
                       </div>
-                    ))}
+                      <div>
+                        <div className="text-muted-foreground">Potential Win</div>
+                        <div className="font-medium text-blue-600">${potentialWinAmount.toFixed(2)}</div>
+                      </div>
+                      {bet.status === 'settled' && (
+                        <>
+                          <div>
+                            <div className="text-muted-foreground">Actual Win</div>
+                            <div className="font-medium">${actualWinAmount.toFixed(2)}</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Profit/Loss</div>
+                            <div className={`font-medium ${
+                              profitLoss > 0 
+                                ? 'text-green-600' 
+                                : profitLoss < 0 
+                                  ? 'text-red-600' 
+                                  : 'text-muted-foreground'
+                            }`}>
+                              {profitLoss > 0 ? '+' : ''}${profitLoss.toFixed(2)}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    
+                    {bet.notes && (
+                      <div className="mt-3 p-2 bg-muted/50 rounded text-sm">
+                        <div className="text-muted-foreground mb-1">Notes:</div>
+                        <div>{bet.notes}</div>
+                      </div>
+                    )}
                   </div>
-                  
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                    <div>
-                      <span className="text-sm text-muted-foreground">Total Stake: </span>
-                      <span className="font-semibold">${slip.totalStake.toFixed(2)}</span>
-                    </div>
-                    <div>
-                      <span className="text-sm text-muted-foreground">Potential Win: </span>
-                      <span className="font-semibold text-blue-600">${slip.totalPotentialWin.toFixed(2)}</span>
-                    </div>
-                  </div>
-                  
-                  {slip.status === 'draft' && slip === currentSlip && (
-                    <div className="mt-3 flex gap-2">
-                      <Button 
-                        size="sm" 
-                        onClick={() => setShowBettingSlip(true)}
-                        variant="outline"
-                      >
-                        Edit Slip
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        className="bg-green-600 hover:bg-green-700"
-                        disabled={slip.totalStake === 0}
-                        onClick={() => {
-                          toast({
-                            title: "Bets Placed!",
-                            description: `${slip.items.length} bets placed for $${slip.totalStake.toFixed(2)}`,
-                          });
-                          const updatedSlip = { ...slip, status: 'placed' as const };
-                          setBettingSlips(prev => prev.map(s => s.id === slip.id ? updatedSlip : s));
-                          setCurrentSlip(null);
-                        }}
-                      >
-                        Place Bets (${slip.totalStake.toFixed(2)})
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No virtual betting slips yet.</p>
-              <p className="text-sm">Start by adding bets to create your first slip!</p>
+              <p>No virtual bets yet.</p>
+              <p className="text-sm">Start by placing your first virtual bet above!</p>
             </div>
           )}
         </CardContent>
