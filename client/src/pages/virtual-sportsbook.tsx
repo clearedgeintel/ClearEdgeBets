@@ -83,11 +83,11 @@ export default function VirtualSportsbook() {
   const [aiBetSlip, setAiBetSlip] = useState<AIBetRecommendation[] | null>(null);
   const [isGeneratingAIBets, setIsGeneratingAIBets] = useState(false);
 
-  // Mutation to save bets to database
+  // Mutation to save virtual bets to database
   const saveBetsMutation = useMutation({
     mutationFn: async (betsToSave: { gameId: string; betType: string; selection: string; odds: number; stake: number; potentialWin: number; }[]) => {
       const promises = betsToSave.map(bet => 
-        apiRequest("POST", "/api/bets", {
+        apiRequest("POST", "/api/virtual/bets", {
           gameId: bet.gameId,
           betType: bet.betType,
           selection: bet.selection,
@@ -100,13 +100,14 @@ export default function VirtualSportsbook() {
       return Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/bets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/virtual/bets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
     },
     onError: (error) => {
-      console.error("Error saving bets:", error);
+      console.error("Error saving virtual bets:", error);
       toast({
         title: "Error",
-        description: "Failed to save bets. Please try again.",
+        description: "Failed to place virtual bets. Please try again.",
         variant: "destructive",
       });
     },
@@ -343,6 +344,21 @@ export default function VirtualSportsbook() {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
+  // Fetch user's virtual bets
+  const { data: virtualBets = [], isLoading: virtualBetsLoading } = useQuery({
+    queryKey: ["/api/virtual/bets", user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/virtual/bets?userId=${user?.id}`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    },
+    enabled: !!user?.id,
+  });
+
   // Reset balance mutation
   const resetBalanceMutation = useMutation({
     mutationFn: async () => {
@@ -442,14 +458,30 @@ export default function VirtualSportsbook() {
         const weight = confidence / totalConfidence;
         const stake = Math.round((totalBudget * weight) * 100) / 100;
         
-        // Calculate implied probability and value
+        // Calculate implied probability and value with safety checks
         const impliedProbability = odds > 0 ? 100 / (odds + 100) : Math.abs(odds) / (Math.abs(odds) + 100);
         const aiProbability = confidence / 100;
-        const impliedValue = ((aiProbability - impliedProbability) / impliedProbability) * 100;
         
-        const expectedReturn = odds > 0 
-          ? stake * (odds / 100) + stake
-          : stake * (100 / Math.abs(odds)) + stake;
+        // Prevent division by zero and ensure finite values
+        let impliedValue = 0;
+        if (impliedProbability > 0 && isFinite(impliedProbability)) {
+          impliedValue = ((aiProbability - impliedProbability) / impliedProbability) * 100;
+          // Cap implied value to reasonable range
+          impliedValue = Math.max(-100, Math.min(1000, impliedValue));
+        }
+        
+        // Calculate expected return with safety checks
+        let expectedReturn = stake;
+        if (odds > 0) {
+          expectedReturn = stake * (odds / 100) + stake;
+        } else if (odds < 0) {
+          expectedReturn = stake * (100 / Math.abs(odds)) + stake;
+        }
+        
+        // Ensure finite values
+        if (!isFinite(expectedReturn)) {
+          expectedReturn = stake;
+        }
         
         recommendations.push({
           gameId: game.gameId,
