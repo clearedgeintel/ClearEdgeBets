@@ -86,8 +86,12 @@ export default function VirtualSportsbook() {
   // Mutation to save virtual bets to database
   const saveBetsMutation = useMutation({
     mutationFn: async (betsToSave: { gameId: string; betType: string; selection: string; odds: number; stake: number; potentialWin: number; }[]) => {
+      // Use test user ID (999) for virtual betting when not authenticated
+      const virtualUserId = user?.id || 999;
+      
       const promises = betsToSave.map(bet => 
         apiRequest("POST", "/api/virtual/bets", {
+          userId: virtualUserId,
           gameId: bet.gameId,
           betType: bet.betType,
           selection: bet.selection,
@@ -323,9 +327,18 @@ export default function VirtualSportsbook() {
 
   // Fetch user's virtual balance and stats
   const { data: balanceData, isLoading: balanceLoading } = useQuery<BalanceData>({
-    queryKey: ["/api/user/balance"],
+    queryKey: ["/api/user/balance", user?.id || 999],
+    queryFn: async () => {
+      const virtualUserId = user?.id || 999;
+      const response = await fetch(`/api/user/balance?userId=${virtualUserId}`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    },
     retry: false,
-    enabled: !!user,
   });
 
   // Fetch games for selected date
@@ -346,9 +359,10 @@ export default function VirtualSportsbook() {
 
   // Fetch user's virtual bets
   const { data: virtualBets = [], isLoading: virtualBetsLoading } = useQuery({
-    queryKey: ["/api/virtual/bets", user?.id],
+    queryKey: ["/api/virtual/bets", user?.id || 999],
     queryFn: async () => {
-      const response = await fetch(`/api/virtual/bets?userId=${user?.id}`, {
+      const virtualUserId = user?.id || 999;
+      const response = await fetch(`/api/virtual/bets?userId=${virtualUserId}`, {
         credentials: "include",
       });
       if (!response.ok) {
@@ -356,7 +370,6 @@ export default function VirtualSportsbook() {
       }
       return response.json();
     },
-    enabled: !!user?.id,
   });
 
   // Reset balance mutation
