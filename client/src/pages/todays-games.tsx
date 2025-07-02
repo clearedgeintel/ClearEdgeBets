@@ -66,6 +66,8 @@ export default function TodaysGames() {
   const [filterBy, setFilterBy] = useState("all");
   const [selectedDate, setSelectedDate] = useState(new Date());
 
+
+
   const { data: games = [], isLoading } = useQuery<Game[]>({
     queryKey: ["/api/games", format(selectedDate, "yyyy-MM-dd")],
     queryFn: async () => {
@@ -103,7 +105,20 @@ export default function TodaysGames() {
     })
     .sort((a, b) => {
       if (sortBy === "time") {
-        return new Date(a.gameTime).getTime() - new Date(b.gameTime).getTime();
+        // Convert time strings like "7:10 PM" to comparable values for sorting
+        const parseTime = (timeStr: string): number => {
+          if (!timeStr) return 0;
+          const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+          if (!match) return 0;
+          let hours = parseInt(match[1]);
+          const minutes = parseInt(match[2]);
+          const period = match[3].toUpperCase();
+          if (period === 'AM' && hours === 12) hours = 0;
+          if (period === 'PM' && hours !== 12) hours += 12;
+          return hours * 60 + minutes;
+        };
+        
+        return parseTime(a.gameTime) - parseTime(b.gameTime);
       }
       if (sortBy === "confidence" && a.aiSummary && b.aiSummary) {
         return b.aiSummary.confidence - a.aiSummary.confidence;
