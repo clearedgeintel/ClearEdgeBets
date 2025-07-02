@@ -150,11 +150,11 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
-- July 2, 2025: TIMEZONE CONSISTENCY FIX - All game times and platform timestamps now display with clear Eastern Time (ET) labels
-  - Fixed MLB API game time formatting to include timezone abbreviation (e.g., "3:07 PM EST" instead of "3:07 PM")
+- July 2, 2025: TIMEZONE CONSISTENCY FIX - All game times and platform timestamps now use consistent Eastern Time
+  - Removed timezone abbreviation clutter from game cards for cleaner display (shows "3:07 PM" instead of "3:07 PM EST")
   - Updated Hot Trends "Last updated" timestamps to use consistent Eastern timezone with clear labeling
   - Eliminated timezone confusion where some timestamps appeared in different timezones
-  - All platform time displays now consistently use America/New_York timezone with proper abbreviations
+  - All platform time calculations consistently use America/New_York timezone while maintaining clean UI
 - July 2, 2025: CRITICAL DATA CONSISTENCY FIX - Resolved pitcher information mismatch between AI picks and current game data
   - Fixed daily picks generation to use real-time pitcher data from current MLB games API
   - Updated DailyPicksInput interface to include awayPitcher, homePitcher, awayPitcherStats, homePitcherStats
