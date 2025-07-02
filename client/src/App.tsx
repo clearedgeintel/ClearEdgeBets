@@ -48,6 +48,7 @@ function Router() {
     <Layout>
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/games" component={TodaysGames} />
         <Route path="/todays-games" component={TodaysGames} />
         <Route path="/game/:gameId" component={GameDetail} />
         <Route path="/my-bets" component={MyBets} />

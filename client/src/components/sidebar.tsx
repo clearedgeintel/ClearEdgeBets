@@ -99,13 +99,13 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
       icon: HomePlate,
       expanded: baseballExpanded,
       setExpanded: setBaseballExpanded,
-      active: location === "/" || location.startsWith("/baseball") || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets" || location === "/performance-tracking",
+      active: location === "/" || location.startsWith("/baseball") || location === "/games" || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets" || location === "/performance-tracking",
       freeItems: [
         { 
           name: "Games", 
-          href: "/todays-games", 
+          href: "/games", 
           icon: Home,
-          current: location === "/todays-games",
+          current: location === "/games" || location === "/todays-games",
           description: "MLB games and odds for any date"
         },
         { 
