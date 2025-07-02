@@ -14,6 +14,7 @@ import { getPlayerPropsForGame } from "./services/player-props";
 import { getPinnaclePlayerProps, getPinnacleSports } from "./services/pinnacle-props";
 import { insertBetSchema, insertGameSchema, insertOddsSchema, insertUserSchema } from "@shared/schema";
 import { syncLiveGameData, settlePendingBets, updateGameStatus, getLiveGameInfo } from "./services/bet-settlement";
+import { bankrollManager } from "./services/bankroll-manager";
 import Stripe from "stripe";
 import bcrypt from "bcrypt";
 import { STRIPE_PRODUCTS, getProductByTier, getTierByPriceId } from "./stripe-config";
@@ -954,15 +955,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Place a new bet
+  // Place a new bet with bankroll management
   app.post("/api/bets", async (req, res) => {
     try {
       const validatedBet = insertBetSchema.parse(req.body);
+      
+      // Create the bet record first
       const bet = await storage.createBet(validatedBet);
+      
+      // Process bankroll transaction if bet has a user
+      if (validatedBet.userId) {
+        try {
+          const stakeAmount = parseFloat(validatedBet.stake.toString());
+          const betDescription = `${validatedBet.betType} ${validatedBet.selection}`;
+          
+          await bankrollManager.processBetPlacement(
+            validatedBet.userId,
+            bet.id,
+            stakeAmount,
+            validatedBet.gameId,
+            betDescription
+          );
+          
+          // Log successful bet placement
+          await bankrollManager.createAuditLog({
+            userId: validatedBet.userId,
+            action: 'bet_placed',
+            entityType: 'bet',
+            entityId: bet.id.toString(),
+            newValues: {
+              betType: validatedBet.betType,
+              selection: validatedBet.selection,
+              stake: stakeAmount,
+              odds: validatedBet.odds
+            },
+            severity: 'info',
+            description: `Bet placed: ${betDescription} for $${stakeAmount}`,
+            metadata: { 
+              gameId: validatedBet.gameId,
+              betId: bet.id,
+              potentialWin: validatedBet.potentialWin 
+            }
+          });
+          
+        } catch (bankrollError: any) {
+          // If bankroll processing fails, remove the bet and return error
+          await storage.deleteBet(bet.id);
+          console.error('Bankroll processing failed:', bankrollError);
+          return res.status(400).json({ 
+            error: (bankrollError as Error)?.message || "Insufficient funds or bankroll error" 
+          });
+        }
+      }
+      
       res.status(201).json(bet);
     } catch (error) {
       console.error("Error placing bet:", error);
       res.status(400).json({ error: "Invalid bet data" });
+    }
+  });
+
+  // Get user's bankroll analytics and transaction history
+  app.get("/api/user/bankroll-analytics", async (req, res) => {
+    try {
+      const userId = parseInt(req.query.userId as string);
+      if (!userId) {
+        return res.status(400).json({ error: "User ID required" });
+      }
+
+      const analytics = await bankrollManager.getUserBankrollAnalytics(userId);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching bankroll analytics:", error);
+      res.status(500).json({ error: "Failed to fetch bankroll analytics" });
+    }
+  });
+
+  // Get user's transaction history
+  app.get("/api/user/transactions", async (req, res) => {
+    try {
+      const userId = parseInt(req.query.userId as string);
+      const limit = parseInt(req.query.limit as string) || 50;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "User ID required" });
+      }
+
+      const transactions = await bankrollManager.getUserTransactionHistory(userId, limit);
+      res.json(transactions);
+    } catch (error) {
+      console.error("Error fetching transaction history:", error);
+      res.status(500).json({ error: "Failed to fetch transaction history" });
+    }
+  });
+
+  // Get user's audit trail
+  app.get("/api/user/audit-trail", async (req, res) => {
+    try {
+      const userId = parseInt(req.query.userId as string);
+      const limit = parseInt(req.query.limit as string) || 100;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "User ID required" });
+      }
+
+      const auditTrail = await bankrollManager.getUserAuditTrail(userId, limit);
+      res.json(auditTrail);
+    } catch (error) {
+      console.error("Error fetching audit trail:", error);
+      res.status(500).json({ error: "Failed to fetch audit trail" });
     }
   });
 

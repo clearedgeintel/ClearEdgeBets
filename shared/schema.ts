@@ -290,6 +290,84 @@ export type ReferralCode = typeof referralCodes.$inferSelect;
 export type InsertWeeklyLeaderboard = z.infer<typeof insertWeeklyLeaderboardSchema>;
 export type WeeklyLeaderboard = typeof weeklyLeaderboard.$inferSelect;
 
+// Bankroll transactions table for comprehensive financial tracking
+export const bankrollTransactions = pgTable("bankroll_transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  transactionType: text("transaction_type").notNull(), // bet_placed, bet_won, bet_lost, bet_push, deposit, withdrawal, bonus, refund
+  amount: integer("amount").notNull(), // amount in cents (positive for credits, negative for debits)
+  previousBalance: integer("previous_balance").notNull(), // balance before transaction in cents
+  newBalance: integer("new_balance").notNull(), // balance after transaction in cents
+  relatedBetId: integer("related_bet_id").references(() => bets.id), // link to bet if transaction is bet-related
+  relatedGameId: text("related_game_id"), // link to game if applicable
+  description: text("description").notNull(), // human-readable description
+  metadata: jsonb("metadata"), // additional transaction details
+  processedBy: text("processed_by"), // system, admin, or user action
+  status: text("status").default("completed"), // pending, completed, failed, reversed
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Audit log table for comprehensive system tracking
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id), // null for system actions
+  action: text("action").notNull(), // bet_placed, bet_settled, balance_updated, user_created, etc.
+  entityType: text("entity_type").notNull(), // bet, user, game, transaction, etc.
+  entityId: text("entity_id"), // ID of the affected entity
+  oldValues: jsonb("old_values"), // previous state before change
+  newValues: jsonb("new_values"), // new state after change
+  ipAddress: text("ip_address"), // user IP if applicable
+  userAgent: text("user_agent"), // user browser/app info
+  sessionId: text("session_id"), // session identifier
+  severity: text("severity").default("info"), // debug, info, warning, error, critical
+  description: text("description").notNull(), // human-readable description
+  metadata: jsonb("metadata"), // additional context data
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Daily bankroll snapshots for historical tracking
+export const bankrollSnapshots = pgTable("bankroll_snapshots", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  snapshotDate: date("snapshot_date").notNull(), // date of snapshot
+  startingBalance: integer("starting_balance").notNull(), // balance at start of day
+  endingBalance: integer("ending_balance").notNull(), // balance at end of day
+  totalWagered: integer("total_wagered").default(0), // total amount wagered this day
+  totalWon: integer("total_won").default(0), // total amount won this day
+  totalLost: integer("total_lost").default(0), // total amount lost this day
+  betsPlaced: integer("bets_placed").default(0), // number of bets placed
+  betsWon: integer("bets_won").default(0), // number of bets won
+  betsLost: integer("bets_lost").default(0), // number of bets lost
+  netChange: integer("net_change").default(0), // net change for the day
+  winRate: decimal("win_rate", { precision: 5, scale: 2 }).default("0.00"), // win percentage
+  roi: decimal("roi", { precision: 5, scale: 2 }).default("0.00"), // return on investment percentage
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Insert schemas for new tables
+export const insertBankrollTransactionSchema = createInsertSchema(bankrollTransactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertBankrollSnapshotSchema = createInsertSchema(bankrollSnapshots).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for new tables
+export type InsertBankrollTransaction = z.infer<typeof insertBankrollTransactionSchema>;
+export type BankrollTransaction = typeof bankrollTransactions.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertBankrollSnapshot = z.infer<typeof insertBankrollSnapshotSchema>;
+export type BankrollSnapshot = typeof bankrollSnapshots.$inferSelect;
+
 // Player props table for DFS betting
 export const playerProps = pgTable("player_props", {
   id: serial("id").primaryKey(),

@@ -66,6 +66,7 @@ export interface IStorage {
   getUserBets(userId?: number): Promise<Bet[]>;
   createBet(bet: InsertBet): Promise<Bet>;
   updateBetResult(betId: number, result: string, actualWin?: number): Promise<Bet>;
+  deleteBet(betId: number): Promise<void>;
 
   // Props methods
   getPropsByGameId(gameId: string): Promise<Prop[]>;
@@ -395,6 +396,14 @@ export class MemStorage implements IStorage {
     return updatedBet;
   }
 
+  async deleteBet(betId: number): Promise<void> {
+    const existingBet = this.bets.get(betId);
+    if (!existingBet) {
+      throw new Error(`Bet with ID ${betId} not found`);
+    }
+    this.bets.delete(betId);
+  }
+
   async getPropsByGameId(gameId: string): Promise<Prop[]> {
     return this.props.get(gameId) || [];
   }
@@ -627,6 +636,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bets.id, betId))
       .returning();
     return bet;
+  }
+
+  async deleteBet(betId: number): Promise<void> {
+    await db
+      .delete(bets)
+      .where(eq(bets.id, betId));
   }
 
   async getPropsByGameId(gameId: string): Promise<Prop[]> {

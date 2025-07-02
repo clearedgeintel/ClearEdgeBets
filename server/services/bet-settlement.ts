@@ -2,6 +2,7 @@ import { db } from '../db';
 import { games, bets } from '@shared/schema';
 import { eq, and, isNull } from 'drizzle-orm';
 import { fetchMLBScoreboard } from './mlb-api';
+import { bankrollManager } from './bankroll-manager';
 
 export interface GameResult {
   awayScore: number;
@@ -117,10 +118,11 @@ export async function settlePendingBets(): Promise<number> {
 
       console.log(`Settling ${pendingBets.length} bets for game ${game.gameId}`);
 
-      // Settle each bet
+      // Settle each bet with bankroll management
       for (const bet of pendingBets) {
         const { result, actualWin } = calculateBetResult(bet, game);
         
+        // Update bet record
         await db
           .update(bets)
           .set({
@@ -129,6 +131,44 @@ export async function settlePendingBets(): Promise<number> {
             actualWin: actualWin.toString()
           })
           .where(eq(bets.id, bet.id));
+
+        // Process bankroll transaction if bet has a user
+        if (bet.userId) {
+          try {
+            const betDescription = `${bet.betType} on ${game.awayTeam} @ ${game.homeTeam}`;
+            
+            if (result === 'won') {
+              await bankrollManager.processBetSettlement(
+                bet.userId,
+                bet.id,
+                'win',
+                actualWin,
+                game.gameId,
+                betDescription
+              );
+            } else if (result === 'lost') {
+              await bankrollManager.processBetSettlement(
+                bet.userId,
+                bet.id,
+                'loss',
+                0,
+                game.gameId,
+                betDescription
+              );
+            } else if (result === 'push') {
+              await bankrollManager.processBetSettlement(
+                bet.userId,
+                bet.id,
+                'push',
+                parseFloat(bet.stake.toString()),
+                game.gameId,
+                betDescription
+              );
+            }
+          } catch (error) {
+            console.error(`Failed to process bankroll for bet ${bet.id}:`, error);
+          }
+        }
 
         totalSettled++;
       }
