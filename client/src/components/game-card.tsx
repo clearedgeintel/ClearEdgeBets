@@ -9,6 +9,7 @@ import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { useAuth } from "@/contexts/auth-context";
 import { apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
+import { LiveScore } from "@/components/live-score";
 
 interface Game {
   id: number;
@@ -24,6 +25,8 @@ interface Game {
   awayPitcherStats?: string;
   homePitcherStats?: string;
   status: string;
+  awayScore?: number;
+  homeScore?: number;
   odds: Array<{
     id: number;
     gameId: string;
@@ -193,11 +196,12 @@ export default function GameCard({ game }: GameCardProps) {
               })()}
             </p>
             <p className="text-xs text-muted-foreground">{game.venue}</p>
-            {game.status === "final" && (
-              <div className="mt-1 text-sm font-semibold text-foreground">
-                Final: {game.awayTeamCode} {game.awayScore || 0} - {game.homeScore || 0} {game.homeTeamCode}
-              </div>
-            )}
+            <LiveScore 
+              gameId={game.gameId}
+              awayTeam={game.awayTeamCode}
+              homeTeam={game.homeTeamCode}
+              className="mt-1"
+            />
           </div>
         </div>
 

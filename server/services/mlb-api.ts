@@ -144,6 +144,22 @@ export async function fetchMLBScoreboard(year: number, month: number, day: numbe
       const awayCode = awayCompetitor.team.abbreviation;
       const homeCode = homeCompetitor.team.abbreviation;
       
+      // Extract detailed game state information
+      const status = competition.status;
+      const gameState = status.type.state;
+      const isLive = gameState === 'in' || status.type.name === 'STATUS_IN_PROGRESS';
+      const isFinal = status.type.completed || gameState === 'post';
+      
+      // Determine inning details
+      let inning: number | undefined;
+      let inningHalf: 'top' | 'bottom' | undefined;
+      
+      if (status.period && isLive) {
+        inning = status.period;
+        // MLB API doesn't always provide top/bottom, so we'll infer from clock
+        inningHalf = status.displayClock?.includes('Top') ? 'top' : 'bottom';
+      }
+
       return {
         gameId: `${awayCode}@${homeCode}`,
         gameDate: event.date,
@@ -158,11 +174,19 @@ export async function fetchMLBScoreboard(year: number, month: number, day: numbe
           timeZone: 'America/New_York'
         }),
         venue: competition.venue.fullName,
-        status: competition.status.type.detail,
-        inning: competition.status.period ? `Inning ${competition.status.period}` : undefined,
+        status: isFinal ? 'final' : isLive ? 'live' : 'scheduled',
+        inning: inning ? `Inning ${inning}` : undefined,
         awayScore: awayCompetitor.score ? parseInt(awayCompetitor.score) : undefined,
         homeScore: homeCompetitor.score ? parseInt(homeCompetitor.score) : undefined,
-        isCompleted: competition.status.type.completed
+        isCompleted: isFinal,
+        // Additional live game details
+        liveDetails: isLive ? {
+          inning,
+          inningHalf,
+          displayClock: status.displayClock,
+          detail: status.type.detail,
+          shortDetail: status.type.shortDetail
+        } : undefined
       };
     }).filter(game => game !== null) as MLBGameData[];
   } catch (error) {

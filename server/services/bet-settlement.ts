@@ -1,0 +1,277 @@
+import { db } from '../db';
+import { games, bets } from '@shared/schema';
+import { eq, and, isNull } from 'drizzle-orm';
+import { fetchMLBScoreboard } from './mlb-api';
+
+export interface GameResult {
+  awayScore: number;
+  homeScore: number;
+  status: string;
+  completedAt?: Date;
+}
+
+/**
+ * Calculate bet result based on game outcome
+ */
+export function calculateBetResult(bet: any, game: any): { result: string; actualWin: number } {
+  if (!game.awayScore && game.awayScore !== 0 || !game.homeScore && game.homeScore !== 0) {
+    return { result: 'pending', actualWin: 0 };
+  }
+
+  const { betType, selection, stake, odds } = bet;
+  const { awayScore, homeScore, awayTeam, homeTeam } = game;
+  
+  let result = 'lose';
+  let actualWin = 0;
+
+  switch (betType) {
+    case 'moneyline':
+      if (selection === awayTeam && awayScore > homeScore) {
+        result = 'win';
+      } else if (selection === homeTeam && homeScore > awayScore) {
+        result = 'win';
+      }
+      break;
+
+    case 'spread':
+    case 'runline':
+      // Parse spread from selection (e.g., "Rangers -1.5")
+      const spreadMatch = selection.match(/([-+]?\d+\.?\d*)/);
+      if (spreadMatch) {
+        const spread = parseFloat(spreadMatch[1]);
+        const isAway = selection.includes(awayTeam);
+        
+        if (isAway) {
+          const adjustedScore = awayScore + spread;
+          if (adjustedScore > homeScore) result = 'win';
+          else if (adjustedScore === homeScore) result = 'push';
+        } else {
+          const adjustedScore = homeScore + spread;
+          if (adjustedScore > awayScore) result = 'win';
+          else if (adjustedScore === awayScore) result = 'push';
+        }
+      }
+      break;
+
+    case 'total':
+      const totalScore = awayScore + homeScore;
+      const totalMatch = selection.match(/(\d+\.?\d*)/);
+      
+      if (totalMatch) {
+        const line = parseFloat(totalMatch[1]);
+        
+        if (selection.toLowerCase().includes('over')) {
+          if (totalScore > line) result = 'win';
+          else if (totalScore === line) result = 'push';
+        } else if (selection.toLowerCase().includes('under')) {
+          if (totalScore < line) result = 'win';
+          else if (totalScore === line) result = 'push';
+        }
+      }
+      break;
+  }
+
+  // Calculate actual winnings
+  if (result === 'win') {
+    if (odds > 0) {
+      actualWin = parseFloat(stake) * (odds / 100);
+    } else {
+      actualWin = parseFloat(stake) * (100 / Math.abs(odds));
+    }
+  } else if (result === 'push') {
+    actualWin = parseFloat(stake); // Return stake on push
+  }
+
+  return { result, actualWin };
+}
+
+/**
+ * Settle all pending bets for completed games
+ */
+export async function settlePendingBets(): Promise<number> {
+  try {
+    // Find completed games that haven't had bets settled
+    const completedGames = await db
+      .select()
+      .from(games)
+      .where(
+        and(
+          eq(games.status, 'final'),
+          eq(games.betsSettled, false)
+        )
+      );
+
+    let totalSettled = 0;
+
+    for (const game of completedGames) {
+      // Find all pending bets for this game
+      const pendingBets = await db
+        .select()
+        .from(bets)
+        .where(
+          and(
+            eq(bets.gameId, game.gameId),
+            eq(bets.status, 'pending')
+          )
+        );
+
+      console.log(`Settling ${pendingBets.length} bets for game ${game.gameId}`);
+
+      // Settle each bet
+      for (const bet of pendingBets) {
+        const { result, actualWin } = calculateBetResult(bet, game);
+        
+        await db
+          .update(bets)
+          .set({
+            status: 'settled',
+            result,
+            actualWin: actualWin.toString()
+          })
+          .where(eq(bets.id, bet.id));
+
+        totalSettled++;
+      }
+
+      // Mark game as having bets settled
+      await db
+        .update(games)
+        .set({
+          betsSettled: true,
+          completedAt: new Date()
+        })
+        .where(eq(games.id, game.id));
+    }
+
+    console.log(`Settled ${totalSettled} bets across ${completedGames.length} games`);
+    return totalSettled;
+
+  } catch (error) {
+    console.error('Error settling bets:', error);
+    return 0;
+  }
+}
+
+/**
+ * Update game with live score and status information
+ */
+export async function updateGameStatus(gameId: string, update: {
+  status?: string;
+  awayScore?: number;
+  homeScore?: number;
+  inning?: number;
+  inningHalf?: 'top' | 'bottom';
+  outs?: number;
+  balls?: number;
+  strikes?: number;
+  runnersOn?: any;
+  lastPlay?: string;
+}): Promise<void> {
+  try {
+    await db
+      .update(games)
+      .set({
+        ...update,
+        completedAt: update.status === 'final' ? new Date() : undefined
+      })
+      .where(eq(games.gameId, gameId));
+
+    // If game is complete, trigger bet settlement
+    if (update.status === 'final') {
+      setTimeout(async () => {
+        await settlePendingBets();
+      }, 1000); // Small delay to ensure update is committed
+    }
+
+  } catch (error) {
+    console.error('Error updating game status:', error);
+  }
+}
+
+/**
+ * Sync live game data from MLB API
+ */
+export async function syncLiveGameData(): Promise<number> {
+  try {
+    console.log('Syncing live game data from MLB API...');
+    
+    // Get today's games from MLB API
+    const today = new Date();
+    const mlbGames = await fetchMLBScoreboard(today.getFullYear(), today.getMonth() + 1, today.getDate());
+    
+    let updatedGames = 0;
+    
+    for (const mlbGame of mlbGames) {
+      // Find matching game in our database
+      const existingGames = await db
+        .select()
+        .from(games)
+        .where(eq(games.gameId, mlbGame.gameId));
+      
+      if (existingGames.length === 0) {
+        console.log(`Game ${mlbGame.gameId} not found in database, skipping sync`);
+        continue;
+      }
+      
+      const existingGame = existingGames[0];
+      
+      // Check if status or scores have changed
+      const statusChanged = existingGame.status !== mlbGame.status;
+      const scoresChanged = existingGame.awayScore !== mlbGame.awayScore || 
+                           existingGame.homeScore !== mlbGame.homeScore;
+      
+      if (statusChanged || scoresChanged) {
+        console.log(`Updating game ${mlbGame.gameId}: ${mlbGame.status}, Score: ${mlbGame.awayScore}-${mlbGame.homeScore}`);
+        
+        // Extract live details if available
+        const liveDetails = (mlbGame as any).liveDetails;
+        
+        await updateGameStatus(mlbGame.gameId, {
+          status: mlbGame.status,
+          awayScore: mlbGame.awayScore ?? undefined,
+          homeScore: mlbGame.homeScore ?? undefined,
+          inning: liveDetails?.inning ?? undefined,
+          inningHalf: liveDetails?.inningHalf ?? undefined,
+          lastPlay: liveDetails?.detail ?? undefined
+        });
+        
+        updatedGames++;
+      }
+    }
+    
+    console.log(`Synced ${updatedGames} games from MLB API`);
+    return updatedGames;
+    
+  } catch (error) {
+    console.error('Error syncing live game data:', error);
+    return 0;
+  }
+}
+
+/**
+ * Get live game information (now fetches from database which is synced with MLB API)
+ */
+export async function getLiveGameInfo(gameId: string) {
+  try {
+    const [game] = await db
+      .select({
+        status: games.status,
+        awayScore: games.awayScore,
+        homeScore: games.homeScore,
+        inning: games.inning,
+        inningHalf: games.inningHalf,
+        outs: games.outs,
+        balls: games.balls,
+        strikes: games.strikes,
+        runnersOn: games.runnersOn,
+        lastPlay: games.lastPlay
+      })
+      .from(games)
+      .where(eq(games.gameId, gameId));
+
+    return game;
+  } catch (error) {
+    console.error('Error fetching live game info:', error);
+    return null;
+  }
+}

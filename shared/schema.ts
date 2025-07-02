@@ -76,9 +76,20 @@ export const games = pgTable("games", {
   homePitcher: text("home_pitcher"),
   awayPitcherStats: text("away_pitcher_stats"),
   homePitcherStats: text("home_pitcher_stats"),
-  status: text("status").notNull().default("scheduled"),
+  status: text("status").notNull().default("scheduled"), // scheduled, live, final, postponed, suspended
   awayScore: integer("away_score"),
   homeScore: integer("home_score"),
+  // Live game information
+  inning: integer("inning"),
+  inningHalf: text("inning_half"), // top, bottom
+  outs: integer("outs"),
+  balls: integer("balls"),
+  strikes: integer("strikes"),
+  runnersOn: jsonb("runners_on"), // bases occupied
+  lastPlay: text("last_play"),
+  // Game completion info
+  completedAt: timestamp("completed_at"),
+  betsSettled: boolean("bets_settled").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

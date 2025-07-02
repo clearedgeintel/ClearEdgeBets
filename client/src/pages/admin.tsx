@@ -13,6 +13,7 @@ import {
   Crown, 
   Star,
   Settings,
+  RefreshCw,
   Search,
   UserCog,
   Calendar,
@@ -245,6 +246,39 @@ export default function AdminPanel() {
     );
   }
 
+// SyncLiveDataButton component for syncing real MLB data
+function SyncLiveDataButton() {
+  const { toast } = useToast();
+  
+  const syncMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/admin/sync-live-games'),
+    onSuccess: (data: any) => {
+      toast({
+        title: "Live Data Synced",
+        description: `Updated ${data.updatedGames} games and settled ${data.settledBets} bets from real MLB API`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Sync Failed",
+        description: "Failed to sync live MLB data. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  return (
+    <Button 
+      onClick={() => syncMutation.mutate()}
+      disabled={syncMutation.isPending}
+      className="bg-green-600 hover:bg-green-700"
+    >
+      <RefreshCw className={`w-4 h-4 mr-2 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
+      {syncMutation.isPending ? 'Syncing...' : 'Sync Live Games'}
+    </Button>
+  );
+}
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -263,6 +297,7 @@ export default function AdminPanel() {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0">
+              <SyncLiveDataButton />
               <Link href="/admin/users">
                 <Button className="bg-blue-600 hover:bg-blue-700">
                   <Users className="w-4 h-4 mr-2" />

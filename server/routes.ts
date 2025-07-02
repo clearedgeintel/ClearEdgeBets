@@ -13,6 +13,7 @@ import { generateGameAnalysis, generateDailyDigest, type GameAnalysisData } from
 import { getPlayerPropsForGame } from "./services/player-props";
 import { getPinnaclePlayerProps, getPinnacleSports } from "./services/pinnacle-props";
 import { insertBetSchema, insertGameSchema, insertOddsSchema, insertUserSchema } from "@shared/schema";
+import { syncLiveGameData, settlePendingBets, updateGameStatus, getLiveGameInfo } from "./services/bet-settlement";
 import Stripe from "stripe";
 import bcrypt from "bcrypt";
 import { STRIPE_PRODUCTS, getProductByTier, getTierByPriceId } from "./stripe-config";
@@ -3777,6 +3778,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Refresh props error:', error);
       res.status(500).json({ error: 'Failed to refresh props' });
+    }
+  });
+
+  // Import bet settlement functions
+  const { settlePendingBets, updateGameStatus, getLiveGameInfo } = await import('./services/bet-settlement');
+
+  // Bet Settlement Routes
+  app.post('/api/admin/settle-bets', async (req: Request, res: Response) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      const settledCount = await settlePendingBets();
+      res.json({ 
+        success: true, 
+        message: `Settled ${settledCount} bets`,
+        settledCount 
+      });
+    } catch (error) {
+      console.error('Settle bets error:', error);
+      res.status(500).json({ error: 'Failed to settle bets' });
+    }
+  });
+
+  // Update game status (for testing completed games)
+  app.post('/api/admin/update-game-status', async (req: Request, res: Response) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      const { gameId, status, awayScore, homeScore, inning, inningHalf, outs, balls, strikes } = req.body;
+      
+      await updateGameStatus(gameId, {
+        status,
+        awayScore,
+        homeScore,
+        inning,
+        inningHalf,
+        outs,
+        balls,
+        strikes
+      });
+
+      res.json({ success: true, message: 'Game status updated' });
+    } catch (error) {
+      console.error('Update game status error:', error);
+      res.status(500).json({ error: 'Failed to update game status' });
+    }
+  });
+
+  // Sync live game data from MLB API
+  app.post('/api/admin/sync-live-games', async (req: Request, res: Response) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      console.log('Syncing live game data from MLB API...');
+      const updatedGames = await syncLiveGameData();
+      const settledBets = await settlePendingBets();
+      
+      res.json({ 
+        success: true, 
+        message: `Synced ${updatedGames} games and settled ${settledBets} bets from real MLB API data`,
+        updatedGames,
+        settledBets 
+      });
+    } catch (error) {
+      console.error('Sync live games error:', error);
+      res.status(500).json({ error: 'Failed to sync live game data' });
+    }
+  });
+
+  // Get live game information
+  app.get('/api/live-game/:gameId', async (req: Request, res: Response) => {
+    try {
+      const { gameId } = req.params;
+      const liveInfo = await getLiveGameInfo(gameId);
+      
+      if (!liveInfo) {
+        return res.status(404).json({ error: 'Game not found' });
+      }
+
+      res.json(liveInfo);
+    } catch (error) {
+      console.error('Get live game info error:', error);
+      res.status(500).json({ error: 'Failed to get live game info' });
+    }
+  });
+
+  // Simulate game completion for testing
+  app.post('/api/admin/complete-game', async (req: Request, res: Response) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      const { gameId } = req.body;
+      
+      // Simulate realistic final scores
+      const awayScore = Math.floor(Math.random() * 8) + 2; // 2-9 runs
+      const homeScore = Math.floor(Math.random() * 8) + 2; // 2-9 runs
+      
+      await updateGameStatus(gameId, {
+        status: 'final',
+        awayScore,
+        homeScore,
+        inning: 9,
+        inningHalf: 'bottom',
+        outs: 3
+      });
+
+      res.json({ 
+        success: true, 
+        message: `Game ${gameId} completed`,
+        finalScore: `${awayScore}-${homeScore}`
+      });
+    } catch (error) {
+      console.error('Complete game error:', error);
+      res.status(500).json({ error: 'Failed to complete game' });
     }
   });
 
