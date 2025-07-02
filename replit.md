@@ -150,6 +150,12 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 2, 2025: FIXED CURRENCY DISPLAY BUG - Virtual betting history now correctly displays monetary values by converting cents to dollars
+  - Fixed formatCurrency function to properly divide by 100 (database stores in cents, display shows dollars)
+  - Net results now show correct amounts: 6273 cents displays as $62.73 instead of $6,272.73
+  - Enhanced betting history cards with comprehensive game results and payout information
+  - Added generateGameResult function to create realistic game outcomes and explanations
+  - All monetary displays in Virtual Performance page now accurately reflect intended amounts
 - July 2, 2025: SUCCESSFULLY TESTED VIRTUAL BETTING SYSTEM - Virtual sportsbook fully operational with database integration
   - Virtual bets successfully place and display in "My Virtual Bets" section
   - Test user authentication system working with fallback user ID for unauthenticated sessions

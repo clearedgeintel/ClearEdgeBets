@@ -65,10 +65,12 @@ export default function VirtualPerformance() {
 
   const formatCurrency = (amount: number | string) => {
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    // Convert cents to dollars by dividing by 100
+    const dollars = num / 100;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(num);
+    }).format(dollars);
   };
 
   const formatOdds = (odds: number) => {
