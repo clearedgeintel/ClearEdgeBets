@@ -202,14 +202,18 @@ export async function syncLiveGameData(): Promise<number> {
     let updatedGames = 0;
     
     for (const mlbGame of mlbGames) {
-      // Find matching game in our database
+      // Create the expected game ID format with date prefix
+      const dateStr = mlbGame.gameDate || today.toISOString().split('T')[0];
+      const expectedGameId = `${dateStr}_${mlbGame.awayTeamCode} @ ${mlbGame.homeTeamCode}`;
+      
+      // Find matching game in our database using the expected format
       const existingGames = await db
         .select()
         .from(games)
-        .where(eq(games.gameId, mlbGame.gameId));
+        .where(eq(games.gameId, expectedGameId));
       
       if (existingGames.length === 0) {
-        console.log(`Game ${mlbGame.gameId} not found in database, skipping sync`);
+        console.log(`Game ${expectedGameId} not found in database, skipping sync`);
         continue;
       }
       
@@ -221,12 +225,12 @@ export async function syncLiveGameData(): Promise<number> {
                            existingGame.homeScore !== mlbGame.homeScore;
       
       if (statusChanged || scoresChanged) {
-        console.log(`Updating game ${mlbGame.gameId}: ${mlbGame.status}, Score: ${mlbGame.awayScore}-${mlbGame.homeScore}`);
+        console.log(`Updating game ${expectedGameId}: ${mlbGame.status}, Score: ${mlbGame.awayScore}-${mlbGame.homeScore}`);
         
         // Extract live details if available
         const liveDetails = (mlbGame as any).liveDetails;
         
-        await updateGameStatus(mlbGame.gameId, {
+        await updateGameStatus(expectedGameId, {
           status: mlbGame.status,
           awayScore: mlbGame.awayScore ?? undefined,
           homeScore: mlbGame.homeScore ?? undefined,
