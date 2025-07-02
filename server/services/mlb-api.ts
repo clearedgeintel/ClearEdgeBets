@@ -171,7 +171,8 @@ export async function fetchMLBScoreboard(year: number, month: number, day: numbe
           hour: 'numeric',
           minute: '2-digit',
           hour12: true,
-          timeZone: 'America/New_York'
+          timeZone: 'America/New_York',
+          timeZoneName: 'short'
         }),
         venue: competition.venue.fullName,
         status: isFinal ? 'final' : isLive ? 'live' : 'scheduled',
@@ -328,7 +329,8 @@ export async function fetchMLBGameDetails(year: number, month: number, day: numb
           hour: 'numeric',
           minute: '2-digit',
           hour12: true,
-          timeZone: 'America/New_York'
+          timeZone: 'America/New_York',
+          timeZoneName: 'short'
         }),
         venue: competition.venue.fullName,
         status: competition.status.type.detail,

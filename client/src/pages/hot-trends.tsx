@@ -192,7 +192,15 @@ export default function HotTrends() {
                     <div className="mt-4 pt-3 border-t">
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">
-                          Last updated: {new Date(trend.lastUpdated).toLocaleString()}
+                          Last updated: {new Date(trend.lastUpdated).toLocaleString('en-US', {
+                            timeZone: 'America/New_York',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true,
+                            timeZoneName: 'short'
+                          })}
                         </span>
                         <Button size="sm" variant="outline">
                           <Target className="h-3 w-3 mr-1" />
