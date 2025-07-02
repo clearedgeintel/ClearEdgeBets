@@ -150,6 +150,13 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 2, 2025: MAJOR FIX - CORRECTED NET PROFIT CALCULATIONS AND ELIMINATED CURRENCY DOUBLE CONVERSION
+  - Fixed critical bug in bet settlement where actualWin was being multiplied by 100, causing $6,272.73 instead of $62.73
+  - Corrected calculateBetResult function to properly handle stakes already stored in cents from database
+  - Fixed virtual bet settlement to not double-convert actualWin values (removed Math.round(betResult.actualWin * 100))
+  - Updated database with correct actualWin: 6273 cents = $62.73 for winning bet instead of 627,273 cents
+  - Net profit now accurately shows -$260.27 instead of inflated $5,949.73
+  - All performance metrics (totalStaked, totalWinnings, netProfit) now display consistently and mathematically correctly
 - July 2, 2025: FIXED CURRENCY DISPLAY BUG - Virtual betting history now correctly displays monetary values by converting cents to dollars
   - Fixed formatCurrency function to properly divide by 100 (database stores in cents, display shows dollars)
   - Net results now show correct amounts: 6273 cents displays as $62.73 instead of $6,272.73

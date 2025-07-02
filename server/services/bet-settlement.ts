@@ -72,15 +72,16 @@ export function calculateBetResult(bet: any, game: any): { result: string; actua
       break;
   }
 
-  // Calculate actual winnings
+  // Calculate actual winnings (stake is already in cents from database)
+  const stakeInCents = parseFloat(stake);
   if (result === 'win') {
     if (odds > 0) {
-      actualWin = parseFloat(stake) * (odds / 100);
+      actualWin = stakeInCents * (odds / 100);
     } else {
-      actualWin = parseFloat(stake) * (100 / Math.abs(odds));
+      actualWin = stakeInCents * (100 / Math.abs(odds));
     }
   } else if (result === 'push') {
-    actualWin = parseFloat(stake); // Return stake on push
+    actualWin = stakeInCents; // Return stake on push
   }
 
   return { result, actualWin };
@@ -232,7 +233,7 @@ export async function settleVirtualBets(): Promise<number> {
           .set({
             status: 'settled',
             result: betResult.result,
-            actualWin: Math.round(betResult.actualWin * 100) // Convert to cents
+            actualWin: Math.round(betResult.actualWin) // Already in cents
           })
           .where(eq(virtualBets.id, bet.id));
 
