@@ -150,6 +150,13 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 2, 2025: CRITICAL DATA CONSISTENCY FIX - Resolved pitcher information mismatch between AI picks and current game data
+  - Fixed daily picks generation to use real-time pitcher data from current MLB games API
+  - Updated DailyPicksInput interface to include awayPitcher, homePitcher, awayPitcherStats, homePitcherStats
+  - Enhanced OpenAI prompt to include actual pitcher matchups in daily picks analysis
+  - Eliminated inconsistency where AI picks referenced outdated pitchers (Shane McClanahan, Clayton Kershaw) while games showed current pitchers (Freddy Peralta, Clay Holmes)
+  - Daily picks now accurately reflect real pitcher information: Brady Singer vs Richard Fitts, Sonny Gray vs Mitch Keller, Ryan Pepiot vs Mitch Spence
+  - Enhanced bet editing functionality to support both stake and odds adjustments with real-time potential win calculations
 - July 2, 2025: MAJOR FIX - CORRECTED NET PROFIT CALCULATIONS AND ELIMINATED CURRENCY DOUBLE CONVERSION
   - Fixed critical bug in bet settlement where actualWin was being multiplied by 100, causing $6,272.73 instead of $62.73
   - Corrected calculateBetResult function to properly handle stakes already stored in cents from database

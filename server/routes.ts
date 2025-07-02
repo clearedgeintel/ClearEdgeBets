@@ -1488,6 +1488,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           awayTeam: game.awayTeam,
           homeTeam: game.homeTeam,
           gameId: game.gameId,
+          awayPitcher: game.awayPitcher,
+          homePitcher: game.homePitcher,
+          awayPitcherStats: game.awayPitcherStats,
+          homePitcherStats: game.homePitcherStats,
           moneylineOdds: game.odds.moneyline ? { away: game.odds.moneyline.away, home: game.odds.moneyline.home } : undefined,
           total: game.odds.total ? { line: game.odds.total.line, overOdds: game.odds.total.over, underOdds: game.odds.total.under } : undefined,
           runLine: game.odds.spread ? { 

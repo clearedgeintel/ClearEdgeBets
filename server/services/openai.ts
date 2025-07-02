@@ -145,6 +145,10 @@ export interface DailyPicksInput {
   awayTeam: string;
   homeTeam: string;
   gameId: string;
+  awayPitcher?: string;
+  homePitcher?: string;
+  awayPitcherStats?: string;
+  homePitcherStats?: string;
   moneylineOdds?: { away: number; home: number };
   total?: { line: number; overOdds: number; underOdds: number };
   runLine?: { awaySpread: number; homeSpread: number; awayOdds: number; homeOdds: number };
@@ -184,6 +188,7 @@ export async function generateDailyPicks(games: DailyPicksInput[]): Promise<Dail
 Games Data:
 ${games.map(game => `
 Game: ${game.awayTeam} @ ${game.homeTeam}
+${game.awayPitcher && game.homePitcher ? `Pitching: ${game.awayPitcher} ${game.awayPitcherStats || ''} vs ${game.homePitcher} ${game.homePitcherStats || ''}` : 'Pitching matchup TBD'}
 ${game.moneylineOdds ? `Moneyline: ${game.awayTeam} ${game.moneylineOdds.away > 0 ? '+' : ''}${game.moneylineOdds.away}, ${game.homeTeam} ${game.moneylineOdds.home > 0 ? '+' : ''}${game.moneylineOdds.home}` : ''}
 ${game.total ? `Total: ${game.total.line} (O: ${game.total.overOdds}, U: ${game.total.underOdds})` : ''}
 ${game.runLine ? `Run Line: ${game.awayTeam} ${game.runLine.awaySpread} (${game.runLine.awayOdds}), ${game.homeTeam} ${game.runLine.homeSpread} (${game.runLine.homeOdds})` : ''}
