@@ -59,8 +59,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
   const [hockeyExpanded, setHockeyExpanded] = useState(false);
   const [basketballExpanded, setBasketballExpanded] = useState(false);
 
-  // Debug logging
-  console.log("Sidebar bets:", bets);
+
 
   const sportsNavigation = [
     {

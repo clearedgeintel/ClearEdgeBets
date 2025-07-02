@@ -364,7 +364,7 @@ export default function VirtualSportsbook() {
     queryKey: ["/api/virtual/bets", user?.id || 999],
     queryFn: async () => {
       const virtualUserId = user?.id || 999;
-      console.log("Fetching virtual bets for user:", virtualUserId);
+
       const response = await fetch(`/api/virtual/bets?userId=${virtualUserId}`, {
         credentials: "include",
       });
@@ -372,7 +372,7 @@ export default function VirtualSportsbook() {
         throw new Error(`${response.status}: ${response.statusText}`);
       }
       const data = await response.json();
-      console.log("Virtual bets fetched:", data);
+
       return data;
     },
   });
@@ -1125,9 +1125,7 @@ export default function VirtualSportsbook() {
                       potentialWin: isParlayMode ? calculateParlayPayout(parlayStake, calculateParlayOdds(currentSlip.items)) : item.potentialWin
                     }));
 
-                    // Debug logging
-                    console.log("Bets to save:", betsToSave);
-                    console.log("Current slip items:", currentSlip.items);
+
                     
                     // Save bets to database
                     saveBetsMutation.mutate(betsToSave, {

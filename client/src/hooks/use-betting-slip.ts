@@ -59,9 +59,7 @@ export function useBettingSlip() {
   }, [stats]);
 
   const addBet = (bet: Bet) => {
-    console.log("Adding bet:", bet);
     setBets(currentBets => {
-      console.log("Current bets before adding:", currentBets);
       // Check if bet already exists
       const existingBetIndex = currentBets.findIndex(
         b => b.gameId === bet.gameId && b.betType === bet.betType && b.selection === bet.selection
@@ -71,12 +69,12 @@ export function useBettingSlip() {
         // Update existing bet
         const updatedBets = [...currentBets];
         updatedBets[existingBetIndex] = bet;
-        console.log("Updated existing bet, new bets:", updatedBets);
+
         return updatedBets;
       } else {
         // Add new bet
         const newBets = [...currentBets, bet];
-        console.log("Added new bet, new bets:", newBets);
+
         return newBets;
       }
     });

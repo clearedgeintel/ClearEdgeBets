@@ -38,11 +38,7 @@ export default function MyBets() {
     queryKey: ["/api/bets"],
   });
   
-  // Debug query state
-  console.log("Bets query loading:", betsLoading);
-  console.log("Bets query error:", betsError);
-  console.log("Server bets from API:", serverBets);
-  console.log("Server bets length:", serverBets.length);
+
 
   // Mutation to place bets from betting slip
   const placeBetsMutation = useMutation({
@@ -139,9 +135,7 @@ export default function MyBets() {
   const pendingBets = allBets.filter(bet => bet.status === "pending");
   const settledBets = allBets.filter(bet => bet.status === "settled");
   
-  // Debug logging after variables are declared
-  console.log("All bets combined:", allBets);
-  console.log("Pending bets:", pendingBets);
+
 
   const formatOdds = (odds: number) => {
     return odds > 0 ? `+${odds}` : `${odds}`;
