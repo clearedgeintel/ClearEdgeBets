@@ -1229,13 +1229,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const settledBets = bets.filter(bet => bet.status === 'settled');
       const wonBets = settledBets.filter(bet => bet.result === 'win');
       
-      const totalStaked = bets.reduce((sum, bet) => sum + (parseFloat(bet.stake.toString()) / 100), 0);
-      const totalWinnings = settledBets.reduce((sum, bet) => sum + (bet.actualWin ? (parseFloat(bet.actualWin.toString()) / 100) : 0), 0);
-      const netProfit = totalWinnings - totalStaked;
+      // Keep everything in cents for consistency with database storage
+      const totalStakedCents = bets.reduce((sum, bet) => sum + parseFloat(bet.stake.toString()), 0);
+      const totalWinningsCents = settledBets.reduce((sum, bet) => sum + (bet.actualWin ? parseFloat(bet.actualWin.toString()) : 0), 0);
+      const netProfitCents = totalWinningsCents - totalStakedCents;
       const winRate = settledBets.length > 0 ? wonBets.length / settledBets.length : 0;
-      const roi = totalStaked > 0 ? netProfit / totalStaked : 0;
-      const avgStake = totalBets > 0 ? totalStaked / totalBets : 0;
-      const avgWin = wonBets.length > 0 ? totalWinnings / wonBets.length : 0;
+      const roi = totalStakedCents > 0 ? netProfitCents / totalStakedCents : 0;
+      const avgStakeCents = totalBets > 0 ? totalStakedCents / totalBets : 0;
+      const avgWinCents = wonBets.length > 0 ? totalWinningsCents / wonBets.length : 0;
       
       // Performance by bet type
       const byBetType: Record<string, any> = {};
@@ -1250,10 +1251,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         }
         byBetType[bet.betType].count++;
-        byBetType[bet.betType].staked += (parseFloat(bet.stake.toString()) / 100);
+        byBetType[bet.betType].staked += parseFloat(bet.stake.toString());
         if (bet.status === 'settled') {
           byBetType[bet.betType].settled++;
-          byBetType[bet.betType].winnings += bet.actualWin ? (parseFloat(bet.actualWin.toString()) / 100) : 0;
+          byBetType[bet.betType].winnings += bet.actualWin ? parseFloat(bet.actualWin.toString()) : 0;
           if (bet.result === 'win') {
             byBetType[bet.betType].won++;
           }
@@ -1275,15 +1276,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
 
       const stats = {
-        totalBets,
-        totalStaked,
-        totalWinnings,
-        netProfit,
-        winRate,
-        roi,
-        avgStake,
-        avgWin,
-        byBetType,
+        totalBets: totalBets,
+        totalStaked: totalStakedCents,
+        totalWinnings: totalWinningsCents,
+        netProfit: netProfitCents,
+        winRate: winRate,
+        roi: roi,
+        avgStake: avgStakeCents,
+        avgWin: avgWinCents,
+        byBetType: byBetType,
         recentBets: convertedRecentBets
       };
       
