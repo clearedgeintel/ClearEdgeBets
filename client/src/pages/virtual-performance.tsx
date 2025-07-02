@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, TrendingUp, TrendingDown, Target, DollarSign, BarChart3, Filter } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface VirtualBet {
@@ -46,7 +46,7 @@ export default function VirtualPerformance() {
   const [periodFilter, setPeriodFilter] = useState<string>("all");
 
   const { data: stats, isLoading } = useQuery<VirtualPerformanceStats>({
-    queryKey: ['/api/virtual/performance', { userId: 1 }],
+    queryKey: ['/api/virtual/performance', 1],
     queryFn: async () => {
       const response = await fetch('/api/virtual/performance?userId=1');
       if (!response.ok) throw new Error('Failed to fetch performance stats');
@@ -55,7 +55,7 @@ export default function VirtualPerformance() {
   });
 
   const { data: virtualBets, isLoading: betsLoading } = useQuery<VirtualBet[]>({
-    queryKey: ['/api/virtual/bets', { userId: 1 }],
+    queryKey: ['/api/virtual/bets', 1],
     queryFn: async () => {
       const response = await fetch('/api/virtual/bets?userId=1');
       if (!response.ok) throw new Error('Failed to fetch virtual bets');
@@ -104,23 +104,28 @@ export default function VirtualPerformance() {
     );
   };
 
-  const filteredBets = virtualBets?.filter(bet => {
-    if (statusFilter !== "all" && bet.status !== statusFilter) return false;
-    if (betTypeFilter !== "all" && bet.betType !== betTypeFilter) return false;
-    if (periodFilter !== "all") {
-      const betDate = new Date(bet.placedAt);
-      const now = new Date();
-      switch (periodFilter) {
-        case "7d":
-          return betDate >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        case "30d":
-          return betDate >= new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        case "90d":
-          return betDate >= new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+  const filteredBets = useMemo(() => {
+    if (!virtualBets) return [];
+    
+    const now = new Date().getTime();
+    
+    return virtualBets.filter(bet => {
+      if (statusFilter !== "all" && bet.status !== statusFilter) return false;
+      if (betTypeFilter !== "all" && bet.betType !== betTypeFilter) return false;
+      if (periodFilter !== "all") {
+        const betDate = new Date(bet.placedAt).getTime();
+        switch (periodFilter) {
+          case "7d":
+            return betDate >= now - 7 * 24 * 60 * 60 * 1000;
+          case "30d":
+            return betDate >= now - 30 * 24 * 60 * 60 * 1000;
+          case "90d":
+            return betDate >= now - 90 * 24 * 60 * 60 * 1000;
+        }
       }
-    }
-    return true;
-  }) || [];
+      return true;
+    });
+  }, [virtualBets, statusFilter, betTypeFilter, periodFilter]);
 
   if (isLoading || betsLoading) {
     return (

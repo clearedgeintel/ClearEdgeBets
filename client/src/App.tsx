@@ -41,6 +41,7 @@ import Groups from "@/pages/groups";
 import StripeSetup from "@/pages/stripe-setup";
 import PlayerPropBuilder from "@/pages/player-prop-builder";
 import Help from "@/pages/help";
+import VirtualPerformance from "@/pages/virtual-performance";
 
 function Router() {
   return (
@@ -51,7 +52,7 @@ function Router() {
         <Route path="/game/:gameId" component={GameDetail} />
         <Route path="/my-bets" component={MyBets} />
         <Route path="/virtual-sportsbook" component={VirtualSportsbook} />
-        <Route path="/virtual-performance" component={lazy(() => import('./pages/virtual-performance'))} />
+        <Route path="/virtual-performance" component={VirtualPerformance} />
         <Route path="/weekly-leaderboard" component={WeeklyLeaderboard} />
         <Route path="/groups" component={Groups} />
         <Route path="/daily-picks" component={DailyPicks} />
