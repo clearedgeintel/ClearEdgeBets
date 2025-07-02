@@ -509,7 +509,7 @@ export default function MyBets() {
                           </span>
                           {bet.actualWin !== undefined && bet.actualWin !== null && (
                             <span className="text-muted-foreground">
-                              Result: <span className={`font-medium ${bet.actualWin! > 0 ? 'text-secondary' : 'text-red-600'}`}>
+                              Result: <span className={`font-medium ${bet.actualWin! > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                 {formatCurrency(bet.actualWin!)}
                               </span>
                             </span>
@@ -528,7 +528,7 @@ export default function MyBets() {
                       <div>
                         <Badge 
                           variant={bet.result === "win" ? "default" : "destructive"}
-                          className={bet.result === "win" ? "bg-secondary" : ""}
+                          className={bet.result === "win" ? "bg-green-600 text-white hover:bg-green-700" : ""}
                         >
                           {bet.result === "win" ? "Won" : bet.result === "loss" ? "Lost" : "Push"}
                         </Badge>
