@@ -719,7 +719,11 @@ export default function VirtualSportsbook() {
           Reset Balance to $1,000
         </Button>
         
-        <Button variant="outline" className="flex items-center gap-2">
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-2"
+          onClick={() => window.location.href = '/virtual-performance'}
+        >
           <BarChart3 className="h-4 w-4" />
           View Performance Stats
         </Button>

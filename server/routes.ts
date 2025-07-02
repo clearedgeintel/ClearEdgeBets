@@ -1218,6 +1218,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get virtual betting performance statistics
+  app.get('/api/virtual/performance', async (req, res) => {
+    try {
+      const userId = parseInt(req.query.userId as string) || 999; // Fallback user ID for testing
+      const bets = await storage.getUserVirtualBets(userId);
+      
+      // Calculate performance statistics
+      const totalBets = bets.length;
+      const settledBets = bets.filter(bet => bet.status === 'settled');
+      const wonBets = settledBets.filter(bet => bet.result === 'win');
+      
+      const totalStaked = bets.reduce((sum, bet) => sum + parseInt(bet.stake.toString()), 0);
+      const totalWinnings = settledBets.reduce((sum, bet) => sum + (bet.actualWin ? parseInt(bet.actualWin.toString()) : 0), 0);
+      const netProfit = totalWinnings - totalStaked;
+      const winRate = settledBets.length > 0 ? wonBets.length / settledBets.length : 0;
+      const roi = totalStaked > 0 ? netProfit / totalStaked : 0;
+      const avgStake = totalBets > 0 ? totalStaked / totalBets : 0;
+      const avgWin = wonBets.length > 0 ? totalWinnings / wonBets.length : 0;
+      
+      // Performance by bet type
+      const byBetType: Record<string, any> = {};
+      bets.forEach(bet => {
+        if (!byBetType[bet.betType]) {
+          byBetType[bet.betType] = {
+            count: 0,
+            staked: 0,
+            winnings: 0,
+            won: 0,
+            settled: 0
+          };
+        }
+        byBetType[bet.betType].count++;
+        byBetType[bet.betType].staked += parseInt(bet.stake.toString());
+        if (bet.status === 'settled') {
+          byBetType[bet.betType].settled++;
+          byBetType[bet.betType].winnings += bet.actualWin ? parseInt(bet.actualWin.toString()) : 0;
+          if (bet.result === 'win') {
+            byBetType[bet.betType].won++;
+          }
+        }
+      });
+      
+      // Calculate win rates by bet type
+      Object.keys(byBetType).forEach(betType => {
+        const data = byBetType[betType];
+        data.winRate = data.settled > 0 ? data.won / data.settled : 0;
+      });
+      
+      const stats = {
+        totalBets,
+        totalStaked,
+        totalWinnings,
+        netProfit,
+        winRate,
+        roi,
+        avgStake,
+        avgWin,
+        byBetType,
+        recentBets: bets.slice(-10).reverse() // Last 10 bets, most recent first
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching virtual performance:', error);
+      res.status(500).json({ error: 'Failed to fetch virtual performance' });
+    }
+  });
+
   // Virtual Betting Slip API Endpoints
   
   // Get user's virtual betting slip
