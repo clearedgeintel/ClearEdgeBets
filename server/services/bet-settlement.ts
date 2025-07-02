@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { games, bets } from '@shared/schema';
+import { games, bets, virtualBets, users } from '@shared/schema';
 import { eq, and, isNull } from 'drizzle-orm';
 import { fetchMLBScoreboard } from './mlb-api';
 import { bankrollManager } from './bankroll-manager';
@@ -188,6 +188,107 @@ export async function settlePendingBets(): Promise<number> {
 
   } catch (error) {
     console.error('Error settling bets:', error);
+    return 0;
+  }
+}
+
+/**
+ * Settle pending virtual bets based on completed games
+ */
+export async function settleVirtualBets(): Promise<number> {
+  try {
+    // Find completed games that haven't had bets settled
+    const completedGames = await db
+      .select()
+      .from(games)
+      .where(
+        and(
+          eq(games.status, 'final'),
+          eq(games.betsSettled, false)
+        )
+      );
+
+    let totalSettled = 0;
+
+    for (const game of completedGames) {
+      // Find all pending virtual bets for this game
+      const pendingVirtualBets = await db
+        .select()
+        .from(virtualBets)
+        .where(
+          and(
+            eq(virtualBets.gameId, game.gameId),
+            eq(virtualBets.status, 'pending')
+          )
+        );
+
+      for (const bet of pendingVirtualBets) {
+        // Calculate bet result
+        const betResult = calculateBetResult(bet, game);
+        
+        // Update virtual bet status
+        await db
+          .update(virtualBets)
+          .set({
+            status: 'settled',
+            result: betResult.result,
+            actualWin: Math.round(betResult.actualWin * 100) // Convert to cents
+          })
+          .where(eq(virtualBets.id, bet.id));
+
+        // Update user's virtual balance and statistics
+        if (bet.userId) {
+          const user = await db
+            .select()
+            .from(users)
+            .where(eq(users.id, bet.userId))
+            .limit(1);
+
+          if (user.length > 0) {
+            const currentUser = user[0];
+            const stakeAmount = parseFloat(bet.stake.toString());
+            const winAmount = betResult.actualWin;
+            
+            let balanceChange = 0;
+            let totalWinningsChange = 0;
+            let totalLossesChange = 0;
+            let winCountChange = 0;
+
+            if (betResult.result === 'win') {
+              balanceChange = winAmount;
+              totalWinningsChange = winAmount;
+              winCountChange = 1;
+            } else if (betResult.result === 'loss') {
+              // Balance was already deducted when bet was placed, no additional change needed
+              totalLossesChange = stakeAmount;
+            } else if (betResult.result === 'push') {
+              // Return the stake to user's balance
+              balanceChange = stakeAmount;
+            }
+
+            // Update user statistics
+            await db
+              .update(users)
+              .set({
+                virtualBalance: Math.round((currentUser.virtualBalance || 0) + (balanceChange * 100)), // Convert to cents
+                totalVirtualWinnings: Math.round(((currentUser.totalVirtualWinnings || 0) / 100) + totalWinningsChange) * 100,
+                totalVirtualLosses: Math.round(((currentUser.totalVirtualLosses || 0) / 100) + totalLossesChange) * 100,
+                winCount: (currentUser.winCount || 0) + winCountChange,
+                betCount: (currentUser.betCount || 0) // betCount was incremented when bet was placed
+              })
+              .where(eq(users.id, bet.userId));
+          }
+        }
+
+        totalSettled++;
+      }
+    }
+
+    console.log(`Settled ${totalSettled} virtual bets across ${completedGames.length} games`);
+    return totalSettled;
+
+  } catch (error) {
+    console.error('Error settling virtual bets:', error);
     return 0;
   }
 }

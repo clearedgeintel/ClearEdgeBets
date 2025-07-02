@@ -4123,7 +4123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Import bet settlement functions
-  const { settlePendingBets, updateGameStatus, getLiveGameInfo } = await import('./services/bet-settlement');
+  const { settlePendingBets, settleVirtualBets, updateGameStatus, getLiveGameInfo } = await import('./services/bet-settlement');
 
   // Bet Settlement Routes
   app.post('/api/admin/settle-bets', async (req: Request, res: Response) => {
@@ -4147,6 +4147,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Settle bets error:', error);
       res.status(500).json({ error: 'Failed to settle bets' });
+    }
+  });
+
+  // Virtual Bet Settlement Route
+  app.post('/api/admin/settle-virtual-bets', async (req: Request, res: Response) => {
+    try {
+      console.log('Manual virtual bet settlement triggered');
+      
+      // Settle pending virtual bets
+      const settledCount = await settleVirtualBets();
+      
+      res.json({ 
+        success: true, 
+        message: `Settled ${settledCount} virtual bets`,
+        settledCount 
+      });
+    } catch (error) {
+      console.error('Virtual bet settlement error:', error);
+      res.status(500).json({ error: 'Failed to settle virtual bets' });
     }
   });
 
