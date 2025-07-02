@@ -944,6 +944,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete a bet
+  app.delete("/api/bets/:id", async (req, res) => {
+    try {
+      const betId = parseInt(req.params.id);
+      await storage.deleteBet(betId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting bet:", error);
+      res.status(500).json({ error: "Failed to delete bet" });
+    }
+  });
+
   // Admin endpoint to fetch all bets
   app.get("/api/admin/bets", async (req, res) => {
     try {

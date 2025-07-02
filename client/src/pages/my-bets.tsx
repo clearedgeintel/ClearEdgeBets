@@ -32,7 +32,7 @@ export default function MyBets() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [editingBet, setEditingBet] = useState<number | null>(null);
-  const [editValues, setEditValues] = useState<{ stake: string; selection: string }>({ stake: "", selection: "" });
+  const [editValues, setEditValues] = useState<{ stake: string; selection: string; odds: string }>({ stake: "", selection: "", odds: "" });
   
   const { data: serverBets = [], isLoading: betsLoading, error: betsError } = useQuery<Bet[]>({
     queryKey: ["/api/bets"],
@@ -65,24 +65,64 @@ export default function MyBets() {
     },
   });
 
+  // Mutation to delete server bets
+  const deleteBetMutation = useMutation({
+    mutationFn: async (betId: number) => {
+      await apiRequest("DELETE", `/api/bets/${betId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Bet Deleted",
+        description: "Your bet has been successfully deleted.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/bets"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete bet. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
+
+
+  // Remove bet from local betting slip
+  const removeBet = (bet: any) => {
+    clearBet(bet.gameId, bet.betType, bet.selection);
+    toast({
+      title: "Bet removed",
+      description: "Bet has been removed from your betting slip.",
+    });
+  };
+
+  // Delete server bet from database
+  const deleteServerBet = (betId: number) => {
+    if (window.confirm("Are you sure you want to delete this bet? This action cannot be undone.")) {
+      deleteBetMutation.mutate(betId);
+    }
+  };
 
   // Handlers for editing bets
   const startEditing = (bet: any) => {
     setEditingBet(bet.id);
     setEditValues({
       stake: typeof bet.stake === 'string' ? bet.stake : bet.stake.toString(),
-      selection: bet.selection
+      selection: bet.selection,
+      odds: bet.odds.toString()
     });
   };
 
   const cancelEditing = () => {
     setEditingBet(null);
-    setEditValues({ stake: "", selection: "" });
+    setEditValues({ stake: "", selection: "", odds: "" });
   };
 
   const saveEdit = (bet: any) => {
     const newStake = parseFloat(editValues.stake);
+    const newOdds = parseFloat(editValues.odds);
+    
     if (isNaN(newStake) || newStake <= 0) {
       toast({
         title: "Invalid stake",
@@ -92,25 +132,27 @@ export default function MyBets() {
       return;
     }
 
+    if (isNaN(newOdds) || newOdds === 0) {
+      toast({
+        title: "Invalid odds",
+        description: "Please enter valid odds.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const updates = {
       stake: newStake,
       selection: editValues.selection,
-      potentialWin: calculatePotentialWin(newStake, bet.odds)
+      odds: newOdds,
+      potentialWin: calculatePotentialWin(newStake, newOdds)
     };
 
     updateBet(bet.gameId, bet.betType, bet.selection, updates);
     setEditingBet(null);
     toast({
       title: "Bet updated",
-      description: "Your bet has been successfully updated.",
-    });
-  };
-
-  const removeBet = (bet: any) => {
-    clearBet(bet.gameId, bet.betType, bet.selection);
-    toast({
-      title: "Bet removed",
-      description: "Bet has been removed from your betting slip.",
+      description: "Your bet has been successfully updated with new stake and odds.",
     });
   };
 
@@ -408,6 +450,18 @@ export default function MyBets() {
                               />
                             ) : (
                               <span className="font-medium text-foreground">{formatCurrency(bet.stake)}</span>
+                            )}
+                          </span>
+                          <span className="text-muted-foreground">
+                            Odds: {editingBet === bet.id ? (
+                              <Input
+                                type="number"
+                                value={editValues.odds}
+                                onChange={(e) => setEditValues({ ...editValues, odds: e.target.value })}
+                                className="w-20 h-8 text-sm inline-block ml-1"
+                              />
+                            ) : (
+                              <span className="font-medium text-foreground">{formatOdds(bet.odds)}</span>
                             )}
                           </span>
                           <span className="text-muted-foreground">
