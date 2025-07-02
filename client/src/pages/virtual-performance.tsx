@@ -46,18 +46,18 @@ export default function VirtualPerformance() {
   const [periodFilter, setPeriodFilter] = useState<string>("all");
 
   const { data: stats, isLoading } = useQuery<VirtualPerformanceStats>({
-    queryKey: ['/api/virtual/performance', { userId: 999 }],
+    queryKey: ['/api/virtual/performance', { userId: 1 }],
     queryFn: async () => {
-      const response = await fetch('/api/virtual/performance?userId=999');
+      const response = await fetch('/api/virtual/performance?userId=1');
       if (!response.ok) throw new Error('Failed to fetch performance stats');
       return response.json();
     }
   });
 
   const { data: virtualBets, isLoading: betsLoading } = useQuery<VirtualBet[]>({
-    queryKey: ['/api/virtual/bets', { userId: 999 }],
+    queryKey: ['/api/virtual/bets', { userId: 1 }],
     queryFn: async () => {
-      const response = await fetch('/api/virtual/bets?userId=999');
+      const response = await fetch('/api/virtual/bets?userId=1');
       if (!response.ok) throw new Error('Failed to fetch virtual bets');
       return response.json();
     }
@@ -67,7 +67,7 @@ export default function VirtualPerformance() {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(amount / 100);
+    }).format(amount);
   };
 
   const formatOdds = (odds: number) => {
