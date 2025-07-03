@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { storage } from '../storage';
 import { generateAITicket } from './openai';
+import { settlePendingBets, settleVirtualBets, syncLiveGameData } from './bet-settlement';
 
 interface ScheduledTask {
   name: string;
@@ -27,9 +28,13 @@ class SchedulerService {
     // Optional: Weekly summary ticket every Monday at 9 AM Central
     this.addTask('weekly-summary', '0 0 14 * * 1', this.generateWeeklySummaryTicket.bind(this));
     
-    console.log('✓ Scheduler service initialized with automated AI ticket generation');
+    // Automatic bet settlement every 15 minutes
+    this.addTask('auto-bet-settlement', '0 */15 * * * *', this.runAutomaticBetSettlement.bind(this));
+    
+    console.log('✓ Scheduler service initialized with automated AI ticket generation and bet settlement');
     console.log('  - Daily tickets: 9:00 AM Central Time');
     console.log('  - Weekly summaries: Mondays at 9:00 AM Central Time');
+    console.log('  - Automatic bet settlement: Every 15 minutes');
   }
 
   public addTask(name: string, schedule: string, taskFunction: () => Promise<void>) {
@@ -244,6 +249,31 @@ class SchedulerService {
     };
 
     return analysis;
+  }
+
+  // Automatic bet settlement task
+  private async runAutomaticBetSettlement() {
+    try {
+      console.log('🎯 Running scheduled bet settlement...');
+      
+      // Sync live game data first to get latest scores
+      const syncedGames = await syncLiveGameData();
+      
+      // Settle regular bets
+      const regularBetsSettled = await settlePendingBets();
+      
+      // Settle virtual bets
+      const virtualBetsSettled = await settleVirtualBets();
+      
+      const totalSettled = regularBetsSettled + virtualBetsSettled;
+      
+      if (totalSettled > 0) {
+        console.log(`✅ Scheduled settlement complete: ${totalSettled} bets reconciled (${regularBetsSettled} regular, ${virtualBetsSettled} virtual)`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Scheduled bet settlement failed:', error);
+    }
   }
 
   // Manual trigger for testing

@@ -322,6 +322,7 @@ export async function updateGameStatus(gameId: string, update: {
     if (update.status === 'final') {
       setTimeout(async () => {
         await settlePendingBets();
+        await settleVirtualBets();
       }, 1000); // Small delay to ensure update is committed
     }
 

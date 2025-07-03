@@ -150,6 +150,13 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 2, 2025: AUTOMATIC BET SETTLEMENT SYSTEM - Implemented comprehensive automatic bet reconciliation
+  - Added scheduled bet settlement running every 15 minutes to reconcile pending bets automatically
+  - Enhanced game status updates to trigger immediate settlement when games become "final"
+  - Successfully reconciled 6 pending regular bets from Yankees vs Blue Jays game (final score: Yankees 5, Blue Jays 3)
+  - Settlement system now handles both regular bets and virtual bets automatically
+  - Users no longer need to wait for manual admin settlement of completed games
+  - Platform now provides real-time bet resolution with proper win/loss/push calculations
 - July 2, 2025: TIMEZONE CONSISTENCY FIX - All game times and platform timestamps now use consistent Eastern Time
   - Removed timezone abbreviation clutter from game cards for cleaner display (shows "3:07 PM" instead of "3:07 PM EST")
   - Updated Hot Trends "Last updated" timestamps to use consistent Eastern timezone with clear labeling
