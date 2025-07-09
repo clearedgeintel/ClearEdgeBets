@@ -534,6 +534,10 @@ export default function GameCard({ game }: GameCardProps) {
                             analysis.favoredTeam = game.awayTeam.includes('Mariners') || game.awayTeam.includes('Seattle') ? game.awayTeam : game.homeTeam;
                           } else if (summary.includes('rays') && (summary.includes('advantage') || summary.includes('edge') || summary.includes('value') || summary.includes('favor'))) {
                             analysis.favoredTeam = game.awayTeam.includes('Rays') || game.awayTeam.includes('Tampa Bay') ? game.awayTeam : game.homeTeam;
+                          } else if (summary.includes('brewers') && (summary.includes('positioned for') || summary.includes('victory') || summary.includes('narrow victory') || summary.includes('advantage') || summary.includes('edge'))) {
+                            analysis.favoredTeam = game.awayTeam.includes('Brewers') || game.awayTeam.includes('Milwaukee') ? game.awayTeam : game.homeTeam;
+                          } else if (summary.includes('dodgers') && (summary.includes('positioned for') || summary.includes('victory') || summary.includes('advantage') || summary.includes('edge'))) {
+                            analysis.favoredTeam = game.awayTeam.includes('Dodgers') || game.awayTeam.includes('Los Angeles') ? game.awayTeam : game.homeTeam;
                           }
                           
                           // Determine total direction from analysis
@@ -548,13 +552,19 @@ export default function GameCard({ game }: GameCardProps) {
                               summary.includes('low-scoring game') || summary.includes('potential low-scoring game') ||
                               summary.includes('suppress hits') || summary.includes('control the pace') ||
                               summary.includes('manage baserunners') || summary.includes('under control') ||
-                              summary.includes('pitching duel') || summary.includes('solid pitching')) {
+                              summary.includes('pitching duel') || summary.includes('solid pitching') ||
+                              summary.includes('may lean under') || summary.includes('lean under') ||
+                              summary.includes('total may lean under') || summary.includes('run total may lean under') ||
+                              summary.includes('respecting the quality pitching') || summary.includes('quality pitching') ||
+                              summary.includes('limit baserunners') || summary.includes('defensive solidity')) {
                             analysis.totalDirection = 'under';
                           } else if (summary.includes('high-scoring') || summary.includes('offensive') || 
                               summary.includes('run production') || summary.includes('over') ||
                               summary.includes('high total') || summary.includes('offensive capabilities') ||
                               summary.includes('potent offense') || summary.includes('explosive offense') ||
-                              summary.includes('run heavy') || summary.includes('high-scoring game')) {
+                              summary.includes('run heavy') || summary.includes('high-scoring game') ||
+                              summary.includes('may lean over') || summary.includes('lean over') ||
+                              summary.includes('offensive surge') || summary.includes('potent lineup')) {
                             analysis.totalDirection = 'over';
                           }
                           
