@@ -150,6 +150,14 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 9, 2025: CRITICAL BUG FIX - Resolved AI analysis and suggested bets inconsistency that undermined platform credibility
+  - Fixed text analysis logic to properly detect over/under signals from AI summaries
+  - Enhanced phrase detection to include "lower total score", "pitching duel", "under control", "manage baserunners"
+  - Added comprehensive team favoring detection for phrases like "value in betting on [team]", "[team] edge", "[team] worthwhile"
+  - Eliminated inconsistency where AI analysis suggested "under" but betting recommendations showed "over"
+  - Now properly analyzes actual AI summary content instead of using random suggestions
+  - Enhanced detection covers all key phrases used in AI-generated game analysis
+  - Platform now provides consistent, credible betting recommendations aligned with AI analysis
 - July 2, 2025: AUTOMATIC BET SETTLEMENT SYSTEM - Implemented comprehensive automatic bet reconciliation
   - Added scheduled bet settlement running every 15 minutes to reconcile pending bets automatically
   - Enhanced game status updates to trigger immediate settlement when games become "final"

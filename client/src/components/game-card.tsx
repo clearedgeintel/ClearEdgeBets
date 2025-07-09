@@ -500,23 +500,40 @@ export default function GameCard({ game }: GameCardProps) {
                           };
                           
                           // Determine favored team from analysis
-                          if (summary.includes(`favors the ${game.awayTeam.toLowerCase()}`) || 
-                              summary.includes(`${game.awayTeam.toLowerCase()} has`) ||
-                              summary.includes(`${game.awayTeam.toLowerCase()} advantage`) ||
-                              summary.includes(`${game.awayTeam.toLowerCase()} superiority`)) {
+                          const awayTeamLower = game.awayTeam.toLowerCase();
+                          const homeTeamLower = game.homeTeam.toLowerCase();
+                          
+                          if (summary.includes(`favors the ${awayTeamLower}`) || 
+                              summary.includes(`${awayTeamLower} has`) ||
+                              summary.includes(`${awayTeamLower} advantage`) ||
+                              summary.includes(`${awayTeamLower} superiority`) ||
+                              summary.includes(`value in betting on the ${awayTeamLower}`) ||
+                              summary.includes(`${awayTeamLower} hold a`) ||
+                              summary.includes(`${awayTeamLower} prospects`) ||
+                              summary.includes(`strengthen the ${awayTeamLower}`) ||
+                              summary.includes(`${awayTeamLower} edge`) ||
+                              summary.includes(`${awayTeamLower} worthwhile`)) {
                             analysis.favoredTeam = game.awayTeam;
-                          } else if (summary.includes(`favors the ${game.homeTeam.toLowerCase()}`) ||
-                                   summary.includes(`${game.homeTeam.toLowerCase()} has`) ||
-                                   summary.includes(`${game.homeTeam.toLowerCase()} advantage`) ||
-                                   summary.includes(`${game.homeTeam.toLowerCase()} superiority`)) {
+                          } else if (summary.includes(`favors the ${homeTeamLower}`) ||
+                                   summary.includes(`${homeTeamLower} has`) ||
+                                   summary.includes(`${homeTeamLower} advantage`) ||
+                                   summary.includes(`${homeTeamLower} superiority`) ||
+                                   summary.includes(`value in betting on the ${homeTeamLower}`) ||
+                                   summary.includes(`${homeTeamLower} hold a`) ||
+                                   summary.includes(`${homeTeamLower} prospects`) ||
+                                   summary.includes(`strengthen the ${homeTeamLower}`) ||
+                                   summary.includes(`${homeTeamLower} edge`) ||
+                                   summary.includes(`${homeTeamLower} worthwhile`)) {
                             analysis.favoredTeam = game.homeTeam;
-                          } else if ((summary.includes('yankees') && summary.includes('favor')) ||
-                                   (summary.includes('new york yankees') && summary.includes('favor')) ||
-                                   (summary.includes('pitching matchup heavily favors the new york yankees'))) {
-                            analysis.favoredTeam = game.awayTeam.includes('Yankees') || game.awayTeam.includes('New York Yankees') ? game.awayTeam : game.homeTeam;
-                          } else if ((summary.includes('blue jays') && summary.includes('favor')) ||
-                                   (summary.includes('toronto') && summary.includes('favor'))) {
-                            analysis.favoredTeam = game.awayTeam.includes('Blue Jays') || game.awayTeam.includes('Toronto') ? game.awayTeam : game.homeTeam;
+                          }
+                          
+                          // Handle specific team name variations
+                          if (summary.includes('mets') && (summary.includes('advantage') || summary.includes('edge') || summary.includes('value'))) {
+                            analysis.favoredTeam = game.awayTeam.includes('Mets') || game.awayTeam.includes('New York Mets') ? game.awayTeam : game.homeTeam;
+                          } else if (summary.includes('mariners') && (summary.includes('advantage') || summary.includes('edge') || summary.includes('value') || summary.includes('worthwhile'))) {
+                            analysis.favoredTeam = game.awayTeam.includes('Mariners') || game.awayTeam.includes('Seattle') ? game.awayTeam : game.homeTeam;
+                          } else if (summary.includes('rays') && (summary.includes('advantage') || summary.includes('edge') || summary.includes('value') || summary.includes('favor'))) {
+                            analysis.favoredTeam = game.awayTeam.includes('Rays') || game.awayTeam.includes('Tampa Bay') ? game.awayTeam : game.homeTeam;
                           }
                           
                           // Determine total direction from analysis
@@ -526,10 +543,18 @@ export default function GameCard({ game }: GameCardProps) {
                               summary.includes('neutralize') || summary.includes('suppress runs') ||
                               summary.includes('difficulty for hitters') || summary.includes('strong pitching') ||
                               summary.includes('pitching dominance') || summary.includes('likely for the game to stay under') ||
-                              summary.includes('considering a low-scoring')) {
+                              summary.includes('considering a low-scoring') || summary.includes('lower total score') ||
+                              summary.includes('lower total') || summary.includes('keeping the game tight') ||
+                              summary.includes('low-scoring game') || summary.includes('potential low-scoring game') ||
+                              summary.includes('suppress hits') || summary.includes('control the pace') ||
+                              summary.includes('manage baserunners') || summary.includes('under control') ||
+                              summary.includes('pitching duel') || summary.includes('solid pitching')) {
                             analysis.totalDirection = 'under';
                           } else if (summary.includes('high-scoring') || summary.includes('offensive') || 
-                              summary.includes('run production') || summary.includes('over')) {
+                              summary.includes('run production') || summary.includes('over') ||
+                              summary.includes('high total') || summary.includes('offensive capabilities') ||
+                              summary.includes('potent offense') || summary.includes('explosive offense') ||
+                              summary.includes('run heavy') || summary.includes('high-scoring game')) {
                             analysis.totalDirection = 'over';
                           }
                           
