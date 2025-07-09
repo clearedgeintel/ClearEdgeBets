@@ -2647,23 +2647,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Hot Trends endpoint for Elite tier
+  // Hot Trends endpoint for Pro tier
   app.get("/api/hot-trends", async (req, res) => {
     try {
       const { category } = req.query;
       
-      // Generate mock hot trends data with realistic MLB patterns
+      // Generate dynamic hot trends data with realistic MLB patterns that change over time
+      const now = new Date();
+      const todayHour = now.getHours();
+      const daysSinceEpoch = Math.floor(now.getTime() / (1000 * 60 * 60 * 24));
+      
+      // Use time-based variations to simulate realistic trend changes
+      const baseVariation = Math.sin(daysSinceEpoch * 0.1) * 5; // ±5% variation
+      const hourlyVariation = Math.sin(todayHour * 0.5) * 3; // ±3% hourly variation
+      
       const mockTrends = [
         {
           id: "trend_1",
           title: "Rockies Home Overs",
           description: "Colorado Rockies home games consistently hitting the over at Coors Field",
-          percentage: 73,
-          games: 32,
+          percentage: Math.round(73 + baseVariation + hourlyVariation),
+          games: Math.round(32 + (daysSinceEpoch % 7)), // Slowly increasing game count
           category: "venue",
           trend: "hot",
-          confidence: 87,
-          roi: 18.5,
+          confidence: Math.round(87 + baseVariation),
+          roi: Math.round((18.5 + baseVariation + hourlyVariation) * 10) / 10,
           examples: [
             { text: "COL vs LAD - Over 11.5 ✓ (Final: 8-6)", date: "2025-06-28" },
             { text: "COL vs SD - Over 10.5 ✓ (Final: 9-7)", date: "2025-06-26" }, 
@@ -2675,12 +2683,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: "trend_2", 
           title: "Astros Road Favorites",
           description: "Houston Astros as road favorites covering the run line consistently",
-          percentage: 68,
-          games: 28,
+          percentage: Math.round(68 + baseVariation - hourlyVariation),
+          games: Math.round(28 + (daysSinceEpoch % 5)),
           category: "team",
           trend: "hot",
-          confidence: 82,
-          roi: 14.2,
+          confidence: Math.round(82 + baseVariation),
+          roi: Math.round((14.2 + baseVariation - hourlyVariation) * 10) / 10,
           examples: [
             { text: "HOU -1.5 @ SEA ✓ (Won 7-3)", date: "2025-06-29" },
             { text: "HOU -1.5 @ LAA ✓ (Won 8-4)", date: "2025-06-27" },
@@ -2692,12 +2700,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: "trend_3",
           title: "White Sox Under Streak", 
           description: "Chicago White Sox games trending heavily under the total",
-          percentage: 71,
-          games: 24,
+          percentage: Math.round(71 + baseVariation * 1.2),
+          games: Math.round(24 + (daysSinceEpoch % 4)),
           category: "total",
           trend: "hot",
-          confidence: 79,
-          roi: 12.8,
+          confidence: Math.round(79 + baseVariation),
+          roi: Math.round((12.8 + baseVariation * 1.2) * 10) / 10,
           examples: [
             { text: "CWS vs DET - Under 9 ✓ (Final: 4-2)", date: "2025-06-30" },
             { text: "CWS @ KC - Under 8.5 ✓ (Final: 3-1)", date: "2025-06-28" },
@@ -2709,12 +2717,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: "trend_4",
           title: "Rain Game Unders",
           description: "Games with 30%+ rain probability hitting under at high rate",
-          percentage: 69,
-          games: 18,
+          percentage: Math.round(69 + baseVariation * 0.8),
+          games: Math.round(18 + (daysSinceEpoch % 3)),
           category: "weather", 
           trend: "hot",
-          confidence: 75,
-          roi: 11.3,
+          confidence: Math.round(75 + baseVariation),
+          roi: Math.round((11.3 + baseVariation * 0.8) * 10) / 10,
           examples: [
             { text: "NYY @ BOS - Under 9.5 ✓ (Rain delay, Final: 4-1)", date: "2025-06-27" },
             { text: "PHI @ WAS - Under 10 ✓ (Drizzle throughout)", date: "2025-06-25" },
@@ -2726,12 +2734,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: "trend_5",
           title: "Brewers First 5 Overs",
           description: "Milwaukee Brewers first 5 innings consistently high scoring",
-          percentage: 64,
-          games: 21,
+          percentage: Math.round(64 + baseVariation * 0.9),
+          games: Math.round(21 + (daysSinceEpoch % 6)),
           category: "team",
           trend: "hot", 
-          confidence: 71,
-          roi: 9.7,
+          confidence: Math.round(71 + baseVariation),
+          roi: Math.round((9.7 + baseVariation * 0.9) * 10) / 10,
           examples: [
             { text: "MIL F5 Over 4.5 vs STL ✓ (5-2 after 5)", date: "2025-06-29" },
             { text: "MIL F5 Over 5 @ CIN ✓ (6-1 after 5)", date: "2025-06-27" },
@@ -2743,16 +2751,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: "trend_6",
           title: "Yankees Losing Streak ATS",
           description: "New York Yankees failing to cover as favorites during recent slump",
-          percentage: 29,
-          games: 14,
+          percentage: Math.round(29 - baseVariation * 0.6), // Inverse for cold trend
+          games: Math.round(14 + (daysSinceEpoch % 3)),
           category: "streak",
           trend: "cold",
-          confidence: 68,
-          roi: -8.4,
+          confidence: Math.round(68 + baseVariation),
+          roi: Math.round((-8.4 - baseVariation * 0.6) * 10) / 10,
           examples: [
-            "NYY -1.5 vs BOS ✗ (Won 5-4)",
-            "NYY -2.5 @ TB ✗ (Lost 6-3)",
-            "NYY -1.5 vs TOR ✗ (Won 4-3)"
+            { text: "NYY -1.5 vs BOS ✗ (Won 5-4)", date: "2025-06-30" },
+            { text: "NYY -2.5 @ TB ✗ (Lost 6-3)", date: "2025-06-28" },
+            { text: "NYY -1.5 vs TOR ✗ (Won 4-3)", date: "2025-06-26" }
           ],
           lastUpdated: new Date().toISOString()
         }

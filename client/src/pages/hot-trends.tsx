@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { TrendingUp, TrendingDown, Flame, AlertTriangle, CheckCircle, Target } from "lucide-react";
+import { TrendingUp, TrendingDown, Flame, AlertTriangle, CheckCircle, Target, RefreshCw } from "lucide-react";
 
 interface HotTrend {
   id: string;
@@ -23,8 +23,9 @@ interface HotTrend {
 
 export default function HotTrends() {
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const queryClient = useQueryClient();
 
-  const { data: trends, isLoading } = useQuery({
+  const { data: trends, isLoading, isFetching } = useQuery({
     queryKey: ['/api/hot-trends', selectedCategory],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -34,8 +35,14 @@ export default function HotTrends() {
       if (!response.ok) throw new Error('Failed to fetch hot trends');
       const data = await response.json();
       return data as HotTrend[];
-    }
+    },
+    refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+    staleTime: 3 * 60 * 1000, // Consider data stale after 3 minutes
   });
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/hot-trends'] });
+  };
 
   const getTrendIcon = (trend: string) => {
     switch (trend) {
@@ -97,9 +104,21 @@ export default function HotTrends() {
             Discover trending patterns and statistical edges in MLB betting
           </p>
         </div>
-        <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-          Elite Feature
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh}
+            disabled={isFetching}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+            Pro Feature
+          </Badge>
+        </div>
       </div>
 
       {/* Category Filters */}
