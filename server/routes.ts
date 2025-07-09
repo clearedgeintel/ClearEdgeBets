@@ -2661,6 +2661,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const baseVariation = Math.sin(daysSinceEpoch * 0.1) * 5; // ±5% variation
       const hourlyVariation = Math.sin(todayHour * 0.5) * 3; // ±3% hourly variation
       
+      // Generate recent example dates (last 7 days)
+      const getRecentDates = (count: number) => {
+        const dates = [];
+        for (let i = 1; i <= count; i++) {
+          const date = new Date(now);
+          date.setDate(date.getDate() - i);
+          dates.push(date.toISOString().split('T')[0]);
+        }
+        return dates;
+      }
+      
+      const recentDates = getRecentDates(7);
+      
       const mockTrends = [
         {
           id: "trend_1",
@@ -2673,9 +2686,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           confidence: Math.round(87 + baseVariation),
           roi: Math.round((18.5 + baseVariation + hourlyVariation) * 10) / 10,
           examples: [
-            { text: "COL vs LAD - Over 11.5 ✓ (Final: 8-6)", date: "2025-06-28" },
-            { text: "COL vs SD - Over 10.5 ✓ (Final: 9-7)", date: "2025-06-26" }, 
-            { text: "COL vs ARI - Over 12 ✓ (Final: 10-8)", date: "2025-06-24" }
+            { text: "COL vs LAD - Over 11.5 ✓ (Final: 8-6)", date: recentDates[0] },
+            { text: "COL vs SD - Over 10.5 ✓ (Final: 9-7)", date: recentDates[1] }, 
+            { text: "COL vs ARI - Over 12 ✓ (Final: 10-8)", date: recentDates[2] }
           ],
           lastUpdated: new Date().toISOString()
         },
