@@ -150,6 +150,11 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 17, 2025: FIXED GAME TIME DISPLAY - Resolved raw ISO timestamp format showing in game cards
+  - Fixed game time formatting to display proper Eastern Time (e.g., "5:30 PM" instead of "2025-07-16T21:30:00.000Z")
+  - Added proper timezone conversion to America/New_York with 12-hour format
+  - Enhanced date parsing with error handling and fallback to "7:00 PM"
+  - All game times now display in user-friendly format with consistent timezone
 - July 9, 2025: CRITICAL BUG FIX - Resolved AI analysis and suggested bets inconsistency that undermined platform credibility
   - Fixed text analysis logic to properly detect over/under signals from AI summaries
   - Enhanced phrase detection to include "lower total score", "pitching duel", "under control", "manage baserunners"
