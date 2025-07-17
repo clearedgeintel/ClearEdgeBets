@@ -155,6 +155,12 @@ A test user has been created with Elite tier access:
   - Added proper timezone conversion to America/New_York with 12-hour format
   - Enhanced date parsing with error handling and fallback to "7:00 PM"
   - All game times now display in user-friendly format with consistent timezone
+- July 17, 2025: DATA INTEGRITY FIX - Eliminated mock games during actual no-game periods
+  - Removed fallback to generateGamesForDate() when no real MLB games are scheduled
+  - System now returns empty array instead of creating fake games during All-Star break
+  - Enhanced empty state messaging to explain why no games are available (e.g., "MLB All-Star break")
+  - Home page and games pages now properly display "No MLB games available" with context
+  - Platform now accurately reflects real MLB scheduling instead of showing fake games
 - July 9, 2025: CRITICAL BUG FIX - Resolved AI analysis and suggested bets inconsistency that undermined platform credibility
   - Fixed text analysis logic to properly detect over/under signals from AI summaries
   - Enhanced phrase detection to include "lower total score", "pitching duel", "under control", "manage baserunners"

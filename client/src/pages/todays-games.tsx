@@ -326,6 +326,13 @@ export default function TodaysGames() {
                   ? "Try adjusting your search or filters" 
                   : `No MLB games are scheduled for ${format(selectedDate, "MMMM d, yyyy")}`}
               </p>
+              {!searchTerm && filterBy === "all" && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  {format(selectedDate, "MMMM d") === "July 16" ? 
+                    "MLB All-Star break - Games resume July 19th" :
+                    "Check the MLB schedule for game availability"}
+                </p>
+              )}
               {!isSameDay(selectedDate, new Date()) && (
                 <Button 
                   variant="outline" 

@@ -562,10 +562,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("Failed to fetch real odds:", error);
       }
       
-      // Use real MLB games if available, otherwise fall back to generated
+      // Use real MLB games if available, otherwise return empty array (no mock games)
       const gamesWithOdds = realMLBGames.length > 0 ? 
         realMLBGames.map((game: any) => convertMLBGameToGameFormat(game, targetDate)) :
-        generateGamesForDate(targetDate);
+        [];
       
       // Merge real odds with games
       const gamesWithRealOdds = mergeRealOddsWithGames(gamesWithOdds, realOdds);
