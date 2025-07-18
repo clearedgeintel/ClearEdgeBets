@@ -1,4 +1,4 @@
-import { users, games, odds, aiSummaries, bets, props, dailyPicks, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, tickets, virtualBets, virtualBettingSlip, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship, type Ticket, type InsertTicket, type VirtualBet, type InsertVirtualBet, type VirtualBettingSlip, type InsertVirtualBettingSlip } from "@shared/schema";
+import { users, games, odds, aiSummaries, bets, props, dailyPicks, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, tickets, virtualBets, virtualBettingSlip, phraseDetectionRules, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship, type Ticket, type InsertTicket, type VirtualBet, type InsertVirtualBet, type VirtualBettingSlip, type InsertVirtualBettingSlip, type PhraseDetectionRule, type InsertPhraseDetectionRule } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, gte, lte, desc, lt } from "drizzle-orm";
 
@@ -160,6 +160,14 @@ export interface IStorage {
   getGames(date: string): Promise<Game[]>;
   getRecentPerformanceData(): Promise<any[]>;
   getPerformanceDataRange(startDate: string, endDate: string): Promise<any[]>;
+
+  // Phrase Detection Rule methods
+  getAllPhraseDetectionRules(): Promise<PhraseDetectionRule[]>;
+  getPhraseDetectionRulesByCategory(category: string): Promise<PhraseDetectionRule[]>;
+  createPhraseDetectionRule(rule: InsertPhraseDetectionRule): Promise<PhraseDetectionRule>;
+  updatePhraseDetectionRule(id: number, updates: Partial<PhraseDetectionRule>): Promise<PhraseDetectionRule>;
+  deletePhraseDetectionRule(id: number): Promise<void>;
+  togglePhraseDetectionRule(id: number, isActive: boolean): Promise<PhraseDetectionRule>;
 }
 
 export class MemStorage implements IStorage {
@@ -1521,6 +1529,68 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(virtualBettingSlip)
       .where(eq(virtualBettingSlip.userId, userId));
+  }
+
+  // Phrase Detection Rule methods
+  async getAllPhraseDetectionRules(): Promise<PhraseDetectionRule[]> {
+    return await db
+      .select()
+      .from(phraseDetectionRules)
+      .orderBy(phraseDetectionRules.priority, phraseDetectionRules.category);
+  }
+
+  async getPhraseDetectionRulesByCategory(category: string): Promise<PhraseDetectionRule[]> {
+    return await db
+      .select()
+      .from(phraseDetectionRules)
+      .where(
+        and(
+          eq(phraseDetectionRules.category, category),
+          eq(phraseDetectionRules.isActive, true)
+        )
+      )
+      .orderBy(phraseDetectionRules.priority);
+  }
+
+  async createPhraseDetectionRule(rule: InsertPhraseDetectionRule): Promise<PhraseDetectionRule> {
+    const [newRule] = await db
+      .insert(phraseDetectionRules)
+      .values({
+        ...rule,
+        updatedAt: new Date(),
+      })
+      .returning();
+    return newRule;
+  }
+
+  async updatePhraseDetectionRule(id: number, updates: Partial<PhraseDetectionRule>): Promise<PhraseDetectionRule> {
+    const [updatedRule] = await db
+      .update(phraseDetectionRules)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(phraseDetectionRules.id, id))
+      .returning();
+    return updatedRule;
+  }
+
+  async deletePhraseDetectionRule(id: number): Promise<void> {
+    await db
+      .delete(phraseDetectionRules)
+      .where(eq(phraseDetectionRules.id, id));
+  }
+
+  async togglePhraseDetectionRule(id: number, isActive: boolean): Promise<PhraseDetectionRule> {
+    const [updatedRule] = await db
+      .update(phraseDetectionRules)
+      .set({
+        isActive,
+        updatedAt: new Date(),
+      })
+      .where(eq(phraseDetectionRules.id, id))
+      .returning();
+    return updatedRule;
   }
 }
 

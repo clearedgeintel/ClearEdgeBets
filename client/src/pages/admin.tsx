@@ -21,7 +21,8 @@ import {
   AlertCircle,
   CheckCircle,
   XCircle,
-  Ticket
+  Ticket,
+  Brain
 } from "lucide-react";
 import Header from "@/components/header";
 import { apiRequest } from "@/lib/queryClient";
@@ -308,6 +309,12 @@ function SyncLiveDataButton() {
                 <Button className="bg-green-600 hover:bg-green-700">
                   <Ticket className="w-4 h-4 mr-2" />
                   Referral Codes
+                </Button>
+              </Link>
+              <Link href="/admin/phrase-detection">
+                <Button className="bg-indigo-600 hover:bg-indigo-700">
+                  <Brain className="w-4 h-4 mr-2" />
+                  Phrase Detection
                 </Button>
               </Link>
               <Link href="/admin/stripe-setup">

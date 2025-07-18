@@ -63,6 +63,18 @@ export const weeklyLeaderboard = pgTable("weekly_leaderboard", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Phrase detection rules for AI analysis
+export const phraseDetectionRules = pgTable("phrase_detection_rules", {
+  id: serial("id").primaryKey(),
+  phrase: text("phrase").notNull(),
+  category: text("category").notNull(), // 'under', 'over', 'away_team', 'home_team'
+  description: text("description"), // optional description of what the phrase indicates
+  isActive: boolean("is_active").default(true),
+  priority: integer("priority").default(1), // higher priority phrases are checked first
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const games = pgTable("games", {
   id: serial("id").primaryKey(),
   gameId: text("game_id").notNull().unique(),
@@ -599,3 +611,12 @@ export type VirtualBet = typeof virtualBets.$inferSelect;
 export const insertVirtualBettingSlipSchema = createInsertSchema(virtualBettingSlip);
 export type InsertVirtualBettingSlip = z.infer<typeof insertVirtualBettingSlipSchema>;
 export type VirtualBettingSlip = typeof virtualBettingSlip.$inferSelect;
+
+// Type exports for phrase detection rules
+export const insertPhraseDetectionRuleSchema = createInsertSchema(phraseDetectionRules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertPhraseDetectionRule = z.infer<typeof insertPhraseDetectionRuleSchema>;
+export type PhraseDetectionRule = typeof phraseDetectionRules.$inferSelect;

@@ -4402,6 +4402,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Phrase Detection Rules API routes (Admin only)
+  
+  // Get all phrase detection rules
+  app.get("/api/admin/phrase-rules", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const rules = await storage.getAllPhraseDetectionRules();
+      res.json(rules);
+    } catch (error) {
+      console.error("Error fetching phrase detection rules:", error);
+      res.status(500).json({ error: "Failed to fetch phrase detection rules" });
+    }
+  });
+
+  // Get phrase detection rules by category
+  app.get("/api/admin/phrase-rules/:category", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { category } = req.params;
+      const rules = await storage.getPhraseDetectionRulesByCategory(category);
+      res.json(rules);
+    } catch (error) {
+      console.error("Error fetching phrase detection rules by category:", error);
+      res.status(500).json({ error: "Failed to fetch phrase detection rules" });
+    }
+  });
+
+  // Create new phrase detection rule
+  app.post("/api/admin/phrase-rules", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { phrase, category, description, priority = 1 } = req.body;
+      
+      if (!phrase || !category) {
+        return res.status(400).json({ error: "Phrase and category are required" });
+      }
+
+      const rule = await storage.createPhraseDetectionRule({
+        phrase: phrase.toLowerCase().trim(),
+        category,
+        description,
+        priority,
+        isActive: true
+      });
+
+      res.status(201).json(rule);
+    } catch (error) {
+      console.error("Error creating phrase detection rule:", error);
+      res.status(500).json({ error: "Failed to create phrase detection rule" });
+    }
+  });
+
+  // Update phrase detection rule
+  app.patch("/api/admin/phrase-rules/:id", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { id } = req.params;
+      const updates = req.body;
+
+      // If updating phrase, normalize it
+      if (updates.phrase) {
+        updates.phrase = updates.phrase.toLowerCase().trim();
+      }
+
+      const rule = await storage.updatePhraseDetectionRule(parseInt(id), updates);
+      res.json(rule);
+    } catch (error) {
+      console.error("Error updating phrase detection rule:", error);
+      res.status(500).json({ error: "Failed to update phrase detection rule" });
+    }
+  });
+
+  // Toggle phrase detection rule active status
+  app.patch("/api/admin/phrase-rules/:id/toggle", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { id } = req.params;
+      const { isActive } = req.body;
+
+      const rule = await storage.togglePhraseDetectionRule(parseInt(id), isActive);
+      res.json(rule);
+    } catch (error) {
+      console.error("Error toggling phrase detection rule:", error);
+      res.status(500).json({ error: "Failed to toggle phrase detection rule" });
+    }
+  });
+
+  // Delete phrase detection rule
+  app.delete("/api/admin/phrase-rules/:id", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { id } = req.params;
+      await storage.deletePhraseDetectionRule(parseInt(id));
+      res.json({ success: true, message: "Phrase detection rule deleted" });
+    } catch (error) {
+      console.error("Error deleting phrase detection rule:", error);
+      res.status(500).json({ error: "Failed to delete phrase detection rule" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
