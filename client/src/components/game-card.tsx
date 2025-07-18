@@ -571,7 +571,11 @@ export default function GameCard({ game }: GameCardProps) {
                               summary.includes('may lean under') || summary.includes('lean under') ||
                               summary.includes('total may lean under') || summary.includes('run total may lean under') ||
                               summary.includes('respecting the quality pitching') || summary.includes('quality pitching') ||
-                              summary.includes('limit baserunners') || summary.includes('defensive solidity')) {
+                              summary.includes('limit baserunners') || summary.includes('defensive solidity') ||
+                              summary.includes('may suppress scoring') || summary.includes('suppress scoring') ||
+                              summary.includes('towards the under') || summary.includes('toward the under') ||
+                              summary.includes('influencing the total run market towards the under') ||
+                              summary.includes('market towards the under')) {
                             analysis.totalDirection = 'under';
                           } else if (summary.includes('high-scoring') || summary.includes('offensive') || 
                               summary.includes('run production') || summary.includes('over') ||

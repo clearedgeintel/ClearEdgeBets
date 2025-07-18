@@ -161,6 +161,12 @@ A test user has been created with Elite tier access:
   - Enhanced empty state messaging to explain why no games are available (e.g., "MLB All-Star break")
   - Home page and games pages now properly display "No MLB games available" with context
   - Platform now accurately reflects real MLB scheduling instead of showing fake games
+- July 17, 2025: ENHANCED AI ANALYSIS CONSISTENCY - Added detection for additional "under" signals
+  - Added detection for "may suppress scoring", "suppress scoring", and "towards the under" phrases
+  - Fixed inconsistency where AI analysis mentioned scoring suppression but suggested "Over" bets
+  - Enhanced text analysis to detect "influencing the total run market towards the under"
+  - Suggested bets now accurately reflect AI analysis sentiment for total run predictions
+  - Improved alignment between AI game analysis content and betting recommendations
 - July 9, 2025: CRITICAL BUG FIX - Resolved AI analysis and suggested bets inconsistency that undermined platform credibility
   - Fixed text analysis logic to properly detect over/under signals from AI summaries
   - Enhanced phrase detection to include "lower total score", "pitching duel", "under control", "manage baserunners"
