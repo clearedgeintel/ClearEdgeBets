@@ -12,7 +12,7 @@ interface MLBPick {
   team?: string;
   selection: string;
   confidence: number;
-  odds: number;
+  odds: string;
   reasoning: string;
   value: number;
 }
@@ -54,8 +54,8 @@ export default function MLBPicks() {
     return { variant: "outline" as const, label: "Low" };
   };
 
-  const formatOdds = (odds: number) => {
-    return odds > 0 ? `+${odds}` : `${odds}`;
+  const formatOdds = (odds: string) => {
+    return odds;
   };
 
   if (isLoading) {
@@ -194,7 +194,7 @@ export default function MLBPicks() {
                           {confidenceBadge.label} ({pick.confidence}%)
                         </Badge>
                         <Badge variant="outline">
-                          {formatOdds(pick.odds)}
+                          {pick.odds}
                         </Badge>
                         {pick.value > 0 && (
                           <Badge variant="default">

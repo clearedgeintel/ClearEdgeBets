@@ -19,6 +19,7 @@ import { mlbStatsAPI } from "./services/mlb-stats-api";
 
 import { weatherAPI } from "./services/weather-api";
 import { mlbPicksAPI } from "./services/mlb-picks-api";
+import { enhancedMLBPicks } from "./services/enhanced-mlb-picks";
 import apiManagementRoutes from "./routes/api-management";
 // Note: Auth will be handled by existing system
 import Stripe from "stripe";
@@ -838,21 +839,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // MLB Authentic Picks Endpoint
   app.get('/api/mlb/picks/authentic', async (req, res) => {
     try {
-      const picks = await mlbPicksAPI.getTodaysPicks();
-      
-      if (!picks) {
-        return res.status(404).json({ message: 'No authentic picks available' });
-      }
-
-      res.json({
-        success: true,
-        data: picks,
-        source: 'RapidAPI MLB Picks',
-        lastUpdated: new Date().toISOString()
-      });
+      const enhancedPicks = await enhancedMLBPicks.getEnhancedMLBPicks();
+      res.json(enhancedPicks);
     } catch (error) {
-      console.error('Error fetching authentic MLB picks:', error);
-      res.status(500).json({ message: 'Failed to fetch authentic MLB picks' });
+      console.error('Error fetching enhanced MLB picks:', error);
+      
+      // Fallback to basic picks if enhanced fails
+      try {
+        const basicPicks = await mlbPicksAPI.getTodaysPicks();
+        if (basicPicks) {
+          res.json({
+            success: true,
+            data: basicPicks,
+            source: 'RapidAPI MLB Picks (Fallback)',
+            lastUpdated: new Date().toISOString()
+          });
+        } else {
+          res.status(404).json({ message: 'No authentic picks available' });
+        }
+      } catch (fallbackError) {
+        console.error('Fallback picks also failed:', fallbackError);
+        res.status(500).json({ message: 'Failed to fetch MLB picks' });
+      }
     }
   });
 
