@@ -5,7 +5,7 @@
 
 import express from 'express';
 import { mlbStatsAPI } from '../services/mlb-stats-api';
-import { sportsInsightsAPI } from '../services/sports-insights-api';
+
 import { weatherAPI } from '../services/weather-api';
 
 const router = express.Router();
@@ -35,7 +35,6 @@ router.get('/admin/apis', async (req, res) => {
   try {
     const apis: APIStatus[] = [
       mlbStatsAPI.getUsageStats(),
-      sportsInsightsAPI.getUsageStats(),
       weatherAPI.getUsageStats(),
       // Add existing APIs from the platform
       {

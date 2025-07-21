@@ -16,7 +16,7 @@ import { insertBetSchema, insertGameSchema, insertOddsSchema, insertUserSchema }
 import { syncLiveGameData, settlePendingBets, updateGameStatus, getLiveGameInfo } from "./services/bet-settlement";
 import { bankrollManager } from "./services/bankroll-manager";
 import { mlbStatsAPI } from "./services/mlb-stats-api";
-import { sportsInsightsAPI } from "./services/sports-insights-api";
+
 import { weatherAPI } from "./services/weather-api";
 import apiManagementRoutes from "./routes/api-management";
 // Note: Auth will be handled by existing system
@@ -751,23 +751,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Public Betting Data Endpoint  
-  app.get('/api/games/:gameId/betting-data', async (req, res) => {
-    try {
-      const { gameId } = req.params;
-      const bettingData = await sportsInsightsAPI.getPublicBettingData([gameId]);
-      const gameData = bettingData.find(game => game.gameId === gameId);
-      
-      if (!gameData) {
-        return res.status(404).json({ message: 'Betting data not found for game' });
-      }
-
-      res.json(gameData.bettingData);
-    } catch (error) {
-      console.error('Error fetching betting data:', error);
-      res.status(500).json({ message: 'Failed to fetch betting data' });
-    }
-  });
+  // Public Betting Data Endpoint - Removed (requires paid service)
 
   // Weather Data Endpoint  
   app.get('/api/games/:gameId/weather', async (req, res) => {
@@ -786,29 +770,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Enhanced Game Analysis combining all data sources
+  // Enhanced Game Analysis combining authentic data sources
   app.get('/api/games/:gameId/enhanced-analysis', async (req, res) => {
     try {
       const { gameId } = req.params;
       
-      // Fetch enhanced data from all sources
-      const [bettingData, weather] = await Promise.all([
-        sportsInsightsAPI.getPublicBettingData([gameId]).then(data => 
-          data.find(game => game.gameId === gameId)?.bettingData
-        ),
-        weatherAPI.getGameWeather(gameId)
-      ]);
+      // Fetch weather data from authentic source
+      const weather = await weatherAPI.getGameWeather(gameId);
 
       const enhancedAnalysis = {
         gameId,
-        publicBetting: bettingData || null,
         weather: weather || null,
         timestamp: new Date().toISOString(),
         insights: {
           weatherImpact: weather?.impact || 'No significant weather impact expected',
-          publicSentiment: bettingData?.moneyline ? 
-            `Public heavily on ${bettingData.moneyline.homeTeam > 60 ? 'home' : 'away'} team` : 
-            'Public betting data unavailable',
           valueOpportunities: []
         }
       };
