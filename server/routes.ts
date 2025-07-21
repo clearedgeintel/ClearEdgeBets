@@ -1660,6 +1660,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Manual virtual bet settlement endpoint
+  app.post("/api/admin/settle-virtual-bets", async (req, res) => {
+    try {
+      console.log("Manual virtual bet settlement triggered");
+      const regularBetsSettled = await settlePendingBets();
+      const virtualBetsSettled = await settleVirtualBets();
+      
+      res.json({ 
+        success: true,
+        message: `Settled ${virtualBetsSettled} virtual bets`,
+        regularBetsSettled,
+        virtualBetsSettled,
+        totalSettled: regularBetsSettled + virtualBetsSettled,
+        settledCount: virtualBetsSettled
+      });
+    } catch (error) {
+      console.error("Error manually settling virtual bets:", error);
+      res.status(500).json({ error: "Failed to settle virtual bets" });
+    }
+  });
+
   // Endpoint to simulate game completion with final scores for testing
   app.post("/api/simulate-game-results", async (req, res) => {
     try {

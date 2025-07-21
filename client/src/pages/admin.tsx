@@ -280,6 +280,39 @@ function SyncLiveDataButton() {
   );
 }
 
+// Virtual Bet Settlement Button component
+function SettleVirtualBetsButton() {
+  const { toast } = useToast();
+  
+  const settleMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/admin/settle-virtual-bets'),
+    onSuccess: (data: any) => {
+      toast({
+        title: "Virtual Bets Settled",
+        description: `Settled ${data.virtualBetsSettled} virtual bets and ${data.regularBetsSettled} regular bets`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Settlement Failed",
+        description: "Failed to settle virtual bets. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  return (
+    <Button 
+      onClick={() => settleMutation.mutate()}
+      disabled={settleMutation.isPending}
+      className="bg-orange-600 hover:bg-orange-700"
+    >
+      <CheckCircle className={`w-4 h-4 mr-2 ${settleMutation.isPending ? 'animate-spin' : ''}`} />
+      {settleMutation.isPending ? 'Settling...' : 'Settle Virtual Bets'}
+    </Button>
+  );
+}
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -299,6 +332,7 @@ function SyncLiveDataButton() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0">
               <SyncLiveDataButton />
+              <SettleVirtualBetsButton />
               <Link href="/admin/users">
                 <Button className="bg-blue-600 hover:bg-blue-700">
                   <Users className="w-4 h-4 mr-2" />

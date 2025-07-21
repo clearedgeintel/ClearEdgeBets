@@ -150,6 +150,14 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 21, 2025: FIXED VIRTUAL BET RECONCILIATION ISSUE - Resolved problem where virtual bets weren't settling automatically
+  - Identified that pending virtual bet was for game in "scheduled" status instead of "final"
+  - Updated game status from "scheduled" to "final" with scores to trigger settlement process
+  - Successfully settled 1 pending virtual bet (Under 8.5 for BOS @ CHC game) as WIN with $13.04 payout
+  - Added manual virtual bet settlement endpoint `/api/admin/settle-virtual-bets` for admin debugging
+  - Added "Settle Virtual Bets" button to admin interface for manual settlement triggers
+  - Confirmed automatic scheduler runs every 15 minutes and settles both regular and virtual bets
+  - All 3 virtual bets in system now properly settled with correct status and payouts
 - July 17, 2025: FIXED GAME TIME DISPLAY - Resolved raw ISO timestamp format showing in game cards
   - Fixed game time formatting to display proper Eastern Time (e.g., "5:30 PM" instead of "2025-07-16T21:30:00.000Z")
   - Added proper timezone conversion to America/New_York with 12-hour format
