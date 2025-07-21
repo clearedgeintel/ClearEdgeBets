@@ -89,12 +89,35 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
     queryKey: ['/api/mlb/picks/authentic']
   });
 
-  // Get a random AI pick from the available picks for this game
-  const aiPick = allAIPicks.length > 0 ? allAIPicks[Math.floor(Math.random() * allAIPicks.length)] : null;
+  // Get AI pick that matches this game's teams
+  const aiPick = allAIPicks.find(pick => {
+    if (!pick.selection) return false;
+    const selection = pick.selection.toLowerCase();
+    const awayTeam = game.awayTeam.toLowerCase();
+    const homeTeam = game.homeTeam.toLowerCase();
+    
+    return selection.includes(awayTeam.split(' ').pop()) || 
+           selection.includes(homeTeam.split(' ').pop()) ||
+           selection.includes(game.awayTeamCode.toLowerCase()) ||
+           selection.includes(game.homeTeamCode.toLowerCase());
+  }) || (allAIPicks.length > 0 ? allAIPicks[0] : null);
   
-  // Get a random expert pick from the available picks
+  // Find expert pick that matches this game's teams or use first available
   const expertPicks = expertPicksResponse?.data?.picks || [];
-  const expertPick = expertPicks.length > 0 ? expertPicks[Math.floor(Math.random() * expertPicks.length)] : null;
+  const expertPick = expertPicks.find(pick => {
+    if (!pick.selection) return false;
+    const selection = pick.selection.toLowerCase();
+    const awayTeam = game.awayTeam.toLowerCase();
+    const homeTeam = game.homeTeam.toLowerCase();
+    
+    // Check if expert pick mentions teams from this game
+    return selection.includes(awayTeam.split(' ').pop()) || 
+           selection.includes(homeTeam.split(' ').pop()) ||
+           selection.includes(game.awayTeamCode.toLowerCase()) ||
+           selection.includes(game.homeTeamCode.toLowerCase()) ||
+           // Also match general picks like "Under 8.5" or "Over 9.0"
+           (selection.includes('under') || selection.includes('over'));
+  }) || (expertPicks.length > 0 ? expertPicks[0] : null);
 
   const getOddsByMarket = (market: string) => {
     return game.odds.find(o => o.market === market);
