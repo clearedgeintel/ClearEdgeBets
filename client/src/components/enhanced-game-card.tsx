@@ -77,7 +77,7 @@ interface EnhancedGameCardProps {
 }
 
 export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true); // Default to expanded
   const { addBet } = useBettingSlip();
 
   // Fetch all daily picks and expert picks
@@ -188,13 +188,13 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
         {/* Quick Odds Display */}
         <div className="grid grid-cols-3 gap-4 mb-4">
           {moneylineOdds && (
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground mb-1">Moneyline</p>
+            <div className="text-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-700 font-medium mb-2">Moneyline</p>
               <div className="space-y-1">
-                <Badge variant="outline" className="text-xs">
+                <Badge className="bg-blue-100 text-blue-800 text-xs">
                   {game.awayTeamCode} {formatOdds(moneylineOdds.awayOdds || 0)}
                 </Badge>
-                <Badge variant="outline" className="text-xs">
+                <Badge className="bg-blue-100 text-blue-800 text-xs">
                   {game.homeTeamCode} {formatOdds(moneylineOdds.homeOdds || 0)}
                 </Badge>
               </div>
@@ -202,13 +202,13 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
           )}
           
           {spreadOdds && (
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground mb-1">Run Line</p>
+            <div className="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-xs text-green-700 font-medium mb-2">Run Line</p>
               <div className="space-y-1">
-                <Badge variant="outline" className="text-xs">
+                <Badge className="bg-green-100 text-green-800 text-xs">
                   {game.awayTeamCode} {spreadOdds.awaySpread}
                 </Badge>
-                <Badge variant="outline" className="text-xs">
+                <Badge className="bg-green-100 text-green-800 text-xs">
                   {game.homeTeamCode} {spreadOdds.homeSpread}
                 </Badge>
               </div>
@@ -216,13 +216,13 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
           )}
 
           {totalOdds && (
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground mb-1">Total</p>
+            <div className="text-center p-3 bg-orange-50 border border-orange-200 rounded-lg">
+              <p className="text-xs text-orange-700 font-medium mb-2">Total</p>
               <div className="space-y-1">
-                <Badge variant="outline" className="text-xs">
+                <Badge className="bg-orange-100 text-orange-800 text-xs">
                   Over {totalOdds.total}
                 </Badge>
-                <Badge variant="outline" className="text-xs">
+                <Badge className="bg-orange-100 text-orange-800 text-xs">
                   Under {totalOdds.total}
                 </Badge>
               </div>
@@ -232,7 +232,7 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
 
         {expanded && (
           <>
-            <div className="border-t my-4"></div>
+            <div className="border-t border-gradient-to-r from-blue-200 via-purple-200 to-orange-200 my-4"></div>
             
             {/* AI Game Analysis */}
             {game.aiSummary && (
@@ -244,7 +244,7 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
                     {game.aiSummary.confidence}% Confidence
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground mb-3">
+                <p className="text-sm text-slate-700 mb-3">
                   {game.aiSummary.summary}
                 </p>
               </div>
@@ -254,22 +254,22 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
             <div className="space-y-4">
               {/* AI Pick */}
               {aiPick && (
-                <div className="p-3 bg-purple-50/30 border border-purple-200 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-300 rounded-lg shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
-                      <Brain className="h-4 w-4 text-purple-600" />
-                      <h5 className="text-sm font-medium">AI Suggestion</h5>
-                      <Badge className={getConfidenceBadge(aiPick.confidence).color}>
+                      <Brain className="h-5 w-5 text-purple-600" />
+                      <h5 className="text-sm font-semibold text-purple-800">AI Suggestion</h5>
+                      <Badge className="bg-purple-100 text-purple-800 font-medium">
                         {aiPick.confidence}%
                       </Badge>
                     </div>
-                    <Badge variant="outline">{aiPick.odds || "N/A"}</Badge>
+                    <Badge className="bg-indigo-100 text-indigo-800">{aiPick.odds || "N/A"}</Badge>
                   </div>
-                  <div className="flex items-center space-x-2 mb-2">
-                    {getPickIcon(aiPick.pickType)}
-                    <span className="text-sm font-medium">{aiPick.selection}</span>
+                  <div className="flex items-center space-x-2 mb-3">
+                    <div className="text-purple-600">{getPickIcon(aiPick.pickType)}</div>
+                    <span className="text-sm font-semibold text-indigo-800">{aiPick.selection}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-slate-700 leading-relaxed">
                     {aiPick.reasoning}
                   </p>
                 </div>
@@ -279,9 +279,10 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
 
               {/* No picks available message */}
               {!aiPick && (
-                <div className="text-center py-4 text-muted-foreground">
-                  <Brain className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No AI picks available for this game</p>
+                <div className="text-center py-6 bg-slate-50 border border-slate-200 rounded-lg">
+                  <Brain className="h-10 w-10 mx-auto mb-3 text-slate-400" />
+                  <p className="text-sm text-slate-600 font-medium">No AI picks available for this game</p>
+                  <p className="text-xs text-slate-500 mt-1">Check back later for updates</p>
                 </div>
               )}
             </div>
