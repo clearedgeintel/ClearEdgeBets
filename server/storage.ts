@@ -981,6 +981,12 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async clearUserVirtualBets(userId: number): Promise<void> {
+    await db
+      .delete(virtualBets)
+      .where(eq(virtualBets.userId, userId));
+  }
+
   async processBetSettlement(userId: number, betResult: 'win' | 'loss', amount: number): Promise<User> {
     const currentUser = await this.getUser(userId);
     if (!currentUser) throw new Error('User not found');

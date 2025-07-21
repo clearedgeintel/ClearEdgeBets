@@ -3361,16 +3361,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Not authenticated" });
       }
 
+      const { clearHistory } = req.body;
+      
       const updatedUser = await storage.resetVirtualBalance(userId);
       
+      // Optionally clear virtual bet history
+      if (clearHistory) {
+        await storage.clearUserVirtualBets(userId);
+      }
+      
       res.json({
-        message: "Balance reset to $1,000",
+        message: clearHistory ? "Balance reset to $1,000 and bet history cleared" : "Balance reset to $1,000",
         balance: (updatedUser.virtualBalance || 100000) / 100,
         totalWinnings: 0,
         totalLosses: 0,
         betCount: 0,
         winCount: 0,
-        winRate: "0.0"
+        winRate: "0.0",
+        historyCleared: clearHistory || false
       });
     } catch (error) {
       console.error("Error resetting balance:", error);

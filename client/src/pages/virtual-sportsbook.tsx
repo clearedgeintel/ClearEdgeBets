@@ -11,6 +11,8 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DollarSign, TrendingUp, TrendingDown, RotateCcw, Target, Trophy, BarChart3, LogIn, Brain, Calculator, Trash2, Plus, Minus, Receipt, X, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 
@@ -128,6 +130,10 @@ export default function VirtualSportsbook() {
   
   // Track selected bets
   const [selectedBets, setSelectedBets] = useState<Set<string>>(new Set());
+  
+  // Reset balance dialog state
+  const [clearHistory, setClearHistory] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
 
   // Helper function to check if bet is selected
   const getBetState = (gameId: string, betType: string, selection: string, originalOdds: number) => {
@@ -379,15 +385,18 @@ export default function VirtualSportsbook() {
 
   // Reset balance mutation
   const resetBalanceMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest("POST", "/api/user/balance/reset");
+    mutationFn: async ({ clearHistory }: { clearHistory: boolean }) => {
+      return await apiRequest("POST", "/api/user/balance/reset", { clearHistory });
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/virtual/bets"] });
       toast({
         title: "Balance Reset",
         description: data.message || "Balance reset to $1,000",
       });
+      setShowResetDialog(false);
+      setClearHistory(false);
     },
     onError: (error: any) => {
       toast({
@@ -406,9 +415,7 @@ export default function VirtualSportsbook() {
   };
 
   const handleResetBalance = () => {
-    if (window.confirm("Are you sure you want to reset your balance to $1,000? This will clear all your statistics.")) {
-      resetBalanceMutation.mutate();
-    }
+    resetBalanceMutation.mutate({ clearHistory });
   };
 
   // Generate AI bet recommendations
@@ -709,15 +716,47 @@ export default function VirtualSportsbook() {
           {isGeneratingAIBets ? "Generating AI Bets..." : "Generate AI Bet Slip"}
         </Button>
         
-        <Button
-          variant="outline"
-          onClick={handleResetBalance}
-          disabled={resetBalanceMutation.isPending}
-          className="flex items-center gap-2"
-        >
-          <RotateCcw className="h-4 w-4" />
-          Reset Balance to $1,000
-        </Button>
+        <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reset Balance to $1,000
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reset Virtual Balance</DialogTitle>
+              <DialogDescription>
+                This will reset your virtual balance to $1,000 and clear all your statistics.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex items-center space-x-2 py-4">
+              <Checkbox 
+                id="clearHistory" 
+                checked={clearHistory}
+                onCheckedChange={(checked) => setClearHistory(checked as boolean)}
+              />
+              <Label htmlFor="clearHistory" className="text-sm">
+                Also clear all virtual bet history
+              </Label>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowResetDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleResetBalance}
+                disabled={resetBalanceMutation.isPending}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {resetBalanceMutation.isPending ? "Resetting..." : "Reset Balance"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         
         <Button 
           variant="outline" 
