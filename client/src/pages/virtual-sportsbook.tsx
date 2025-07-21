@@ -59,9 +59,11 @@ interface BettingSlipItem {
   betType: string;
   selection: string;
   odds: number;
+  originalOdds: number;
   stake: number;
   potentialWin: number;
   addedAt: Date;
+  saveToMyBets?: boolean;
 }
 
 interface BettingSlip {
@@ -227,9 +229,11 @@ export default function VirtualSportsbook() {
       betType,
       selection,
       odds,
+      originalOdds: odds,
       stake: 0,
       potentialWin: 0,
-      addedAt: new Date()
+      addedAt: new Date(),
+      saveToMyBets: false
     };
 
     const updatedSlip = {
@@ -274,6 +278,48 @@ export default function VirtualSportsbook() {
       items: updatedItems,
       totalStake,
       totalPotentialWin
+    };
+
+    setCurrentSlip(updatedSlip);
+    setBettingSlips(prev => prev.map(s => s.id === currentSlip.id ? updatedSlip : s));
+  };
+
+  const updateBetOdds = (betId: string, odds: number) => {
+    if (!currentSlip) return;
+
+    const updatedItems = currentSlip.items.map(item => {
+      if (item.id === betId) {
+        const potentialWin = odds === 0 ? 0 : item.stake * (odds > 0 ? odds / 100 : 100 / Math.abs(odds));
+        return { ...item, odds, potentialWin };
+      }
+      return item;
+    });
+
+    const totalPotentialWin = updatedItems.reduce((sum, item) => sum + item.potentialWin, 0);
+
+    const updatedSlip = {
+      ...currentSlip,
+      items: updatedItems,
+      totalPotentialWin
+    };
+
+    setCurrentSlip(updatedSlip);
+    setBettingSlips(prev => prev.map(s => s.id === currentSlip.id ? updatedSlip : s));
+  };
+
+  const updateSaveToMyBets = (betId: string, saveToMyBets: boolean) => {
+    if (!currentSlip) return;
+
+    const updatedItems = currentSlip.items.map(item => {
+      if (item.id === betId) {
+        return { ...item, saveToMyBets };
+      }
+      return item;
+    });
+
+    const updatedSlip = {
+      ...currentSlip,
+      items: updatedItems
     };
 
     setCurrentSlip(updatedSlip);
@@ -1010,10 +1056,40 @@ export default function VirtualSportsbook() {
                     <div className="flex-1">
                       <div className="font-medium text-sm">{bet.selection}</div>
                       <div className="text-xs text-muted-foreground">{bet.matchup}</div>
-                      <div className="text-xs text-blue-600 font-medium">
-                        {bet.odds > 0 ? '+' : ''}{bet.odds} odds
+                      
+                      {/* Editable Odds */}
+                      <div className="flex items-center gap-2 mt-1">
+                        <label className="text-xs text-muted-foreground">Odds:</label>
+                        <input
+                          type="number"
+                          value={bet.odds || ''}
+                          onChange={(e) => {
+                            const odds = parseInt(e.target.value) || 0;
+                            updateBetOdds(bet.id, odds);
+                          }}
+                          className="w-16 px-1 py-0.5 text-xs border rounded text-center bg-background text-foreground border-border"
+                          step="1"
+                        />
+                        {bet.odds !== bet.originalOdds && (
+                          <span className="text-xs text-orange-500">
+                            (was {bet.originalOdds > 0 ? '+' : ''}{bet.originalOdds})
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Save to My Bets Checkbox */}
+                      <div className="flex items-center gap-2 mt-1">
+                        <Checkbox
+                          id={`save-${bet.id}`}
+                          checked={bet.saveToMyBets || false}
+                          onCheckedChange={(checked) => updateSaveToMyBets(bet.id, checked as boolean)}
+                        />
+                        <Label htmlFor={`save-${bet.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                          Save to My Bets
+                        </Label>
                       </div>
                     </div>
+                    
                     <div className="flex items-center gap-2 ml-4">
                       <div className="text-right">
                         <input
@@ -1130,6 +1206,22 @@ export default function VirtualSportsbook() {
                     {currentSlip.items.length} bets selected
                     {isParlayMode && <span className="ml-1 text-blue-600">• Parlay</span>}
                   </div>
+                  
+                  {/* Save All to My Bets Toggle */}
+                  <div className="flex items-center gap-2 mt-2">
+                    <Checkbox
+                      id="saveAllToMyBets"
+                      checked={currentSlip.items.every(item => item.saveToMyBets)}
+                      onCheckedChange={(checked) => {
+                        currentSlip.items.forEach(item => {
+                          updateSaveToMyBets(item.id, checked as boolean);
+                        });
+                      }}
+                    />
+                    <Label htmlFor="saveAllToMyBets" className="text-xs text-muted-foreground cursor-pointer">
+                      Save all bets to My Bets for long-term tracking
+                    </Label>
+                  </div>
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-bold">
@@ -1140,6 +1232,13 @@ export default function VirtualSportsbook() {
                       ? calculateParlayPayout(parlayStake, calculateParlayOdds(currentSlip.items)).toFixed(2)
                       : currentSlip.totalPotentialWin.toFixed(2)
                     }
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {currentSlip.items.filter(item => item.saveToMyBets).length > 0 && (
+                      <span className="text-blue-600">
+                        {currentSlip.items.filter(item => item.saveToMyBets).length} bet{currentSlip.items.filter(item => item.saveToMyBets).length === 1 ? '' : 's'} will be saved to My Bets
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1169,9 +1268,38 @@ export default function VirtualSportsbook() {
                     // Save bets to database
                     saveBetsMutation.mutate(betsToSave, {
                       onSuccess: () => {
+                        // Also save to My Bets if any bets have saveToMyBets checked
+                        const betsForMyBets = currentSlip.items
+                          .filter(item => item.saveToMyBets)
+                          .map(item => ({
+                            gameId: item.gameId,
+                            betType: item.betType,
+                            selection: item.selection,
+                            odds: item.odds,
+                            stake: item.stake,
+                            potentialWin: item.potentialWin
+                          }));
+
+                        if (betsForMyBets.length > 0) {
+                          // Save to My Bets (regular bets endpoint)
+                          apiRequest("POST", "/api/bets", betsForMyBets).then(() => {
+                            toast({
+                              title: "Bets Saved!",
+                              description: `${betsForMyBets.length} bet${betsForMyBets.length === 1 ? '' : 's'} saved to My Bets for long-term tracking`,
+                            });
+                          }).catch((error) => {
+                            console.error("Failed to save to My Bets:", error);
+                            toast({
+                              title: "Error",
+                              description: "Failed to save some bets to My Bets",
+                              variant: "destructive",
+                            });
+                          });
+                        }
+
                         toast({
-                          title: "Bets Placed!",
-                          description: `${betDescription} placed for $${totalStake.toFixed(2)}`,
+                          title: "Virtual Bets Placed!",
+                          description: `${betDescription} placed for $${totalStake.toFixed(2)} in virtual sportsbook`,
                         });
                         
                         // Clear all selected bets

@@ -970,57 +970,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Place a new bet with bankroll management
   app.post("/api/bets", async (req, res) => {
     try {
-      const validatedBet = insertBetSchema.parse(req.body);
+      // Handle both single bet and array of bets
+      const betsData = Array.isArray(req.body) ? req.body : [req.body];
+      const results = [];
       
-      // Create the bet record first
-      const bet = await storage.createBet(validatedBet);
-      
-      // Process bankroll transaction if bet has a user
-      if (validatedBet.userId) {
-        try {
-          const stakeAmount = parseFloat(validatedBet.stake.toString());
-          const betDescription = `${validatedBet.betType} ${validatedBet.selection}`;
-          
-          await bankrollManager.processBetPlacement(
-            validatedBet.userId,
-            bet.id,
-            stakeAmount,
-            validatedBet.gameId,
-            betDescription
-          );
-          
-          // Log successful bet placement
-          await bankrollManager.createAuditLog({
-            userId: validatedBet.userId,
-            action: 'bet_placed',
-            entityType: 'bet',
-            entityId: bet.id.toString(),
-            newValues: {
-              betType: validatedBet.betType,
-              selection: validatedBet.selection,
-              stake: stakeAmount,
-              odds: validatedBet.odds
-            },
-            severity: 'info',
-            description: `Bet placed: ${betDescription} for $${stakeAmount}`,
-            metadata: { 
-              gameId: validatedBet.gameId,
-              betId: bet.id,
-              potentialWin: validatedBet.potentialWin 
-            }
-          });
-          
-        } catch (bankrollError: any) {
-          // If bankroll processing fails, remove the bet and return error
-          await storage.deleteBet(bet.id);
-          console.error('Bankroll processing failed:', bankrollError);
-          return res.status(400).json({ 
-            error: (bankrollError as Error)?.message || "Insufficient funds or bankroll error" 
-          });
+      for (const betData of betsData) {
+        const validatedBet = insertBetSchema.parse({
+          ...betData,
+          userId: req.session?.userId || null, // Use session userId
+          placedAt: new Date(),
+          status: 'pending'
+        });
+        
+        // Create the bet record first
+        const bet = await storage.createBet(validatedBet);
+        results.push(bet);
+        
+        // Process bankroll transaction if bet has a user
+        if (validatedBet.userId) {
+          try {
+            const stakeAmount = parseFloat(validatedBet.stake.toString());
+            const betDescription = `${validatedBet.betType} ${validatedBet.selection}`;
+            
+            await bankrollManager.processBetPlacement(
+              validatedBet.userId,
+              bet.id,
+              stakeAmount,
+              validatedBet.gameId,
+              betDescription
+            );
+            
+            // Log successful bet placement
+            await bankrollManager.createAuditLog({
+              userId: validatedBet.userId,
+              action: 'bet_placed',
+              entityType: 'bet',
+              entityId: bet.id.toString(),
+              newValues: {
+                betType: validatedBet.betType,
+                selection: validatedBet.selection,
+                stake: stakeAmount,
+                odds: validatedBet.odds
+              },
+              severity: 'info',
+              description: `Bet placed: ${betDescription} for $${stakeAmount}`,
+              metadata: { 
+                gameId: validatedBet.gameId,
+                betId: bet.id,
+                potentialWin: validatedBet.potentialWin 
+              }
+            });
+            
+          } catch (bankrollError: any) {
+            // If bankroll processing fails, remove the bet and return error
+            await storage.deleteBet(bet.id);
+            console.error('Bankroll processing failed:', bankrollError);
+            return res.status(400).json({ 
+              error: (bankrollError as Error)?.message || "Insufficient funds or bankroll error" 
+            });
+          }
         }
       }
       
-      res.status(201).json(bet);
+      // Return single bet or array based on input
+      res.status(201).json(Array.isArray(req.body) ? results : results[0]);
     } catch (error) {
       console.error("Error placing bet:", error);
       res.status(400).json({ error: "Invalid bet data" });
