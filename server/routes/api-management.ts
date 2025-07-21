@@ -52,7 +52,7 @@ router.get('/admin/apis', async (req, res) => {
       {
         name: 'The Odds API',
         endpoint: 'https://api.the-odds-api.com/v4/',
-        status: (process.env.ODDS_API_KEY ? 'active' : 'inactive') as const,
+        status: (process.env.ODDS_API_KEY ? 'active' : 'inactive') as 'active' | 'inactive',
         requestCount: 0,
         lastRequest: 'Used for odds data',
         cost: 'Free tier available',

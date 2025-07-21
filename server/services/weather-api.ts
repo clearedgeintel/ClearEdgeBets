@@ -6,7 +6,7 @@
  * Rate Limit: 60 calls/minute
  */
 
-const WEATHER_API_KEY = process.env.OPENWEATHERMAP_API_KEY || '';
+const WEATHER_API_KEY = process.env.OPENWEATHERMAP_API_KEY || '08ddce5b876d93f18535f6fc512c7e04';
 const WEATHER_API_BASE = 'https://api.openweathermap.org/data/2.5';
 
 export interface GameWeatherData {
@@ -278,11 +278,11 @@ class WeatherAPIService {
       endpoint: this.baseUrl,
       requestCount: this.requestCount,
       lastRequest: new Date(this.lastRequestTime).toISOString(),
-      status: this.apiKey ? 'active' : 'inactive - missing API key',
+      status: (this.apiKey ? 'active' : 'inactive') as 'active' | 'inactive',
       cost: 'Free (1000 calls/day)',
       rateLimit: '60 calls/minute',
       features: ['Temperature', 'Wind Speed/Direction', 'Precipitation', 'Humidity', 'Game Impact Analysis'],
-      note: this.apiKey ? 'Ready to use' : 'Requires OPENWEATHERMAP_API_KEY environment variable'
+      note: this.apiKey ? 'Configured and ready with API key' : 'Requires OPENWEATHERMAP_API_KEY environment variable'
     };
   }
 }
