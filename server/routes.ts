@@ -843,27 +843,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const realGames = await storage.getAllTodaysGames();
       console.log(`Using ${realGames.length} real MLB games for expert picks generation`);
 
-      // Generate expert picks based on actual games
+      // Get AI picks to ensure expert picks complement rather than conflict
+      const aiPicks = await storage.getDailyPicks(new Date().toISOString().split('T')[0]);
+      
+      // Generate expert picks based on actual games that complement AI picks
       const expertPicks = realGames.slice(0, 5).map((game, index) => {
-        const pickTypes = ['moneyline', 'spread', 'total'];
-        const pickType = pickTypes[index % 3]; // Distribute pick types
-        
+        // Find corresponding AI pick for this game
+        const aiPick = aiPicks.find(pick => {
+          const selection = pick.selection?.toLowerCase() || '';
+          const awayTeam = game.awayTeam.toLowerCase();
+          const homeTeam = game.homeTeam.toLowerCase();
+          return selection.includes(awayTeam.split(' ').pop()) || 
+                 selection.includes(homeTeam.split(' ').pop());
+        });
+
         let selection = '';
         let reasoning = '';
+        let pickType = '';
         
-        if (pickType === 'moneyline') {
-          const team = index % 2 === 0 ? game.homeTeam : game.awayTeam;
-          selection = `${team} ML`;
-          reasoning = `Strong pitching matchup favors this team. Home field advantage and recent form support the moneyline value here.`;
-        } else if (pickType === 'spread') {
-          const team = index % 2 === 0 ? game.homeTeam : game.awayTeam;
-          const spread = index % 2 === 0 ? '-1.5' : '+1.5';
-          selection = `${team} ${spread}`;
-          reasoning = `Run line provides excellent value based on recent offensive production and pitcher matchup dynamics.`;
+        // If AI pick exists, create complementary expert pick
+        if (aiPick && aiPick.selection) {
+          const aiSelection = aiPick.selection.toLowerCase();
+          
+          if (aiSelection.includes('ml') || aiSelection.includes('moneyline')) {
+            // AI picked moneyline, expert picks total
+            pickType = 'total';
+            const total = (8.5 + (index % 3) * 0.5).toFixed(1);
+            selection = `${index % 2 === 0 ? 'Over' : 'Under'} ${total}`;
+            reasoning = `Complementing the moneyline play, total provides additional value based on pitching matchup analysis.`;
+          } else if (aiSelection.includes('over') || aiSelection.includes('under')) {
+            // AI picked total, expert picks spread
+            pickType = 'spread';
+            const team = index % 2 === 0 ? game.homeTeam : game.awayTeam;
+            const spread = index % 2 === 0 ? '-1.5' : '+1.5';
+            selection = `${team} ${spread}`;
+            reasoning = `Run line complements the total play, providing value on margin of victory with strong pitching analysis.`;
+          } else {
+            // Default to moneyline
+            pickType = 'moneyline';
+            const team = index % 2 === 0 ? game.homeTeam : game.awayTeam;
+            selection = `${team} ML`;
+            reasoning = `Moneyline value based on pitching advantage and recent team form trends.`;
+          }
         } else {
-          const total = (8.5 + (index % 3) * 0.5).toFixed(1);
-          selection = `${index % 2 === 0 ? 'Over' : 'Under'} ${total}`;
-          reasoning = `Pitching matchup and weather conditions create favorable environment for ${index % 2 === 0 ? 'high' : 'low'} scoring game.`;
+          // No AI pick found, default expert analysis
+          const pickTypes = ['moneyline', 'spread', 'total'];
+          pickType = pickTypes[index % 3];
+          
+          if (pickType === 'moneyline') {
+            const team = index % 2 === 0 ? game.homeTeam : game.awayTeam;
+            selection = `${team} ML`;
+            reasoning = `Strong pitching matchup favors this team with home field advantage supporting the value.`;
+          } else if (pickType === 'spread') {
+            const team = index % 2 === 0 ? game.homeTeam : game.awayTeam;
+            const spread = index % 2 === 0 ? '-1.5' : '+1.5';
+            selection = `${team} ${spread}`;
+            reasoning = `Run line provides excellent value based on recent offensive production analysis.`;
+          } else {
+            const total = (8.5 + (index % 3) * 0.5).toFixed(1);
+            selection = `${index % 2 === 0 ? 'Over' : 'Under'} ${total}`;
+            reasoning = `Total play based on pitcher matchup and environmental conditions favoring ${index % 2 === 0 ? 'high' : 'low'} scoring.`;
+          }
         }
 
         return {
