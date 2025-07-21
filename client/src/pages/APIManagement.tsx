@@ -399,14 +399,15 @@ export default function APIManagement() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between mb-4">
                     <p className="text-sm text-muted-foreground">
-                      Last tested: {new Date((testIntegrationsMutation.data as any).timestamp).toLocaleString()}
+                      Last tested: {(testIntegrationsMutation.data as any)?.timestamp ? new Date((testIntegrationsMutation.data as any).timestamp).toLocaleString() : 'Never'}
                     </p>
                     <Badge variant="outline">
-                      {(testIntegrationsMutation.data as any).successfulTests} / {(testIntegrationsMutation.data as any).totalTests} passing
+                      {(testIntegrationsMutation.data as any)?.successfulTests || 0} / {(testIntegrationsMutation.data as any)?.totalTests || 0} passing
                     </Badge>
                   </div>
                   
-                  {(testIntegrationsMutation.data as any).results.map((result: any, index: number) => (
+                  {(testIntegrationsMutation.data as any)?.results?.length > 0 ? (
+                    (testIntegrationsMutation.data as any).results.map((result: any, index: number) => (
                     <div key={index} className="space-y-2 p-4 border rounded-lg">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
@@ -439,7 +440,12 @@ export default function APIManagement() {
                         </details>
                       )}
                     </div>
-                  ))}
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-muted-foreground">
+                      <p>No test results available</p>
+                    </div>
+                  )}
                 </div>
               )}
               
