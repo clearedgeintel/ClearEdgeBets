@@ -43,6 +43,7 @@ import StripeSetup from "@/pages/stripe-setup";
 import PlayerPropBuilder from "@/pages/player-prop-builder";
 import Help from "@/pages/help";
 import VirtualPerformance from "@/pages/virtual-performance";
+import APIManagement from "@/pages/APIManagement";
 
 function Router() {
   return (
@@ -65,7 +66,7 @@ function Router() {
         <Route path="/admin/phrase-detection" component={AdminPhraseDetection} />
         <Route path="/admin/stripe-setup" component={StripeSetup} />
         <Route path="/admin/ticket-dashboard" component={TicketDashboard} />
-        <Route path="/admin/api-management" component={lazy(() => import('@/pages/APIManagement'))} />
+        <Route path="/admin/api-management" component={APIManagement} />
         <Route path="/cfl" component={CFLHub} />
         <Route path="/cfl/games" component={CFLGames} />
         <Route path="/cfl/picks" component={CFLPicks} />
