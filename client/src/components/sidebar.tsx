@@ -129,6 +129,13 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           icon: Cloud,
           current: location === "/weather-summary",
           description: "Fun weather map for today's MLB games"
+        },
+        { 
+          name: "Authentic Picks", 
+          href: "/mlb-picks", 
+          icon: Target,
+          current: location === "/mlb-picks",
+          description: "Real MLB picks from authenticated APIs"
         }
       ],
       proItems: [
