@@ -102,21 +102,24 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
            selection.includes(game.homeTeamCode.toLowerCase());
   }) || (allAIPicks.length > 0 ? allAIPicks[0] : null);
   
-  // Find expert pick that matches this game's teams or use first available
+  // Find expert pick that matches this specific game
   const expertPicks = expertPicksResponse?.data?.picks || [];
   const expertPick = expertPicks.find(pick => {
+    // First try to match by exact gameId
+    if (pick.gameId === game.gameId) {
+      return true;
+    }
+    
+    // Then check if expert pick mentions teams from this game
     if (!pick.selection) return false;
     const selection = pick.selection.toLowerCase();
     const awayTeam = game.awayTeam.toLowerCase();
     const homeTeam = game.homeTeam.toLowerCase();
     
-    // Check if expert pick mentions teams from this game
     return selection.includes(awayTeam.split(' ').pop()) || 
            selection.includes(homeTeam.split(' ').pop()) ||
            selection.includes(game.awayTeamCode.toLowerCase()) ||
-           selection.includes(game.homeTeamCode.toLowerCase()) ||
-           // Also match general picks like "Under 8.5" or "Over 9.0"
-           (selection.includes('under') || selection.includes('over'));
+           selection.includes(game.homeTeamCode.toLowerCase());
   }) || (expertPicks.length > 0 ? expertPicks[0] : null);
 
   const getOddsByMarket = (market: string) => {
