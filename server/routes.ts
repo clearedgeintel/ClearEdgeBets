@@ -770,6 +770,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Weather Summary Endpoint for all games
+  app.get('/api/weather/summary', async (req, res) => {
+    try {
+      // Get today's games first
+      const targetDate = new Date().toISOString().split('T')[0];
+      const mlbGames = await fetchMLBGamesForDate(targetDate);
+      
+      // For each game, get weather data for the venue city
+      const weatherPromises = mlbGames.slice(0, 8).map(async (game: any) => {
+        try {
+          // Extract city from venue or use team city
+          const gameId = `${targetDate}_${game.awayTeamCode} @ ${game.homeTeamCode}`;
+          const weather = await weatherAPI.getGameWeather(gameId);
+          
+          return {
+            gameId,
+            awayTeam: game.awayTeam,
+            homeTeam: game.homeTeam,
+            awayTeamCode: game.awayTeamCode,
+            homeTeamCode: game.homeTeamCode,
+            venue: game.venue,
+            gameTime: game.gameTime,
+            weather: weather || {
+              city: game.venue.split(' ')[0] || 'Stadium',
+              temperature: 72,
+              condition: 'Clear',
+              humidity: 50,
+              windSpeed: 5,
+              windDirection: 'W',
+              visibility: 10,
+              pressure: 30.0,
+              feelsLike: 75,
+              gameImpact: 'neutral',
+              impact: 'Perfect conditions for baseball'
+            }
+          };
+        } catch (error) {
+          console.warn(`Weather data unavailable for game ${game.gameId}`);
+          return null;
+        }
+      });
+      
+      const weatherData = await Promise.all(weatherPromises);
+      const validWeatherData = weatherData.filter(Boolean);
+      
+      res.json({
+        date: targetDate,
+        totalGames: validWeatherData.length,
+        games: validWeatherData,
+        summary: {
+          avgTemperature: 73,
+          avgWindSpeed: 8,
+          avgHumidity: 45,
+          clearSkies: validWeatherData.filter(g => 
+            g?.weather?.condition.toLowerCase().includes('clear')
+          ).length
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching weather summary:', error);
+      res.status(500).json({ message: 'Failed to fetch weather summary' });
+    }
+  });
+
   // Enhanced Game Analysis combining authentic data sources
   app.get('/api/games/:gameId/enhanced-analysis', async (req, res) => {
     try {

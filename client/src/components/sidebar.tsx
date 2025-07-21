@@ -31,6 +31,7 @@ import {
   Brain,
   Calculator,
   CircleDot,
+  Cloud,
   Shield,
   HelpCircle
 } from "lucide-react";
@@ -121,6 +122,13 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           icon: Calculator,
           current: location === "/kelly-calculator",
           description: "Optimize bet sizing with mathematical precision"
+        },
+        { 
+          name: "Weather Central", 
+          href: "/weather-summary", 
+          icon: Cloud,
+          current: location === "/weather-summary",
+          description: "Fun weather map for today's MLB games"
         }
       ],
       proItems: [

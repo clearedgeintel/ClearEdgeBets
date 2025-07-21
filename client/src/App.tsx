@@ -44,6 +44,7 @@ import PlayerPropBuilder from "@/pages/player-prop-builder";
 import Help from "@/pages/help";
 import VirtualPerformance from "@/pages/virtual-performance";
 import APIManagement from "@/pages/APIManagement";
+import WeatherSummary from "@/pages/WeatherSummary";
 
 function Router() {
   return (
@@ -67,6 +68,7 @@ function Router() {
         <Route path="/admin/stripe-setup" component={StripeSetup} />
         <Route path="/admin/ticket-dashboard" component={TicketDashboard} />
         <Route path="/admin/api-management" component={APIManagement} />
+        <Route path="/weather-summary" component={WeatherSummary} />
         <Route path="/cfl" component={CFLHub} />
         <Route path="/cfl/games" component={CFLGames} />
         <Route path="/cfl/picks" component={CFLPicks} />
