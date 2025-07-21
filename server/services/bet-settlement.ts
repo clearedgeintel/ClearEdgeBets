@@ -75,11 +75,14 @@ export function calculateBetResult(bet: any, game: any): { result: string; actua
   // Calculate actual winnings (stake is already in cents from database)
   const stakeInCents = parseFloat(stake);
   if (result === 'win') {
+    let profit = 0;
     if (odds > 0) {
-      actualWin = stakeInCents * (odds / 100);
+      profit = stakeInCents * (odds / 100);
     } else {
-      actualWin = stakeInCents * (100 / Math.abs(odds));
+      profit = stakeInCents * (100 / Math.abs(odds));
     }
+    // Total payout = original stake + profit
+    actualWin = stakeInCents + profit;
   } else if (result === 'push') {
     actualWin = stakeInCents; // Return stake on push
   }
@@ -256,8 +259,9 @@ export async function settleVirtualBets(): Promise<number> {
             let winCountChange = 0;
 
             if (betResult.result === 'win') {
+              // winAmount already includes stake + profit from calculateBetResult
               balanceChange = winAmount;
-              totalWinningsChange = winAmount;
+              totalWinningsChange = winAmount - stakeAmount; // Only count the profit as winnings
               winCountChange = 1;
             } else if (betResult.result === 'loss') {
               // Balance was already deducted when bet was placed, no additional change needed
@@ -267,13 +271,13 @@ export async function settleVirtualBets(): Promise<number> {
               balanceChange = stakeAmount;
             }
 
-            // Update user statistics
+            // Update user statistics - balanceChange is already in cents
             await db
               .update(users)
               .set({
-                virtualBalance: Math.round((currentUser.virtualBalance || 0) + (balanceChange * 100)), // Convert to cents
-                totalVirtualWinnings: Math.round(((currentUser.totalVirtualWinnings || 0) / 100) + totalWinningsChange) * 100,
-                totalVirtualLosses: Math.round(((currentUser.totalVirtualLosses || 0) / 100) + totalLossesChange) * 100,
+                virtualBalance: Math.round((currentUser.virtualBalance || 0) + balanceChange), // balanceChange already in cents
+                totalVirtualWinnings: Math.round((currentUser.totalVirtualWinnings || 0) + (totalWinningsChange * 100)), // Convert profit to cents
+                totalVirtualLosses: Math.round((currentUser.totalVirtualLosses || 0) + (totalLossesChange * 100)), // Convert to cents
                 winCount: (currentUser.winCount || 0) + winCountChange,
                 betCount: (currentUser.betCount || 0) // betCount was incremented when bet was placed
               })
