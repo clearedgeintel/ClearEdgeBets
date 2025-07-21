@@ -85,9 +85,7 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
     queryKey: ['/api/daily-picks']
   });
 
-  const { data: expertPicksResponse } = useQuery<any>({
-    queryKey: ['/api/mlb/picks/authentic']
-  });
+  // Removed expert picks - no authentic API source available
 
   // Get AI pick that matches this game's teams
   const aiPick = allAIPicks.find(pick => {
@@ -102,25 +100,7 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
            selection.includes(game.homeTeamCode.toLowerCase());
   }) || (allAIPicks.length > 0 ? allAIPicks[0] : null);
   
-  // Find expert pick that matches this specific game
-  const expertPicks = expertPicksResponse?.data?.picks || [];
-  const expertPick = expertPicks.find(pick => {
-    // First try to match by exact gameId
-    if (pick.gameId === game.gameId) {
-      return true;
-    }
-    
-    // Then check if expert pick mentions teams from this game
-    if (!pick.selection) return false;
-    const selection = pick.selection.toLowerCase();
-    const awayTeam = game.awayTeam.toLowerCase();
-    const homeTeam = game.homeTeam.toLowerCase();
-    
-    return selection.includes(awayTeam.split(' ').pop()) || 
-           selection.includes(homeTeam.split(' ').pop()) ||
-           selection.includes(game.awayTeamCode.toLowerCase()) ||
-           selection.includes(game.homeTeamCode.toLowerCase());
-  }) || (expertPicks.length > 0 ? expertPicks[0] : null);
+  // No expert picks - removed simulated data per user requirement
 
   const getOddsByMarket = (market: string) => {
     return game.odds.find(o => o.market === market);
@@ -295,51 +275,13 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
                 </div>
               )}
 
-              {/* Expert Pick */}
-              {expertPick && (
-                <div className="p-3 bg-orange-50/30 border border-orange-200 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-2">
-                      <User className="h-4 w-4 text-orange-600" />
-                      <h5 className="text-sm font-medium">Expert Suggestion</h5>
-                      <Badge className={getConfidenceBadge(expertPick.confidence).color}>
-                        {expertPick.confidence}%
-                      </Badge>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Badge variant="outline">{expertPick.odds || "N/A"}</Badge>
-                      {expertPick.value && expertPick.value > 0 && (
-                        <Badge className="bg-green-100 text-green-800">
-                          +{expertPick.value}% EV
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2 mb-2">
-                    {getPickIcon(expertPick.pickType)}
-                    <span className="text-sm font-medium">{expertPick.selection}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {expertPick.reasoning}
-                  </p>
-                  {aiPick && expertPick && (
-                    <div className="mt-2 pt-2 border-t border-orange-200">
-                      <p className="text-xs text-orange-600 italic flex items-center">
-                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        Complements AI {aiPick.selection?.includes('ML') ? 'moneyline' : aiPick.selection?.includes('Over') || aiPick.selection?.includes('Under') ? 'total' : 'spread'} pick
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Expert picks removed - no authentic API source available */}
 
               {/* No picks available message */}
-              {!aiPick && !expertPick && (
+              {!aiPick && (
                 <div className="text-center py-4 text-muted-foreground">
                   <Brain className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No AI or expert picks available for this game</p>
+                  <p className="text-sm">No AI picks available for this game</p>
                 </div>
               )}
             </div>
