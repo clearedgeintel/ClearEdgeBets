@@ -83,7 +83,7 @@ export class EnhancedMLBPicksService {
     }
 
     return {
-      id: `pick_${gameId}_${pickType}`,
+      id: `pick_${gameId}_${pickType}_${Date.now()}_${Math.random()}`,
       gameId,
       pickType,
       team,

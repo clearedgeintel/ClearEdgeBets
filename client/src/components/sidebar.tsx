@@ -131,11 +131,11 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           description: "Fun weather map for today's MLB games"
         },
         { 
-          name: "Authentic Picks", 
-          href: "/mlb-picks", 
+          name: "Unified Picks", 
+          href: "/unified-picks", 
           icon: Target,
-          current: location === "/mlb-picks",
-          description: "Real MLB picks from authenticated APIs"
+          current: location === "/unified-picks",
+          description: "Expert picks and AI analysis combined"
         }
       ],
       proItems: [
