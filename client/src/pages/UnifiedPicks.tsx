@@ -193,7 +193,7 @@ export default function UnifiedPicks() {
                       <User className="h-5 w-5 text-orange-500" />
                       <h3 className="text-lg font-semibold">Expert Picks</h3>
                       <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                        {authenticPicks?.source}
+                        {authenticPicks?.source || 'Expert Analysis'}
                       </Badge>
                     </div>
                     {authenticPicksData.map((pick) => {

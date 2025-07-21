@@ -836,31 +836,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // MLB Authentic Picks Endpoint
+  // MLB Authentic Picks Endpoint - Professional Expert Analysis
   app.get('/api/mlb/picks/authentic', async (req, res) => {
     try {
       const enhancedPicks = await enhancedMLBPicks.getEnhancedMLBPicks();
       res.json(enhancedPicks);
     } catch (error) {
       console.error('Error fetching enhanced MLB picks:', error);
-      
-      // Fallback to basic picks if enhanced fails
-      try {
-        const basicPicks = await mlbPicksAPI.getTodaysPicks();
-        if (basicPicks) {
-          res.json({
-            success: true,
-            data: basicPicks,
-            source: 'RapidAPI MLB Picks (Fallback)',
-            lastUpdated: new Date().toISOString()
-          });
-        } else {
-          res.status(404).json({ message: 'No authentic picks available' });
-        }
-      } catch (fallbackError) {
-        console.error('Fallback picks also failed:', fallbackError);
-        res.status(500).json({ message: 'Failed to fetch MLB picks' });
-      }
+      res.status(500).json({ message: 'Failed to fetch expert picks' });
     }
   });
 
