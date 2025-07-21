@@ -85,7 +85,7 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
     queryKey: ['/api/daily-picks']
   });
 
-  // Removed expert picks - no authentic API source available
+  // No expert picks API - removed to maintain authentic data only
 
   // Get AI pick that matches this game's teams
   const aiPick = allAIPicks.find(pick => {
@@ -100,7 +100,7 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
            selection.includes(game.homeTeamCode.toLowerCase());
   }) || (allAIPicks.length > 0 ? allAIPicks[0] : null);
   
-  // No expert picks - removed simulated data per user requirement
+  // No expert picks available - removed to maintain authentic data integrity
 
   const getOddsByMarket = (market: string) => {
     return game.odds.find(o => o.market === market);
@@ -275,7 +275,7 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
                 </div>
               )}
 
-              {/* Expert picks removed - no authentic API source available */}
+              {/* Expert picks removed - no authentic expert picks API available */}
 
               {/* No picks available message */}
               {!aiPick && (

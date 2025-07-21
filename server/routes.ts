@@ -836,7 +836,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Removed simulated expert picks endpoint - no authentic API source available
+  // Expert picks API removed - no authentic expert picks source available
 
   // Enhanced Game Analysis combining authentic data sources
   app.get('/api/games/:gameId/enhanced-analysis', async (req, res) => {

@@ -156,6 +156,7 @@ A test user has been created with Elite tier access:
   - Expert picks were generating made-up analysis without real API source
   - Platform now exclusively uses authentic data: AI picks match real game teams and odds
   - Maintains data integrity by avoiding any simulated recommendations or fake professional insights
+  - Corrected issue where RapidAPI endpoint returned game data but no actual picks - removed all pick generation
 - July 21, 2025: AUTHENTIC MLB PICKS INTEGRATION COMPLETE - Successfully integrated RapidAPI MLB picks endpoint for real betting recommendations
   - Created MLB Picks API service (server/services/mlb-picks-api.ts) to fetch authentic MLB picks data
   - Added `/api/mlb/picks/authentic` endpoint returning real picks with confidence scores and reasoning
