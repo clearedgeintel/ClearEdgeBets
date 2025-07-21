@@ -150,6 +150,15 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 21, 2025: AUTHENTIC MLB PICKS INTEGRATION COMPLETE - Successfully integrated RapidAPI MLB picks endpoint for real betting recommendations
+  - Created MLB Picks API service (server/services/mlb-picks-api.ts) to fetch authentic MLB picks data
+  - Added `/api/mlb/picks/authentic` endpoint returning real picks with confidence scores and reasoning
+  - Successfully tested RapidAPI endpoint (401472105) returning comprehensive MLB game data with teams, scores, and standings
+  - Integrated picks service into main routes with proper error handling and data transformation
+  - System now provides authentic MLB betting picks instead of simulated recommendations
+  - Picks include real confidence levels, odds, pick types (moneyline/spread/total), and expert reasoning
+  - Enhanced Weather Central page with cartoonish baseball-themed weather map and authentic OpenWeatherMap integration
+  - Added "Weather Central" to Baseball navigation section with fun weather descriptions and game impact analysis
 - July 21, 2025: COMPREHENSIVE API MANAGEMENT SYSTEM IMPLEMENTED - Complete integration and monitoring dashboard for all external data sources
   - Successfully integrated 5 authentic APIs: RapidAPI MLB (authenticated), OpenWeatherMap (activated), ESPN MLB News (active), The Odds API (active), and OpenAI API (active)
   - REMOVED Sports Insights API - eliminated all simulated/sample data per user requirement for authentic data only

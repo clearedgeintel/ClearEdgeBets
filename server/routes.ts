@@ -18,6 +18,7 @@ import { bankrollManager } from "./services/bankroll-manager";
 import { mlbStatsAPI } from "./services/mlb-stats-api";
 
 import { weatherAPI } from "./services/weather-api";
+import { mlbPicksAPI } from "./services/mlb-picks-api";
 import apiManagementRoutes from "./routes/api-management";
 // Note: Auth will be handled by existing system
 import Stripe from "stripe";
@@ -831,6 +832,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching weather summary:', error);
       res.status(500).json({ message: 'Failed to fetch weather summary' });
+    }
+  });
+
+  // MLB Authentic Picks Endpoint
+  app.get('/api/mlb/picks/authentic', async (req, res) => {
+    try {
+      const picks = await mlbPicksAPI.getTodaysPicks();
+      
+      if (!picks) {
+        return res.status(404).json({ message: 'No authentic picks available' });
+      }
+
+      res.json({
+        success: true,
+        data: picks,
+        source: 'RapidAPI MLB Picks',
+        lastUpdated: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error fetching authentic MLB picks:', error);
+      res.status(500).json({ message: 'Failed to fetch authentic MLB picks' });
     }
   });
 
