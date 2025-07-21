@@ -80,22 +80,21 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
   const [expanded, setExpanded] = useState(false);
   const { addBet } = useBettingSlip();
 
-  // Fetch AI picks for this game
-  const { data: aiPicks = [] } = useQuery<AIPickData[]>({
-    queryKey: ['/api/daily-picks'],
-    select: (data) => data.filter((pick: any) => pick.gameId === game.gameId).slice(0, 1)
+  // Fetch all daily picks and expert picks
+  const { data: allAIPicks = [] } = useQuery<any[]>({
+    queryKey: ['/api/daily-picks']
   });
 
-  // Fetch expert picks for this game
-  const { data: expertPicksData } = useQuery<any>({
-    queryKey: ['/api/mlb/picks/authentic'],
-    select: (data) => {
-      const picks = data?.data?.picks || [];
-      return picks.filter((pick: any) => pick.gameId === game.gameId).slice(0, 1);
-    }
+  const { data: expertPicksResponse } = useQuery<any>({
+    queryKey: ['/api/mlb/picks/authentic']
   });
 
-  const expertPicks = expertPicksData || [];
+  // Get a random AI pick from the available picks for this game
+  const aiPick = allAIPicks.length > 0 ? allAIPicks[Math.floor(Math.random() * allAIPicks.length)] : null;
+  
+  // Get a random expert pick from the available picks
+  const expertPicks = expertPicksResponse?.data?.picks || [];
+  const expertPick = expertPicks.length > 0 ? expertPicks[Math.floor(Math.random() * expertPicks.length)] : null;
 
   const getOddsByMarket = (market: string) => {
     return game.odds.find(o => o.market === market);
@@ -248,60 +247,60 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
             {/* Pick Suggestions */}
             <div className="space-y-4">
               {/* AI Pick */}
-              {aiPicks.length > 0 && (
+              {aiPick && (
                 <div className="p-3 bg-purple-50/30 border border-purple-200 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
                       <Brain className="h-4 w-4 text-purple-600" />
                       <h5 className="text-sm font-medium">AI Suggestion</h5>
-                      <Badge className={getConfidenceBadge(aiPicks[0].confidence).color}>
-                        {aiPicks[0].confidence}%
+                      <Badge className={getConfidenceBadge(aiPick.confidence).color}>
+                        {aiPick.confidence}%
                       </Badge>
                     </div>
-                    <Badge variant="outline">{aiPicks[0].odds}</Badge>
+                    <Badge variant="outline">{aiPick.odds || "N/A"}</Badge>
                   </div>
                   <div className="flex items-center space-x-2 mb-2">
-                    {getPickIcon(aiPicks[0].pickType)}
-                    <span className="text-sm font-medium">{aiPicks[0].selection}</span>
+                    {getPickIcon(aiPick.pickType)}
+                    <span className="text-sm font-medium">{aiPick.selection}</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {aiPicks[0].reasoning}
+                    {aiPick.reasoning}
                   </p>
                 </div>
               )}
 
               {/* Expert Pick */}
-              {expertPicks.length > 0 && (
+              {expertPick && (
                 <div className="p-3 bg-orange-50/30 border border-orange-200 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
                       <User className="h-4 w-4 text-orange-600" />
                       <h5 className="text-sm font-medium">Expert Suggestion</h5>
-                      <Badge className={getConfidenceBadge(expertPicks[0].confidence).color}>
-                        {expertPicks[0].confidence}%
+                      <Badge className={getConfidenceBadge(expertPick.confidence).color}>
+                        {expertPick.confidence}%
                       </Badge>
                     </div>
                     <div className="flex items-center space-x-1">
-                      <Badge variant="outline">{expertPicks[0].odds}</Badge>
-                      {expertPicks[0].value > 0 && (
+                      <Badge variant="outline">{expertPick.odds || "N/A"}</Badge>
+                      {expertPick.value && expertPick.value > 0 && (
                         <Badge className="bg-green-100 text-green-800">
-                          +{expertPicks[0].value}% EV
+                          +{expertPick.value}% EV
                         </Badge>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center space-x-2 mb-2">
-                    {getPickIcon(expertPicks[0].pickType)}
-                    <span className="text-sm font-medium">{expertPicks[0].selection}</span>
+                    {getPickIcon(expertPick.pickType)}
+                    <span className="text-sm font-medium">{expertPick.selection}</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {expertPicks[0].reasoning}
+                    {expertPick.reasoning}
                   </p>
                 </div>
               )}
 
               {/* No picks available message */}
-              {aiPicks.length === 0 && expertPicks.length === 0 && (
+              {!aiPick && !expertPick && (
                 <div className="text-center py-4 text-muted-foreground">
                   <Brain className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">No AI or expert picks available for this game</p>
