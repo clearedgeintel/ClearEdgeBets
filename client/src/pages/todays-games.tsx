@@ -3,12 +3,13 @@ import { useState } from "react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import GameCard from "@/components/game-card";
-import { Card, CardContent } from "@/components/ui/card";
+import EnhancedGameCard from "@/components/enhanced-game-card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Calendar, BarChart3, TrendingUp, Clock, ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
+import { Search, Filter, Calendar, BarChart3, TrendingUp, Clock, ChevronLeft, ChevronRight, CalendarIcon, Brain, User, Target } from "lucide-react";
 import { format, addDays, subDays, isSameDay } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -347,7 +348,7 @@ export default function TodaysGames() {
         ) : (
           <div className="grid grid-cols-1 gap-6">
             {filteredGames.map((game) => (
-              <GameCard key={game.id} game={game} />
+              <EnhancedGameCard key={game.id} game={game} />
             ))}
           </div>
         )}
