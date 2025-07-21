@@ -236,15 +236,15 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
             
             {/* AI Game Analysis */}
             {game.aiSummary && (
-              <div className="mb-4">
+              <div className="mb-4 p-3 bg-slate-50/30 border border-slate-100 rounded-lg">
                 <div className="flex items-center space-x-2 mb-2">
-                  <Brain className="h-4 w-4 text-purple-600" />
-                  <h4 className="text-sm font-medium">AI Game Analysis</h4>
-                  <Badge variant="outline" className="text-xs">
+                  <Brain className="h-4 w-4 text-slate-400" />
+                  <h4 className="text-sm font-medium text-slate-600">AI Game Analysis</h4>
+                  <Badge variant="outline" className="text-xs border-slate-200 text-slate-500">
                     {game.aiSummary.confidence}% Confidence
                   </Badge>
                 </div>
-                <p className="text-sm text-slate-700 mb-3">
+                <p className="text-sm text-slate-500 leading-relaxed">
                   {game.aiSummary.summary}
                 </p>
               </div>
