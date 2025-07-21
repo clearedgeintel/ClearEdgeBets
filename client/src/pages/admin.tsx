@@ -22,7 +22,9 @@ import {
   CheckCircle,
   XCircle,
   Ticket,
-  Brain
+  Brain,
+  Database,
+  Activity
 } from "lucide-react";
 import Header from "@/components/header";
 import { apiRequest } from "@/lib/queryClient";
@@ -343,6 +345,12 @@ function SettleVirtualBetsButton() {
                 <Button className="bg-green-600 hover:bg-green-700">
                   <Ticket className="w-4 h-4 mr-2" />
                   Referral Codes
+                </Button>
+              </Link>
+              <Link href="/admin/api-management">
+                <Button className="bg-indigo-600 hover:bg-indigo-700">
+                  <Database className="w-4 h-4 mr-2" />
+                  API Management
                 </Button>
               </Link>
               <Link href="/admin/phrase-detection">
