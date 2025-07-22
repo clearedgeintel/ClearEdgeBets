@@ -169,7 +169,7 @@ export default function EnhancedOdds() {
                   {game.awayTeam} @ {game.homeTeam}
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  {game.gameTime} • {game.venue}
+                  {game.gameTime} • {(game as any).venue || "TBD"}
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">

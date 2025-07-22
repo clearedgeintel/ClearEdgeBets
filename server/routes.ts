@@ -2916,9 +2916,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   function calculateImpliedProbability(odds: number): number {
     if (odds > 0) {
-      return (100 / (odds + 100)) * 100;
+      return 100 / (odds + 100);
     } else {
-      return (Math.abs(odds) / (Math.abs(odds) + 100)) * 100;
+      return Math.abs(odds) / (Math.abs(odds) + 100);
     }
   }
 
