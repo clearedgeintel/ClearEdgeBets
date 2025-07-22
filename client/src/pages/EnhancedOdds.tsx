@@ -278,54 +278,6 @@ export default function EnhancedOdds() {
                   </div>
                 </div>
 
-                <Separator />
-
-                {/* Market Analysis */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4" />
-                    Market Analysis
-                  </h3>
-                  
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <Card>
-                      <CardContent className="pt-4">
-                        <div className="text-center">
-                          <p className="text-sm text-muted-foreground">Total Implied</p>
-                          <p className="text-2xl font-bold">
-                            {formatPercentage(totalImplied)}
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="pt-4">
-                        <div className="text-center">
-                          <p className="text-sm text-muted-foreground">Sportsbook Vig</p>
-                          <p className="text-2xl font-bold text-red-600">
-                            {vigPercentage.toFixed(2)}%
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="pt-4">
-                        <div className="text-center">
-                          <p className="text-sm text-muted-foreground">Model Accuracy</p>
-                          <p className="text-2xl font-bold text-blue-600">
-                            {moneyline.modelAwayProb && moneyline.modelHomeProb ? 
-                              formatPercentage(moneyline.modelAwayProb + moneyline.modelHomeProb) : 
-                              'N/A'
-                            }
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-
                 {/* Spread and Total Information */}
                 {(game.odds.spread || game.odds.total) && (
                   <>
