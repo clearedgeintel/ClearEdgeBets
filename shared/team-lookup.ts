@@ -27,6 +27,7 @@ export const MLB_TEAMS = {
   'NYM': { name: 'New York Mets', city: 'New York', abbreviation: 'NYM', division: 'NL East' },
   'PHI': { name: 'Philadelphia Phillies', city: 'Philadelphia', abbreviation: 'PHI', division: 'NL East' },
   'WSH': { name: 'Washington Nationals', city: 'Washington', abbreviation: 'WSH', division: 'NL East' },
+  'WSN': { name: 'Washington Nationals', city: 'Washington', abbreviation: 'WSN', division: 'NL East' },
   
   // National League Central
   'CHC': { name: 'Chicago Cubs', city: 'Chicago', abbreviation: 'CHC', division: 'NL Central' },
