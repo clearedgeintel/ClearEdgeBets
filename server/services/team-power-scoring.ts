@@ -3,6 +3,7 @@ import { normalizeTeamCode, getTeamName } from '@shared/team-lookup';
 
 export interface TeamPowerScore {
   team: string;
+  teamCode?: string;
   advBattingScore: number;
   pitchingScore: number;
   teamPowerScore: number;
@@ -88,8 +89,11 @@ export class TeamPowerScoringService {
     const pitchingScore = this.calculatePitchingScore(pitchingStats);
     const teamPowerScore = advBattingScore + pitchingScore;
     
+    const teamName = battingStats.team || pitchingStats.team;
+    
     return {
-      team: battingStats.team || pitchingStats.team,
+      team: teamName,
+      teamCode: normalizeTeamCode(teamName), // Convert Baseball Reference team name to standard code
       advBattingScore,
       pitchingScore,
       teamPowerScore,

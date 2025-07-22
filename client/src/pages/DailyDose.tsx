@@ -45,8 +45,9 @@ export default function DailyDose() {
         setGeneratedNewsletter(data.html);
         setDebugData({
           prompt: data.debugData?.prompt || 'Prompt not available',
-          response: data.debugData?.response || 'Response data not available'
+          response: data.debugData || 'Response data not available'
         });
+        console.log('Debug data received:', data.debugData);
       } else if (!data.success && data.error) {
         // Handle case where no real games are available
         console.log('Newsletter generation failed:', data.message);
