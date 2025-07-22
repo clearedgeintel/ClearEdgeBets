@@ -5458,28 +5458,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Generating enhanced odds analysis for ${awayTeam} @ ${homeTeam}`);
       
-      // Get team power scores
-      const [awayPowerData, homePowerData] = await Promise.all([
-        teamPowerScoringService.getTeamPowerScore(awayTeam),
-        teamPowerScoringService.getTeamPowerScore(homeTeam)
+      // Get live team power scores (same pattern as existing endpoints)
+      const [liveBattingStats, livePitchingStats] = await Promise.all([
+        baseballReferenceService.fetchTeamBattingStats(),
+        baseballReferenceService.fetchTeamPitchingStats()
       ]);
       
-      if (!awayPowerData || !homePowerData) {
-        return res.status(404).json({
+      if (liveBattingStats.length === 0 || livePitchingStats.length === 0) {
+        return res.status(503).json({
           success: false,
-          error: "Team power data not available",
+          error: "Unable to fetch live stats from Baseball Reference",
           availableTeams: ["BAL", "BOS", "NYY", "TB", "TOR", "CWS", "CLE", "DET", "KC", "MIN", "HOU", "LAA", "OAK", "SEA", "TEX", "ATL", "MIA", "NYM", "PHI", "WSH", "CHC", "CIN", "MIL", "PIT", "STL", "ARI", "COL", "LAD", "SD", "SF"]
         });
       }
       
+      // Calculate all team power scores
+      const teamPowerScores = teamPowerScoringService.calculateAllTeamPowerScores(
+        liveBattingStats,
+        livePitchingStats
+      );
+      
+      // Get rankings with percentiles
+      const rankedScores = teamPowerScoringService.getTeamPowerRankings(teamPowerScores);
+      
+      // Find specific team data
+      const awayPowerData = teamPowerScoringService.findTeamPowerScore(rankedScores, awayTeam);
+      const homePowerData = teamPowerScoringService.findTeamPowerScore(rankedScores, homeTeam);
+      
+      if (!awayPowerData || !homePowerData) {
+        return res.status(404).json({
+          success: false,
+          error: "Team power data not available for requested teams",
+          requestedTeams: { away: awayTeam, home: homeTeam },
+          availableTeams: rankedScores.map(t => t.team)
+        });
+      }
+      
       // Calculate team advantage using power scores
-      const teamAdvantage = teamPowerScoringService.calculateTeamAdvantage(awayPowerData, homePowerData);
+      const teamAdvantage = teamPowerScoringService.calculateTeamAdvantage(rankedScores, homeTeam, awayTeam);
       
-      // Generate mock odds for demonstration (in production, this would come from odds API)
-      const homeAdvantageOdds = teamAdvantage.homePowerAdvantage > 0 ? -120 - (teamAdvantage.homePowerAdvantage * 3) : -110 + Math.abs(teamAdvantage.homePowerAdvantage * 2);
-      const awayAdvantageOdds = teamAdvantage.homePowerAdvantage < 0 ? -120 + (teamAdvantage.homePowerAdvantage * 3) : -110 - Math.abs(teamAdvantage.homePowerAdvantage * 2);
+      if (!teamAdvantage) {
+        return res.status(400).json({
+          success: false,
+          error: "Unable to calculate team advantage",
+          teams: { away: awayTeam, home: homeTeam }
+        });
+      }
       
-      // Create enhanced odds object with mock data
+      // Generate odds based on power differential
+      const powerDiff = teamAdvantage.powerDifference;
+      const homeAdvantageOdds = powerDiff > 0 ? -120 - (Math.abs(powerDiff) * 3) : -110 + Math.abs(powerDiff * 2);
+      const awayAdvantageOdds = powerDiff < 0 ? -120 + (Math.abs(powerDiff) * 3) : -110 - Math.abs(powerDiff * 2);
+      
+      // Create enhanced odds object
       const baseOdds = {
         moneyline: {
           home: Math.round(homeAdvantageOdds),
@@ -5501,17 +5532,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         teamPowerAnalysis: {
           awayTeam: {
             code: awayTeam,
+            fullName: awayPowerData.fullName,
             powerScore: awayPowerData.teamPowerScore,
-            powerRank: awayPowerData.powerRank,
+            powerRank: awayPowerData.rank,
             battingScore: awayPowerData.advBattingScore,
-            pitchingScore: awayPowerData.pitchingScore
+            pitchingScore: awayPowerData.pitchingScore,
+            battingRank: awayPowerData.battingRank,
+            pitchingRank: awayPowerData.pitchingRank,
+            percentile: awayPowerData.percentile
           },
           homeTeam: {
             code: homeTeam,
+            fullName: homePowerData.fullName,
             powerScore: homePowerData.teamPowerScore,
-            powerRank: homePowerData.powerRank,
+            powerRank: homePowerData.rank,
             battingScore: homePowerData.advBattingScore,
-            pitchingScore: homePowerData.pitchingScore
+            pitchingScore: homePowerData.pitchingScore,
+            battingRank: homePowerData.battingRank,
+            pitchingRank: homePowerData.pitchingRank,
+            percentile: homePowerData.percentile
           },
           advantage: teamAdvantage
         },
