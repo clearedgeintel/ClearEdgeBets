@@ -136,6 +136,13 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           icon: Target,
           current: location === "/unified-picks",
           description: "Expert picks and AI analysis combined"
+        },
+        { 
+          name: "Team Power Scores", 
+          href: "/team-power-scores", 
+          icon: BarChart3,
+          current: location === "/team-power-scores",
+          description: "Live MLB team rankings and power scores"
         }
       ],
       proItems: [

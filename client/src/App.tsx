@@ -47,6 +47,7 @@ import APIManagement from "@/pages/APIManagement";
 import WeatherSummary from "@/pages/WeatherSummary";
 import MLBPicks from "@/pages/MLBPicks";
 import UnifiedPicks from "@/pages/UnifiedPicks";
+import TeamPowerScores from "@/pages/TeamPowerScores";
 
 function Router() {
   return (
@@ -90,6 +91,7 @@ function Router() {
         <Route path="/hot-trends" component={HotTrends} />
         <Route path="/ai-assistant" component={AIAssistant} />
         <Route path="/kelly-calculator" component={KellyCalculator} />
+        <Route path="/team-power-scores" component={TeamPowerScores} />
         <Route path="/player-prop-builder" component={PlayerPropBuilder} />
         <Route path="/help" component={Help} />
         <Route path="/auth" component={AuthPage} />

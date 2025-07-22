@@ -873,6 +873,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Expert picks API removed - no authentic expert picks source available
 
+  // Team Power Scores API for comprehensive rankings display
+  app.get('/api/team-power-scores', async (req, res) => {
+    try {
+      // Fetch live data from Baseball Reference
+      const [liveBattingStats, livePitchingStats] = await Promise.all([
+        baseballReferenceService.fetchTeamBattingStats(),
+        baseballReferenceService.fetchTeamPitchingStats()
+      ]);
+      
+      if (liveBattingStats.length === 0 || livePitchingStats.length === 0) {
+        return res.status(503).json({ 
+          message: 'Unable to fetch team statistics from Baseball Reference' 
+        });
+      }
+      
+      // Calculate power scores using live data
+      const teamPowerScores = teamPowerScoringService.calculateAllTeamPowerScores(
+        liveBattingStats,
+        livePitchingStats
+      );
+      
+      // Get rankings with percentiles
+      const powerScores = teamPowerScoringService.getTeamPowerRankings(teamPowerScores);
+      console.log(`Team Power Scores API: Serving ${powerScores.length} teams with live data`);
+      
+      res.json(powerScores);
+    } catch (error) {
+      console.error('Error fetching team power scores:', error);
+      res.status(500).json({ message: 'Failed to fetch team power scores' });
+    }
+  });
+
   // Enhanced Game Analysis combining authentic data sources
   app.get('/api/games/:gameId/enhanced-analysis', async (req, res) => {
     try {
