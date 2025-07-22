@@ -104,6 +104,14 @@ export default function APIManagement() {
     mutationFn: () => apiRequest('POST', '/api/admin/test-integrations', {}),
   });
 
+  // Refresh Baseball Reference data mutation
+  const refreshBaseballRefMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/admin/apis/baseball-reference/refresh', {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/apis'] });
+    }
+  });
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
@@ -320,6 +328,20 @@ export default function APIManagement() {
                   {api.note && (
                     <div className="mt-4 p-3 bg-muted rounded-md">
                       <p className="text-sm">{api.note}</p>
+                    </div>
+                  )}
+                  {api.name === 'Baseball Reference' && (
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        onClick={() => refreshBaseballRefMutation.mutate()}
+                        disabled={refreshBaseballRefMutation.isPending}
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center space-x-2"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${refreshBaseballRefMutation.isPending ? 'animate-spin' : ''}`} />
+                        <span>{refreshBaseballRefMutation.isPending ? 'Refreshing...' : 'Refresh Data'}</span>
+                      </Button>
                     </div>
                   )}
                 </CardContent>

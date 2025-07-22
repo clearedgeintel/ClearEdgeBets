@@ -5,8 +5,8 @@
 
 import express from 'express';
 import { mlbStatsAPI } from '../services/mlb-stats-api';
-
 import { weatherAPI } from '../services/weather-api';
+import { baseballReferenceService } from '../services/baseball-reference-simple';
 
 const router = express.Router();
 
@@ -36,6 +36,18 @@ router.get('/admin/apis', async (req, res) => {
     const apis: APIStatus[] = [
       mlbStatsAPI.getUsageStats(),
       weatherAPI.getUsageStats(),
+      // Baseball Reference for team power scores
+      {
+        name: 'Baseball Reference',
+        endpoint: 'https://www.baseball-reference.com/',
+        status: 'active' as const,
+        requestCount: 0,
+        lastRequest: 'Used for team statistics',
+        cost: 'Free web scraping',
+        rateLimit: 'Respectful usage only',
+        features: ['Team Batting Stats', 'Team Pitching Stats', 'Power Score Calculations', 'Live Data'],
+        note: 'Authentic MLB statistics for team power scoring system'
+      },
       // Add existing APIs from the platform
       {
         name: 'ESPN MLB News API',
@@ -132,14 +144,26 @@ router.post('/admin/apis/health-check', async (req, res) => {
       });
     }
 
-    // Health check for Sports Insights (simulated)
-    healthChecks.push({
-      name: 'Sports Insights API',
-      success: true,
-      responseTime: 100,
-      lastChecked: new Date().toISOString(),
-      note: 'Currently using simulated data - would test real endpoint in production'
-    });
+    // Health check for Baseball Reference
+    const baseballRefStart = Date.now();
+    try {
+      const battingStats = await baseballReferenceService.fetchTeamBattingStats();
+      healthChecks.push({
+        name: 'Baseball Reference',
+        success: battingStats.length > 0,
+        responseTime: Date.now() - baseballRefStart,
+        lastChecked: new Date().toISOString(),
+        note: `Fetched ${battingStats.length} team batting records`
+      });
+    } catch (error) {
+      healthChecks.push({
+        name: 'Baseball Reference',
+        success: false,
+        responseTime: Date.now() - baseballRefStart,
+        lastChecked: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
 
     res.json({
       timestamp: new Date().toISOString(),
@@ -278,6 +302,65 @@ router.post('/admin/test-integrations', async (req, res) => {
   } catch (error) {
     console.error('Error testing integrations:', error);
     res.status(500).json({ message: 'Failed to test integrations' });
+  }
+});
+
+/**
+ * POST /admin/apis/baseball-reference/refresh - Refresh Baseball Reference data
+ */
+router.post('/admin/apis/baseball-reference/refresh', async (req, res) => {
+  try {
+    const startTime = Date.now();
+    
+    // Fetch fresh data from Baseball Reference
+    const [battingStats, pitchingStats] = await Promise.all([
+      baseballReferenceService.fetchTeamBattingStats(),
+      baseballReferenceService.fetchTeamPitchingStats()
+    ]);
+    
+    const refreshTime = Date.now() - startTime;
+    
+    if (battingStats.length === 0 || pitchingStats.length === 0) {
+      return res.status(503).json({
+        success: false,
+        message: 'Failed to refresh Baseball Reference data',
+        details: {
+          battingTeams: battingStats.length,
+          pitchingTeams: pitchingStats.length,
+          responseTime: refreshTime
+        }
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Baseball Reference data refreshed successfully',
+      details: {
+        battingTeams: battingStats.length,
+        pitchingTeams: pitchingStats.length,
+        responseTime: refreshTime,
+        lastRefresh: new Date().toISOString()
+      },
+      sampleData: {
+        battingExample: battingStats[0] ? {
+          team: battingStats[0].team,
+          runsPerGame: battingStats[0].runsPerGame,
+          homeRuns: battingStats[0].homeRuns
+        } : null,
+        pitchingExample: pitchingStats[0] ? {
+          team: pitchingStats[0].team,
+          era: pitchingStats[0].era,
+          whip: pitchingStats[0].whip
+        } : null
+      }
+    });
+  } catch (error) {
+    console.error('Error refreshing Baseball Reference data:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to refresh Baseball Reference data',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
