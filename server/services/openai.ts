@@ -45,7 +45,7 @@ export async function generateNewsletterHtml(prompt: string): Promise<string> {
         }
       ],
       temperature: 0.7,
-      max_tokens: 4000
+      max_tokens: 8000
     });
 
     let htmlContent = completion.choices[0]?.message?.content || "<html><body><h1>Newsletter generation failed</h1></body></html>";

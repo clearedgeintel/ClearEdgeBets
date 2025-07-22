@@ -48,6 +48,11 @@ export default function DailyDose() {
           response: data.debugData || 'Response data not available'
         });
         console.log('Debug data received:', data.debugData);
+        console.log('Debug data prompt:', data.debugData?.prompt ? 'Available' : 'Not available');
+        console.log('Setting debugData state to:', {
+          prompt: data.debugData?.prompt || 'Prompt not available',
+          response: data.debugData || 'Response data not available'
+        });
       } else if (!data.success && data.error) {
         // Handle case where no real games are available
         console.log('Newsletter generation failed:', data.message);
@@ -145,47 +150,43 @@ export default function DailyDose() {
 
         <Separator />
 
-        {/* Debug Console */}
-        <div className="text-xs text-gray-500 mb-2">Debug Data: {debugData ? 'Available' : 'Not Available'}</div>
-        {debugData && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <span>🐛 Debug Console</span>
-                <Badge variant="outline">Development</Badge>
-              </CardTitle>
-              <CardDescription>
-                Prompt sent to OpenAI and response details for debugging power score calculations
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {debugData.error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-red-800 mb-2">Error:</h4>
-                  <pre className="text-sm text-red-700 whitespace-pre-wrap">{debugData.error}</pre>
+        {/* Debug Console - Always Visible for Development */}
+        <Card className="mb-6 border-2 border-blue-200">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <span>🐛 Debug Console</span>
+              <Badge variant="outline">Development</Badge>
+            </CardTitle>
+            <CardDescription>
+              Status: {debugData ? 'Data Available' : 'No Data'} | Prompt: {debugData?.prompt ? 'Available' : 'Not Available'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!debugData && (
+              <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded">
+                No debug data available. Generate a newsletter to see the OpenAI prompt and team power scores.
+              </div>
+            )}
+            
+            {debugData?.prompt && (
+              <div className="space-y-2">
+                <h4 className="font-semibold">Prompt Sent to OpenAI:</h4>
+                <div className="bg-slate-50 border rounded-lg p-4 max-h-64 overflow-y-auto">
+                  <pre className="text-sm whitespace-pre-wrap">{debugData.prompt}</pre>
                 </div>
-              )}
-              
-              {debugData.prompt && (
-                <div className="space-y-2">
-                  <h4 className="font-semibold">Prompt Sent to OpenAI:</h4>
-                  <div className="bg-slate-50 border rounded-lg p-4 max-h-64 overflow-y-auto">
-                    <pre className="text-sm whitespace-pre-wrap">{debugData.prompt}</pre>
-                  </div>
+              </div>
+            )}
+            
+            {debugData?.response && (
+              <div className="space-y-2">
+                <h4 className="font-semibold">Response Data:</h4>
+                <div className="bg-slate-50 border rounded-lg p-4 max-h-64 overflow-y-auto">
+                  <pre className="text-sm">{JSON.stringify(debugData.response, null, 2)}</pre>
                 </div>
-              )}
-              
-              {debugData.response && (
-                <div className="space-y-2">
-                  <h4 className="font-semibold">Team Power Scores Data:</h4>
-                  <div className="bg-slate-50 border rounded-lg p-4 max-h-64 overflow-y-auto">
-                    <pre className="text-sm">{JSON.stringify(debugData.response, null, 2)}</pre>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Newsletter Preview */}
         {currentHtml ? (

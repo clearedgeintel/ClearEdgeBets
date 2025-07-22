@@ -5838,8 +5838,10 @@ CSS Guidelines:
 - Use bars (optional) or bold numbers to show EV%
 - Font: clean sans-serif (e.g., Arial or Roboto)
 
+**CRITICAL: You MUST include ALL sections listed above. Do not skip any section.**
 **Return ONLY the full HTML document**, wrapped in <html><head>...</head><body>...</body></html>.  
 Do not return markdown, raw JSON, or explanations.
+**Ensure every section from "Today's Matchups" through "Short Summary" is completed with actual data.**
 
 List of games: ${JSON.stringify(gamesData, null, 2)}`;
 
