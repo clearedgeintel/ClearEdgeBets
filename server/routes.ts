@@ -5837,6 +5837,9 @@ CSS Guidelines:
 - Bordered tables with padding
 - Use bars (optional) or bold numbers to show EV%
 - Font: clean sans-serif (e.g., Arial or Roboto)
+- **IMPORTANT: Ensure high contrast between text and background colors for readability**
+- Use dark text on light backgrounds or light text on dark backgrounds
+- Avoid white text on light backgrounds or dark text on dark backgrounds
 
 **CRITICAL: You MUST include ALL sections listed above. Do not skip any section.**
 **Return ONLY the full HTML document**, wrapped in <html><head>...</head><body>...</body></html>.  
