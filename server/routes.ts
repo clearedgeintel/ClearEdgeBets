@@ -22,6 +22,7 @@ import { mlbPicksAPI } from "./services/mlb-picks-api";
 import { enhancedMLBPicks } from "./services/enhanced-mlb-picks";
 import apiManagementRoutes from "./routes/api-management";
 import { baseballReferenceService } from "./services/baseball-reference";
+import { teamPowerScoringService } from "./services/team-power-scoring";
 // Note: Auth will be handled by existing system
 import Stripe from "stripe";
 import bcrypt from "bcrypt";
@@ -5090,6 +5091,162 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false,
         error: "Failed to fetch historical pitching team statistics",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Team Power Scoring API endpoints
+  // Calculate and retrieve current team power scores
+  app.get("/api/team-power-scores", async (req, res) => {
+    try {
+      const { date } = req.query;
+      const targetDate = date ? String(date) : new Date().toISOString().split('T')[0];
+      
+      console.log(`Calculating team power scores for date: ${targetDate}`);
+      
+      // Get batting and pitching stats for the target date
+      const [battingStats, pitchingStats] = await Promise.all([
+        storage.getBaseballReferenceSnapshot(targetDate),
+        storage.getBaseballReferencePitchingSnapshot(targetDate)
+      ]);
+      
+      if (battingStats.length === 0 || pitchingStats.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: "No batting or pitching stats found for the specified date",
+          date: targetDate,
+          battingTeams: battingStats.length,
+          pitchingTeams: pitchingStats.length
+        });
+      }
+      
+      // Calculate power scores
+      const teamPowerScores = teamPowerScoringService.calculateAllTeamPowerScores(
+        battingStats,
+        pitchingStats
+      );
+      
+      // Get rankings with percentiles
+      const rankedScores = teamPowerScoringService.getTeamPowerRankings(teamPowerScores);
+      
+      res.json({
+        success: true,
+        date: targetDate,
+        data: rankedScores,
+        count: rankedScores.length,
+        summary: {
+          topTeam: rankedScores[0],
+          averagePowerScore: Math.round(rankedScores.reduce((sum, team) => sum + team.teamPowerScore, 0) / rankedScores.length),
+          highestBattingScore: Math.max(...rankedScores.map(t => t.advBattingScore)),
+          highestPitchingScore: Math.max(...rankedScores.map(t => t.pitchingScore))
+        }
+      });
+    } catch (error) {
+      console.error("Error calculating team power scores:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to calculate team power scores",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Get power score for specific team
+  app.get("/api/team-power-scores/:team", async (req, res) => {
+    try {
+      const { team } = req.params;
+      const { date } = req.query;
+      const targetDate = date ? String(date) : new Date().toISOString().split('T')[0];
+      
+      console.log(`Getting power score for team: ${team.toUpperCase()} on ${targetDate}`);
+      
+      // Get team-specific stats
+      const [battingStats, pitchingStats] = await Promise.all([
+        storage.getTeamBaseballReferenceStats(team.toUpperCase(), targetDate),
+        storage.getTeamBaseballReferencePitchingStats(team.toUpperCase(), targetDate)
+      ]);
+      
+      if (!battingStats || !pitchingStats) {
+        return res.status(404).json({
+          success: false,
+          error: `Stats not found for team ${team.toUpperCase()} on ${targetDate}`,
+          team: team.toUpperCase(),
+          date: targetDate,
+          hasBatting: !!battingStats,
+          hasPitching: !!pitchingStats
+        });
+      }
+      
+      // Calculate power score for this team
+      const teamPowerScore = teamPowerScoringService.calculateTeamPowerScore(
+        battingStats,
+        pitchingStats
+      );
+      
+      res.json({
+        success: true,
+        team: team.toUpperCase(),
+        date: targetDate,
+        data: teamPowerScore
+      });
+    } catch (error) {
+      console.error(`Error getting power score for team ${req.params.team}:`, error);
+      res.status(500).json({
+        success: false,
+        error: `Failed to get power score for team ${req.params.team}`,
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Calculate power scores using live Baseball Reference data
+  app.post("/api/team-power-scores/calculate-live", async (req, res) => {
+    try {
+      console.log("Calculating live team power scores from Baseball Reference...");
+      
+      // Fetch live data from Baseball Reference
+      const [liveBattingStats, livePitchingStats] = await Promise.all([
+        baseballReferenceService.fetchTeamBattingStats(),
+        baseballReferenceService.fetchTeamPitchingStats()
+      ]);
+      
+      if (liveBattingStats.length === 0 || livePitchingStats.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: "Unable to fetch live stats from Baseball Reference",
+          battingTeams: liveBattingStats.length,
+          pitchingTeams: livePitchingStats.length
+        });
+      }
+      
+      // Calculate power scores using live data
+      const teamPowerScores = teamPowerScoringService.calculateAllTeamPowerScores(
+        liveBattingStats,
+        livePitchingStats
+      );
+      
+      // Get rankings with percentiles
+      const rankedScores = teamPowerScoringService.getTeamPowerRankings(teamPowerScores);
+      
+      res.json({
+        success: true,
+        source: "live_baseball_reference",
+        data: rankedScores,
+        count: rankedScores.length,
+        timestamp: new Date().toISOString(),
+        summary: {
+          topTeam: rankedScores[0],
+          averagePowerScore: Math.round(rankedScores.reduce((sum, team) => sum + team.teamPowerScore, 0) / rankedScores.length),
+          highestBattingScore: Math.max(...rankedScores.map(t => t.advBattingScore)),
+          highestPitchingScore: Math.max(...rankedScores.map(t => t.pitchingScore))
+        }
+      });
+    } catch (error) {
+      console.error("Error calculating live team power scores:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to calculate live team power scores",
         message: error instanceof Error ? error.message : "Unknown error"
       });
     }
