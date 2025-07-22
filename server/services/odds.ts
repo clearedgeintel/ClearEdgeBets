@@ -113,7 +113,7 @@ export async function fetchTodaysGames(): Promise<ProcessedGameData[]> {
 
     const games: OddsApiGame[] = await response.json();
     
-    return games.map(game => processGameData(game)).filter(Boolean);
+    return games.map(game => processGameData(game)).filter((game): game is ProcessedGameData => game !== null);
   } catch (error) {
     console.error("Error fetching odds data:", error);
     return generateDemoOddsData();
@@ -300,7 +300,7 @@ export function enhanceOddsWithAnalytics(odds: ProcessedGameData['odds'], homeWi
 
   // Avoid division by zero
   if (!homeDecimalOdds || !awayDecimalOdds || !homeWinPct || !awayWinPct) {
-    return { ...odds, moneyline: { ...odds.moneyline, note: "Missing or invalid input data" } };
+    return odds;
   }
 
   const totalWinPct = homeWinPct + awayWinPct;
