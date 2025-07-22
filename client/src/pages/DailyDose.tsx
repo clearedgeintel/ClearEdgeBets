@@ -35,11 +35,18 @@ export default function DailyDose() {
     onMutate: () => {
       setIsGenerating(true);
     },
-    onSuccess: (data: DailyDoseData) => {
-      setGeneratedNewsletter(data.html);
+    onSuccess: (data: any) => {
+      console.log('Newsletter generation response:', data);
+      if (data.success && data.html) {
+        setGeneratedNewsletter(data.html);
+      } else if (!data.success && data.error) {
+        // Handle case where no real games are available
+        console.log('Newsletter generation failed:', data.message);
+      }
       setIsGenerating(false);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Newsletter generation error:', error);
       setIsGenerating(false);
     }
   });

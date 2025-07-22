@@ -1,0 +1,929 @@
+{
+  "name": "Baseball",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1200,
+        -460
+      ],
+      "id": "c71789aa-314a-4791-9ec4-e1e48340389f",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://baseball4.p.rapidapi.com/v1/mlb/schedule",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "date",
+              "value": "2025-06-27"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Rapidapi-Key",
+              "value": "25bba99bcbmshffc54c14b825acep1bbb33jsn48412e55f747"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -980,
+        -760
+      ],
+      "id": "178919a9-103c-4593-998e-c982fb6b967e",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const games = $json.body;\n\nconst output = [];\n\nObject.keys(games).forEach(key => {\n  const game = games[key];\n\n  if (game && game.teams) {\n    const isoDate = game.gameDate;\n    const dateObj = new Date(isoDate);\n\n    // Subtract 5 hours for CDT (Central Daylight Time)\n    dateObj.setHours(dateObj.getHours() - 5);\n\n    const datePart = dateObj.toISOString().split('T')[0];\n    const timePart = dateObj.toISOString().split('T')[1].replace('Z', '').slice(0, 8);\n\n    output.push({\n      date: datePart,           // Central Date\n      time: timePart,           // Central Time\n      awayTeam: game.teams.away.team.name,\n      awayWins: game.teams.away.leagueRecord.wins,\n      awayLosses: game.teams.away.leagueRecord.losses,\n      awayWinPct: game.teams.away.leagueRecord.pct,\n      homeTeam: game.teams.home.team.name,\n      homeWins: game.teams.home.leagueRecord.wins,\n      homeLosses: game.teams.home.leagueRecord.losses,\n      homeWinPct: game.teams.home.leagueRecord.pct,\n      venue: game.venue.name,\n      gameStatus: game.status.detailedState,\n      dayNight: game.dayNight,\n      scheduledInnings: game.scheduledInnings,\n      gamePk: game.gamePk\n    });\n  }\n});\n\nreturn output.map(record => ({ json: record }));\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -760,
+        -760
+      ],
+      "id": "59ec0516-24a1-4b60-9d4a-fe7971f6d2e3",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "url": "https://pinnacle-odds.p.rapidapi.com/kit/v1/markets?",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "league_ids",
+              "value": "246"
+            },
+            {
+              "name": "event_type",
+              "value": "prematch"
+            },
+            {
+              "name": "sport_id",
+              "value": "9"
+            },
+            {
+              "name": "is_have_odds",
+              "value": "true"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Rapidapi-Key",
+              "value": "25bba99bcbmshffc54c14b825acep1bbb33jsn48412e55f747"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -980,
+        -560
+      ],
+      "id": "39abfec6-26e6-49c4-9eed-0b7830ebd968",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = [];\n\nfor (const item of items) {\n  const events = item.json.events || [];\n\n  for (const game of events) {\n    const period0 = game.periods?.num_0;\n    const moneyLine = period0?.money_line;\n\n    if (moneyLine && moneyLine.home && moneyLine.away) {\n      output.push({\n        json: {\n          event_id: game.event_id,\n          home_team: game.home,\n          away_team: game.away,\n          start_time: game.starts,\n          home_odds: moneyLine.home,\n          away_odds: moneyLine.away\n        }\n      });\n    }\n  }\n}\n\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -760,
+        -560
+      ],
+      "id": "bb0ca690-e0d3-4d96-a16d-362aecc6478e",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "advanced": true,
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "homeTeam",
+              "field2": "home_team"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        -540,
+        -660
+      ],
+      "id": "5362b9af-9809-42e1-bddf-e6df5e4b5eab",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const data = item.json;\n\n  const homeOdds = parseFloat(data.home_odds);\n  const awayOdds = parseFloat(data.away_odds);\n  const homeWinPct = parseFloat(data.homeWinPct);\n  const awayWinPct = parseFloat(data.awayWinPct);\n\n  // Avoid division by zero\n  if (!homeOdds || !awayOdds || !homeWinPct || !awayWinPct) {\n    return { json: { ...data, note: \"Missing or invalid input data\" } };\n  }\n\n  const totalWinPct = homeWinPct + awayWinPct;\n  const modelHomeProb = homeWinPct / totalWinPct;\n  const modelAwayProb = awayWinPct / totalWinPct;\n\n  const impliedHomeProb = 1 / homeOdds;\n  const impliedAwayProb = 1 / awayOdds;\n\n  const homeEV = (modelHomeProb * (homeOdds - 1)) - (1 - modelHomeProb);\n  const awayEV = (modelAwayProb * (awayOdds - 1)) - (1 - modelAwayProb);\n\n  const homeKelly = ((homeOdds - 1) * modelHomeProb - (1 - modelHomeProb)) / (homeOdds - 1);\n  const awayKelly = ((awayOdds - 1) * modelAwayProb - (1 - modelAwayProb)) / (awayOdds - 1);\n\n  // New: Model Edge = Model Prob - Implied Prob\n  const homeEdge = modelHomeProb - impliedHomeProb;\n  const awayEdge = modelAwayProb - impliedAwayProb;\n\n  return {\n    json: {\n      ...data,\n      modelHomeProb: modelHomeProb.toFixed(4),\n      modelAwayProb: modelAwayProb.toFixed(4),\n      impliedHomeProb: impliedHomeProb.toFixed(4),\n      impliedAwayProb: impliedAwayProb.toFixed(4),\n      homeEdge: homeEdge.toFixed(4),         // NEW\n      awayEdge: awayEdge.toFixed(4),         // NEW\n      homeEV: homeEV.toFixed(4),\n      awayEV: awayEV.toFixed(4),\n      homeKelly: homeKelly.toFixed(4),\n      awayKelly: awayKelly.toFixed(4)\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        340,
+        -460
+      ],
+      "id": "3befadd4-5286-4290-8de1-c4d95e32bc7f",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a professional betting analyst assistant.\n\nYou are given a list of today’s MLB games with the following fields:\n- Home team, Away team\n- Home odds, Away odds\n- Model win probabilities (homeProb, awayProb)\n- Implied win probabilities (homeImp, awayImp)\n- Expected value (homeEV, awayEV)\n- Kelly stake suggestion (homeKelly, awayKelly)\n- Edge (homeEdge, awayEdge)\n- Game time (UTC) and location\n\n **$100 Kelly Bankroll Ticket**  \n- Use Kelly Criterion values to recommend fractional bets from a $100 bankroll  \n- Limit to 3 best selections for the day\n- Round to nearest dollar  \n- Skip bets with Kelly stake ≤ 0  \n- Recommend total stake spent  \n- Potential Payout\n -American Odds\n- Bold teams and stake sizes\n\nAssume today is {{ $now.toFormat(\"yyyy-MM-dd\") }}.\n\n---\n\n✳️ First, return a **clean JSON array** of the top  bets (EV > 0, sorted by EV descending), using these fields:\n\n- \"team\" (name of the team being bet on)\n- \"odds\" (decimal)\n- \"ev\" (expected value %, rounded to 2 decimals)\n- \"kellyStake\" (out of $100, round to integer)\n- \"winProb\" (model win probability, %, rounded to 2 decimals)\n- \"impProb\" (implied win probability, %, rounded to 2 decimals)\n- \"gameTime\" (converted to Central Time like \"6:10 PM\")\n- \"location\" (game venue)\n- \"date\" (set as {{ $now.toFormat(\"yyyy-MM-dd\") }})\n\n\n✅ Return only the JSON array — no markdown, no commentary, no formatting blocks. It must start with `[` and end with `]`.\n\nHere is the game data (JSON format):\n\n\n{{ $json.text }}\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        780,
+        -460
+      ],
+      "id": "b55c7d4f-a4fd-4122-ae5c-ede05ad9faec",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "T194e8y92hhPaWFE",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const oddsArray = items.map(item => item.json);\n\nreturn [\n  {\n    json: {\n      text: JSON.stringify({ odds: oddsArray }, null, 2)\n    }\n  }\n];\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        -360
+      ],
+      "id": "44455537-829a-48d6-82e7-b814428ebe4b",
+      "name": "Code3"
+    },
+    {
+      "parameters": {
+        "sendTo": "analystate@gmail.com",
+        "subject": "EV Betting Summary",
+        "message": "={{ $json.message.content }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1156,
+        -260
+      ],
+      "id": "46f23808-83e7-45bb-8ada-66c4ff931764",
+      "name": "Gmail",
+      "webhookId": "66a9210a-d42b-4175-82f7-2a84d8093436",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "DoBH6HIriV8nMxEO",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a professional betting analyst assistant writing a newsletter called **“The Daily Dose.”**\n\nYou are given a list of today’s MLB games with the following fields:\n- Home team, Away team\n- Home odds, Away odds\n- Model win probabilities (homeProb, awayProb)\n- Implied win probabilities (homeImp, awayImp)\n- Expected value (homeEV, awayEV)\n- Kelly stake suggestion (homeKelly, awayKelly)\n- Edge (homeEdge, awayEdge)\n- Game time (UTC) and location\n- Advanced stats for each team:\n  - teamPowerScore\n  - advBattingScore\n  - PitchingScore\n\nAssume today is [DateTime: 2025-05-21T00:00:00.000-05:00]. Convert all game times to **Central Time (CT)**.\n\n---\n\nGenerate a **full HTML newsletter** called **📬 The Daily Dose**, with the following sections:\n\n---\n\n✅ **Today’s Matchups**  \nA table with columns:\n- Home Team  \n- Away Team  \n- Game Time (CT)  \n- Location  \n- Home Power Score  \n- Away Power Score\n\nSort by game time. Highlight the biggest mismatch in Power Score.\n\n---\n** 📅⚾ ** This day in baseball history\n-Give 2 quick historical facts from this day in baseball history\n\n\n🔢 **Stats Overview**  \n- Number of games with EV > 0  \n- Highest teamPowerScore today (team name and value)  \n- Largest power score mismatch (team and opponent, with score difference)\n\n---\n\n🔥 **Top 3 Value Bets** (sorted by EV descending)  \nFor each:\n- Team Name  \n- American Odds  \n- EV %  \n- Kelly Stake %  \n- teamPowerScore  \n- One-liner: “Model gives them X% win chance vs. Y% implied.”\n\n---\n\n💡 **Best Home Edge**  \nHighlight the single best **home** team bet based on homeEdge and teamPowerScore.\n\n---\n\n🎟️ **$100 Kelly Bankroll Ticket**  \n- Use Kelly Criterion values to recommend fractional bets from a $100 bankroll  \n- Round to nearest dollar  \n- 3 bets\n- Skip bets with Kelly stake ≤ 0  \n- Recommend total stake spent  \n- Potential Payout\n -American Odds\n- Bold teams and stake sizes\n- Does not need to be an underdog\n- Why is this tteam worth a play today?\n\n---\n\n📜 **Short Summary (max 200 words)**  \nHighlight the top storyline of the day: e.g., strongest favorite, value upset, or edge mismatch. Be concise, professional, and slightly witty.\n\n---\nReturn production ready html, no comments, no markdown\n🎨 **HTML Styling Instructions**  \nUse the following theme:\n\nNo Gradients\n\nUse green red and tan mimicking the colors of the Minnesota Wild\nCSS Guidelines:\n- Centered layout\n- Use `<table>` with styled headers\n- Emojis for section headers\n- Bordered tables with padding\n- Use bars (optional) or bold numbers to show EV%\n- Font: clean sans-serif (e.g., Arial or Roboto)\n\n---\n\n**Return ONLY the full HTML document**, wrapped in `<html><head>...</head><body>...</body></html>`.  \nDo not return markdown, raw JSON, or explanations.\nList of games: {{ $json.text }}\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        780,
+        -260
+      ],
+      "id": "51180d0e-e668-4341-a5c7-3f211bc6b463",
+      "name": "OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "T194e8y92hhPaWFE",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "16eqaPW_UX0sG08W_3CO-PnlNgksoIHUwNSdTHNzlMrE",
+          "mode": "list",
+          "cachedResultName": "Bet Tracker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/16eqaPW_UX0sG08W_3CO-PnlNgksoIHUwNSdTHNzlMrE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1462530058,
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/16eqaPW_UX0sG08W_3CO-PnlNgksoIHUwNSdTHNzlMrE/edit#gid=1462530058"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Key": "={{ $json.key }}",
+            "Date": "={{ $json.date }}",
+            "Team": "={{ $json.team }}",
+            "Odds": "={{ $json.odds }}",
+            "Expected Value (%)": "={{ $json.ev }}",
+            "Model Win Probability (%)": "={{ $json.winProb }}",
+            "Implied Win Probability (%)": "={{ $json.impProb }}",
+            "Kelly Stake (%)": "={{ $json.kellyStake }}",
+            "Game Time (CT)": "={{ $json.gameTime }}",
+            "Location": "={{ $json.location }}"
+          },
+          "matchingColumns": [
+            "Key"
+          ],
+          "schema": [
+            {
+              "id": "Key",
+              "displayName": "Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Team",
+              "displayName": "Team",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Odds",
+              "displayName": "Odds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Expected Value (%)",
+              "displayName": "Expected Value (%)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Model Win Probability (%)",
+              "displayName": "Model Win Probability (%)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Implied Win Probability (%)",
+              "displayName": "Implied Win Probability (%)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Kelly Stake (%)",
+              "displayName": "Kelly Stake (%)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Game Time (CT)",
+              "displayName": "Game Time (CT)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Result",
+              "displayName": "Result",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Winnings",
+              "displayName": "Winnings",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "RunningTotal",
+              "displayName": "RunningTotal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "American Odds",
+              "displayName": "American Odds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1376,
+        -460
+      ],
+      "id": "0e6a432c-f433-4ad4-81c1-c7fbf958c48d",
+      "name": "Google Sheets1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jKfQEbtP5QPsr3Ic",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Step 1: Extract and parse the stringified JSON from GPT response\nconst raw = items[0].json.message.content;\nconst bets = JSON.parse(raw);\n\n// Step 2: Format for Google Sheets or Airtable\nreturn bets.map((bet, index) => ({\n  json: {\n    key: `${bet.date}_${bet.team.replace(/\\s+/g, '')}`,\n    team: bet.team,\n    odds: bet.odds,\n    ev: bet.ev,\n    kellyStake: bet.kellyStake,\n    winProb: bet.winProb,\n    impProb: bet.impProb,\n    gameTime: bet.gameTime,\n    location: bet.location,\n    date: bet.date\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1156,
+        -460
+      ],
+      "id": "3ef07a32-92d3-46a1-b201-0a6c69c2c8b2",
+      "name": "Code4"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1BlFpW-65G9vPEzljaC0vZh5QENVqC1xSDda1kM0vDXs",
+          "mode": "list",
+          "cachedResultName": "Baseball (over/under)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BlFpW-65G9vPEzljaC0vZh5QENVqC1xSDda1kM0vDXs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1448578581,
+          "mode": "list",
+          "cachedResultName": "Batting",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BlFpW-65G9vPEzljaC0vZh5QENVqC1xSDda1kM0vDXs/edit#gid=1448578581"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -980,
+        -360
+      ],
+      "id": "8a3e26f9-0267-4d6e-97f0-c398fe93adfe",
+      "name": "Batting",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jKfQEbtP5QPsr3Ic",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1BlFpW-65G9vPEzljaC0vZh5QENVqC1xSDda1kM0vDXs",
+          "mode": "list",
+          "cachedResultName": "Baseball (over/under)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BlFpW-65G9vPEzljaC0vZh5QENVqC1xSDda1kM0vDXs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 821043667,
+          "mode": "list",
+          "cachedResultName": "Pitching",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BlFpW-65G9vPEzljaC0vZh5QENVqC1xSDda1kM0vDXs/edit#gid=821043667"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -980,
+        -160
+      ],
+      "id": "b8bd2c77-0297-435c-a069-a432bfc06f8f",
+      "name": "Pitching",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jKfQEbtP5QPsr3Ic",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "fieldsToMatchString": "Tm",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        -760,
+        -260
+      ],
+      "id": "418d4112-6a23-4cc4-b935-85fa309014be",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Each item should have: team, advBattingScore, pitchingScore\n\nreturn items.map(item => {\n  const data = item.json;\n\n  const batting = Number(data.advBattingScore || 0);\n  const pitching = Number(data.PitchingScore || 0);\n\n  return {\n    json: {\n      ...data,\n      teamPowerScore: batting + pitching\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -540,
+        -300
+      ],
+      "id": "16546cd2-ca9a-4da9-9190-3dff37c4b6df",
+      "name": "calculateTeamPoer"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "advanced": true,
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "homeTeam",
+              "field2": "Tm"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        -320,
+        -610
+      ],
+      "id": "88f34cc4-0d32-4f73-9a76-9ff34af36aca",
+      "name": "Merge Home Team Stats"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "advanced": true,
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "awayTeam",
+              "field2": "Tm"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        -320,
+        -310
+      ],
+      "id": "c69df080-bd4f-4594-b826-e15e5dd60d2b",
+      "name": "Merge Away Team Stats"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "advanced": true,
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "home_event_id",
+              "field2": "away_event_id"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        120,
+        -460
+      ],
+      "id": "6f7aab84-7554-4ede-b176-eac3a872be66",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const result = {};\n\n  for (const key in item.json) {\n    if (!key.startsWith('away_') && key !== 'away_team' && key !== 'awayTeam' && !key.startsWith('away') &&  !key.startsWith('home')) {\n      result[`away_${key}`] = item.json[key];\n    } else {\n      result[key] = item.json[key];\n    }\n  }\n\n  return { json: result };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -100,
+        -310
+      ],
+      "id": "91e79f15-a694-4182-a8c5-7421381f692f",
+      "name": "Code6"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const result = {};\n\n  for (const key in item.json) {\n    if (!key.startsWith('home_') && key !== 'home_team' && key !== 'homeTeam' && !key.startsWith('home') &&  !key.startsWith('away')) {\n      result[`home_${key}`] = item.json[key];\n    } else {\n      result[key] = item.json[key];\n    }\n  }\n\n  return { json: result };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -100,
+        -610
+      ],
+      "id": "636d54fb-8820-4564-a64e-4e9407488c08",
+      "name": "RenameHomeStats"
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "import pandas as pd\n\nurl = \"https://www.baseball-reference.com/leagues/majors/2025-standard-pitching.shtml\"\n\n# Use html5lib instead of lxml\ntables = pd.read_html(url, flavor='html5lib')\n\ndf = tables[0]\ndf = df[df[\"Rk\"] != \"Rk\"]\npitching_stats = df.to_dict(orient=\"records\")\n\nreturn {\"result\": pitching_stats[:10]}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -760,
+        -160
+      ],
+      "id": "c3a2765f-986f-4037-86fc-9adffb883d59",
+      "name": "Code5"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Batting",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Pitching",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Merge Home Team Stats",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Away Team Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code3": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "OpenAI1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Code4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI1": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "main": [
+        []
+      ]
+    },
+    "Code4": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batting": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pitching": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Code5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "calculateTeamPoer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "calculateTeamPoer": {
+      "main": [
+        [
+          {
+            "node": "Merge Home Team Stats",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Merge Away Team Stats",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Home Team Stats": {
+      "main": [
+        [
+          {
+            "node": "RenameHomeStats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Away Team Stats": {
+      "main": [
+        [
+          {
+            "node": "Code6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RenameHomeStats": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code6": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b37204bc-361a-409e-bd56-426adc006acd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f3436d00acb92e5e796222d5425a982bab416f129b2136429a7285374f4f1372"
+  },
+  "id": "OTlBqEODnLg020So",
+  "tags": []
+}

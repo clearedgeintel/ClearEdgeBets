@@ -9,7 +9,7 @@ import { fetchCFLGames, generateMockCFLPublicPercentage, type CFLGame } from "./
 import { fetchMLBGamesForDate, fetchMLBGameDetails, getGameResult } from "./services/mlb-api";
 import { fetchRealMLBOdds, mergeRealOddsWithGames } from "./services/realOdds";
 import { fetchMLBNews, generateMockMLBNews } from "./services/mlb-news";
-import { generateGameAnalysis, generateDailyDigest, type GameAnalysisData } from "./services/openai";
+import { generateGameAnalysis, generateDailyDigest, generateNewsletterHtml, type GameAnalysisData } from "./services/openai";
 import { getPlayerPropsForGame } from "./services/player-props";
 import { getPinnaclePlayerProps, getPinnacleSports } from "./services/pinnacle-props";
 import { insertBetSchema, insertGameSchema, insertOddsSchema, insertUserSchema } from "@shared/schema";
@@ -5643,61 +5643,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       const rankedScores = teamPowerScoringService.getTeamPowerRankings(teamPowerScores);
       
-      // Get today's games with enhanced odds
-      const todaysGames = await fetchTodaysGames();
+      // Get today's games using RapidAPI (same as n8n workflow)
+      const { rapidAPIMLBService } = await import('./services/rapidapi-mlb');
+      const { normalizeTeamCode } = await import('../shared/team-lookup');
+      const today = new Date().toISOString().split('T')[0];
       
-      // Enhance games with team power data and analytics
-      const enhancedGames = todaysGames.map(game => {
-        const awayPowerData = teamPowerScoringService.findTeamPowerScore(rankedScores, game.awayTeamCode);
-        const homePowerData = teamPowerScoringService.findTeamPowerScore(rankedScores, game.homeTeamCode);
+      console.log(`Fetching MLB data for ${today} using RapidAPI from n8n workflow...`);
+      
+      // Fetch MLB schedule and Pinnacle odds (matching n8n workflow)
+      const [mlbGames, pinnacleOdds] = await Promise.all([
+        rapidAPIMLBService.fetchMLBSchedule(today),
+        rapidAPIMLBService.fetchPinnacleOdds()
+      ]);
+      
+      if (mlbGames.length === 0) {
+        return res.status(200).json({
+          success: false,
+          error: "No MLB games available today",
+          message: "Newsletter cannot be generated without real game data from RapidAPI",
+          metadata: {
+            date: today,
+            totalGames: 0,
+            topValueBets: 0,
+            generatedAt: new Date().toISOString()
+          }
+        });
+      }
+      
+      // Debug log to check team codes
+      console.log("Sample game from RapidAPI:", JSON.stringify(mlbGames[0], null, 2));
+      
+      // Calculate enhanced analytics (matching n8n workflow calculations)
+      const enhancedGamesData = rapidAPIMLBService.calculateEnhancedAnalytics(mlbGames, pinnacleOdds);
+      
+      console.log(`Enhanced analytics calculated for ${enhancedGamesData.length} games with Pinnacle odds`);
+      
+      if (enhancedGamesData.length === 0) {
+        return res.status(200).json({
+          success: false,
+          error: "No games with odds available",
+          message: "Newsletter requires games with Pinnacle odds data for analytics",
+          metadata: {
+            date: today,
+            totalGames: mlbGames.length,
+            topValueBets: 0,
+            generatedAt: new Date().toISOString()
+          }
+        });
+      }
+      
+      // Enhance RapidAPI games with team power data and analytics
+      const enhancedGames = enhancedGamesData.map(game => {
+        const normalizedAwayCode = normalizeTeamCode(game.awayTeamCode);
+        const normalizedHomeCode = normalizeTeamCode(game.homeTeamCode);
         
-        if (!awayPowerData || !homePowerData) {
-          return {
-            ...game,
-            awayPowerScore: 50,
-            homePowerScore: 50,
-            powerDifference: 0
-          };
-        }
-        
-        const totalPowerScore = awayPowerData.teamPowerScore + homePowerData.teamPowerScore;
-        const homeWinPct = (homePowerData.teamPowerScore / totalPowerScore) * 100;
-        const awayWinPct = (awayPowerData.teamPowerScore / totalPowerScore) * 100;
-        
-        // Apply enhanced analytics to odds
-        const enhancedOdds = enhanceOddsWithAnalytics(game.odds, homeWinPct, awayWinPct);
+        const awayPowerData = teamPowerScores.find(team => 
+          normalizeTeamCode(team.teamCode) === normalizedAwayCode
+        );
+        const homePowerData = teamPowerScores.find(team => 
+          normalizeTeamCode(team.teamCode) === normalizedHomeCode
+        );
         
         return {
           ...game,
-          odds: enhancedOdds,
-          awayPowerScore: awayPowerData.teamPowerScore,
-          homePowerScore: homePowerData.teamPowerScore,
-          awayAdvBattingScore: awayPowerData.advBattingScore,
-          homeAdvBattingScore: homePowerData.advBattingScore,
-          awayPitchingScore: awayPowerData.pitchingScore,
-          homePitchingScore: homePowerData.pitchingScore,
-          awayRank: awayPowerData.rank,
-          homeRank: homePowerData.rank,
-          powerDifference: Math.abs(homePowerData.teamPowerScore - awayPowerData.teamPowerScore)
+          awayPowerScore: awayPowerData?.teamPowerScore || 50,
+          homePowerScore: homePowerData?.teamPowerScore || 50,
+          awayAdvBattingScore: awayPowerData?.advBattingScore || 25,
+          homeAdvBattingScore: homePowerData?.advBattingScore || 25,
+          awayPitchingScore: awayPowerData?.pitchingScore || 25,
+          homePitchingScore: homePowerData?.pitchingScore || 25,
+          awayRank: awayPowerData?.rank || 15,
+          homeRank: homePowerData?.rank || 15,
+          powerDifference: Math.abs((homePowerData?.teamPowerScore || 50) - (awayPowerData?.teamPowerScore || 50))
         };
       });
       
-      // Prepare data for OpenAI prompt
+      // Prepare data for OpenAI prompt using RapidAPI enhanced analytics
       const gamesData = enhancedGames.map(game => ({
         homeTeam: game.homeTeam,
         awayTeam: game.awayTeam,
-        homeOdds: game.odds.moneyline?.home || -110,
-        awayOdds: game.odds.moneyline?.away || -110,
-        homeProb: game.odds.moneyline?.modelHomeProb || 0.5,
-        awayProb: game.odds.moneyline?.modelAwayProb || 0.5,
-        homeImp: game.odds.moneyline?.impliedHomeProb || 0.5,
-        awayImp: game.odds.moneyline?.impliedAwayProb || 0.5,
-        homeEV: game.odds.moneyline?.homeEV || 0,
-        awayEV: game.odds.moneyline?.awayEV || 0,
-        homeKelly: game.odds.moneyline?.homeKelly || 0,
-        awayKelly: game.odds.moneyline?.awayKelly || 0,
-        homeEdge: game.odds.moneyline?.homeEdge || 0,
-        awayEdge: game.odds.moneyline?.awayEdge || 0,
+        homeOdds: game.homeOdds,
+        awayOdds: game.awayOdds,
+        homeProb: game.homeProb,
+        awayProb: game.awayProb,
+        homeImp: game.homeImp,
+        awayImp: game.awayImp,
+        homeEV: game.homeEV,
+        awayEV: game.awayEV,
+        homeKelly: game.homeKelly,
+        awayKelly: game.awayKelly,
+        homeEdge: game.homeEdge,
+        awayEdge: game.awayEdge,
         gameTime: game.gameTime,
         location: game.venue,
         homeTeamPowerScore: game.homePowerScore,
@@ -5797,22 +5833,13 @@ Do not return markdown, raw JSON, or explanations.
 List of games: ${JSON.stringify(gamesData, null, 2)}`;
 
       // Generate newsletter with OpenAI
-      const newsletterHtml = await generateGameAnalysis({
-        gameId: "daily-dose",
-        homeTeam: "Newsletter",
-        awayTeam: "Generation",
-        gameTime: new Date().toISOString(),
-        venue: "ClearEdge Bets",
-        homePitcher: "",
-        awayPitcher: "",
-        odds: { moneyline: { home: -110, away: -110 } }
-      }, promptTemplate);
+      const newsletterHtml = await generateNewsletterHtml(promptTemplate);
       
       const metadata = {
         date: new Date().toISOString().split('T')[0],
         totalGames: enhancedGames.length,
         topValueBets: enhancedGames.filter(g => 
-          (g.odds.moneyline?.homeEV || 0) > 0 || (g.odds.moneyline?.awayEV || 0) > 0
+          (g.homeEV || 0) > 0 || (g.awayEV || 0) > 0
         ).length,
         generatedAt: new Date().toISOString()
       };

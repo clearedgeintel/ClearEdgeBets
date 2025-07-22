@@ -30,6 +30,31 @@ export interface AiAnalysisResult {
   }>;
 }
 
+export async function generateNewsletterHtml(prompt: string): Promise<string> {
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are a professional sports betting analyst writing HTML newsletters. Return only clean, production-ready HTML with no markdown, comments, or explanations."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 4000
+    });
+
+    return completion.choices[0]?.message?.content || "<html><body><h1>Newsletter generation failed</h1></body></html>";
+  } catch (error) {
+    console.error("Error generating newsletter HTML:", error);
+    return "<html><body><h1>Error generating newsletter</h1><p>Please try again later.</p></body></html>";
+  }
+}
+
 export async function generateGameAnalysis(gameData: GameAnalysisData): Promise<AiAnalysisResult> {
   try {
     const prompt = `You are a professional MLB betting analyst. Analyze this game using this PRIORITY HIERARCHY:

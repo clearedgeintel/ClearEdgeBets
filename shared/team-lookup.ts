@@ -75,6 +75,11 @@ export function getAllTeams() {
 
 // Function to match team codes from different sources
 export function normalizeTeamCode(teamCode: string): string {
+  if (!teamCode || typeof teamCode !== 'string') {
+    console.warn('Invalid team code provided to normalizeTeamCode:', teamCode);
+    return 'UNK';
+  }
+  
   // Handle common variations
   const codeMap: Record<string, string> = {
     'WSN': 'WSH', // Washington Nationals sometimes appears as WSN
@@ -89,5 +94,6 @@ export function normalizeTeamCode(teamCode: string): string {
     'SF': 'SF'    // San Francisco Giants
   };
   
-  return codeMap[teamCode.toUpperCase()] || teamCode.toUpperCase();
+  const upperCode = teamCode.toUpperCase();
+  return codeMap[upperCode] || upperCode;
 }
