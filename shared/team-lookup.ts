@@ -5,6 +5,7 @@ export const MLB_TEAMS = {
   'BOS': { name: 'Boston Red Sox', city: 'Boston', abbreviation: 'BOS', division: 'AL East' },
   'NYY': { name: 'New York Yankees', city: 'New York', abbreviation: 'NYY', division: 'AL East' },
   'TB': { name: 'Tampa Bay Rays', city: 'Tampa Bay', abbreviation: 'TB', division: 'AL East' },
+  'TBR': { name: 'Tampa Bay Rays', city: 'Tampa Bay', abbreviation: 'TBR', division: 'AL East' },
   'TOR': { name: 'Toronto Blue Jays', city: 'Toronto', abbreviation: 'TOR', division: 'AL East' },
   
   // American League Central
@@ -13,6 +14,7 @@ export const MLB_TEAMS = {
   'CLE': { name: 'Cleveland Guardians', city: 'Cleveland', abbreviation: 'CLE', division: 'AL Central' },
   'DET': { name: 'Detroit Tigers', city: 'Detroit', abbreviation: 'DET', division: 'AL Central' },
   'KC': { name: 'Kansas City Royals', city: 'Kansas City', abbreviation: 'KC', division: 'AL Central' },
+  'KAN': { name: 'Kansas City Royals', city: 'Kansas City', abbreviation: 'KAN', division: 'AL Central' },
   'MIN': { name: 'Minnesota Twins', city: 'Minnesota', abbreviation: 'MIN', division: 'AL Central' },
   
   // American League West
@@ -42,7 +44,9 @@ export const MLB_TEAMS = {
   'COL': { name: 'Colorado Rockies', city: 'Colorado', abbreviation: 'COL', division: 'NL West' },
   'LAD': { name: 'Los Angeles Dodgers', city: 'Los Angeles', abbreviation: 'LAD', division: 'NL West' },
   'SD': { name: 'San Diego Padres', city: 'San Diego', abbreviation: 'SD', division: 'NL West' },
-  'SF': { name: 'San Francisco Giants', city: 'San Francisco', abbreviation: 'SF', division: 'NL West' }
+  'SDP': { name: 'San Diego Padres', city: 'San Diego', abbreviation: 'SDP', division: 'NL West' },
+  'SF': { name: 'San Francisco Giants', city: 'San Francisco', abbreviation: 'SF', division: 'NL West' },
+  'SFG': { name: 'San Francisco Giants', city: 'San Francisco', abbreviation: 'SFG', division: 'NL West' }
 } as const;
 
 export type TeamCode = keyof typeof MLB_TEAMS;
@@ -75,6 +79,10 @@ export function normalizeTeamCode(teamCode: string): string {
   const codeMap: Record<string, string> = {
     'WSN': 'WSH', // Washington Nationals sometimes appears as WSN
     'CHW': 'CWS', // Chicago White Sox sometimes appears as CHW
+    'KAN': 'KC',  // Kansas City Royals sometimes appears as KAN
+    'TBR': 'TB',  // Tampa Bay Rays sometimes appears as TBR
+    'SDP': 'SD',  // San Diego Padres sometimes appears as SDP
+    'SFG': 'SF',  // San Francisco Giants sometimes appears as SFG
     'LAD': 'LAD', // Los Angeles Dodgers
     'LAA': 'LAA', // Los Angeles Angels
     'SD': 'SD',   // San Diego Padres
