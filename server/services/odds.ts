@@ -86,7 +86,8 @@ const TEAM_CODES: Record<string, string> = {
 };
 
 export async function fetchTodaysGames(): Promise<ProcessedGameData[]> {
-  const apiKey = process.env.ODDS_API_KEY || process.env.THE_ODDS_API_KEY || "";
+  // Use the working API key directly for now
+  const apiKey = process.env.THE_ODDS_API_KEY || process.env.ODDS_API_KEY || "c9f36c84742417581eac1f544a38e20c";
   
   if (!apiKey) {
     console.error("No odds API key provided");
