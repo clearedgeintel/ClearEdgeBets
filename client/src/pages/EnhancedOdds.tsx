@@ -99,9 +99,9 @@ export default function EnhancedOdds() {
   // Transform API data to expected format - extract moneyline odds from odds array
   const gamesWithOdds = gamesData?.map(game => {
     // Find moneyline odds in the odds array
-    const moneylineOdds = game.odds?.find((odds: any) => odds.market === 'moneyline');
-    const spreadOdds = game.odds?.find((odds: any) => odds.market === 'spread');
-    const totalOdds = game.odds?.find((odds: any) => odds.market === 'total');
+    const moneylineOdds = (game.odds as any[])?.find((odds: any) => odds.market === 'moneyline');
+    const spreadOdds = (game.odds as any[])?.find((odds: any) => odds.market === 'spread');
+    const totalOdds = (game.odds as any[])?.find((odds: any) => odds.market === 'total');
     
     if (!moneylineOdds) return null; // Skip games without moneyline odds
     
@@ -169,7 +169,7 @@ export default function EnhancedOdds() {
                   {game.awayTeam} @ {game.homeTeam}
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  {new Date(game.gameTime).toLocaleString()}
+                  {game.gameTime} • {game.venue}
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -201,9 +201,9 @@ export default function EnhancedOdds() {
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span>API Implied Prob:</span>
-                          <span className="font-semibold text-muted-foreground">
-                            {moneyline.impliedAwayProb ? formatPercentage(moneyline.impliedAwayProb) : 'N/A'}
+                          <span>True Probability:</span>
+                          <span className="font-semibold text-green-600">
+                            {formatPercentage(trueAwayProb)}
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -214,18 +214,10 @@ export default function EnhancedOdds() {
                         </div>
                         <div className="flex justify-between">
                           <span>Fair Odds:</span>
-                          <Badge variant="secondary" className="font-mono">
+                          <Badge variant="outline" className="font-mono">
                             {formatOdds(fairAwayOdds)}
                           </Badge>
                         </div>
-                        {moneyline.awayEV !== undefined && (
-                          <div className="flex justify-between">
-                            <span>Expected Value:</span>
-                            <Badge variant={moneyline.awayEV > 0 ? "default" : "destructive"}>
-                              {moneyline.awayEV > 0 ? '+' : ''}{(moneyline.awayEV * 100).toFixed(1)}%
-                            </Badge>
-                          </div>
-                        )}
                       </CardContent>
                     </Card>
 
@@ -248,9 +240,9 @@ export default function EnhancedOdds() {
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span>API Implied Prob:</span>
-                          <span className="font-semibold text-muted-foreground">
-                            {moneyline.impliedHomeProb ? formatPercentage(moneyline.impliedHomeProb) : 'N/A'}
+                          <span>True Probability:</span>
+                          <span className="font-semibold text-green-600">
+                            {formatPercentage(trueHomeProb)}
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -261,18 +253,10 @@ export default function EnhancedOdds() {
                         </div>
                         <div className="flex justify-between">
                           <span>Fair Odds:</span>
-                          <Badge variant="secondary" className="font-mono">
+                          <Badge variant="outline" className="font-mono">
                             {formatOdds(fairHomeOdds)}
                           </Badge>
                         </div>
-                        {moneyline.homeEV !== undefined && (
-                          <div className="flex justify-between">
-                            <span>Expected Value:</span>
-                            <Badge variant={moneyline.homeEV > 0 ? "default" : "destructive"}>
-                              {moneyline.homeEV > 0 ? '+' : ''}{(moneyline.homeEV * 100).toFixed(1)}%
-                            </Badge>
-                          </div>
-                        )}
                       </CardContent>
                     </Card>
                   </div>
@@ -296,12 +280,12 @@ export default function EnhancedOdds() {
                             </CardHeader>
                             <CardContent className="space-y-2">
                               <div className="flex justify-between">
-                                <span>{game.awayTeam} {formatOdds(game.odds.spread.away)}:</span>
-                                <Badge variant="outline">{formatOdds(game.odds.spread.awayOdds)}</Badge>
+                                <span>{game.awayTeam} {game.odds.spread.line > 0 ? '+' : ''}{game.odds.spread.line}:</span>
+                                <Badge variant="outline">{formatOdds(game.odds.spread.away)}</Badge>
                               </div>
                               <div className="flex justify-between">
-                                <span>{game.homeTeam} {formatOdds(game.odds.spread.home)}:</span>
-                                <Badge variant="outline">{formatOdds(game.odds.spread.homeOdds)}</Badge>
+                                <span>{game.homeTeam} {game.odds.spread.line < 0 ? '+' : ''}{-game.odds.spread.line}:</span>
+                                <Badge variant="outline">{formatOdds(game.odds.spread.home)}</Badge>
                               </div>
                             </CardContent>
                           </Card>
