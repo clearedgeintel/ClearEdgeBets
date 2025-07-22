@@ -5837,9 +5837,31 @@ CSS Guidelines:
 - Bordered tables with padding
 - Use bars (optional) or bold numbers to show EV%
 - Font: clean sans-serif (e.g., Arial or Roboto)
-- **IMPORTANT: Ensure high contrast between text and background colors for readability**
-- Use dark text on light backgrounds or light text on dark backgrounds
-- Avoid white text on light backgrounds or dark text on dark backgrounds
+
+**MANDATORY TEXT CONTRAST RULES:**
+- ALL body text MUST be #000000 (pure black) on #FFFFFF (pure white) backgrounds
+- ALL table cell text MUST be #000000 (pure black) 
+- ALL header text MUST be #FFFFFF (pure white) on #007A33 (dark green) backgrounds
+- NEVER use white text (#FFFFFF) on light backgrounds
+- NEVER use light text colors on light backgrounds
+- Set explicit color: #000000; for all <td>, <p>, <div>, <span> elements
+- Set explicit background-color: #FFFFFF; for all content areas
+
+**REQUIRED CSS TEMPLATE - COPY THIS EXACTLY:**
+body { font-family: Arial, sans-serif; background-color: #FFFFFF; color: #000000; text-align: center; }
+table { margin: 20px auto; border-collapse: collapse; width: 90%; max-width: 800px; }
+th, td { border: 1px solid #333; padding: 8px; text-align: center; color: #000000; }
+th { background-color: #007A33; color: #FFFFFF; }
+td { background-color: #F5F5F5; color: #000000; }
+p, div, span { color: #000000; }
+h1, h2, h3 { color: #007A33; }
+.highlight { background-color: #A6192E; color: #FFFFFF; }
+
+**CRITICAL CSS REQUIREMENTS:**
+- Use EXACTLY the CSS template provided above - do not modify colors
+- ALL text MUST be dark (#333333 or #000000) on light backgrounds
+- Headers MUST be white (#FFFFFF) on dark green (#007A33) backgrounds only
+- NEVER use white or light text on light backgrounds
 
 **CRITICAL: You MUST include ALL sections listed above. Do not skip any section.**
 **Return ONLY the full HTML document**, wrapped in <html><head>...</head><body>...</body></html>.  

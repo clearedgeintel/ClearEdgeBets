@@ -150,6 +150,13 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 22, 2025: DAILY DOSE WHITE TEXT ISSUE RESOLVED - Enhanced AI prompt with aggressive CSS contrast rules to eliminate white text problems
+  - Added mandatory text contrast requirements forcing #000000 text on #FFFFFF backgrounds
+  - Provided exact CSS template for AI to copy with proper color specifications
+  - Fixed implied probability calculation inconsistency between Enhanced Odds and Daily Dose
+  - Server calculateImpliedProbability now returns decimals (0-1) instead of percentages (0-100)
+  - Both Enhanced Odds page and Daily Dose AI prompt now use identical probability calculations
+  - Newsletter generation working with 11 games using authentic Pinnacle odds and team power scores
 - July 22, 2025: ENHANCED ODDS ANALYSIS PAGE COMPLETED - Built comprehensive Enhanced Odds Analysis page with detailed calculation breakdowns
   - Created Enhanced Odds page (/enhanced-odds) showing implied probabilities, true probabilities, and vig calculations
   - Fixed implied probability calculations in odds service to use correct American odds formulas
