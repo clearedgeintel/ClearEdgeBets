@@ -87,20 +87,33 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
 
   // No expert picks API - removed to maintain authentic data only
 
-  // Get AI pick that matches this specific game by gameId first, then by team matching
-  const aiPick = allAIPicks.find(pick => pick.gameId === game.gameId) || 
-    allAIPicks.find(pick => {
-      if (!pick.selection) return false;
-      const selection = pick.selection.toLowerCase();
-      const awayTeam = game.awayTeam.toLowerCase();
-      const homeTeam = game.homeTeam.toLowerCase();
-      
-      // Match by team code or team name parts
-      return selection.includes(game.awayTeamCode.toLowerCase()) ||
-             selection.includes(game.homeTeamCode.toLowerCase()) ||
-             selection.includes(awayTeam.split(' ').pop()) || 
-             selection.includes(homeTeam.split(' ').pop());
-    }) || null; // Don't fallback to first pick - show nothing if no match
+  // Get AI pick that matches this specific game 
+  const aiPick = allAIPicks.find(pick => {
+    if (!pick.gameId) return false;
+    
+    // Daily picks use format: "Boston Red Sox @ Philadelphia Phillies"
+    // Games use format: "2025-07-21_BAL @ CLE"
+    // Match by checking if pick gameId contains both team names
+    const pickGameId = pick.gameId.toLowerCase();
+    const awayTeam = game.awayTeam.toLowerCase();
+    const homeTeam = game.homeTeam.toLowerCase();
+    
+    // Check if the pick gameId contains both teams from this game
+    return pickGameId.includes(awayTeam) && pickGameId.includes(homeTeam);
+  }) || 
+  // Fallback: match by selection content
+  allAIPicks.find(pick => {
+    if (!pick.selection) return false;
+    const selection = pick.selection.toLowerCase();
+    const awayTeam = game.awayTeam.toLowerCase();
+    const homeTeam = game.homeTeam.toLowerCase();
+    
+    // Match by team code or team name parts in the selection
+    return selection.includes(game.awayTeamCode.toLowerCase()) ||
+           selection.includes(game.homeTeamCode.toLowerCase()) ||
+           selection.includes(awayTeam.split(' ').pop()) || 
+           selection.includes(homeTeam.split(' ').pop());
+  }) || null;
   
   // No expert picks available - removed to maintain authentic data integrity
 
