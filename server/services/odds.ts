@@ -242,8 +242,9 @@ export function enhanceOddsWithAnalytics(odds: ProcessedGameData['odds'], homeWi
   const modelHomeProb = homeWinPct / totalWinPct;
   const modelAwayProb = awayWinPct / totalWinPct;
 
-  const impliedHomeProb = 1 / homeDecimalOdds;
-  const impliedAwayProb = 1 / awayDecimalOdds;
+  // Calculate implied probabilities correctly from American odds (return as decimal 0-1)
+  const impliedHomeProb = homeOdds > 0 ? 100 / (homeOdds + 100) / 100 : Math.abs(homeOdds) / (Math.abs(homeOdds) + 100) / 100;
+  const impliedAwayProb = awayOdds > 0 ? 100 / (awayOdds + 100) / 100 : Math.abs(awayOdds) / (Math.abs(awayOdds) + 100) / 100;
 
   const homeEV = (modelHomeProb * (homeDecimalOdds - 1)) - (1 - modelHomeProb);
   const awayEV = (modelAwayProb * (awayDecimalOdds - 1)) - (1 - modelAwayProb);

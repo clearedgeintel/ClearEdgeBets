@@ -177,6 +177,14 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           current: location === "/hot-trends",
           description: "Discover trending betting patterns",
           requiresPro: true
+        },
+        { 
+          name: "Enhanced Odds", 
+          href: "/enhanced-odds", 
+          icon: Calculator,
+          current: location === "/enhanced-odds",
+          description: "Detailed odds analysis and implied probability breakdown",
+          requiresPro: true
         }
       ],
       eliteItems: [
