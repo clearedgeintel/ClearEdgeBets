@@ -167,9 +167,10 @@ export class TeamPowerScoringService {
     const powerData: Record<string, any> = {};
     
     teamCodes.forEach(code => {
+      if (!code) return; // Skip undefined/null codes
       const normalizedCode = normalizeTeamCode(code);
       const teamData = teamScores.find(team => 
-        normalizeTeamCode(team.team) === normalizedCode
+        team.team && normalizeTeamCode(team.team) === normalizedCode
       );
       
       if (teamData) {
@@ -198,9 +199,10 @@ export class TeamPowerScoringService {
     pitchingRank: number;
     fullName: string;
   }) | null {
+    if (!teamCode) return null; // Skip undefined/null team codes
     const normalizedCode = normalizeTeamCode(teamCode);
     const teamData = teamScores.find(team => 
-      normalizeTeamCode(team.team) === normalizedCode
+      team.team && normalizeTeamCode(team.team) === normalizedCode
     );
     
     if (teamData) {

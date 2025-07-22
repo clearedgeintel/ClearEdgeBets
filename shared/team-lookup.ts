@@ -76,8 +76,7 @@ export function getAllTeams() {
 // Function to match team codes from different sources
 export function normalizeTeamCode(teamCode: string): string {
   if (!teamCode || typeof teamCode !== 'string') {
-    console.warn('Invalid team code provided to normalizeTeamCode:', teamCode);
-    return 'UNK';
+    return 'UNK'; // Quietly return default instead of logging warnings
   }
   
   // Handle common variations

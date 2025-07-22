@@ -5670,9 +5670,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Debug log to check team codes
-      console.log("Sample game from RapidAPI:", JSON.stringify(mlbGames[0], null, 2));
-      
       // Calculate enhanced analytics (matching n8n workflow calculations)
       const enhancedGamesData = rapidAPIMLBService.calculateEnhancedAnalytics(mlbGames, pinnacleOdds);
       
@@ -5694,14 +5691,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Enhance RapidAPI games with team power data and analytics
       const enhancedGames = enhancedGamesData.map(game => {
-        const normalizedAwayCode = normalizeTeamCode(game.awayTeamCode);
-        const normalizedHomeCode = normalizeTeamCode(game.homeTeamCode);
+        // Only normalize if team codes exist
+        const normalizedAwayCode = game.awayTeamCode ? normalizeTeamCode(game.awayTeamCode) : 'UNK';
+        const normalizedHomeCode = game.homeTeamCode ? normalizeTeamCode(game.homeTeamCode) : 'UNK';
         
         const awayPowerData = teamPowerScores.find(team => 
-          normalizeTeamCode(team.teamCode) === normalizedAwayCode
+          team.teamCode && normalizeTeamCode(team.teamCode) === normalizedAwayCode
         );
         const homePowerData = teamPowerScores.find(team => 
-          normalizeTeamCode(team.teamCode) === normalizedHomeCode
+          team.teamCode && normalizeTeamCode(team.teamCode) === normalizedHomeCode
         );
         
         return {
