@@ -91,28 +91,49 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
   const aiPick = allAIPicks.find(pick => {
     if (!pick.gameId) return false;
     
-    // Daily picks use format: "Boston Red Sox @ Philadelphia Phillies"
-    // Games use format: "2025-07-21_BAL @ CLE"
-    // Match by checking if pick gameId contains both team names
+    // New daily picks use format: "NYA@TOR" or "BOS@PHI" (team codes)
+    // Games use format: "2025-07-21_BAL @ CLE" 
+    // Match by team codes in gameId
     const pickGameId = pick.gameId.toLowerCase();
-    const awayTeam = game.awayTeam.toLowerCase();
-    const homeTeam = game.homeTeam.toLowerCase();
+    const gameAwayCode = game.awayTeamCode.toLowerCase();
+    const gameHomeCode = game.homeTeamCode.toLowerCase();
     
-    // Check if the pick gameId contains both teams from this game
-    return pickGameId.includes(awayTeam) && pickGameId.includes(homeTeam);
+    // Handle different team code formats (NYA = NYY, etc.)
+    const codeMapping: { [key: string]: string[] } = {
+      'nya': ['nyy', 'yankees'],
+      'nyy': ['nya', 'yankees'], 
+      'bos': ['boston', 'red sox'],
+      'phi': ['philadelphia', 'phillies'],
+      'tor': ['toronto', 'blue jays'],
+      'det': ['detroit', 'tigers'],
+      'pit': ['pittsburgh', 'pirates'],
+      'hou': ['houston', 'astros'],
+      'ari': ['arizona', 'diamondbacks']
+    };
+    
+    // Check if pick gameId matches this game's team codes (with mapping)
+    const awayMatches = pickGameId.includes(gameAwayCode) || 
+                        (codeMapping[gameAwayCode] && codeMapping[gameAwayCode].some(code => pickGameId.includes(code))) ||
+                        (codeMapping[pickGameId.split('@')[0]] && codeMapping[pickGameId.split('@')[0]].includes(gameAwayCode));
+    const homeMatches = pickGameId.includes(gameHomeCode) ||
+                        (codeMapping[gameHomeCode] && codeMapping[gameHomeCode].some(code => pickGameId.includes(code))) ||
+                        (codeMapping[pickGameId.split('@')[1]] && codeMapping[pickGameId.split('@')[1]].includes(gameHomeCode));
+    
+    return awayMatches && homeMatches;
   }) || 
-  // Fallback: match by selection content
+  // Fallback: match by selection content 
   allAIPicks.find(pick => {
     if (!pick.selection) return false;
     const selection = pick.selection.toLowerCase();
+    const reasoning = pick.reasoning?.toLowerCase() || '';
     const awayTeam = game.awayTeam.toLowerCase();
     const homeTeam = game.homeTeam.toLowerCase();
     
-    // Match by team code or team name parts in the selection
-    return selection.includes(game.awayTeamCode.toLowerCase()) ||
-           selection.includes(game.homeTeamCode.toLowerCase()) ||
-           selection.includes(awayTeam.split(' ').pop()) || 
-           selection.includes(homeTeam.split(' ').pop());
+    // Match by team names in selection/reasoning
+    const textToSearch = selection + ' ' + reasoning;
+    return textToSearch.includes(awayTeam) || textToSearch.includes(homeTeam) ||
+           textToSearch.includes(game.awayTeamCode.toLowerCase()) ||
+           textToSearch.includes(game.homeTeamCode.toLowerCase());
   }) || null;
   
   // No expert picks available - removed to maintain authentic data integrity
