@@ -171,8 +171,8 @@ export default function DailyDose() {
             {debugData?.prompt && (
               <div className="space-y-2">
                 <h4 className="font-semibold">Prompt Sent to OpenAI:</h4>
-                <div className="bg-slate-50 border rounded-lg p-4 max-h-64 overflow-y-auto">
-                  <pre className="text-sm whitespace-pre-wrap">{debugData.prompt}</pre>
+                <div className="bg-slate-50 dark:bg-slate-900 border rounded-lg p-4 max-h-64 overflow-y-auto">
+                  <pre className="text-sm text-slate-900 dark:text-slate-100 whitespace-pre-wrap">{debugData.prompt}</pre>
                 </div>
               </div>
             )}
@@ -180,8 +180,8 @@ export default function DailyDose() {
             {debugData?.response && (
               <div className="space-y-2">
                 <h4 className="font-semibold">Response Data:</h4>
-                <div className="bg-slate-50 border rounded-lg p-4 max-h-64 overflow-y-auto">
-                  <pre className="text-sm">{JSON.stringify(debugData.response, null, 2)}</pre>
+                <div className="bg-slate-50 dark:bg-slate-900 border rounded-lg p-4 max-h-64 overflow-y-auto">
+                  <pre className="text-sm text-slate-900 dark:text-slate-100">{JSON.stringify(debugData.response, null, 2)}</pre>
                 </div>
               </div>
             )}
