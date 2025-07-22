@@ -21,7 +21,7 @@ import { weatherAPI } from "./services/weather-api";
 import { mlbPicksAPI } from "./services/mlb-picks-api";
 import { enhancedMLBPicks } from "./services/enhanced-mlb-picks";
 import apiManagementRoutes from "./routes/api-management";
-import { baseballReferenceService } from "./services/baseball-reference";
+import { baseballReferenceService } from "./services/baseball-reference-simple";
 import { teamPowerScoringService } from "./services/team-power-scoring";
 // Note: Auth will be handled by existing system
 import Stripe from "stripe";
@@ -278,6 +278,39 @@ function generateGamesForDate(dateString: string) {
   }
   
   return games;
+}
+
+// Generate detailed matchup insight based on team power scores
+function generateMatchupInsight(awayTeam: any, homeTeam: any, powerDifferential: number): string {
+  const strongerTeam = powerDifferential > 0 ? homeTeam : awayTeam;
+  const weakerTeam = powerDifferential > 0 ? awayTeam : homeTeam;
+  const absAdvantage = Math.abs(powerDifferential);
+  
+  const strongerTeamCode = strongerTeam.code || strongerTeam.team || 'Team';
+  const weakerTeamCode = weakerTeam.code || weakerTeam.team || 'Team';
+  
+  let insight = `${strongerTeamCode} holds a ${absAdvantage}-point team power advantage (${strongerTeam.teamPowerScore} vs ${weakerTeam.teamPowerScore}). `;
+  
+  // Analyze specific strengths
+  const battingAdvantage = strongerTeam.advBattingScore - weakerTeam.advBattingScore;
+  const pitchingAdvantage = strongerTeam.pitchingScore - weakerTeam.pitchingScore;
+  
+  if (Math.abs(battingAdvantage) > Math.abs(pitchingAdvantage)) {
+    insight += `This advantage is primarily driven by superior offensive production (batting rank #${strongerTeam.battingRank} vs #${weakerTeam.battingRank}). `;
+  } else {
+    insight += `This advantage is primarily driven by superior pitching staff (pitching rank #${strongerTeam.pitchingRank} vs #${weakerTeam.pitchingRank}). `;
+  }
+  
+  // Add context based on advantage magnitude
+  if (absAdvantage >= 15) {
+    insight += "This represents a significant talent disparity that strongly favors the superior team.";
+  } else if (absAdvantage >= 10) {
+    insight += "This moderate advantage suggests a competitive but lopsided matchup.";
+  } else {
+    insight += "This slight advantage indicates a fairly balanced matchup between two comparable teams.";
+  }
+  
+  return insight;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -847,13 +880,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Fetch weather data from authentic source
       const weather = await weatherAPI.getGameWeather(gameId);
+      
+      // Get team power scores for enhanced analysis
+      let teamPowerAnalysis = null;
+      try {
+        // Fetch live data from Baseball Reference
+        const [liveBattingStats, livePitchingStats] = await Promise.all([
+          baseballReferenceService.fetchTeamBattingStats(),
+          baseballReferenceService.fetchTeamPitchingStats()
+        ]);
+        
+        if (liveBattingStats.length > 0 && livePitchingStats.length > 0) {
+          // Calculate power scores using live data
+          const teamPowerScores = teamPowerScoringService.calculateAllTeamPowerScores(
+            liveBattingStats,
+            livePitchingStats
+          );
+          
+          // Get rankings with percentiles
+          const powerScores = teamPowerScoringService.getTeamPowerRankings(teamPowerScores);
+          console.log(`Enhanced analysis: Got ${powerScores.length} power scores for gameId: ${gameId}`);
+          
+          // Extract team codes from gameId (format: "2025-07-21_BAL @ CLE")
+          const parts = gameId.split('_');
+          if (parts.length === 2) {
+            const teamPart = parts[1]; // "BAL @ CLE"
+            const teams = teamPart.split('@').map(t => t.trim());
+            if (teams.length === 2) {
+              const [awayTeamCode, homeTeamCode] = teams;
+              console.log(`Extracted teams: Away=${awayTeamCode}, Home=${homeTeamCode}`);
+          
+              const awayTeamScore = powerScores.find(score => score.team === awayTeamCode);
+              const homeTeamScore = powerScores.find(score => score.team === homeTeamCode);
+              
+              console.log(`Team power analysis: Found ${awayTeamCode}=${awayTeamScore ? 'Yes' : 'No'}, ${homeTeamCode}=${homeTeamScore ? 'Yes' : 'No'}`);
+              
+              if (awayTeamScore && homeTeamScore) {
+                const powerAdvantage = homeTeamScore.teamPowerScore - awayTeamScore.teamPowerScore;
+                const significantAdvantage = Math.abs(powerAdvantage) >= 10;
+                
+                teamPowerAnalysis = {
+                  awayTeam: {
+                    code: awayTeamCode,
+                    powerScore: awayTeamScore.teamPowerScore,
+                    rank: awayTeamScore.rank,
+                    percentile: awayTeamScore.percentile,
+                    battingScore: awayTeamScore.advBattingScore,
+                    battingRank: awayTeamScore.battingRank,
+                    pitchingScore: awayTeamScore.pitchingScore,
+                    pitchingRank: awayTeamScore.pitchingRank
+                  },
+                  homeTeam: {
+                    code: homeTeamCode,
+                    powerScore: homeTeamScore.teamPowerScore,
+                    rank: homeTeamScore.rank,
+                    percentile: homeTeamScore.percentile,
+                    battingScore: homeTeamScore.advBattingScore,
+                    battingRank: homeTeamScore.battingRank,
+                    pitchingScore: homeTeamScore.pitchingScore,
+                    pitchingRank: homeTeamScore.pitchingRank
+                  },
+                  powerDifferential: powerAdvantage,
+                  favoredTeam: powerAdvantage > 0 ? homeTeamCode : awayTeamCode,
+                  advantageStrength: significantAdvantage ? 'Significant' : 'Moderate',
+                  matchupInsight: generateMatchupInsight(
+                    { ...awayTeamScore, code: awayTeamCode }, 
+                    { ...homeTeamScore, code: homeTeamCode }, 
+                    powerAdvantage
+                  )
+                };
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to fetch team power scores:', error);
+      }
 
       const enhancedAnalysis = {
         gameId,
         weather: weather || null,
+        teamPowerAnalysis: teamPowerAnalysis || null,
         timestamp: new Date().toISOString(),
         insights: {
           weatherImpact: weather?.impact || 'No significant weather impact expected',
+          powerAnalysisInsight: teamPowerAnalysis?.matchupInsight || 'Team power analysis unavailable',
           valueOpportunities: []
         }
       };

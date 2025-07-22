@@ -131,8 +131,8 @@ export class BaseballReferenceService {
       const tableRegex = /<table[^>]*id="teams_standard_batting"[^>]*>(.*?)<\/table>/gs;
       const tableMatch = html.match(tableRegex);
       
-      if (!tableMatch) {
-        console.warn('Could not find teams_standard_batting table');
+      if (!tableMatch || !tableMatch[1]) {
+        console.warn('Could not find teams_standard_batting table or table content is empty');
         return [];
       }
 
@@ -140,7 +140,14 @@ export class BaseballReferenceService {
       
       // Extract table rows
       const rowRegex = /<tr[^>]*>(.*?)<\/tr>/gs;
-      const rows = [...tableContent.matchAll(rowRegex)];
+      const rowMatches = tableContent.match(rowRegex);
+      
+      if (!rowMatches) {
+        console.warn('No table rows found in batting stats');
+        return [];
+      }
+      
+      const rows = rowMatches.map(row => [row, row.replace(/<tr[^>]*>(.*?)<\/tr>/gs, '$1')]);
       
       for (const row of rows) {
         const rowContent = row[1];
@@ -213,8 +220,8 @@ export class BaseballReferenceService {
       const tableRegex = /<table[^>]*id="teams_standard_pitching"[^>]*>(.*?)<\/table>/gs;
       const tableMatch = html.match(tableRegex);
       
-      if (!tableMatch) {
-        console.warn('Could not find teams_standard_pitching table');
+      if (!tableMatch || !tableMatch[1]) {
+        console.warn('Could not find teams_standard_pitching table or table content is empty');
         return [];
       }
 
@@ -222,7 +229,14 @@ export class BaseballReferenceService {
       
       // Extract table rows
       const rowRegex = /<tr[^>]*>(.*?)<\/tr>/gs;
-      const rows = [...tableContent.matchAll(rowRegex)];
+      const rowMatches = tableContent.match(rowRegex);
+      
+      if (!rowMatches) {
+        console.warn('No table rows found in pitching stats');
+        return [];
+      }
+      
+      const rows = rowMatches.map(row => [row, row.replace(/<tr[^>]*>(.*?)<\/tr>/gs, '$1')]);
       
       for (const row of rows) {
         const rowContent = row[1];
