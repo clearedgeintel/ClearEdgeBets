@@ -1,4 +1,5 @@
 import { BaseballReferenceStats, BaseballReferencePitchingStats } from '@shared/schema';
+import { normalizeTeamCode, getTeamName } from '@shared/team-lookup';
 
 export interface TeamPowerScore {
   team: string;
@@ -152,6 +153,125 @@ export class TeamPowerScoringService {
         pitchingRank
       };
     });
+  }
+
+  /**
+   * Get team power data for specific team codes (useful for linking with odds data)
+   */
+  getTeamPowerData(teamScores: (TeamPowerScore & {
+    rank: number;
+    percentile: number;
+    battingRank: number;
+    pitchingRank: number;
+  })[], teamCodes: string[]): Record<string, any> {
+    const powerData: Record<string, any> = {};
+    
+    teamCodes.forEach(code => {
+      const normalizedCode = normalizeTeamCode(code);
+      const teamData = teamScores.find(team => 
+        normalizeTeamCode(team.team) === normalizedCode
+      );
+      
+      if (teamData) {
+        powerData[normalizedCode] = {
+          ...teamData,
+          fullName: getTeamName(normalizedCode)
+        };
+      }
+    });
+    
+    return powerData;
+  }
+
+  /**
+   * Find team power score by team code (handles various code formats)
+   */
+  findTeamPowerScore(teamScores: (TeamPowerScore & {
+    rank: number;
+    percentile: number;
+    battingRank: number;
+    pitchingRank: number;
+  })[], teamCode: string): (TeamPowerScore & {
+    rank: number;
+    percentile: number;
+    battingRank: number;
+    pitchingRank: number;
+    fullName: string;
+  }) | null {
+    const normalizedCode = normalizeTeamCode(teamCode);
+    const teamData = teamScores.find(team => 
+      normalizeTeamCode(team.team) === normalizedCode
+    );
+    
+    if (teamData) {
+      return {
+        ...teamData,
+        fullName: getTeamName(normalizedCode)
+      };
+    }
+    
+    return null;
+  }
+
+  /**
+   * Calculate team advantage between two teams based on power scores
+   */
+  calculateTeamAdvantage(
+    teamScores: (TeamPowerScore & {
+      rank: number;
+      percentile: number;
+      battingRank: number;
+      pitchingRank: number;
+    })[],
+    homeTeam: string,
+    awayTeam: string
+  ): {
+    homeTeamData: any;
+    awayTeamData: any;
+    powerDifference: number;
+    favoredTeam: 'home' | 'away' | 'even';
+    confidenceLevel: 'low' | 'medium' | 'high';
+    matchupAnalysis: string;
+  } | null {
+    const homeData = this.findTeamPowerScore(teamScores, homeTeam);
+    const awayData = this.findTeamPowerScore(teamScores, awayTeam);
+    
+    if (!homeData || !awayData) {
+      return null;
+    }
+    
+    const powerDifference = homeData.teamPowerScore - awayData.teamPowerScore;
+    const absPowerDiff = Math.abs(powerDifference);
+    
+    let favoredTeam: 'home' | 'away' | 'even';
+    let confidenceLevel: 'low' | 'medium' | 'high';
+    let matchupAnalysis: string;
+    
+    if (absPowerDiff <= 3) {
+      favoredTeam = 'even';
+      confidenceLevel = 'low';
+      matchupAnalysis = `Evenly matched teams with ${homeData.fullName} (${homeData.teamPowerScore} power, rank #${homeData.rank}) vs ${awayData.fullName} (${awayData.teamPowerScore} power, rank #${awayData.rank})`;
+    } else if (absPowerDiff <= 8) {
+      favoredTeam = powerDifference > 0 ? 'home' : 'away';
+      confidenceLevel = 'medium';
+      const favored = powerDifference > 0 ? homeData : awayData;
+      matchupAnalysis = `${favored.fullName} holds a ${absPowerDiff}-point team power advantage (rank #${favored.rank} vs #${powerDifference > 0 ? awayData.rank : homeData.rank})`;
+    } else {
+      favoredTeam = powerDifference > 0 ? 'home' : 'away';
+      confidenceLevel = 'high';
+      const favored = powerDifference > 0 ? homeData : awayData;
+      const underdog = powerDifference > 0 ? awayData : homeData;
+      matchupAnalysis = `${favored.fullName} significantly favored with ${absPowerDiff}-point power advantage primarily driven by ${favored.battingRank < favored.pitchingRank ? 'superior offensive capabilities' : 'superior pitching staff'} (rank #${favored.rank} vs #${underdog.rank})`;
+    }
+    
+    return {
+      homeTeamData: homeData,
+      awayTeamData: awayData,
+      powerDifference,
+      favoredTeam,
+      confidenceLevel,
+      matchupAnalysis
+    };
   }
 }
 

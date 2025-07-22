@@ -905,6 +905,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced Team Matchup Analysis - combines power scores with odds data
+  app.get('/api/enhanced-matchup/:awayTeam/:homeTeam', async (req, res) => {
+    try {
+      const { awayTeam, homeTeam } = req.params;
+      
+      // Fetch live team power data
+      const [liveBattingStats, livePitchingStats] = await Promise.all([
+        baseballReferenceService.fetchTeamBattingStats(),
+        baseballReferenceService.fetchTeamPitchingStats()
+      ]);
+      
+      if (liveBattingStats.length === 0 || livePitchingStats.length === 0) {
+        return res.status(503).json({ 
+          message: 'Unable to fetch team statistics for matchup analysis' 
+        });
+      }
+      
+      // Calculate power scores
+      const teamPowerScores = teamPowerScoringService.calculateAllTeamPowerScores(
+        liveBattingStats, 
+        livePitchingStats
+      );
+      const powerScores = teamPowerScoringService.getTeamPowerRankings(teamPowerScores);
+      
+      // Get team advantage analysis
+      const matchupAnalysis = teamPowerScoringService.calculateTeamAdvantage(
+        powerScores,
+        homeTeam,
+        awayTeam
+      );
+      
+      if (!matchupAnalysis) {
+        return res.status(404).json({ 
+          message: `Team power data not found for ${awayTeam} vs ${homeTeam}` 
+        });
+      }
+      
+      res.json({
+        matchup: `${awayTeam} @ ${homeTeam}`,
+        awayTeam: matchupAnalysis.awayTeamData,
+        homeTeam: matchupAnalysis.homeTeamData,
+        analysis: {
+          powerDifference: matchupAnalysis.powerDifference,
+          favoredTeam: matchupAnalysis.favoredTeam,
+          confidenceLevel: matchupAnalysis.confidenceLevel,
+          insight: matchupAnalysis.matchupAnalysis
+        },
+        lastUpdated: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('Error in enhanced matchup analysis:', error);
+      res.status(500).json({ message: 'Failed to analyze team matchup' });
+    }
+  });
+
   // Enhanced Game Analysis combining authentic data sources
   app.get('/api/games/:gameId/enhanced-analysis', async (req, res) => {
     try {

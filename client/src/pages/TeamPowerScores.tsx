@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Progress } from "@/components/ui/progress";
 import { TrendingUp, TrendingDown, Activity, Target, Zap, Shield } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getTeamName, getTeamDivision } from "@shared/team-lookup";
 
 interface TeamPowerScore {
   team: string;
@@ -203,7 +204,10 @@ export default function TeamPowerScores() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-bold text-lg">{team.team}</div>
+                    <div>
+                      <div className="font-bold text-lg">{getTeamName(team.team)}</div>
+                      <div className="text-xs text-muted-foreground">{team.team} • {getTeamDivision(team.team)}</div>
+                    </div>
                   </TableCell>
                   <TableCell className="text-center">
                     <div className="text-2xl font-bold">{team.teamPowerScore}</div>
