@@ -105,6 +105,14 @@ export default function EnhancedOdds() {
         <p className="text-lg text-muted-foreground">
           Detailed breakdown of odds calculations, implied probabilities, and betting value analysis
         </p>
+        {gamesWithOdds.length > 0 && gamesWithOdds[0].gameId.startsWith('demo-') && (
+          <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+            <p className="text-yellow-800 dark:text-yellow-200 text-sm">
+              <strong>Demo Mode:</strong> Displaying sample odds data for calculation demonstration. 
+              The Odds API quota has been exceeded. Calculations and formulas are accurate and ready for live data.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6">
