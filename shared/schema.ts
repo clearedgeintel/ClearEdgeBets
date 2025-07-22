@@ -621,7 +621,7 @@ export const insertPhraseDetectionRuleSchema = createInsertSchema(phraseDetectio
 export type InsertPhraseDetectionRule = z.infer<typeof insertPhraseDetectionRuleSchema>;
 export type PhraseDetectionRule = typeof phraseDetectionRules.$inferSelect;
 
-// Baseball Reference team statistics snapshots
+// Baseball Reference team batting statistics snapshots
 export const baseballReferenceStats = pgTable("baseball_reference_stats", {
   id: serial("id").primaryKey(),
   date: date("date").notNull(), // Date of the snapshot
@@ -649,10 +649,54 @@ export const baseballReferenceStats = pgTable("baseball_reference_stats", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Type exports for Baseball Reference stats
+// Baseball Reference team pitching statistics snapshots
+export const baseballReferencePitchingStats = pgTable("baseball_reference_pitching_stats", {
+  id: serial("id").primaryKey(),
+  date: date("date").notNull(), // Date of the snapshot
+  team: text("team").notNull(), // Team abbreviation (BOS, NYY, etc.)
+  pitchers: integer("pitchers"), // Number of pitchers used
+  pitchingAge: decimal("pitching_age", { precision: 4, scale: 1 }), // Average age
+  runsAllowedPerGame: decimal("runs_allowed_per_game", { precision: 4, scale: 2 }), // RA/G
+  games: integer("games"), // Games played
+  gamesStarted: integer("games_started"), // GS
+  completeGames: integer("complete_games"), // CG
+  shutouts: integer("shutouts"), // SHO
+  saves: integer("saves"), // SV
+  inningsPitched: decimal("innings_pitched", { precision: 5, scale: 1 }), // IP
+  hits: integer("hits"), // H
+  runs: integer("runs"), // R
+  earnedRuns: integer("earned_runs"), // ER
+  homeRuns: integer("home_runs"), // HR
+  walks: integer("walks"), // BB
+  intentionalWalks: integer("intentional_walks"), // IBB
+  strikeouts: integer("strikeouts"), // SO
+  hitByPitch: integer("hit_by_pitch"), // HBP
+  balks: integer("balks"), // BK
+  wildPitches: integer("wild_pitches"), // WP
+  battersFaced: integer("batters_faced"), // BF
+  era: decimal("era", { precision: 4, scale: 2 }), // ERA
+  fip: decimal("fip", { precision: 4, scale: 2 }), // FIP
+  whip: decimal("whip", { precision: 4, scale: 3 }), // WHIP
+  h9: decimal("h9", { precision: 4, scale: 1 }), // H/9
+  hr9: decimal("hr9", { precision: 4, scale: 1 }), // HR/9
+  bb9: decimal("bb9", { precision: 4, scale: 1 }), // BB/9
+  so9: decimal("so9", { precision: 4, scale: 1 }), // SO/9
+  so_w: decimal("so_w", { precision: 4, scale: 2 }), // SO/W
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Type exports for Baseball Reference batting stats
 export const insertBaseballReferenceStatsSchema = createInsertSchema(baseballReferenceStats).omit({
   id: true,
   createdAt: true,
 });
 export type InsertBaseballReferenceStats = z.infer<typeof insertBaseballReferenceStatsSchema>;
 export type BaseballReferenceStats = typeof baseballReferenceStats.$inferSelect;
+
+// Type exports for Baseball Reference pitching stats
+export const insertBaseballReferencePitchingStatsSchema = createInsertSchema(baseballReferencePitchingStats).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertBaseballReferencePitchingStats = z.infer<typeof insertBaseballReferencePitchingStatsSchema>;
+export type BaseballReferencePitchingStats = typeof baseballReferencePitchingStats.$inferSelect;

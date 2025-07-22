@@ -1,4 +1,4 @@
-import { users, games, odds, aiSummaries, bets, props, dailyPicks, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, tickets, virtualBets, virtualBettingSlip, phraseDetectionRules, baseballReferenceStats, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship, type Ticket, type InsertTicket, type VirtualBet, type InsertVirtualBet, type VirtualBettingSlip, type InsertVirtualBettingSlip, type PhraseDetectionRule, type InsertPhraseDetectionRule, type BaseballReferenceStats, type InsertBaseballReferenceStats } from "@shared/schema";
+import { users, games, odds, aiSummaries, bets, props, dailyPicks, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, tickets, virtualBets, virtualBettingSlip, phraseDetectionRules, baseballReferenceStats, baseballReferencePitchingStats, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship, type Ticket, type InsertTicket, type VirtualBet, type InsertVirtualBet, type VirtualBettingSlip, type InsertVirtualBettingSlip, type PhraseDetectionRule, type InsertPhraseDetectionRule, type BaseballReferenceStats, type InsertBaseballReferenceStats, type BaseballReferencePitchingStats, type InsertBaseballReferencePitchingStats } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, gte, lte, desc, lt } from "drizzle-orm";
 
@@ -174,6 +174,12 @@ export interface IStorage {
   getBaseballReferenceSnapshot(date: string): Promise<BaseballReferenceStats[]>;
   getHistoricalBaseballReferenceStats(team: string, date: string, daysBack: number): Promise<BaseballReferenceStats[]>;
   getTeamBaseballReferenceStats(team: string, date?: string): Promise<BaseballReferenceStats | undefined>;
+  
+  // Baseball Reference Pitching Stats methods
+  storeBaseballReferencePitchingStats(stats: InsertBaseballReferencePitchingStats): Promise<BaseballReferencePitchingStats>;
+  getBaseballReferencePitchingSnapshot(date: string): Promise<BaseballReferencePitchingStats[]>;
+  getHistoricalBaseballReferencePitchingStats(team: string, date: string, daysBack: number): Promise<BaseballReferencePitchingStats[]>;
+  getTeamBaseballReferencePitchingStats(team: string, date?: string): Promise<BaseballReferencePitchingStats | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -1657,6 +1663,64 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(baseballReferenceStats.team, team),
           eq(baseballReferenceStats.date, targetDate)
+        )
+      );
+    
+    return stats;
+  }
+
+  // Baseball Reference Pitching Stats methods
+  async storeBaseballReferencePitchingStats(stats: InsertBaseballReferencePitchingStats): Promise<BaseballReferencePitchingStats> {
+    const [newStats] = await db
+      .insert(baseballReferencePitchingStats)
+      .values(stats)
+      .onConflictDoUpdate({
+        target: [baseballReferencePitchingStats.date, baseballReferencePitchingStats.team],
+        set: {
+          ...stats,
+          createdAt: new Date(),
+        },
+      })
+      .returning();
+    return newStats;
+  }
+
+  async getBaseballReferencePitchingSnapshot(date: string): Promise<BaseballReferencePitchingStats[]> {
+    return await db
+      .select()
+      .from(baseballReferencePitchingStats)
+      .where(eq(baseballReferencePitchingStats.date, date))
+      .orderBy(baseballReferencePitchingStats.team);
+  }
+
+  async getHistoricalBaseballReferencePitchingStats(team: string, date: string, daysBack: number): Promise<BaseballReferencePitchingStats[]> {
+    const endDate = new Date(date);
+    const startDate = new Date(date);
+    startDate.setDate(endDate.getDate() - daysBack);
+
+    return await db
+      .select()
+      .from(baseballReferencePitchingStats)
+      .where(
+        and(
+          eq(baseballReferencePitchingStats.team, team),
+          gte(baseballReferencePitchingStats.date, startDate.toISOString().split('T')[0]),
+          lte(baseballReferencePitchingStats.date, endDate.toISOString().split('T')[0])
+        )
+      )
+      .orderBy(desc(baseballReferencePitchingStats.date));
+  }
+
+  async getTeamBaseballReferencePitchingStats(team: string, date?: string): Promise<BaseballReferencePitchingStats | undefined> {
+    const targetDate = date || new Date().toISOString().split('T')[0];
+    
+    const [stats] = await db
+      .select()
+      .from(baseballReferencePitchingStats)
+      .where(
+        and(
+          eq(baseballReferencePitchingStats.team, team),
+          eq(baseballReferencePitchingStats.date, targetDate)
         )
       );
     
