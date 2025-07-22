@@ -91,49 +91,43 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
   const aiPick = allAIPicks.find(pick => {
     if (!pick.gameId) return false;
     
-    // New daily picks use format: "NYA@TOR" or "BOS@PHI" (team codes)
-    // Games use format: "2025-07-21_BAL @ CLE" 
-    // Match by team codes in gameId
+    // Daily picks now use full team names: "Boston Red Sox @ Philadelphia Phillies"
+    // Games use format: "2025-07-21_BAL @ CLE" with full team names in awayTeam/homeTeam
     const pickGameId = pick.gameId.toLowerCase();
-    const gameAwayCode = game.awayTeamCode.toLowerCase();
-    const gameHomeCode = game.homeTeamCode.toLowerCase();
-    
-    // Handle different team code formats (NYA = NYY, etc.)
-    const codeMapping: { [key: string]: string[] } = {
-      'nya': ['nyy', 'yankees'],
-      'nyy': ['nya', 'yankees'], 
-      'bos': ['boston', 'red sox'],
-      'phi': ['philadelphia', 'phillies'],
-      'tor': ['toronto', 'blue jays'],
-      'det': ['detroit', 'tigers'],
-      'pit': ['pittsburgh', 'pirates'],
-      'hou': ['houston', 'astros'],
-      'ari': ['arizona', 'diamondbacks']
-    };
-    
-    // Check if pick gameId matches this game's team codes (with mapping)
-    const awayMatches = pickGameId.includes(gameAwayCode) || 
-                        (codeMapping[gameAwayCode] && codeMapping[gameAwayCode].some(code => pickGameId.includes(code))) ||
-                        (codeMapping[pickGameId.split('@')[0]] && codeMapping[pickGameId.split('@')[0]].includes(gameAwayCode));
-    const homeMatches = pickGameId.includes(gameHomeCode) ||
-                        (codeMapping[gameHomeCode] && codeMapping[gameHomeCode].some(code => pickGameId.includes(code))) ||
-                        (codeMapping[pickGameId.split('@')[1]] && codeMapping[pickGameId.split('@')[1]].includes(gameHomeCode));
-    
-    return awayMatches && homeMatches;
-  }) || 
-  // Fallback: match by selection content 
-  allAIPicks.find(pick => {
-    if (!pick.selection) return false;
-    const selection = pick.selection.toLowerCase();
-    const reasoning = pick.reasoning?.toLowerCase() || '';
     const awayTeam = game.awayTeam.toLowerCase();
     const homeTeam = game.homeTeam.toLowerCase();
     
-    // Match by team names in selection/reasoning
-    const textToSearch = selection + ' ' + reasoning;
-    return textToSearch.includes(awayTeam) || textToSearch.includes(homeTeam) ||
-           textToSearch.includes(game.awayTeamCode.toLowerCase()) ||
-           textToSearch.includes(game.homeTeamCode.toLowerCase());
+    // Direct match by full team names
+    if (pickGameId.includes(awayTeam) && pickGameId.includes(homeTeam)) {
+      return true;
+    }
+    
+    // Team name mapping for common variations
+    const teamNameMapping: { [key: string]: string[] } = {
+      'boston red sox': ['red sox', 'boston'],
+      'philadelphia phillies': ['phillies', 'philadelphia'],
+      'detroit tigers': ['tigers', 'detroit'],
+      'pittsburgh pirates': ['pirates', 'pittsburgh'],
+      'houston astros': ['astros', 'houston'], 
+      'arizona diamondbacks': ['diamondbacks', 'arizona', 'dbacks'],
+      'san francisco giants': ['giants', 'san francisco'],
+      'atlanta braves': ['braves', 'atlanta'],
+      'baltimore orioles': ['orioles', 'baltimore'],
+      'cleveland guardians': ['guardians', 'cleveland'],
+      'san diego padres': ['padres', 'san diego'],
+      'miami marlins': ['marlins', 'miami'],
+      'cincinnati reds': ['reds', 'cincinnati'],
+      'washington nationals': ['nationals', 'washington']
+    };
+    
+    // Check variations of team names
+    const awayVariations = teamNameMapping[awayTeam] || [awayTeam];
+    const homeVariations = teamNameMapping[homeTeam] || [homeTeam];
+    
+    const awayMatches = awayVariations.some(variation => pickGameId.includes(variation));
+    const homeMatches = homeVariations.some(variation => pickGameId.includes(variation));
+    
+    return awayMatches && homeMatches;
   }) || null;
   
   // No expert picks available - removed to maintain authentic data integrity

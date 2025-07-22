@@ -150,6 +150,12 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 22, 2025: FIXED AI PICK MATCHING ISSUE - Resolved problem where AI picks didn't correspond to displayed games
+  - Cleared stale daily picks and regenerated fresh picks matching today's real MLB games
+  - Updated matching logic to handle full team name format: "Boston Red Sox @ Philadelphia Phillies"
+  - Added comprehensive team name mapping for variations (Red Sox, Phillies, Tigers, Pirates, etc.)
+  - Removed random fallback logic to maintain authentic data integrity
+  - AI suggestions now properly correspond to specific games: BOS@PHI (Phillies ML), DET@PIT (Pirates ML), HOU@ARI (Astros ML), SF@ATL (Over 9)
 - July 21, 2025: REMOVED SIMULATED EXPERT PICKS - Eliminated all fake expert analysis per user requirement for authentic data only
   - Removed simulated expert picks API endpoint that generated fake professional analysis
   - Cleaned up frontend to only show authentic AI picks from real games data
