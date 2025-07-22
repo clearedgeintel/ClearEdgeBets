@@ -9,6 +9,7 @@ export const MLB_TEAMS = {
   
   // American League Central
   'CWS': { name: 'Chicago White Sox', city: 'Chicago', abbreviation: 'CWS', division: 'AL Central' },
+  'CHW': { name: 'Chicago White Sox', city: 'Chicago', abbreviation: 'CHW', division: 'AL Central' },
   'CLE': { name: 'Cleveland Guardians', city: 'Cleveland', abbreviation: 'CLE', division: 'AL Central' },
   'DET': { name: 'Detroit Tigers', city: 'Detroit', abbreviation: 'DET', division: 'AL Central' },
   'KC': { name: 'Kansas City Royals', city: 'Kansas City', abbreviation: 'KC', division: 'AL Central' },
@@ -73,6 +74,7 @@ export function normalizeTeamCode(teamCode: string): string {
   // Handle common variations
   const codeMap: Record<string, string> = {
     'WSN': 'WSH', // Washington Nationals sometimes appears as WSN
+    'CHW': 'CWS', // Chicago White Sox sometimes appears as CHW
     'LAD': 'LAD', // Los Angeles Dodgers
     'LAA': 'LAA', // Los Angeles Angels
     'SD': 'SD',   // San Diego Padres
