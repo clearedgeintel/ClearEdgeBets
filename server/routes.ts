@@ -21,6 +21,7 @@ import { weatherAPI } from "./services/weather-api";
 import { mlbPicksAPI } from "./services/mlb-picks-api";
 import { enhancedMLBPicks } from "./services/enhanced-mlb-picks";
 import apiManagementRoutes from "./routes/api-management";
+import { baseballReferenceService } from "./services/baseball-reference";
 // Note: Auth will be handled by existing system
 import Stripe from "stripe";
 import bcrypt from "bcrypt";
@@ -4795,6 +4796,150 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting phrase detection rule:", error);
       res.status(500).json({ error: "Failed to delete phrase detection rule" });
+    }
+  });
+
+  // Baseball Reference API endpoints
+  // Fetch daily team batting statistics snapshot
+  app.get("/api/baseball-reference/team-batting", async (req, res) => {
+    try {
+      console.log("Fetching Baseball Reference team batting stats...");
+      const stats = await baseballReferenceService.fetchTeamBattingStats();
+      res.json({
+        success: true,
+        data: stats,
+        count: stats.length,
+        lastUpdated: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error fetching Baseball Reference team batting stats:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to fetch Baseball Reference team batting statistics",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Store daily snapshot in database
+  app.post("/api/baseball-reference/store-snapshot", async (req, res) => {
+    try {
+      console.log("Storing daily Baseball Reference snapshot...");
+      const stats = await baseballReferenceService.fetchTeamBattingStats();
+      
+      if (stats.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: "No stats data retrieved to store"
+        });
+      }
+
+      // Store each team's stats in the database
+      const today = new Date().toISOString().split('T')[0];
+      const storedStats = [];
+
+      for (const teamStats of stats) {
+        try {
+          const statsRecord = await storage.storeBaseballReferenceStats({
+            date: today,
+            team: teamStats.team,
+            batters: teamStats.batters,
+            battingAge: teamStats.battingAge.toString(),
+            runsPerGame: teamStats.runsPerGame.toString(),
+            games: teamStats.games,
+            plateAppearances: teamStats.plateAppearances,
+            atBats: teamStats.atBats,
+            runs: teamStats.runs,
+            hits: teamStats.hits,
+            doubles: teamStats.doubles,
+            triples: teamStats.triples,
+            homeRuns: teamStats.homeRuns,
+            rbis: teamStats.rbis,
+            stolenBases: teamStats.stolenBases,
+            caughtStealing: teamStats.caughtStealing,
+            walks: teamStats.walks,
+            strikeouts: teamStats.strikeouts,
+            battingAverage: teamStats.battingAverage.toString(),
+            onBasePct: teamStats.obp.toString(),
+            sluggingPct: teamStats.slg.toString(),
+            ops: teamStats.ops.toString()
+          });
+          storedStats.push(statsRecord);
+        } catch (storeError) {
+          console.warn(`Failed to store stats for team ${teamStats.team}:`, storeError);
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `Successfully stored daily snapshot for ${storedStats.length} teams`,
+        date: today,
+        teamsStored: storedStats.length,
+        teams: storedStats.map(s => s.team)
+      });
+    } catch (error) {
+      console.error("Error storing Baseball Reference snapshot:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to store Baseball Reference daily snapshot",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Get historical team stats by date and team
+  app.get("/api/baseball-reference/historical/:team", async (req, res) => {
+    try {
+      const { team } = req.params;
+      const { date, days = 7 } = req.query;
+      
+      const targetDate = date ? String(date) : new Date().toISOString().split('T')[0];
+      const daysBack = parseInt(String(days));
+      
+      const historicalStats = await storage.getHistoricalBaseballReferenceStats(
+        team.toUpperCase(), 
+        targetDate, 
+        daysBack
+      );
+
+      res.json({
+        success: true,
+        team: team.toUpperCase(),
+        date: targetDate,
+        daysBack,
+        data: historicalStats,
+        count: historicalStats.length
+      });
+    } catch (error) {
+      console.error(`Error fetching historical stats for team ${req.params.team}:`, error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to fetch historical team statistics",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Get league-wide stats snapshot for a specific date
+  app.get("/api/baseball-reference/snapshot/:date", async (req, res) => {
+    try {
+      const { date } = req.params;
+      const snapshot = await storage.getBaseballReferenceSnapshot(date);
+
+      res.json({
+        success: true,
+        date,
+        data: snapshot,
+        count: snapshot.length,
+        teams: snapshot.map(s => s.team)
+      });
+    } catch (error) {
+      console.error(`Error fetching snapshot for date ${req.params.date}:`, error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to fetch Baseball Reference snapshot",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
