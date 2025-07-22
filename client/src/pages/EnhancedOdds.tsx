@@ -96,7 +96,35 @@ export default function EnhancedOdds() {
     );
   }
 
-  const gamesWithOdds = gamesData?.filter(game => game.odds.moneyline) || [];
+  // Transform API data to expected format - extract moneyline odds from odds array
+  const gamesWithOdds = gamesData?.map(game => {
+    // Find moneyline odds in the odds array
+    const moneylineOdds = game.odds?.find((odds: any) => odds.market === 'moneyline');
+    const spreadOdds = game.odds?.find((odds: any) => odds.market === 'spread');
+    const totalOdds = game.odds?.find((odds: any) => odds.market === 'total');
+    
+    if (!moneylineOdds) return null; // Skip games without moneyline odds
+    
+    return {
+      ...game,
+      odds: {
+        moneyline: {
+          away: moneylineOdds.awayOdds,
+          home: moneylineOdds.homeOdds
+        },
+        spread: spreadOdds ? {
+          away: spreadOdds.awayOdds,
+          home: spreadOdds.homeOdds,
+          line: spreadOdds.line || 1.5
+        } : undefined,
+        total: totalOdds ? {
+          over: totalOdds.overOdds,
+          under: totalOdds.underOdds,
+          line: totalOdds.line || 8.5
+        } : undefined
+      }
+    };
+  }).filter(game => game !== null) || [];
 
   return (
     <div className="container mx-auto px-4 py-8">
