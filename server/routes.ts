@@ -5689,11 +5689,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Debug: Log team power scores for debugging
+      console.log('Available team power scores:', teamPowerScores.map(t => ({ 
+        team: t.team, 
+        teamCode: t.teamCode, 
+        powerScore: t.teamPowerScore 
+      })));
+      
       // Enhance RapidAPI games with team power data and analytics
       const enhancedGames = enhancedGamesData.map(game => {
         // Only normalize if team codes exist
         const normalizedAwayCode = game.awayTeamCode ? normalizeTeamCode(game.awayTeamCode) : 'UNK';
         const normalizedHomeCode = game.homeTeamCode ? normalizeTeamCode(game.homeTeamCode) : 'UNK';
+        
+        console.log(`Game: ${game.awayTeam} @ ${game.homeTeam}`);
+        console.log(`  Original codes: away=${game.awayTeamCode}, home=${game.homeTeamCode}`);
+        console.log(`  Normalized codes: away=${normalizedAwayCode}, home=${normalizedHomeCode}`);
         
         const awayPowerData = teamPowerScores.find(team => 
           team.teamCode && normalizeTeamCode(team.teamCode) === normalizedAwayCode
@@ -5701,6 +5712,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const homePowerData = teamPowerScores.find(team => 
           team.teamCode && normalizeTeamCode(team.teamCode) === normalizedHomeCode
         );
+        
+        console.log(`  Power data found: away=${!!awayPowerData}, home=${!!homePowerData}`);
         
         return {
           ...game,
@@ -5846,7 +5859,25 @@ List of games: ${JSON.stringify(gamesData, null, 2)}`;
         success: true,
         html: newsletterHtml,
         metadata,
-        gamesAnalyzed: enhancedGames.length
+        gamesAnalyzed: enhancedGames.length,
+        debugData: {
+          prompt: promptTemplate,
+          teamPowerScores: teamPowerScores.map(t => ({ 
+            team: t.team, 
+            teamCode: t.teamCode, 
+            powerScore: t.teamPowerScore,
+            advBattingScore: t.advBattingScore,
+            pitchingScore: t.pitchingScore
+          })),
+          enhancedGames: enhancedGames.map(g => ({
+            awayTeam: g.awayTeam,
+            homeTeam: g.homeTeam,
+            awayTeamCode: g.awayTeamCode,
+            homeTeamCode: g.homeTeamCode,
+            awayPowerScore: g.awayPowerScore,
+            homePowerScore: g.homePowerScore
+          }))
+        }
       });
     } catch (error) {
       console.error("Error generating daily dose:", error);
