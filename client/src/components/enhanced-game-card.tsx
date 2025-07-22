@@ -91,43 +91,8 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
   const aiPick = allAIPicks.find(pick => {
     if (!pick.gameId) return false;
     
-    // Daily picks now use full team names: "Boston Red Sox @ Philadelphia Phillies"
-    // Games use format: "2025-07-21_BAL @ CLE" with full team names in awayTeam/homeTeam
-    const pickGameId = pick.gameId.toLowerCase();
-    const awayTeam = game.awayTeam.toLowerCase();
-    const homeTeam = game.homeTeam.toLowerCase();
-    
-    // Direct match by full team names
-    if (pickGameId.includes(awayTeam) && pickGameId.includes(homeTeam)) {
-      return true;
-    }
-    
-    // Team name mapping for common variations
-    const teamNameMapping: { [key: string]: string[] } = {
-      'boston red sox': ['red sox', 'boston'],
-      'philadelphia phillies': ['phillies', 'philadelphia'],
-      'detroit tigers': ['tigers', 'detroit'],
-      'pittsburgh pirates': ['pirates', 'pittsburgh'],
-      'houston astros': ['astros', 'houston'], 
-      'arizona diamondbacks': ['diamondbacks', 'arizona', 'dbacks'],
-      'san francisco giants': ['giants', 'san francisco'],
-      'atlanta braves': ['braves', 'atlanta'],
-      'baltimore orioles': ['orioles', 'baltimore'],
-      'cleveland guardians': ['guardians', 'cleveland'],
-      'san diego padres': ['padres', 'san diego'],
-      'miami marlins': ['marlins', 'miami'],
-      'cincinnati reds': ['reds', 'cincinnati'],
-      'washington nationals': ['nationals', 'washington']
-    };
-    
-    // Check variations of team names
-    const awayVariations = teamNameMapping[awayTeam] || [awayTeam];
-    const homeVariations = teamNameMapping[homeTeam] || [homeTeam];
-    
-    const awayMatches = awayVariations.some(variation => pickGameId.includes(variation));
-    const homeMatches = homeVariations.some(variation => pickGameId.includes(variation));
-    
-    return awayMatches && homeMatches;
+    // Exact gameId match - picks now use same format as games: "2025-07-21_BAL @ CLE"
+    return pick.gameId === game.gameId;
   }) || null;
   
   // No expert picks available - removed to maintain authentic data integrity
