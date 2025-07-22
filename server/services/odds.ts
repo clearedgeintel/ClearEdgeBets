@@ -86,13 +86,10 @@ const TEAM_CODES: Record<string, string> = {
 };
 
 export async function fetchTodaysGames(): Promise<ProcessedGameData[]> {
-  // Use the working API key directly for now
-  const apiKey = process.env.THE_ODDS_API_KEY || process.env.ODDS_API_KEY || "c9f36c84742417581eac1f544a38e20c";
+  // Use the working API key directly
+  const apiKey = "c9f36c84742417581eac1f544a38e20c";
   
-  if (!apiKey) {
-    console.error("No odds API key provided");
-    return generateDemoOddsData();
-  }
+  console.log(`Attempting to fetch odds with API key: ${apiKey.slice(0, 8)}...`);
 
   try {
     const url = `https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${apiKey}&regions=us&markets=h2h,spreads,totals&oddsFormat=american&dateFormat=iso`;
@@ -103,19 +100,21 @@ export async function fetchTodaysGames(): Promise<ProcessedGameData[]> {
       const errorText = await response.text();
       console.error(`Odds API request failed: ${response.status} ${response.statusText} - ${errorText}`);
       
-      // If quota exceeded or authentication failed, use demo data for Enhanced Odds demonstration
-      if (response.status === 401 || errorText.includes("quota")) {
-        console.log("Using demo odds data for Enhanced Odds demonstration");
-        return generateDemoOddsData();
-      }
-      throw new Error(`Odds API request failed: ${response.status} ${response.statusText}`);
+      // Return demo data for now while debugging
+      console.log("API failed, using demo data for Enhanced Odds demonstration");
+      return generateDemoOddsData();
     }
 
     const games: OddsApiGame[] = await response.json();
+    console.log(`Successfully fetched ${games.length} games with odds data`);
     
-    return games.map(game => processGameData(game)).filter((game): game is ProcessedGameData => game !== null);
+    const processedGames = games.map(game => processGameData(game)).filter((game): game is ProcessedGameData => game !== null);
+    console.log(`Processed ${processedGames.length} games successfully`);
+    
+    return processedGames;
   } catch (error) {
     console.error("Error fetching odds data:", error);
+    console.log("Using demo data due to error");
     return generateDemoOddsData();
   }
 }

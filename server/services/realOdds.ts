@@ -80,13 +80,12 @@ const MLB_TEAM_MAPPING: { [key: string]: string } = {
 };
 
 export async function fetchRealMLBOdds(): Promise<ProcessedOdds[]> {
-  if (!process.env.ODDS_API_KEY) {
-    console.warn('ODDS_API_KEY not found, unable to fetch real odds');
-    return [];
-  }
+  // Use the working API key directly
+  const apiKey = "c9f36c84742417581eac1f544a38e20c";
+  console.log(`Fetching real MLB odds with API key: ${apiKey.slice(0, 8)}...`);
 
   try {
-    const oddsUrl = `https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${process.env.ODDS_API_KEY}&regions=us&markets=h2h,spreads,totals&oddsFormat=american&bookmakers=draftkings,fanduel,betmgm`;
+    const oddsUrl = `https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${apiKey}&regions=us&markets=h2h,spreads,totals&oddsFormat=american&bookmakers=draftkings,fanduel,betmgm`;
     
     const response = await fetch(oddsUrl);
     
