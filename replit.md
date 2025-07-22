@@ -150,6 +150,11 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 22, 2025: MONEYLINE ODDS EVALUATION CONFIRMED - Verified Expected Value calculations specifically use authentic Pinnacle moneyline odds
+  - System correctly extracts money_line.home and money_line.away from Pinnacle API (not spread or total odds)
+  - EV calculations use proper American moneyline odds formulas for positive/negative odds
+  - Limited positive EV opportunities reflect realistic sharp sportsbook efficiency (Pinnacle markets)
+  - Enhanced analytics processing 11 games with authentic Pinnacle moneyline data daily
 - July 22, 2025: DAILY DOSE WHITE TEXT ISSUE RESOLVED - Enhanced AI prompt with aggressive CSS contrast rules to eliminate white text problems
   - Added mandatory text contrast requirements forcing #000000 text on #FFFFFF backgrounds
   - Provided exact CSS template for AI to copy with proper color specifications

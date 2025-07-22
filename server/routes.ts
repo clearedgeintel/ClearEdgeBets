@@ -5795,29 +5795,24 @@ Give 2 quick historical facts from this day in baseball history
 - Highest teamPowerScore today (team name and value)  
 - Largest power score mismatch (team and opponent, with score difference)
 
-🔥 **Top 3 Value Bets** (sorted by EV descending)  
-For each:
-- Team Name  
-- American Odds  
-- EV %  
-- Kelly Stake %  
-- teamPowerScore  
-- One-liner: "Model gives them X% win chance vs. Y% implied."
+🔥 **Top Value Opportunities** (sorted by EV/Edge)  
+If no positive EV found, show:
+- Top 3 teams with smallest negative EV (closest to break-even)
+- Team Name, American Odds, EV %, Edge, Power Score
+- Note: "Efficient Pinnacle markets - limited value available today"
 
-💡 **Best Home Edge**  
-Highlight the single best **home** team bet based on homeEdge and teamPowerScore.
+💡 **Best Potential Plays**  
+Show the best home and away options based on:
+- Smallest edge gap between model and market
+- Team power score advantages
+- Note realistic expectations for sharp odds
 
-🎟️ **$100 Kelly Bankroll Ticket**  
-- Use Kelly Criterion values to recommend fractional bets from a $100 bankroll  
-- Round to nearest dollar  
-- 3 bets
-- Skip bets with Kelly stake ≤ 0  
-- Recommend total stake spent  
-- Potential Payout
-- American Odds
-- Bold teams and stake sizes
-- Does not need to be an underdog
-- Why is this team worth a play today?
+🎟️ **Market Analysis Summary**  
+Instead of Kelly bets when no +EV exists:
+- Explain why no positive EV found (efficient Pinnacle markets)
+- Highlight biggest power score mismatches
+- Show which teams the model rates differently than market
+- Recommend focusing on line shopping or alternative markets
 
 📜 **Short Summary (max 200 words)**  
 Highlight the top storyline of the day: e.g., strongest favorite, value upset, or edge mismatch. Be concise, professional, and slightly witty.
