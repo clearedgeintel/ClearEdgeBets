@@ -150,6 +150,11 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 22, 2025: HOME PAGE TOP 3 PICKS RESTORED - Fixed missing daily picks display on home page
+  - Issue: Daily picks API returned empty array because no picks existed for current date (2025-07-22)  
+  - Solution: Generated today's daily picks using POST /api/daily-picks/generate endpoint
+  - Now displaying: Under 8 Runs (70% confidence), Over 11.5 Runs (78% confidence), Cleveland Guardians ML (75% confidence)
+  - Home page "Today's Top AI Picks" section now functioning correctly with authentic AI-generated picks
 - July 22, 2025: MONEYLINE ODDS EVALUATION CONFIRMED - Verified Expected Value calculations specifically use authentic Pinnacle moneyline odds
   - System correctly extracts money_line.home and money_line.away from Pinnacle API (not spread or total odds)
   - EV calculations use proper American moneyline odds formulas for positive/negative odds
