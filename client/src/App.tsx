@@ -48,6 +48,7 @@ import WeatherSummary from "@/pages/WeatherSummary";
 import MLBPicks from "@/pages/MLBPicks";
 import UnifiedPicks from "@/pages/UnifiedPicks";
 import TeamPowerScores from "@/pages/TeamPowerScores";
+import DailyDose from "@/pages/DailyDose";
 
 function Router() {
   return (
@@ -93,6 +94,7 @@ function Router() {
         <Route path="/kelly-calculator" component={KellyCalculator} />
         <Route path="/team-power-scores" component={TeamPowerScores} />
         <Route path="/player-prop-builder" component={PlayerPropBuilder} />
+        <Route path="/daily-dose" component={DailyDose} />
         <Route path="/help" component={Help} />
         <Route path="/auth" component={AuthPage} />
         <Route component={NotFound} />

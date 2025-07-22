@@ -155,6 +155,14 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           requiresPro: true
         },
         { 
+          name: "Daily Dose Newsletter", 
+          href: "/daily-dose", 
+          icon: FileText,
+          current: location === "/daily-dose",
+          description: "Professional betting newsletter with Kelly analysis",
+          requiresPro: true
+        },
+        { 
           name: "Odds Comparison", 
           href: "/odds-comparison", 
           icon: BarChart3,

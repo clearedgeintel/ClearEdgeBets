@@ -5597,6 +5597,242 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Daily Dose Newsletter Generation
+  app.get("/api/daily-dose", async (req, res) => {
+    try {
+      // Check if today's newsletter already exists
+      const today = new Date().toISOString().split('T')[0];
+      
+      // For now, return empty response - could be enhanced with database storage
+      res.json({
+        success: false,
+        message: "No newsletter generated for today",
+        date: today
+      });
+    } catch (error) {
+      console.error("Error fetching daily dose:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch daily dose",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  app.post("/api/daily-dose/generate", async (req, res) => {
+    try {
+      console.log("Generating Daily Dose newsletter...");
+      
+      // Get live team power scores and games data
+      const [liveBattingStats, livePitchingStats] = await Promise.all([
+        baseballReferenceService.fetchTeamBattingStats(),
+        baseballReferenceService.fetchTeamPitchingStats()
+      ]);
+      
+      if (liveBattingStats.length === 0 || livePitchingStats.length === 0) {
+        return res.status(503).json({
+          success: false,
+          error: "Unable to fetch live stats from Baseball Reference"
+        });
+      }
+      
+      // Calculate team power scores
+      const teamPowerScores = teamPowerScoringService.calculateAllTeamPowerScores(
+        liveBattingStats,
+        livePitchingStats
+      );
+      const rankedScores = teamPowerScoringService.getTeamPowerRankings(teamPowerScores);
+      
+      // Get today's games with enhanced odds
+      const todaysGames = await fetchTodaysGames();
+      
+      // Enhance games with team power data and analytics
+      const enhancedGames = todaysGames.map(game => {
+        const awayPowerData = teamPowerScoringService.findTeamPowerScore(rankedScores, game.awayTeamCode);
+        const homePowerData = teamPowerScoringService.findTeamPowerScore(rankedScores, game.homeTeamCode);
+        
+        if (!awayPowerData || !homePowerData) {
+          return {
+            ...game,
+            awayPowerScore: 50,
+            homePowerScore: 50,
+            powerDifference: 0
+          };
+        }
+        
+        const totalPowerScore = awayPowerData.teamPowerScore + homePowerData.teamPowerScore;
+        const homeWinPct = (homePowerData.teamPowerScore / totalPowerScore) * 100;
+        const awayWinPct = (awayPowerData.teamPowerScore / totalPowerScore) * 100;
+        
+        // Apply enhanced analytics to odds
+        const enhancedOdds = enhanceOddsWithAnalytics(game.odds, homeWinPct, awayWinPct);
+        
+        return {
+          ...game,
+          odds: enhancedOdds,
+          awayPowerScore: awayPowerData.teamPowerScore,
+          homePowerScore: homePowerData.teamPowerScore,
+          awayAdvBattingScore: awayPowerData.advBattingScore,
+          homeAdvBattingScore: homePowerData.advBattingScore,
+          awayPitchingScore: awayPowerData.pitchingScore,
+          homePitchingScore: homePowerData.pitchingScore,
+          awayRank: awayPowerData.rank,
+          homeRank: homePowerData.rank,
+          powerDifference: Math.abs(homePowerData.teamPowerScore - awayPowerData.teamPowerScore)
+        };
+      });
+      
+      // Prepare data for OpenAI prompt
+      const gamesData = enhancedGames.map(game => ({
+        homeTeam: game.homeTeam,
+        awayTeam: game.awayTeam,
+        homeOdds: game.odds.moneyline?.home || -110,
+        awayOdds: game.odds.moneyline?.away || -110,
+        homeProb: game.odds.moneyline?.modelHomeProb || 0.5,
+        awayProb: game.odds.moneyline?.modelAwayProb || 0.5,
+        homeImp: game.odds.moneyline?.impliedHomeProb || 0.5,
+        awayImp: game.odds.moneyline?.impliedAwayProb || 0.5,
+        homeEV: game.odds.moneyline?.homeEV || 0,
+        awayEV: game.odds.moneyline?.awayEV || 0,
+        homeKelly: game.odds.moneyline?.homeKelly || 0,
+        awayKelly: game.odds.moneyline?.awayKelly || 0,
+        homeEdge: game.odds.moneyline?.homeEdge || 0,
+        awayEdge: game.odds.moneyline?.awayEdge || 0,
+        gameTime: game.gameTime,
+        location: game.venue,
+        homeTeamPowerScore: game.homePowerScore,
+        awayTeamPowerScore: game.awayPowerScore,
+        homeAdvBattingScore: game.homeAdvBattingScore,
+        awayAdvBattingScore: game.awayAdvBattingScore,
+        homePitchingScore: game.homePitchingScore,
+        awayPitchingScore: game.awayPitchingScore
+      }));
+      
+      // Read the OpenAI prompt template
+      const promptTemplate = `You are a professional betting analyst assistant writing a newsletter called **"The Daily Dose."**
+
+You are given a list of today's MLB games with the following fields:
+- Home team, Away team
+- Home odds, Away odds
+- Model win probabilities (homeProb, awayProb)
+- Implied win probabilities (homeImp, awayImp)
+- Expected value (homeEV, awayEV)
+- Kelly stake suggestion (homeKelly, awayKelly)
+- Edge (homeEdge, awayEdge)
+- Game time (UTC) and location
+- Advanced stats for each team:
+  - teamPowerScore
+  - advBattingScore
+  - PitchingScore
+
+Assume today is ${new Date().toISOString()}. Convert all game times to **Central Time (CT)**.
+
+Generate a **full HTML newsletter** called **📬 The Daily Dose**, with the following sections:
+
+✅ **Today's Matchups**  
+A table with columns:
+- Home Team  
+- Away Team  
+- Game Time (CT)  
+- Location  
+- Home Power Score  
+- Away Power Score
+
+Sort by game time. Highlight the biggest mismatch in Power Score.
+
+📅⚾ **This day in baseball history**
+Give 2 quick historical facts from this day in baseball history
+
+🔢 **Stats Overview**  
+- Number of games with EV > 0  
+- Highest teamPowerScore today (team name and value)  
+- Largest power score mismatch (team and opponent, with score difference)
+
+🔥 **Top 3 Value Bets** (sorted by EV descending)  
+For each:
+- Team Name  
+- American Odds  
+- EV %  
+- Kelly Stake %  
+- teamPowerScore  
+- One-liner: "Model gives them X% win chance vs. Y% implied."
+
+💡 **Best Home Edge**  
+Highlight the single best **home** team bet based on homeEdge and teamPowerScore.
+
+🎟️ **$100 Kelly Bankroll Ticket**  
+- Use Kelly Criterion values to recommend fractional bets from a $100 bankroll  
+- Round to nearest dollar  
+- 3 bets
+- Skip bets with Kelly stake ≤ 0  
+- Recommend total stake spent  
+- Potential Payout
+- American Odds
+- Bold teams and stake sizes
+- Does not need to be an underdog
+- Why is this team worth a play today?
+
+📜 **Short Summary (max 200 words)**  
+Highlight the top storyline of the day: e.g., strongest favorite, value upset, or edge mismatch. Be concise, professional, and slightly witty.
+
+Return production ready html, no comments, no markdown
+
+🎨 **HTML Styling Instructions**  
+Use the following theme:
+
+No Gradients
+
+Use green red and tan mimicking the colors of the Minnesota Wild
+CSS Guidelines:
+- Centered layout
+- Use <table> with styled headers
+- Emojis for section headers
+- Bordered tables with padding
+- Use bars (optional) or bold numbers to show EV%
+- Font: clean sans-serif (e.g., Arial or Roboto)
+
+**Return ONLY the full HTML document**, wrapped in <html><head>...</head><body>...</body></html>.  
+Do not return markdown, raw JSON, or explanations.
+
+List of games: ${JSON.stringify(gamesData, null, 2)}`;
+
+      // Generate newsletter with OpenAI
+      const newsletterHtml = await generateGameAnalysis({
+        gameId: "daily-dose",
+        homeTeam: "Newsletter",
+        awayTeam: "Generation",
+        gameTime: new Date().toISOString(),
+        venue: "ClearEdge Bets",
+        homePitcher: "",
+        awayPitcher: "",
+        odds: { moneyline: { home: -110, away: -110 } }
+      }, promptTemplate);
+      
+      const metadata = {
+        date: new Date().toISOString().split('T')[0],
+        totalGames: enhancedGames.length,
+        topValueBets: enhancedGames.filter(g => 
+          (g.odds.moneyline?.homeEV || 0) > 0 || (g.odds.moneyline?.awayEV || 0) > 0
+        ).length,
+        generatedAt: new Date().toISOString()
+      };
+      
+      res.json({
+        success: true,
+        html: newsletterHtml,
+        metadata,
+        gamesAnalyzed: enhancedGames.length
+      });
+    } catch (error) {
+      console.error("Error generating daily dose:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to generate daily dose newsletter",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
