@@ -48,7 +48,23 @@ export async function generateNewsletterHtml(prompt: string): Promise<string> {
       max_tokens: 4000
     });
 
-    return completion.choices[0]?.message?.content || "<html><body><h1>Newsletter generation failed</h1></body></html>";
+    let htmlContent = completion.choices[0]?.message?.content || "<html><body><h1>Newsletter generation failed</h1></body></html>";
+    
+    // Extract HTML from markdown code blocks if present
+    if (htmlContent.includes('```html')) {
+      const matches = htmlContent.match(/```html\s*([\s\S]*?)\s*```/);
+      if (matches && matches[1]) {
+        htmlContent = matches[1].trim();
+      }
+    } else if (htmlContent.includes('```')) {
+      // Handle case where there are code blocks without 'html' specifier
+      const matches = htmlContent.match(/```\s*([\s\S]*?)\s*```/);
+      if (matches && matches[1]) {
+        htmlContent = matches[1].trim();
+      }
+    }
+    
+    return htmlContent;
   } catch (error) {
     console.error("Error generating newsletter HTML:", error);
     return "<html><body><h1>Error generating newsletter</h1><p>Please try again later.</p></body></html>";

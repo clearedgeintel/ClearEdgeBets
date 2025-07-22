@@ -31,7 +31,10 @@ export default function DailyDose() {
 
   // Generate new daily dose mutation
   const generateMutation = useMutation({
-    mutationFn: () => apiRequest('POST', '/api/daily-dose/generate', {}),
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/daily-dose/generate', {});
+      return await response.json();
+    },
     onMutate: () => {
       setIsGenerating(true);
     },
