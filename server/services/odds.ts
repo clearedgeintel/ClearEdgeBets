@@ -28,7 +28,21 @@ export interface ProcessedGameData {
   gameTime: string;
   venue: string;
   odds: {
-    moneyline?: { away: number; home: number };
+    moneyline?: { 
+      away: number; 
+      home: number;
+      // Enhanced analytics
+      modelHomeProb?: number;
+      modelAwayProb?: number;
+      impliedHomeProb?: number;
+      impliedAwayProb?: number;
+      homeEdge?: number;
+      awayEdge?: number;
+      homeEV?: number;
+      awayEV?: number;
+      homeKelly?: number;
+      awayKelly?: number;
+    };
     spread?: { away: number; home: number; awayOdds: number; homeOdds: number };
     total?: { line: number; over: number; under: number };
   };
@@ -153,6 +167,13 @@ function processGameData(game: OddsApiGame): ProcessedGameData | null {
       }
     }
 
+    // Default win percentages (could be enhanced with team power scores)
+    const defaultHomeWinPct = 52; // Home field advantage
+    const defaultAwayWinPct = 48;
+    
+    // Enhance odds with analytics
+    const enhancedOdds = enhanceOddsWithAnalytics(odds, defaultHomeWinPct, defaultAwayWinPct);
+
     return {
       gameId: game.id,
       awayTeam: game.away_team,
@@ -161,7 +182,7 @@ function processGameData(game: OddsApiGame): ProcessedGameData | null {
       homeTeamCode,
       gameTime: game.commence_time, // Keep as ISO string for proper date parsing
       venue: `${game.home_team} Stadium`, // Placeholder - API doesn't provide venue
-      odds,
+      odds: enhancedOdds,
       publicPercentage: generateMockPublicPercentage() // Mock data since public percentages require premium API
     };
   } catch (error) {
@@ -194,4 +215,60 @@ export async function fetchPlayerProps(gameId: string): Promise<Array<{
   // In a real implementation, this would fetch from a props API
   // For now, return empty array as props require specialized APIs
   return [];
+}
+
+/**
+ * Enhanced odds data with advanced analytics calculations
+ * Includes model probabilities, expected value, Kelly criterion, and edge calculations
+ */
+export function enhanceOddsWithAnalytics(odds: ProcessedGameData['odds'], homeWinPct: number = 50, awayWinPct: number = 50): ProcessedGameData['odds'] {
+  if (!odds.moneyline) {
+    return odds;
+  }
+
+  const homeOdds = odds.moneyline.home;
+  const awayOdds = odds.moneyline.away;
+
+  // Convert American odds to decimal odds for calculations
+  const homeDecimalOdds = homeOdds > 0 ? (homeOdds / 100) + 1 : (100 / Math.abs(homeOdds)) + 1;
+  const awayDecimalOdds = awayOdds > 0 ? (awayOdds / 100) + 1 : (100 / Math.abs(awayOdds)) + 1;
+
+  // Avoid division by zero
+  if (!homeDecimalOdds || !awayDecimalOdds || !homeWinPct || !awayWinPct) {
+    return { ...odds, moneyline: { ...odds.moneyline, note: "Missing or invalid input data" } };
+  }
+
+  const totalWinPct = homeWinPct + awayWinPct;
+  const modelHomeProb = homeWinPct / totalWinPct;
+  const modelAwayProb = awayWinPct / totalWinPct;
+
+  const impliedHomeProb = 1 / homeDecimalOdds;
+  const impliedAwayProb = 1 / awayDecimalOdds;
+
+  const homeEV = (modelHomeProb * (homeDecimalOdds - 1)) - (1 - modelHomeProb);
+  const awayEV = (modelAwayProb * (awayDecimalOdds - 1)) - (1 - modelAwayProb);
+
+  const homeKelly = ((homeDecimalOdds - 1) * modelHomeProb - (1 - modelHomeProb)) / (homeDecimalOdds - 1);
+  const awayKelly = ((awayDecimalOdds - 1) * modelAwayProb - (1 - modelAwayProb)) / (awayDecimalOdds - 1);
+
+  // Model Edge = Model Prob - Implied Prob
+  const homeEdge = modelHomeProb - impliedHomeProb;
+  const awayEdge = modelAwayProb - impliedAwayProb;
+
+  return {
+    ...odds,
+    moneyline: {
+      ...odds.moneyline,
+      modelHomeProb: parseFloat(modelHomeProb.toFixed(4)),
+      modelAwayProb: parseFloat(modelAwayProb.toFixed(4)),
+      impliedHomeProb: parseFloat(impliedHomeProb.toFixed(4)),
+      impliedAwayProb: parseFloat(impliedAwayProb.toFixed(4)),
+      homeEdge: parseFloat(homeEdge.toFixed(4)),
+      awayEdge: parseFloat(awayEdge.toFixed(4)),
+      homeEV: parseFloat(homeEV.toFixed(4)),
+      awayEV: parseFloat(awayEV.toFixed(4)),
+      homeKelly: parseFloat(homeKelly.toFixed(4)),
+      awayKelly: parseFloat(awayKelly.toFixed(4))
+    }
+  };
 }

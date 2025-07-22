@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { db } from "./db";
 import { playerProps, playerPropParlays } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { fetchTodaysGames } from "./services/odds";
+import { fetchTodaysGames, enhanceOddsWithAnalytics } from "./services/odds";
 import { fetchCFLGames, generateMockCFLPublicPercentage, type CFLGame } from "./services/cfl";
 import { fetchMLBGamesForDate, fetchMLBGameDetails, getGameResult } from "./services/mlb-api";
 import { fetchRealMLBOdds, mergeRealOddsWithGames } from "./services/realOdds";
@@ -5446,6 +5446,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         error: "Failed to calculate live team power scores",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Enhanced odds with team power score analytics
+  app.get("/api/enhanced-odds/:awayTeam/:homeTeam", async (req, res) => {
+    try {
+      const { awayTeam, homeTeam } = req.params;
+      
+      console.log(`Generating enhanced odds analysis for ${awayTeam} @ ${homeTeam}`);
+      
+      // Get team power scores
+      const [awayPowerData, homePowerData] = await Promise.all([
+        teamPowerScoringService.getTeamPowerScore(awayTeam),
+        teamPowerScoringService.getTeamPowerScore(homeTeam)
+      ]);
+      
+      if (!awayPowerData || !homePowerData) {
+        return res.status(404).json({
+          success: false,
+          error: "Team power data not available",
+          availableTeams: ["BAL", "BOS", "NYY", "TB", "TOR", "CWS", "CLE", "DET", "KC", "MIN", "HOU", "LAA", "OAK", "SEA", "TEX", "ATL", "MIA", "NYM", "PHI", "WSH", "CHC", "CIN", "MIL", "PIT", "STL", "ARI", "COL", "LAD", "SD", "SF"]
+        });
+      }
+      
+      // Calculate team advantage using power scores
+      const teamAdvantage = teamPowerScoringService.calculateTeamAdvantage(awayPowerData, homePowerData);
+      
+      // Generate mock odds for demonstration (in production, this would come from odds API)
+      const homeAdvantageOdds = teamAdvantage.homePowerAdvantage > 0 ? -120 - (teamAdvantage.homePowerAdvantage * 3) : -110 + Math.abs(teamAdvantage.homePowerAdvantage * 2);
+      const awayAdvantageOdds = teamAdvantage.homePowerAdvantage < 0 ? -120 + (teamAdvantage.homePowerAdvantage * 3) : -110 - Math.abs(teamAdvantage.homePowerAdvantage * 2);
+      
+      // Create enhanced odds object with mock data
+      const baseOdds = {
+        moneyline: {
+          home: Math.round(homeAdvantageOdds),
+          away: Math.round(awayAdvantageOdds)
+        }
+      };
+      
+      // Convert power scores to win percentages for analytics
+      const totalPowerScore = awayPowerData.teamPowerScore + homePowerData.teamPowerScore;
+      const homeWinPct = (homePowerData.teamPowerScore / totalPowerScore) * 100;
+      const awayWinPct = (awayPowerData.teamPowerScore / totalPowerScore) * 100;
+      
+      // Apply enhanced analytics calculations
+      const enhancedOdds = enhanceOddsWithAnalytics({ moneyline: baseOdds.moneyline }, homeWinPct, awayWinPct);
+      
+      res.json({
+        success: true,
+        matchup: `${awayTeam} @ ${homeTeam}`,
+        teamPowerAnalysis: {
+          awayTeam: {
+            code: awayTeam,
+            powerScore: awayPowerData.teamPowerScore,
+            powerRank: awayPowerData.powerRank,
+            battingScore: awayPowerData.advBattingScore,
+            pitchingScore: awayPowerData.pitchingScore
+          },
+          homeTeam: {
+            code: homeTeam,
+            powerScore: homePowerData.teamPowerScore,
+            powerRank: homePowerData.powerRank,
+            battingScore: homePowerData.advBattingScore,
+            pitchingScore: homePowerData.pitchingScore
+          },
+          advantage: teamAdvantage
+        },
+        enhancedOdds: enhancedOdds.moneyline,
+        analytics: {
+          modelProbabilities: {
+            home: enhancedOdds.moneyline?.modelHomeProb,
+            away: enhancedOdds.moneyline?.modelAwayProb
+          },
+          impliedProbabilities: {
+            home: enhancedOdds.moneyline?.impliedHomeProb,
+            away: enhancedOdds.moneyline?.impliedAwayProb
+          },
+          edges: {
+            home: enhancedOdds.moneyline?.homeEdge,
+            away: enhancedOdds.moneyline?.awayEdge
+          },
+          expectedValues: {
+            home: enhancedOdds.moneyline?.homeEV,
+            away: enhancedOdds.moneyline?.awayEV
+          },
+          kellyCriterion: {
+            home: enhancedOdds.moneyline?.homeKelly,
+            away: enhancedOdds.moneyline?.awayKelly
+          }
+        },
+        recommendations: {
+          strongestEdge: Math.abs(enhancedOdds.moneyline?.homeEdge || 0) > Math.abs(enhancedOdds.moneyline?.awayEdge || 0) ? "home" : "away",
+          bestValue: (enhancedOdds.moneyline?.homeEV || 0) > (enhancedOdds.moneyline?.awayEV || 0) ? "home" : "away",
+          kellyBetSize: {
+            home: Math.max(0, Math.min(0.25, enhancedOdds.moneyline?.homeKelly || 0)), // Cap at 25% of bankroll
+            away: Math.max(0, Math.min(0.25, enhancedOdds.moneyline?.awayKelly || 0))
+          }
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error(`Error generating enhanced odds for ${req.params.awayTeam} @ ${req.params.homeTeam}:`, error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to generate enhanced odds analysis",
         message: error instanceof Error ? error.message : "Unknown error"
       });
     }
