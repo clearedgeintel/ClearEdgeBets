@@ -191,10 +191,28 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
             <div className="text-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-xs text-blue-700 font-medium mb-2">Moneyline</p>
               <div className="space-y-1">
-                <Badge className="bg-blue-100 text-blue-800 text-xs">
+                <Badge 
+                  className="bg-blue-100 text-blue-800 text-xs cursor-pointer hover:bg-blue-200 transition-colors"
+                  onClick={() => addBet({
+                    gameId: game.gameId,
+                    betType: 'moneyline',
+                    selection: game.awayTeamCode,
+                    odds: moneylineOdds.awayOdds || 0,
+                    description: `${game.awayTeamCode} ML`
+                  })}
+                >
                   {game.awayTeamCode} {formatOdds(moneylineOdds.awayOdds || 0)}
                 </Badge>
-                <Badge className="bg-blue-100 text-blue-800 text-xs">
+                <Badge 
+                  className="bg-blue-100 text-blue-800 text-xs cursor-pointer hover:bg-blue-200 transition-colors"
+                  onClick={() => addBet({
+                    gameId: game.gameId,
+                    betType: 'moneyline',
+                    selection: game.homeTeamCode,
+                    odds: moneylineOdds.homeOdds || 0,
+                    description: `${game.homeTeamCode} ML`
+                  })}
+                >
                   {game.homeTeamCode} {formatOdds(moneylineOdds.homeOdds || 0)}
                 </Badge>
               </div>
@@ -205,10 +223,28 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
             <div className="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-xs text-green-700 font-medium mb-2">Run Line</p>
               <div className="space-y-1">
-                <Badge className="bg-green-100 text-green-800 text-xs">
+                <Badge 
+                  className="bg-green-100 text-green-800 text-xs cursor-pointer hover:bg-green-200 transition-colors"
+                  onClick={() => addBet({
+                    gameId: game.gameId,
+                    betType: 'spread',
+                    selection: `${game.awayTeamCode} ${spreadOdds.awaySpread}`,
+                    odds: spreadOdds.awayOdds || -110,
+                    description: `${game.awayTeamCode} ${spreadOdds.awaySpread}`
+                  })}
+                >
                   {game.awayTeamCode} {spreadOdds.awaySpread}
                 </Badge>
-                <Badge className="bg-green-100 text-green-800 text-xs">
+                <Badge 
+                  className="bg-green-100 text-green-800 text-xs cursor-pointer hover:bg-green-200 transition-colors"
+                  onClick={() => addBet({
+                    gameId: game.gameId,
+                    betType: 'spread',
+                    selection: `${game.homeTeamCode} ${spreadOdds.homeSpread}`,
+                    odds: spreadOdds.homeOdds || -110,
+                    description: `${game.homeTeamCode} ${spreadOdds.homeSpread}`
+                  })}
+                >
                   {game.homeTeamCode} {spreadOdds.homeSpread}
                 </Badge>
               </div>
@@ -219,10 +255,28 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
             <div className="text-center p-3 bg-orange-50 border border-orange-200 rounded-lg">
               <p className="text-xs text-orange-700 font-medium mb-2">Total</p>
               <div className="space-y-1">
-                <Badge className="bg-orange-100 text-orange-800 text-xs">
+                <Badge 
+                  className="bg-orange-100 text-orange-800 text-xs cursor-pointer hover:bg-orange-200 transition-colors"
+                  onClick={() => addBet({
+                    gameId: game.gameId,
+                    betType: 'total',
+                    selection: `Over ${totalOdds.total}`,
+                    odds: totalOdds.overOdds || -110,
+                    description: `Over ${totalOdds.total}`
+                  })}
+                >
                   Over {totalOdds.total}
                 </Badge>
-                <Badge className="bg-orange-100 text-orange-800 text-xs">
+                <Badge 
+                  className="bg-orange-100 text-orange-800 text-xs cursor-pointer hover:bg-orange-200 transition-colors"
+                  onClick={() => addBet({
+                    gameId: game.gameId,
+                    betType: 'total',
+                    selection: `Under ${totalOdds.total}`,
+                    odds: totalOdds.underOdds || -110,
+                    description: `Under ${totalOdds.total}`
+                  })}
+                >
                   Under {totalOdds.total}
                 </Badge>
               </div>
