@@ -145,6 +145,48 @@ export default function DailyDose() {
 
         <Separator />
 
+        {/* Debug Console */}
+        <div className="text-xs text-gray-500 mb-2">Debug Data: {debugData ? 'Available' : 'Not Available'}</div>
+        {debugData && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <span>🐛 Debug Console</span>
+                <Badge variant="outline">Development</Badge>
+              </CardTitle>
+              <CardDescription>
+                Prompt sent to OpenAI and response details for debugging power score calculations
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {debugData.error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-red-800 mb-2">Error:</h4>
+                  <pre className="text-sm text-red-700 whitespace-pre-wrap">{debugData.error}</pre>
+                </div>
+              )}
+              
+              {debugData.prompt && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold">Prompt Sent to OpenAI:</h4>
+                  <div className="bg-slate-50 border rounded-lg p-4 max-h-64 overflow-y-auto">
+                    <pre className="text-sm whitespace-pre-wrap">{debugData.prompt}</pre>
+                  </div>
+                </div>
+              )}
+              
+              {debugData.response && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold">Team Power Scores Data:</h4>
+                  <div className="bg-slate-50 border rounded-lg p-4 max-h-64 overflow-y-auto">
+                    <pre className="text-sm">{JSON.stringify(debugData.response, null, 2)}</pre>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Newsletter Preview */}
         {currentHtml ? (
           <Card>
@@ -193,46 +235,7 @@ export default function DailyDose() {
           </Card>
         )}
 
-        {/* Debug Console */}
-        {debugData && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <span>🐛 Debug Console</span>
-                <Badge variant="outline">Development</Badge>
-              </CardTitle>
-              <CardDescription>
-                Prompt sent to OpenAI and response details for debugging power score calculations
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {debugData.error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-red-800 mb-2">Error:</h4>
-                  <pre className="text-sm text-red-700 whitespace-pre-wrap">{debugData.error}</pre>
-                </div>
-              )}
-              
-              {debugData.prompt && (
-                <div className="space-y-2">
-                  <h4 className="font-semibold">Prompt Sent to OpenAI:</h4>
-                  <div className="bg-slate-50 border rounded-lg p-4 max-h-64 overflow-y-auto">
-                    <pre className="text-sm whitespace-pre-wrap">{debugData.prompt}</pre>
-                  </div>
-                </div>
-              )}
-              
-              {debugData.response && (
-                <div className="space-y-2">
-                  <h4 className="font-semibold">API Response Data:</h4>
-                  <div className="bg-slate-50 border rounded-lg p-4 max-h-64 overflow-y-auto">
-                    <pre className="text-sm">{JSON.stringify(debugData.response, null, 2)}</pre>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+
 
         {/* Features */}
         <div className="grid md:grid-cols-3 gap-6">
