@@ -254,7 +254,9 @@ Return your analysis in JSON format with an array of picks. Each pick should inc
 - Mention relevant situational factors (home/away, streaks, weather, etc.)
 - Be specific and detailed like professional betting analysis
 
-Focus on picks with genuine edge and value. Avoid public favorites unless there's clear contrarian value.`;
+Focus on picks with genuine edge and value. Avoid public favorites unless there's clear contrarian value.
+
+**CRITICAL: Ensure all picks are UNIQUE combinations of gameId + pickType + selection. Do not repeat the same bet multiple times.**`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -272,8 +274,14 @@ Focus on picks with genuine edge and value. Avoid public favorites unless there'
       max_tokens: 4000,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || '{"picks": []}');
-    return Array.isArray(result.picks) ? result.picks : [];
+    const content = response.choices[0].message.content || '{"picks": []}';
+    console.log('OpenAI picks response:', content.substring(0, 500));
+    
+    const result = JSON.parse(content);
+    const picks = Array.isArray(result.picks) ? result.picks : (Array.isArray(result) ? result : []);
+    console.log(`Parsed ${picks.length} picks from OpenAI response`);
+    
+    return picks;
   } catch (error) {
     console.error("Error generating daily picks:", error);
     return [];

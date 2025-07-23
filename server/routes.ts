@@ -1876,8 +1876,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const aiPicks = await generateDailyPicks(gameData);
 
+      // Remove duplicates: same gameId + pickType + selection combination
+      const uniquePicks = aiPicks.filter((pick, index, arr) => {
+        const key = `${pick.gameId}-${pick.pickType}-${pick.selection}`;
+        return arr.findIndex(p => `${p.gameId}-${p.pickType}-${p.selection}` === key) === index;
+      });
+
+      console.log(`Generated ${aiPicks.length} picks, filtered to ${uniquePicks.length} unique picks`);
+
       // Store picks in database
-      const storedPicks = await Promise.all(aiPicks.map(pick => 
+      const storedPicks = await Promise.all(uniquePicks.map(pick => 
         storage.createDailyPick({
           date: todayString,
           gameId: pick.gameId,

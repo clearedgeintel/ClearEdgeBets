@@ -158,6 +158,9 @@ A test user has been created with Elite tier access:
   - Added triggerDailyPicks() method to scheduler service for testing and manual execution
   - Daily picks generation now fully automated alongside existing AI tickets and bet settlement
   - Home page top 3 picks will populate automatically every morning at 8 AM Central Time
+  - FIXED DUPLICATE PICKS ISSUE: Added deduplication logic to prevent same game/bet type/selection combinations
+  - Enhanced OpenAI prompt with explicit instruction to avoid duplicate picks
+  - System now generates 5 unique picks daily with proper filtering and logging
 - July 22, 2025: BET RECONCILIATION SYSTEM VERIFIED WORKING - Confirmed automatic bet settlement system functioning correctly
   - Issue: User reported "bets are not being reconciled" 
   - Investigation: All existing bets already "settled", no pending bets requiring reconciliation

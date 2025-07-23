@@ -293,8 +293,14 @@ class SchedulerService {
         return;
       }
       
-      // Get today's games
-      const games = await storage.getGames(today);
+      // Check if games are available by making API call
+      const gamesResponse = await fetch(`http://localhost:5000/api/games`);
+      let games: any[] = [];
+      
+      if (gamesResponse.ok) {
+        games = await gamesResponse.json();
+      }
+      
       if (!games || games.length === 0) {
         console.log(`⚠️ No games found for ${today}, skipping picks generation`);
         return;
