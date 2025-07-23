@@ -145,6 +145,8 @@ function processGameOdds(game: OddsAPIResponse): ProcessedOdds | null {
           processedOdds.spread = {
             away: awaySpread.point,
             home: homeSpread.point || -awaySpread.point,
+            awayOdds: Math.round(awaySpread.price),
+            homeOdds: Math.round(homeSpread.price),
             line: Math.abs(awaySpread.point)
           };
         }
