@@ -228,6 +228,7 @@ export async function generateDailyPicks(games: DailyPicksInput[]): Promise<Dail
 
 Games Data:
 ${games.map(game => `
+GameID: ${game.gameId}
 Game: ${game.awayTeam} @ ${game.homeTeam}
 ${game.awayPitcher && game.homePitcher ? `Pitching: ${game.awayPitcher} ${game.awayPitcherStats || ''} vs ${game.homePitcher} ${game.homePitcherStats || ''}` : 'Pitching matchup TBD'}
 ${game.moneylineOdds ? `Moneyline: ${game.awayTeam} ${game.moneylineOdds.away > 0 ? '+' : ''}${game.moneylineOdds.away}, ${game.homeTeam} ${game.moneylineOdds.home > 0 ? '+' : ''}${game.moneylineOdds.home}` : ''}
@@ -238,8 +239,16 @@ Venue: ${game.venue || 'TBD'}
 Time: ${game.gameTime || 'TBD'}
 `).join('\n')}
 
-Return your analysis in JSON format with an array of picks. Each pick should include:
-- gameId: The game identifier
+**CRITICAL INSTRUCTIONS FOR GAMEID FORMAT:**
+You MUST use the EXACT GameID format shown in the data above. DO NOT create your own gameId format.
+
+Example GameID formats from the data:
+- CORRECT: "2025-07-23_CIN @ WSH" 
+- WRONG: "Cincinnati Reds @ Washington Nationals"
+- WRONG: "Game: Cincinnati Reds @ Washington Nationals"
+
+Return your analysis in JSON format with an array of picks. Each pick MUST include:
+- gameId: Copy the EXACT GameID string from the games data above (format: "2025-07-23_XXX @ YYY")
 - pickType: "moneyline", "total", "spread", or "prop"
 - selection: Detailed description of the bet
 - odds: The betting odds (American format)
@@ -278,7 +287,9 @@ Focus on picks with genuine edge and value. Avoid public favorites unless there'
     console.log('OpenAI picks response:', content.substring(0, 500));
     
     const result = JSON.parse(content);
-    const picks = Array.isArray(result.picks) ? result.picks : (Array.isArray(result) ? result : []);
+    const picks = Array.isArray(result.picks) ? result.picks : 
+                  Array.isArray(result.dailyPicks) ? result.dailyPicks : 
+                  Array.isArray(result) ? result : [];
     console.log(`Parsed ${picks.length} picks from OpenAI response`);
     
     return picks;

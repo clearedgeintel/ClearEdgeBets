@@ -1876,13 +1876,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const aiPicks = await generateDailyPicks(gameData);
 
+      // Fix gameId format matching - map AI's team name format to database format
+      const correctedPicks = aiPicks.map(pick => {
+        // Find matching game by comparing team names in gameId
+        const matchingGame = realGames.find(game => {
+          const pickTeams = pick.gameId.toLowerCase().replace(/game:\s*/, '');
+          const awayTeam = game.awayTeam.toLowerCase();
+          const homeTeam = game.homeTeam.toLowerCase();
+          
+          // Check if pick contains both team names
+          return pickTeams.includes(awayTeam.split(' ')[0]) && pickTeams.includes(homeTeam.split(' ')[0]);
+        });
+        
+        return {
+          ...pick,
+          gameId: matchingGame ? matchingGame.gameId : pick.gameId
+        };
+      });
+
       // Remove duplicates: same gameId + pickType + selection combination
-      const uniquePicks = aiPicks.filter((pick, index, arr) => {
+      const uniquePicks = correctedPicks.filter((pick, index, arr) => {
         const key = `${pick.gameId}-${pick.pickType}-${pick.selection}`;
         return arr.findIndex(p => `${p.gameId}-${p.pickType}-${p.selection}` === key) === index;
       });
 
-      console.log(`Generated ${aiPicks.length} picks, filtered to ${uniquePicks.length} unique picks`);
+      console.log(`Generated ${aiPicks.length} picks, corrected gameId formats, filtered to ${uniquePicks.length} unique picks`);
 
       // Store picks in database
       const storedPicks = await Promise.all(uniquePicks.map(pick => 
