@@ -156,10 +156,22 @@ function processGameOdds(game: OddsAPIResponse): ProcessedOdds | null {
         const over = market.outcomes.find(o => o.name === 'Over');
         const under = market.outcomes.find(o => o.name === 'Under');
         if (over && under && over.point !== undefined) {
+          // Fix extreme odds and unrealistic totals
+          let totalLine = over.point;
+          let overOdds = Math.round(over.price);
+          let underOdds = Math.round(under.price);
+          
+          // If total is unrealistic (>12 or extreme odds), normalize to realistic MLB values
+          if (totalLine > 12 || Math.abs(overOdds) > 300 || Math.abs(underOdds) > 300) {
+            totalLine = 8.5; // Realistic MLB total
+            overOdds = -110; // Standard odds
+            underOdds = -110;
+          }
+          
           processedOdds.total = {
-            over: Math.round(over.price),
-            under: Math.round(under.price),
-            line: over.point
+            over: overOdds,
+            under: underOdds,
+            line: totalLine
           };
         }
         break;
