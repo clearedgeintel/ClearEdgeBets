@@ -23,6 +23,7 @@ import { enhancedMLBPicks } from "./services/enhanced-mlb-picks";
 import apiManagementRoutes from "./routes/api-management";
 import { baseballReferenceService } from "./services/baseball-reference-simple";
 import { teamPowerScoringService } from "./services/team-power-scoring";
+import { schedulerService } from "./services/scheduler";
 // Note: Auth will be handled by existing system
 import Stripe from "stripe";
 import bcrypt from "bcrypt";
@@ -1295,6 +1296,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching admin bets:", error);
       res.status(500).json({ error: "Failed to fetch bets" });
+    }
+  });
+
+  // Admin endpoint to manually trigger daily picks generation
+  app.post("/api/admin/generate-daily-picks", async (req, res) => {
+    try {
+      console.log('Admin manually triggering daily picks generation...');
+      await schedulerService.triggerDailyPicks();
+      
+      // Get today's picks to return to admin
+      const today = new Date().toISOString().split('T')[0];
+      const todaysPicks = await storage.getDailyPicks(today);
+      
+      res.json({ 
+        success: true, 
+        message: `Daily picks generation triggered successfully`,
+        picksCount: todaysPicks.length,
+        date: today,
+        picks: todaysPicks.slice(0, 3) // Return top 3 picks
+      });
+    } catch (error) {
+      console.error("Error triggering daily picks generation:", error);
+      res.status(500).json({ error: "Failed to trigger daily picks generation" });
     }
   });
 

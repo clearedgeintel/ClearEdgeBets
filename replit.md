@@ -150,6 +150,14 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 23, 2025: AUTOMATED DAILY PICKS GENERATION SYSTEM IMPLEMENTED - Comprehensive scheduler ensures picks are generated every day
+  - Added automated daily picks generation task scheduled for 8:00 AM Central Time (13:00 UTC)
+  - System checks for existing picks to avoid duplicates, only generates if none exist for the date
+  - Created admin endpoint `/api/admin/generate-daily-picks` for manual triggering when needed
+  - Scheduler includes intelligent fallback: skips generation when no MLB games are scheduled
+  - Added triggerDailyPicks() method to scheduler service for testing and manual execution
+  - Daily picks generation now fully automated alongside existing AI tickets and bet settlement
+  - Home page top 3 picks will populate automatically every morning at 8 AM Central Time
 - July 22, 2025: BET RECONCILIATION SYSTEM VERIFIED WORKING - Confirmed automatic bet settlement system functioning correctly
   - Issue: User reported "bets are not being reconciled" 
   - Investigation: All existing bets already "settled", no pending bets requiring reconciliation

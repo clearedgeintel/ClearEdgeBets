@@ -19,6 +19,10 @@ class SchedulerService {
   }
 
   private initializeTasks() {
+    // Daily picks generation at 8 AM Central Time (before AI tickets)
+    // Ensures fresh picks are available when users check the site
+    this.addTask('daily-picks-generation', '0 0 13 * * *', this.generateDailyPicks.bind(this));
+    
     // Daily AI ticket submission at 9 AM Central Time
     // Cron expression: 0 9 * * * (second, minute, hour, day, month, day-of-week)
     // Central Time = UTC-6 (standard) or UTC-5 (daylight)
@@ -31,7 +35,8 @@ class SchedulerService {
     // Automatic bet settlement every 15 minutes
     this.addTask('auto-bet-settlement', '0 */15 * * * *', this.runAutomaticBetSettlement.bind(this));
     
-    console.log('✓ Scheduler service initialized with automated AI ticket generation and bet settlement');
+    console.log('✓ Scheduler service initialized with automated daily picks, AI tickets, and bet settlement');
+    console.log('  - Daily picks: 8:00 AM Central Time');
     console.log('  - Daily tickets: 9:00 AM Central Time');
     console.log('  - Weekly summaries: Mondays at 9:00 AM Central Time');
     console.log('  - Automatic bet settlement: Every 15 minutes');
@@ -276,6 +281,44 @@ class SchedulerService {
     }
   }
 
+  // Generate daily picks automatically 
+  private async generateDailyPicks() {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Check if picks already exist for today
+      const existingPicks = await storage.getDailyPicks(today);
+      if (existingPicks && existingPicks.length > 0) {
+        console.log(`✓ Daily picks already exist for ${today} (${existingPicks.length} picks)`);
+        return;
+      }
+      
+      // Get today's games
+      const games = await storage.getGames(today);
+      if (!games || games.length === 0) {
+        console.log(`⚠️ No games found for ${today}, skipping picks generation`);
+        return;
+      }
+      
+      // Generate picks using the existing endpoint logic
+      const response = await fetch(`http://localhost:5000/api/daily-picks/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: today })
+      });
+      
+      if (response.ok) {
+        const picks = await response.json();
+        console.log(`✅ Generated ${picks.length} daily picks for ${today}`);
+      } else {
+        console.error(`❌ Failed to generate daily picks: ${response.status} ${response.statusText}`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Failed to generate daily picks:', error);
+    }
+  }
+
   // Manual trigger for testing
   public async triggerDailyTicket() {
     console.log('Manually triggering daily AI ticket generation...');
@@ -285,6 +328,11 @@ class SchedulerService {
   public async triggerWeeklyTicket() {
     console.log('Manually triggering weekly summary ticket generation...');
     await this.generateWeeklySummaryTicket();
+  }
+
+  public async triggerDailyPicks() {
+    console.log('Manually triggering daily picks generation...');
+    await this.generateDailyPicks();
   }
 }
 
