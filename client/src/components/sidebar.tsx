@@ -130,13 +130,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           current: location === "/weather-summary",
           description: "Fun weather map for today's MLB games"
         },
-        { 
-          name: "Unified Picks", 
-          href: "/unified-picks", 
-          icon: Target,
-          current: location === "/unified-picks",
-          description: "Expert picks and AI analysis combined"
-        },
+
         { 
           name: "Team Power Scores", 
           href: "/team-power-scores", 

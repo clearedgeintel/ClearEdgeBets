@@ -46,7 +46,7 @@ import VirtualPerformance from "@/pages/virtual-performance";
 import APIManagement from "@/pages/APIManagement";
 import WeatherSummary from "@/pages/WeatherSummary";
 import MLBPicks from "@/pages/MLBPicks";
-import UnifiedPicks from "@/pages/UnifiedPicks";
+
 import TeamPowerScores from "@/pages/TeamPowerScores";
 import DailyDose from "@/pages/DailyDose";
 import EnhancedOdds from "@/pages/EnhancedOdds";
@@ -75,7 +75,7 @@ function Router() {
         <Route path="/admin/api-management" component={APIManagement} />
         <Route path="/weather-summary" component={WeatherSummary} />
         <Route path="/mlb-picks" component={MLBPicks} />
-        <Route path="/unified-picks" component={UnifiedPicks} />
+
         <Route path="/cfl" component={CFLHub} />
         <Route path="/cfl/games" component={CFLGames} />
         <Route path="/cfl/picks" component={CFLPicks} />

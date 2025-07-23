@@ -150,6 +150,12 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 23, 2025: DELETED UNIFIED PICKS PAGE - Removed unified picks page component and all navigation references per user request
+  - Removed UnifiedPicks.tsx component file completely
+  - Deleted unified-picks route from App.tsx routing configuration
+  - Removed unified picks navigation link from sidebar component
+  - Cleaned up all imports and references to unified picks functionality
+  - Platform now operates without unified picks page - users can access daily picks and other features separately
 - July 23, 2025: AUTOMATED DAILY PICKS GENERATION SYSTEM IMPLEMENTED - Comprehensive scheduler ensures picks are generated every day
   - Added automated daily picks generation task scheduled for 8:00 AM Central Time (13:00 UTC)
   - System checks for existing picks to avoid duplicates, only generates if none exist for the date
