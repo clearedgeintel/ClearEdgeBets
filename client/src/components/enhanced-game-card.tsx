@@ -192,7 +192,9 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
                     gameId: game.gameId,
                     betType: 'moneyline',
                     selection: game.awayTeamCode,
-                    odds: moneylineOdds.awayOdds || 0
+                    odds: moneylineOdds.awayOdds || 0,
+                    stake: 10,
+                    potentialWin: 0
                   })}
                 >
                   {game.awayTeamCode} {formatOdds(moneylineOdds.awayOdds || 0)}
@@ -203,7 +205,9 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
                     gameId: game.gameId,
                     betType: 'moneyline',
                     selection: game.homeTeamCode,
-                    odds: moneylineOdds.homeOdds || 0
+                    odds: moneylineOdds.homeOdds || 0,
+                    stake: 10,
+                    potentialWin: 0
                   })}
                 >
                   {game.homeTeamCode} {formatOdds(moneylineOdds.homeOdds || 0)}
@@ -222,7 +226,9 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
                     gameId: game.gameId,
                     betType: 'spread',
                     selection: `${game.awayTeamCode} ${spreadOdds.awaySpread}`,
-                    odds: spreadOdds.awayOdds || -110
+                    odds: spreadOdds.awayOdds || -110,
+                    stake: 10,
+                    potentialWin: 0
                   })}
                 >
                   {game.awayTeamCode} {spreadOdds.awaySpread}
@@ -233,7 +239,9 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
                     gameId: game.gameId,
                     betType: 'spread',
                     selection: `${game.homeTeamCode} ${spreadOdds.homeSpread}`,
-                    odds: spreadOdds.homeOdds || -110
+                    odds: spreadOdds.homeOdds || -110,
+                    stake: 10,
+                    potentialWin: 0
                   })}
                 >
                   {game.homeTeamCode} {spreadOdds.homeSpread}
@@ -252,7 +260,9 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
                     gameId: game.gameId,
                     betType: 'total',
                     selection: `Over ${totalOdds.total}`,
-                    odds: totalOdds.overOdds || -110
+                    odds: totalOdds.overOdds || -110,
+                    stake: 10,
+                    potentialWin: 0
                   })}
                 >
                   Over {totalOdds.total}
@@ -263,7 +273,9 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
                     gameId: game.gameId,
                     betType: 'total',
                     selection: `Under ${totalOdds.total}`,
-                    odds: totalOdds.underOdds || -110
+                    odds: totalOdds.underOdds || -110,
+                    stake: 10,
+                    potentialWin: 0
                   })}
                 >
                   Under {totalOdds.total}
