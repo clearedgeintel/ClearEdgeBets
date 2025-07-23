@@ -148,8 +148,8 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
               <LiveScore 
                 awayTeam={game.awayTeam}
                 homeTeam={game.homeTeam}
-                awayScore={game.awayScore}
-                homeScore={game.homeScore}
+                awayScore={game.awayScore || 0}
+                homeScore={game.homeScore || 0}
                 inning="Final"
                 status="final"
               />
