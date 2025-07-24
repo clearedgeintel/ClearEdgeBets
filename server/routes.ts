@@ -1860,6 +1860,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           reasoning: 'The pitching matchup favors Detroit slightly, but the moneyline odds already reflect this advantage. Public betting is heavily on Toronto, creating reverse line movement. No sufficient edge found in any market to warrant a recommendation.',
           hasPickRecommended: false,
           evaluatedAt: '2025-07-24T13:00:00.000Z'
+        },
+        {
+          id: 3,
+          date: '2025-07-24',
+          gameId: '2025-07-24_ATH @ HOU',
+          awayTeam: 'Oakland Athletics',
+          homeTeam: 'Houston Astros',
+          evaluationStatus: 'no_value',
+          reasoning: 'The pitching matchup features Luis Severino (3-11, 5.10 ERA) against Jason Alexander (1-0, 8.40 ERA). While both pitchers have concerning statistics, the market has efficiently priced this matchup. Houston\'s offensive power provides a clear advantage, but the moneyline odds already reflect this edge. No sufficient betting value found.',
+          hasPickRecommended: false,
+          evaluatedAt: '2025-07-24T13:00:00.000Z'
         }
       ];
       

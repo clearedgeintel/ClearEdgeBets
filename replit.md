@@ -150,6 +150,14 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 24, 2025: ENHANCED GAME EVALUATION MESSAGING SYSTEM - Resolved confusion about games without AI picks
+  - Fixed critical TypeScript errors preventing AI picks display in enhanced-game-card.tsx
+  - Created comprehensive game evaluation tracking system with gameEvaluations schema and API endpoint
+  - Enhanced messaging distinguishes between "not evaluated" vs "evaluated but no pick warranted"
+  - Games without picks now show clear reasoning like "No Betting Value Found" with detailed explanations
+  - Added game evaluations API endpoint (/api/game-evaluations) providing authentic evaluation status
+  - Updated enhanced game cards to display proper evaluation messaging for better user experience
+  - System now clearly communicates when games were analyzed but didn't meet betting value thresholds
 - July 24, 2025: FIXED MISSING DAILY PICKS GENERATION - Resolved issue where today's AI picks weren't generated for home page top 3 display
   - Issue: Automated daily picks generation at 8:00 AM Central Time didn't trigger for 2025-07-24
   - Solution: Manually triggered daily picks generation via admin endpoint /api/admin/generate-daily-picks  
