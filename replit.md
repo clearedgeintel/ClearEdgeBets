@@ -150,6 +150,13 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 24, 2025: FIXED MISSING DAILY PICKS GENERATION - Resolved issue where today's AI picks weren't generated for home page top 3 display
+  - Issue: Automated daily picks generation at 8:00 AM Central Time didn't trigger for 2025-07-24
+  - Solution: Manually triggered daily picks generation via admin endpoint /api/admin/generate-daily-picks  
+  - Generated 3 authentic AI picks: Toronto Blue Jays ML (75%), Los Angeles Angels ML (72%), Over 8.5 SD@STL (70%)
+  - Each pick includes detailed reasoning with authentic pitcher analysis and team performance insights
+  - Home page "Today's Top AI Picks" section now displaying correctly with fresh daily picks
+  - Confirmed OpenAI API integration working properly with authentic game data analysis
 - July 23, 2025: DELETED UNIFIED PICKS PAGE - Removed unified picks page component and all navigation references per user request
   - Removed UnifiedPicks.tsx component file completely
   - Deleted unified-picks route from App.tsx routing configuration
