@@ -164,6 +164,18 @@ export const dailyPicks = pgTable("daily_picks", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const gameEvaluations = pgTable("game_evaluations", {
+  id: serial("id").primaryKey(),
+  date: text("date").notNull(),
+  gameId: text("game_id").notNull(),
+  awayTeam: text("away_team").notNull(),
+  homeTeam: text("home_team").notNull(),
+  evaluationStatus: text("evaluation_status").notNull(), // "evaluated", "no_value", "insufficient_data"
+  reasoning: text("reasoning"), // Why no pick was made
+  hasPickRecommended: boolean("has_pick_recommended").notNull().default(false),
+  evaluatedAt: timestamp("evaluated_at").defaultNow(),
+});
+
 export const consensusData = pgTable("consensus_data", {
   id: serial("id").primaryKey(),
   gameId: text("game_id").notNull(),
@@ -700,3 +712,6 @@ export const insertBaseballReferencePitchingStatsSchema = createInsertSchema(bas
 });
 export type InsertBaseballReferencePitchingStats = z.infer<typeof insertBaseballReferencePitchingStatsSchema>;
 export type BaseballReferencePitchingStats = typeof baseballReferencePitchingStats.$inferSelect;
+
+export type InsertGameEvaluation = typeof gameEvaluations.$inferInsert;
+export type GameEvaluation = typeof gameEvaluations.$inferSelect;

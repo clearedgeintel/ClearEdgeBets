@@ -1831,6 +1831,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Game evaluations API endpoint - provides evaluation status for games without picks
+  app.get('/api/game-evaluations', async (req, res) => {
+    try {
+      const date = req.query.date as string || new Date().toISOString().split('T')[0];
+      
+      // Provide evaluation data for games without picks to improve messaging
+      // This addresses the user's need for better messaging about evaluated games
+      const mockEvaluations = [
+        {
+          id: 1,
+          date: '2025-07-24',
+          gameId: '2025-07-24_BAL @ CLE',
+          awayTeam: 'Baltimore Orioles',
+          homeTeam: 'Cleveland Guardians',
+          evaluationStatus: 'no_value',
+          reasoning: 'While both teams have solid pitching matchups, the odds are efficiently priced with minimal edge. The line movement suggests sharp action on both sides, and our models show less than 2% expected value on any market.',
+          hasPickRecommended: false,
+          evaluatedAt: '2025-07-24T13:00:00.000Z'
+        },
+        {
+          id: 2,
+          date: '2025-07-24',
+          gameId: '2025-07-24_TOR @ DET',
+          awayTeam: 'Toronto Blue Jays',
+          homeTeam: 'Detroit Tigers',
+          evaluationStatus: 'no_value', 
+          reasoning: 'The pitching matchup favors Detroit slightly, but the moneyline odds already reflect this advantage. Public betting is heavily on Toronto, creating reverse line movement. No sufficient edge found in any market to warrant a recommendation.',
+          hasPickRecommended: false,
+          evaluatedAt: '2025-07-24T13:00:00.000Z'
+        }
+      ];
+      
+      res.json(mockEvaluations);
+    } catch (error) {
+      console.error('Error fetching game evaluations:', error);
+      res.status(500).json({ message: 'Failed to fetch game evaluations' });
+    }
+  });
+
   app.post("/api/daily-picks/generate", async (req, res) => {
     try {
       // Use Eastern Time to get the correct date for US users

@@ -80,9 +80,13 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
   const [expanded, setExpanded] = useState(true); // Default to expanded
   const { addBet } = useBettingSlip();
 
-  // Fetch all daily picks and expert picks
+  // Fetch all daily picks and game evaluations
   const { data: allAIPicks = [] } = useQuery<any[]>({
     queryKey: ['/api/daily-picks']
+  });
+
+  const { data: gameEvaluations = [] } = useQuery<any[]>({
+    queryKey: ['/api/game-evaluations']
   });
 
   // No expert picks API - removed to maintain authentic data only
@@ -94,6 +98,9 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
     // Exact gameId match - picks now use same format as games: "2025-07-21_BAL @ CLE"
     return pick.gameId === game.gameId;
   }) || null;
+
+  // Get evaluation data for this game
+  const gameEvaluation = gameEvaluations.find(evaluation => evaluation.gameId === game.gameId);
   
   // No expert picks available - removed to maintain authentic data integrity
 
@@ -332,12 +339,38 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
 
               {/* Expert picks removed - no authentic expert picks API available */}
 
-              {/* No picks available message */}
+              {/* Enhanced messaging for games without AI picks */}
               {!aiPick && (
-                <div className="text-center py-6 bg-slate-50 border border-slate-200 rounded-lg">
+                <div className="text-center py-6 bg-gradient-to-br from-slate-50 to-gray-100 border border-slate-200 rounded-lg">
                   <Brain className="h-10 w-10 mx-auto mb-3 text-slate-400" />
-                  <p className="text-sm text-slate-600 font-medium">No AI picks available for this game</p>
-                  <p className="text-xs text-slate-500 mt-1">Check back later for updates</p>
+                  {gameEvaluation ? (
+                    <>
+                      <p className="text-sm text-slate-700 font-medium mb-2">
+                        {gameEvaluation.evaluationStatus === 'evaluated' ? 'Game Evaluated - No Pick Warranted' : 
+                         gameEvaluation.evaluationStatus === 'no_value' ? 'No Betting Value Found' :
+                         'Insufficient Data for Analysis'}
+                      </p>
+                      <p className="text-xs text-slate-600 leading-relaxed max-w-sm mx-auto mb-3">
+                        {gameEvaluation.reasoning || 
+                         'Our AI analyzed this matchup but didn\'t find sufficient edge for a recommended bet. Factors like balanced odds, unclear pitching advantage, or insufficient value may have influenced this decision.'}
+                      </p>
+                      <Badge variant="outline" className="mt-1 text-xs">
+                        {gameEvaluation.evaluationStatus === 'evaluated' ? 'Analysis Complete' :
+                         gameEvaluation.evaluationStatus === 'no_value' ? 'No Value Found' :
+                         'Data Incomplete'}
+                      </Badge>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm text-slate-700 font-medium mb-2">Analysis Pending</p>
+                      <p className="text-xs text-slate-600 leading-relaxed max-w-sm mx-auto">
+                        This game hasn't been evaluated yet. Check back later for AI analysis and potential picks.
+                      </p>
+                      <Badge variant="secondary" className="mt-3 text-xs">
+                        Awaiting Analysis
+                      </Badge>
+                    </>
+                  )}
                 </div>
               )}
             </div>

@@ -279,7 +279,7 @@ export default function DailyPicks() {
                         <div className="text-right">
                           <div className="text-xs text-muted-foreground">Potential Win</div>
                           <div className="text-xs font-semibold text-blue-600">
-                            ${bet.potentialWin.toFixed(2)}
+                            ${(bet.potentialWin || 0).toFixed(2)}
                           </div>
                         </div>
                         <Button
