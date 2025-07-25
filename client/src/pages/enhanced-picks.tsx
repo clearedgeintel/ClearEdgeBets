@@ -180,8 +180,8 @@ export default function EnhancedPicks() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>{enhancedPicks?.awayTeam} @ {enhancedPicks?.homeTeam}</span>
-                    <Badge className={getConfidenceBadgeColor(enhancedPicks?.enhancedPicks.overallConfidence || 0)}>
-                      {enhancedPicks?.enhancedPicks.overallConfidence}% Confidence
+                    <Badge className={getConfidenceBadgeColor(enhancedPicks?.enhancedPicks?.overallConfidence || 0)}>
+                      {enhancedPicks?.enhancedPicks?.overallConfidence}% Confidence
                     </Badge>
                   </CardTitle>
                   <CardDescription>
@@ -198,7 +198,7 @@ export default function EnhancedPicks() {
                 </TabsList>
 
                 <TabsContent value="picks" className="space-y-4">
-                  {enhancedPicks?.enhancedPicks.topPicks.map((pick: BettingRecommendation, index: number) => (
+                  {enhancedPicks?.enhancedPicks?.topPicks?.map((pick: any, index: number) => (
                     <Card key={index}>
                       <CardHeader>
                         <div className="flex items-center justify-between">
@@ -206,11 +206,11 @@ export default function EnhancedPicks() {
                             <span className="bg-blue-100 text-blue-800 text-sm font-medium px-2 py-1 rounded">
                               #{index + 1}
                             </span>
-                            {pick.selection}
+                            {pick.bet}
                           </CardTitle>
                           <div className="flex items-center gap-2">
                             <Badge variant="outline" className="font-mono">
-                              {formatOdds(pick.odds)}
+                              {pick.odds}
                             </Badge>
                             <Badge className={getConfidenceBadgeColor(pick.confidence)}>
                               {pick.confidence}%
@@ -222,13 +222,17 @@ export default function EnhancedPicks() {
                             <TrendingUp className="h-4 w-4" />
                             {pick.expectedValue} EV
                           </span>
-                          <span className="flex items-center gap-1">
-                            <DollarSign className="h-4 w-4" />
-                            {pick.stakeRecommendation}% stake
-                          </span>
-                          <span className="capitalize bg-gray-100 px-2 py-1 rounded">
-                            {pick.betType}
-                          </span>
+                          {pick.stakeRecommendation && (
+                            <span className="flex items-center gap-1">
+                              <DollarSign className="h-4 w-4" />
+                              {pick.stakeRecommendation}% stake
+                            </span>
+                          )}
+                          {pick.betType && (
+                            <span className="capitalize bg-gray-100 px-2 py-1 rounded">
+                              {pick.betType}
+                            </span>
+                          )}
                         </div>
                       </CardHeader>
                       <CardContent>
@@ -280,7 +284,7 @@ export default function EnhancedPicks() {
                       <div>
                         <h4 className="font-medium mb-2">Odds Markets Analyzed</h4>
                         <div className="flex flex-wrap gap-2">
-                          {enhancedPicks?.enhancedPicks.analysisMetadata.oddsAnalyzed.map((market: string, index: number) => (
+                          {enhancedPicks?.enhancedPicks?.analysisMetadata?.oddsAnalyzed?.map((market: string, index: number) => (
                             <Badge key={index} variant="outline" className="capitalize">
                               {market}
                             </Badge>
@@ -293,7 +297,7 @@ export default function EnhancedPicks() {
                       <div>
                         <h4 className="font-medium mb-2">Key Factors</h4>
                         <div className="flex flex-wrap gap-2">
-                          {enhancedPicks?.enhancedPicks.analysisMetadata.keyFactors.map((factor: string, index: number) => (
+                          {enhancedPicks?.enhancedPicks?.analysisMetadata?.keyFactors?.map((factor: string, index: number) => (
                             <Badge key={index} variant="secondary">
                               {factor}
                             </Badge>
@@ -305,8 +309,8 @@ export default function EnhancedPicks() {
 
                       <div>
                         <h4 className="font-medium mb-2">Risk Assessment</h4>
-                        <Badge className={getRiskColor(enhancedPicks?.enhancedPicks.analysisMetadata.riskAssessment || '')}>
-                          {enhancedPicks?.enhancedPicks.analysisMetadata.riskAssessment.toUpperCase()} RISK
+                        <Badge className={getRiskColor(enhancedPicks?.enhancedPicks?.analysisMetadata?.riskAssessment || '')}>
+                          {enhancedPicks?.enhancedPicks?.analysisMetadata?.riskAssessment?.toUpperCase()} RISK
                         </Badge>
                       </div>
                     </CardContent>
