@@ -131,10 +131,7 @@ export default function EnhancedPicks() {
                         {game.awayTeam} @ {game.homeTeam}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {game.venue} • {new Date(game.gameTime).toLocaleTimeString([], { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
+                        {game.venue} • {game.gameTime}
                       </div>
                     </div>
                   </Button>
@@ -185,7 +182,7 @@ export default function EnhancedPicks() {
                     </Badge>
                   </CardTitle>
                   <CardDescription>
-                    {enhancedPicks?.venue} • {new Date(enhancedPicks?.gameTime || '').toLocaleString()}
+                    {enhancedPicks?.venue} • {enhancedPicks?.gameTime}
                   </CardDescription>
                 </CardHeader>
               </Card>
