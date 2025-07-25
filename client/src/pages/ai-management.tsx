@@ -40,17 +40,24 @@ export default function AIManagement() {
   const queryClient = useQueryClient();
 
   // Fetch games with AI responses for the selected date
-  const { data: games = [], isLoading } = useQuery<AIResponse[]>({
+  const { data: games = [], isLoading } = useQuery({
     queryKey: ['/api/games', selectedDate],
-    queryFn: () => apiRequest(`/api/games?date=${selectedDate}`)
+    queryFn: async () => {
+      const response = await fetch(`/api/games?date=${selectedDate}`);
+      if (!response.ok) throw new Error('Failed to fetch games');
+      return response.json() as Promise<AIResponse[]>;
+    }
   });
 
   // Mutation to regenerate AI analysis for a specific game
   const regenerateAIMutation = useMutation({
     mutationFn: async (gameId: string) => {
-      return apiRequest(`/api/games/${gameId}/regenerate-ai`, {
-        method: 'POST'
+      const response = await fetch(`/api/games/${encodeURIComponent(gameId)}/regenerate-ai`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
       });
+      if (!response.ok) throw new Error('Failed to regenerate AI analysis');
+      return response.json();
     },
     onSuccess: (data, gameId) => {
       toast({
@@ -72,10 +79,13 @@ export default function AIManagement() {
   // Mutation to regenerate all AI analyses for the date
   const regenerateAllAIMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/games/regenerate-all-ai`, {
+      const response = await fetch('/api/games/regenerate-all-ai', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: selectedDate })
       });
+      if (!response.ok) throw new Error('Failed to regenerate all AI analyses');
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -128,8 +138,8 @@ export default function AIManagement() {
     );
   };
 
-  const gamesWithAI = games.filter(game => game.aiSummary);
-  const gamesWithoutAI = games.filter(game => !game.aiSummary);
+  const gamesWithAI = Array.isArray(games) ? games.filter((game: AIResponse) => game.aiSummary) : [];
+  const gamesWithoutAI = Array.isArray(games) ? games.filter((game: AIResponse) => !game.aiSummary) : [];
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -183,7 +193,7 @@ export default function AIManagement() {
               <TrendingUp className="h-5 w-5 text-blue-500" />
               <div>
                 <p className="text-sm text-gray-600">Total Games</p>
-                <p className="text-2xl font-bold">{games.length}</p>
+                <p className="text-2xl font-bold">{Array.isArray(games) ? games.length : 0}</p>
               </div>
             </div>
           </CardContent>
@@ -218,7 +228,7 @@ export default function AIManagement() {
                 <p className="text-sm text-gray-600">Avg Confidence</p>
                 <p className="text-2xl font-bold">
                   {gamesWithAI.length > 0 
-                    ? Math.round(gamesWithAI.reduce((sum, game) => sum + (game.aiSummary?.confidence || 0), 0) / gamesWithAI.length)
+                    ? Math.round(gamesWithAI.reduce((sum: number, game: AIResponse) => sum + (game.aiSummary?.confidence || 0), 0) / gamesWithAI.length)
                     : 0}%
                 </p>
               </div>
@@ -234,7 +244,7 @@ export default function AIManagement() {
         </div>
       ) : (
         <div className="space-y-4">
-          {games.map((game) => (
+          {Array.isArray(games) && games.map((game: AIResponse) => (
             <Card key={game.gameId} className="overflow-hidden">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -314,7 +324,7 @@ export default function AIManagement() {
         </div>
       )}
 
-      {games.length === 0 && !isLoading && (
+      {(!Array.isArray(games) || games.length === 0) && !isLoading && (
         <div className="text-center py-12">
           <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-300" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Games Found</h3>
