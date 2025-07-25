@@ -150,6 +150,13 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
+- July 25, 2025: ENHANCED PICKS UNIQUE GAME ANALYSIS COMPLETED - Fixed hardcoded static data issue generating same recommendations for all games
+  - Resolved critical bug where Enhanced Picks API returned identical "Milwaukee Brewers" analysis for every game
+  - Updated odds parsing logic to work with actual API data structure (array format instead of nested objects)
+  - Enhanced picks now correctly analyze each game's specific moneyline odds to identify favorites
+  - System generates authentic game-specific recommendations: NYY Moneyline (-223), BOS Moneyline (-185), PIT Pirates, BAL Orioles
+  - Fixed variable naming conflicts and proper odds references for totals and spreads betting markets
+  - Enhanced Picks page now provides unique betting intelligence for each MLB game with real team names and authentic odds
 - July 25, 2025: COMPREHENSIVE AI MANAGEMENT SYSTEM - Created admin interface for viewing and regenerating AI analysis
   - Built comprehensive AI Management screen (/admin/ai-management) showing all AI responses for games with regeneration capabilities
   - Added backend API endpoints for regenerating individual game AI analysis (/api/games/:gameId/regenerate-ai)
