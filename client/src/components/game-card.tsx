@@ -475,8 +475,8 @@ export default function GameCard({ game }: GameCardProps) {
                   )}
                 </div>
               ) : game.aiSummary ? (
-                <div className="bg-muted rounded-lg p-4">
-                  <p className="text-foreground text-sm leading-relaxed mb-3">
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <p className="text-gray-900 text-sm leading-relaxed mb-3">
                     {game.aiSummary.summary}
                   </p>
                   <div className="pt-3 border-t border-border">

@@ -301,7 +301,7 @@ export default function AIManagement() {
                           <Textarea
                             value={game.aiSummary.summary}
                             readOnly
-                            className="min-h-[120px] bg-gray-50"
+                            className="min-h-[120px] bg-white text-gray-900 border border-gray-200"
                           />
                         </div>
                         <div className="flex items-center justify-between text-sm text-gray-500">
