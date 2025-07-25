@@ -51,6 +51,7 @@ import MLBPicks from "@/pages/MLBPicks";
 import TeamPowerScores from "@/pages/TeamPowerScores";
 import DailyDose from "@/pages/DailyDose";
 import EnhancedOdds from "@/pages/EnhancedOdds";
+import EnhancedPicks from "@/pages/enhanced-picks";
 
 function Router() {
   return (
@@ -99,6 +100,7 @@ function Router() {
         <Route path="/player-prop-builder" component={PlayerPropBuilder} />
         <Route path="/daily-dose" component={DailyDose} />
         <Route path="/enhanced-odds" component={EnhancedOdds} />
+        <Route path="/enhanced-picks" component={EnhancedPicks} />
         <Route path="/help" component={Help} />
         <Route path="/auth" component={AuthPage} />
         <Route component={NotFound} />

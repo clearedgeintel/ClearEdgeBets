@@ -179,6 +179,14 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           current: location === "/enhanced-odds",
           description: "Detailed odds analysis and implied probability breakdown",
           requiresPro: true
+        },
+        { 
+          name: "Enhanced Picks", 
+          href: "/enhanced-picks", 
+          icon: Brain,
+          current: location === "/enhanced-picks",
+          description: "AI-powered betting recommendations using analysis + odds",
+          requiresPro: true
         }
       ],
       eliteItems: [

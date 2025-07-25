@@ -30,6 +30,26 @@ export interface AiAnalysisResult {
   }>;
 }
 
+export interface BettingRecommendation {
+  betType: 'moneyline' | 'spread' | 'total';
+  selection: string;
+  odds: number;
+  confidence: number;
+  reasoning: string;
+  expectedValue: string;
+  stakeRecommendation: number;
+}
+
+export interface EnhancedPicksResult {
+  topPicks: BettingRecommendation[];
+  overallConfidence: number;
+  analysisMetadata: {
+    oddsAnalyzed: string[];
+    keyFactors: string[];
+    riskAssessment: string;
+  };
+}
+
 export async function generateNewsletterHtml(prompt: string): Promise<string> {
   try {
     const completion = await openai.chat.completions.create({
@@ -482,6 +502,102 @@ ${JSON.stringify(requestData.performanceData, null, 2)}
         "Monitor line movements closely",
         "Adjust bankroll management strategy"
       ]
+    };
+  }
+}
+
+export async function generateEnhancedBettingPicks(
+  gameData: GameAnalysisData, 
+  existingAnalysis: string, 
+  odds: {
+    moneyline?: { away: number; home: number };
+    spread?: { awaySpread: number; homeSpread: number; awayOdds: number; homeOdds: number };
+    total?: { line: number; overOdds: number; underOdds: number };
+  }
+): Promise<EnhancedPicksResult> {
+  try {
+    const prompt = `As a professional sports betting analyst, analyze this MLB game and provide exactly 3 betting recommendations based on the existing AI analysis and current odds.
+
+GAME DETAILS:
+${gameData.awayTeam} @ ${gameData.homeTeam}
+Away Pitcher: ${gameData.awayPitcher || 'TBD'} ${gameData.awayPitcherStats || ''}
+Home Pitcher: ${gameData.homePitcher || 'TBD'} ${gameData.homePitcherStats || ''}
+Venue: ${gameData.venue || 'N/A'}
+
+EXISTING AI ANALYSIS:
+${existingAnalysis}
+
+CURRENT ODDS:
+${odds.moneyline ? `Moneyline: ${gameData.awayTeam} ${odds.moneyline.away > 0 ? '+' : ''}${odds.moneyline.away}, ${gameData.homeTeam} ${odds.moneyline.home > 0 ? '+' : ''}${odds.moneyline.home}` : ''}
+${odds.spread ? `Run Line: ${gameData.awayTeam} ${odds.spread.awaySpread > 0 ? '+' : ''}${odds.spread.awaySpread} (${odds.spread.awayOdds}), ${gameData.homeTeam} ${odds.spread.homeSpread > 0 ? '+' : ''}${odds.spread.homeSpread} (${odds.spread.homeOdds})` : ''}
+${odds.total ? `Total: Over ${odds.total.line} (${odds.total.overOdds}), Under ${odds.total.line} (${odds.total.underOdds})` : ''}
+
+INSTRUCTIONS:
+1. Analyze the existing AI summary for key insights about team advantages, pitching matchups, and game factors
+2. Evaluate each available betting market (moneyline, spread, total) for value opportunities
+3. Consider implied probabilities vs. your assessment based on the analysis
+4. Provide exactly 3 picks ranked by confidence and value
+
+Return your response as valid JSON in this exact format:
+{
+  "topPicks": [
+    {
+      "betType": "moneyline|spread|total",
+      "selection": "Team Name ML|Team Name +/-X.X|Over/Under X.X",
+      "odds": numeric_odds_value,
+      "confidence": confidence_percentage_1_to_100,
+      "reasoning": "Detailed explanation referencing analysis and odds value",
+      "expectedValue": "+X.X%" or "-X.X%",
+      "stakeRecommendation": percentage_1_to_10
+    }
+  ],
+  "overallConfidence": average_confidence_of_top_3_picks,
+  "analysisMetadata": {
+    "oddsAnalyzed": ["moneyline", "spread", "total"],
+    "keyFactors": ["factor1", "factor2", "factor3"],
+    "riskAssessment": "low|medium|high"
+  }
+}
+
+Focus on value betting opportunities where your analysis suggests the true probability differs from implied odds probability. Be specific about why each pick has value based on the existing analysis.`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are a professional sports betting analyst. Analyze games and odds to find value betting opportunities. Always return valid JSON responses only."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 2000
+    });
+
+    const result = JSON.parse(completion.choices[0].message.content || '{}');
+    
+    return {
+      topPicks: Array.isArray(result.topPicks) ? result.topPicks.slice(0, 3) : [],
+      overallConfidence: Math.max(1, Math.min(100, result.overallConfidence || 50)),
+      analysisMetadata: {
+        oddsAnalyzed: Array.isArray(result.analysisMetadata?.oddsAnalyzed) ? result.analysisMetadata.oddsAnalyzed : [],
+        keyFactors: Array.isArray(result.analysisMetadata?.keyFactors) ? result.analysisMetadata.keyFactors : [],
+        riskAssessment: result.analysisMetadata?.riskAssessment || 'medium'
+      }
+    };
+  } catch (error) {
+    console.error("Error generating enhanced betting picks:", error);
+    return {
+      topPicks: [],
+      overallConfidence: 0,
+      analysisMetadata: {
+        oddsAnalyzed: [],
+        keyFactors: ['Analysis temporarily unavailable'],
+        riskAssessment: 'high'
+      }
     };
   }
 }

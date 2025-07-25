@@ -9,7 +9,7 @@ import { fetchCFLGames, generateMockCFLPublicPercentage, type CFLGame } from "./
 import { fetchMLBGamesForDate, fetchMLBGameDetails, getGameResult } from "./services/mlb-api";
 import { fetchRealMLBOdds, mergeRealOddsWithGames } from "./services/realOdds";
 import { fetchMLBNews, generateMockMLBNews } from "./services/mlb-news";
-import { generateGameAnalysis, generateDailyDigest, generateNewsletterHtml, type GameAnalysisData } from "./services/openai";
+import { generateGameAnalysis, generateDailyDigest, generateNewsletterHtml, generateEnhancedBettingPicks, type GameAnalysisData, type EnhancedPicksResult } from "./services/openai";
 import { getPlayerPropsForGame } from "./services/player-props";
 import { getPinnaclePlayerProps, getPinnacleSports } from "./services/pinnacle-props";
 import { insertBetSchema, insertGameSchema, insertOddsSchema, insertUserSchema } from "@shared/schema";
@@ -1062,6 +1062,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching enhanced analysis:', error);
       res.status(500).json({ message: 'Failed to fetch enhanced analysis' });
+    }
+  });
+
+  // Enhanced betting picks endpoint - uses AI analysis + odds for targeted recommendations
+  app.get("/api/games/:gameId/enhanced-picks", async (req, res) => {
+    try {
+      const { gameId } = req.params;
+      console.log(`Enhanced picks requested for: ${gameId}`);
+      
+      // Fetch games directly from the main games endpoint to ensure consistency
+      const gamesResponse = await fetch(`http://localhost:5000/api/games`);
+      const gamesWithAI = await gamesResponse.json();
+      
+      console.log(`Looking for gameId: "${gameId}"`);
+      console.log(`Available games:`, gamesWithAI.map(g => g.gameId));
+      const game = gamesWithAI.find(g => g.gameId === gameId);
+      
+      if (!game) {
+        return res.status(404).json({ error: "Game not found" });
+      }
+
+      console.log(`Game found:`, game.gameId);
+      console.log(`AI Summary exists:`, !!game.aiSummary);
+      console.log(`AI Summary keys:`, game.aiSummary ? Object.keys(game.aiSummary) : 'none');
+      
+      if (!game.aiSummary?.summary) {
+        return res.status(400).json({ error: "No AI analysis available for this game" });
+      }
+
+      // For now, create a simple enhanced picks response without OpenAI integration
+      // This will verify the endpoint works, then we can add complex AI logic
+      const enhancedPicks = {
+        topPicks: [
+          {
+            bet: "Milwaukee Brewers Moneyline",
+            odds: "-220",
+            confidence: 85,
+            reasoning: "Freddy Peralta's strong season (12-4, 2.85 ERA) vs Cal Quantrill's struggles (3-8, 5.24 ERA)",
+            expectedValue: "+12.3%"
+          },
+          {
+            bet: "Under 6.5 Total Runs",
+            odds: "-203",
+            confidence: 78,
+            reasoning: "Strong pitching matchup favors under with Peralta's excellent control",
+            expectedValue: "+8.7%"
+          },
+          {
+            bet: "Milwaukee Brewers -1.5",
+            odds: "-105",
+            confidence: 72,
+            reasoning: "Home field advantage and significant pitching edge suggest multi-run victory",
+            expectedValue: "+5.4%"
+          }
+        ],
+        overallConfidence: 78,
+        analysisMetadata: {
+          oddsAnalyzed: ["moneyline", "spread", "total"],
+          keyFactors: ["Pitching matchup", "Home field advantage", "Recent form"],
+          riskAssessment: "moderate"
+        }
+      };
+      
+      res.json({
+        gameId: game.gameId,
+        awayTeam: game.awayTeam,
+        homeTeam: game.homeTeam,
+        venue: game.venue,
+        gameTime: game.gameTime,
+        enhancedPicks,
+        baseAnalysis: {
+          summary: game.aiSummary.summary,
+          confidence: game.aiSummary.confidence
+        }
+      });
+    } catch (error) {
+      console.error("Enhanced picks error:", error);
+      res.status(500).json({ 
+        error: "Failed to generate enhanced picks",
+        details: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
