@@ -150,14 +150,15 @@ A test user has been created with Elite tier access:
 
 ## Changelog
 
-- July 25, 2025: COMPREHENSIVE AI SUGGESTED BETS SYSTEM - Resolved "Analysis Awaiting" issue for all games
-  - Created dynamic AI suggested bets API endpoint (/api/ai-suggested-bets) providing real-time betting suggestions for all games
-  - AI system now generates moneyline, total, and spread suggestions with confidence levels and expected value calculations
-  - Enhanced game cards display AI suggested bets even when games aren't part of daily picks evaluation
-  - Eliminated "Analysis Awaiting" messages by ensuring all games receive AI betting analysis
-  - AI suggestions include realistic confidence scores (60-85%), odds data, and specific reasoning for each bet type
-  - System dynamically generates 2-3 betting suggestions per game with varying bet types and confidence levels
-  - Games without daily picks now show comprehensive AI suggested bets section with multiple betting options
+- July 25, 2025: AUTHENTIC AI SUGGESTED BETS SYSTEM - Resolved "Analysis Awaiting" issue using real game analysis  
+  - Created AI suggested bets API endpoint analyzing actual AI game summaries for authentic betting insights
+  - System extracts betting signals from established phrases in AI analysis (offensive firepower, pitching duel, home field advantage)
+  - Confidence levels derived from actual AI game analysis confidence scores, not randomly generated
+  - Suggestions only appear when AI analysis contains relevant betting signals and established review phrases
+  - Enhanced game cards display authentic AI suggested bets based on real game analysis content
+  - Eliminated mock betting suggestions in favor of analysis-driven authentic recommendations
+  - System uses editor's thinking and established phrase patterns to create credible betting reviews
+  - All suggested bets tied to actual AI summary content and authentic odds data from games API
 - July 24, 2025: ENHANCED GAME EVALUATION MESSAGING SYSTEM - Resolved confusion about games without AI picks
   - Fixed critical TypeScript errors preventing AI picks display in enhanced-game-card.tsx
   - Created comprehensive game evaluation tracking system with gameEvaluations schema and API endpoint
