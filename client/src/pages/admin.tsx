@@ -353,6 +353,12 @@ function SettleVirtualBetsButton() {
                   API Management
                 </Button>
               </Link>
+              <Link href="/admin/ai-management">
+                <Button className="bg-purple-600 hover:bg-purple-700">
+                  <Brain className="w-4 h-4 mr-2" />
+                  AI Management
+                </Button>
+              </Link>
               <Link href="/admin/phrase-detection">
                 <Button className="bg-indigo-600 hover:bg-indigo-700">
                   <Brain className="w-4 h-4 mr-2" />

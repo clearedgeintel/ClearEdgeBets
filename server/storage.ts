@@ -61,6 +61,7 @@ export interface IStorage {
   // AI Summary methods
   getAiSummary(gameId: string): Promise<AiSummary | undefined>;
   createAiSummary(summary: InsertAiSummary): Promise<AiSummary>;
+  updateGameAISummary(gameId: string, aiSummary: any): Promise<void>;
 
   // Bet methods (real-world bets)
   getUserBets(userId?: number): Promise<Bet[]>;
@@ -641,6 +642,31 @@ export class DatabaseStorage implements IStorage {
       .values(insertSummary)
       .returning();
     return summary;
+  }
+
+  async updateGameAISummary(gameId: string, aiSummary: any): Promise<void> {
+    // Check if AI summary already exists for this game
+    const existingSummary = await this.getAiSummary(gameId);
+    
+    if (existingSummary) {
+      // Update existing AI summary
+      await db
+        .update(aiSummaries)
+        .set({
+          summary: aiSummary.summary,
+          confidence: aiSummary.confidence,
+          lastUpdated: new Date()
+        })
+        .where(eq(aiSummaries.gameId, gameId));
+    } else {
+      // Create new AI summary
+      await this.createAiSummary({
+        gameId,
+        summary: aiSummary.summary,
+        confidence: aiSummary.confidence,
+        lastUpdated: new Date()
+      });
+    }
   }
 
   async getUserBets(userId?: number): Promise<Bet[]> {

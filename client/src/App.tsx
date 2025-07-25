@@ -44,6 +44,7 @@ import PlayerPropBuilder from "@/pages/player-prop-builder";
 import Help from "@/pages/help";
 import VirtualPerformance from "@/pages/virtual-performance";
 import APIManagement from "@/pages/APIManagement";
+import AIManagement from "@/pages/ai-management";
 import WeatherSummary from "@/pages/WeatherSummary";
 import MLBPicks from "@/pages/MLBPicks";
 
@@ -73,6 +74,7 @@ function Router() {
         <Route path="/admin/stripe-setup" component={StripeSetup} />
         <Route path="/admin/ticket-dashboard" component={TicketDashboard} />
         <Route path="/admin/api-management" component={APIManagement} />
+        <Route path="/admin/ai-management" component={AIManagement} />
         <Route path="/weather-summary" component={WeatherSummary} />
         <Route path="/mlb-picks" component={MLBPicks} />
 

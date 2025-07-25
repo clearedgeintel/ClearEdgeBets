@@ -1952,6 +1952,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Management endpoints for regenerating AI analysis
+  app.post('/api/games/:gameId/regenerate-ai', async (req, res) => {
+    try {
+      const { gameId } = req.params;
+      
+      // Get the specific game data
+      const gamesResponse = await fetch(`http://localhost:5000/api/games`);
+      let games: any[] = [];
+      
+      if (gamesResponse.ok) {
+        games = await gamesResponse.json();
+      }
+      
+      const game = games.find(g => g.gameId === gameId);
+      if (!game) {
+        return res.status(404).json({ error: 'Game not found' });
+      }
+      
+      // Generate new AI analysis for this specific game
+      const { generateGameAnalysis } = await import("./services/openai.js");
+      
+      const gameInput = {
+        awayTeam: game.awayTeam,
+        homeTeam: game.homeTeam,
+        gameId: game.gameId,
+        awayPitcher: game.awayPitcher,
+        homePitcher: game.homePitcher,
+        awayPitcherStats: game.awayPitcherStats,
+        homePitcherStats: game.homePitcherStats,
+        venue: game.venue,
+        gameTime: game.gameTime,
+        odds: game.odds || []
+      };
+      
+      const newAISummary = await generateGameAnalysis(gameInput);
+      
+      // Update the game in storage with new AI summary
+      await storage.updateGameAISummary(gameId, newAISummary);
+      
+      res.json({ 
+        success: true, 
+        gameId: gameId,
+        aiSummary: newAISummary,
+        message: 'AI analysis regenerated successfully' 
+      });
+    } catch (error) {
+      console.error('Error regenerating AI analysis:', error);
+      res.status(500).json({ error: 'Failed to regenerate AI analysis' });
+    }
+  });
+
+  app.post('/api/games/regenerate-all-ai', async (req, res) => {
+    try {
+      const { date } = req.body;
+      const targetDate = date || new Date().toISOString().split('T')[0];
+      
+      // Get all games for the specified date
+      const gamesResponse = await fetch(`http://localhost:5000/api/games?date=${targetDate}`);
+      let games: any[] = [];
+      
+      if (gamesResponse.ok) {
+        games = await gamesResponse.json();
+      }
+      
+      if (games.length === 0) {
+        return res.json({ success: true, message: 'No games found for the specified date', regenerated: 0 });
+      }
+      
+      // Generate AI analysis for all games
+      const { generateGameAnalysis } = await import("./services/openai.js");
+      let regeneratedCount = 0;
+      
+      for (const game of games) {
+        try {
+          const gameInput = {
+            awayTeam: game.awayTeam,
+            homeTeam: game.homeTeam,
+            gameId: game.gameId,
+            awayPitcher: game.awayPitcher,
+            homePitcher: game.homePitcher,
+            awayPitcherStats: game.awayPitcherStats,
+            homePitcherStats: game.homePitcherStats,
+            venue: game.venue,
+            gameTime: game.gameTime,
+            odds: game.odds || []
+          };
+          
+          const newAISummary = await generateGameAnalysis(gameInput);
+          await storage.updateGameAISummary(game.gameId, newAISummary);
+          regeneratedCount++;
+        } catch (error) {
+          console.error(`Error regenerating AI for game ${game.gameId}:`, error);
+          // Continue with other games even if one fails
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        date: targetDate,
+        totalGames: games.length,
+        regenerated: regeneratedCount,
+        message: `Successfully regenerated AI analysis for ${regeneratedCount} out of ${games.length} games` 
+      });
+    } catch (error) {
+      console.error('Error regenerating all AI analyses:', error);
+      res.status(500).json({ error: 'Failed to regenerate AI analyses' });
+    }
+  });
+
   // Game evaluations API endpoint - provides evaluation status for games without picks
   app.get('/api/game-evaluations', async (req, res) => {
     try {
