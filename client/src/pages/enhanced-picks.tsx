@@ -212,8 +212,8 @@ export default function EnhancedPicks() {
                             <Badge variant="outline" className="font-mono">
                               {pick.odds}
                             </Badge>
-                            <Badge className={getConfidenceBadgeColor(pick.confidence)}>
-                              {pick.confidence}%
+                            <Badge className={getConfidenceBadgeColor(pick.confidence || 0)}>
+                              {pick.confidence || 0}%
                             </Badge>
                           </div>
                         </div>
@@ -240,11 +240,11 @@ export default function EnhancedPicks() {
                         <div className="mt-3 flex items-center gap-2">
                           <div className="flex-1 bg-gray-200 rounded-full h-2">
                             <div 
-                              className={`h-2 rounded-full ${getConfidenceColor(pick.confidence)}`}
-                              style={{ width: `${pick.confidence}%` }}
+                              className={`h-2 rounded-full ${getConfidenceColor(pick.confidence || 0)}`}
+                              style={{ width: `${pick.confidence || 0}%` }}
                             />
                           </div>
-                          <span className="text-sm font-medium">{pick.confidence}%</span>
+                          <span className="text-sm font-medium">{pick.confidence || 0}%</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -259,14 +259,14 @@ export default function EnhancedPicks() {
                         Base AI Analysis
                       </CardTitle>
                       <div className="flex items-center gap-2">
-                        <Badge className={getConfidenceBadgeColor(enhancedPicks?.baseAnalysis.confidence || 0)}>
-                          {enhancedPicks?.baseAnalysis.confidence}% Confidence
+                        <Badge className={getConfidenceBadgeColor(enhancedPicks?.baseAnalysis?.confidence || 0)}>
+                          {enhancedPicks?.baseAnalysis?.confidence}% Confidence
                         </Badge>
                       </div>
                     </CardHeader>
                     <CardContent>
                       <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                        {enhancedPicks?.baseAnalysis.summary}
+                        {enhancedPicks?.baseAnalysis?.summary}
                       </p>
                     </CardContent>
                   </Card>
