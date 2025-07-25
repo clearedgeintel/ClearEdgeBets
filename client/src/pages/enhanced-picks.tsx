@@ -52,7 +52,7 @@ export default function EnhancedPicks() {
 
   // Fetch enhanced picks for selected game
   const { data: enhancedPicks, isLoading: picksLoading, error } = useQuery<EnhancedPicksResponse>({
-    queryKey: ["/api/games", selectedGameId, "enhanced-picks"],
+    queryKey: [`/api/games/${selectedGameId}/enhanced-picks`],
     enabled: !!selectedGameId,
   });
 
