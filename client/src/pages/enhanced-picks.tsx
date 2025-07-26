@@ -87,7 +87,7 @@ export default function EnhancedPicks() {
         </div>
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading AI-powered enhanced picks...</p>
+          <p className="mt-2 text-gray-300">Loading AI-powered enhanced picks...</p>
         </div>
       </div>
     );
@@ -103,7 +103,7 @@ export default function EnhancedPicks() {
             AI-Powered Analysis
           </Badge>
         </div>
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-300">
           {sortedPicks.length} picks from {allEnhancedPicks?.length || 0} games
         </div>
       </div>
@@ -173,7 +173,7 @@ export default function EnhancedPicks() {
                       {pick.confidence}% Confidence
                     </Badge>
                   </div>
-                  <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
+                  <div className="flex items-center space-x-4 text-sm text-gray-300 mb-3">
                     <div className="flex items-center">
                       <Clock className="h-4 w-4 mr-1" />
                       {new Date(pick.gameInfo.gameTime).toLocaleTimeString([], { 
@@ -198,15 +198,15 @@ export default function EnhancedPicks() {
               </div>
 
               <div className="border-l-4 border-blue-200 pl-4 mb-4">
-                <div className="font-medium text-blue-900 mb-2">
+                <div className="font-medium text-blue-300 mb-2">
                   {pick.bet}
                 </div>
-                <p className="text-sm text-gray-700 leading-relaxed">
+                <p className="text-sm text-gray-200 leading-relaxed">
                   {pick.reasoning}
                 </p>
               </div>
 
-              <div className="flex items-center justify-between text-xs text-gray-500">
+              <div className="flex items-center justify-between text-xs text-gray-400">
                 <div className="flex items-center space-x-4">
                   <span>Game ID: {pick.gameInfo.gameId}</span>
                 </div>
@@ -229,7 +229,7 @@ export default function EnhancedPicks() {
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               No Enhanced Picks Available
             </h3>
-            <p className="text-gray-600">
+            <p className="text-gray-300">
               AI-powered enhanced picks will appear here when games have analysis available
             </p>
           </div>
