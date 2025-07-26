@@ -1240,6 +1240,58 @@ Format as JSON:
     }
   });
 
+  // Enhanced picks endpoint for all games sorted by confidence
+  app.get('/api/enhanced-picks/all', async (req, res) => {
+    try {
+      console.log('All enhanced picks requested');
+      
+      // Fetch games directly from the main games endpoint to ensure consistency
+      const gamesResponse = await fetch(`http://localhost:5000/api/games`);
+      const gamesWithAI = await gamesResponse.json();
+      
+      // Filter games that have AI analysis
+      const gamesWithAnalysis = gamesWithAI.filter(game => game.aiSummary?.summary);
+      console.log(`Found ${gamesWithAnalysis.length} games with AI analysis`);
+      
+      // Generate enhanced picks for all games with analysis
+      const allEnhancedPicks = await Promise.all(
+        gamesWithAnalysis.map(async (game) => {
+          try {
+            const enhancedPicks = await generateGameSpecificPicks(game);
+            
+            return {
+              gameId: game.gameId,
+              awayTeam: game.awayTeam,
+              homeTeam: game.homeTeam,
+              venue: game.venue,
+              gameTime: game.gameTime,
+              awayPitcher: game.awayPitcher,
+              homePitcher: game.homePitcher,
+              enhancedPicks,
+              baseAnalysis: {
+                summary: game.aiSummary.summary,
+                confidence: game.aiSummary.confidence
+              }
+            };
+          } catch (error) {
+            console.error(`Error generating picks for game ${game.gameId}:`, error);
+            return null;
+          }
+        })
+      );
+      
+      // Filter out any null results from failed generations
+      const validPicks = allEnhancedPicks.filter(pick => pick !== null);
+      
+      console.log(`Generated enhanced picks for ${validPicks.length} games`);
+      res.json(validPicks);
+      
+    } catch (error) {
+      console.error('All enhanced picks error:', error);
+      res.status(500).json({ message: 'Failed to fetch all enhanced picks' });
+    }
+  });
+
   // Get CFL games with odds
   app.get("/api/cfl/games", async (req, res) => {
     try {
