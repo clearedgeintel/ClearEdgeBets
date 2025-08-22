@@ -187,6 +187,14 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           current: location === "/enhanced-picks",
           description: "AI-powered betting recommendations using analysis + odds",
           requiresPro: true
+        },
+        { 
+          name: "Expected Value", 
+          href: "/expected-value", 
+          icon: Calculator,
+          current: location === "/expected-value",
+          description: "Optimal bet sizing with Kelly Criterion and EV calculations",
+          requiresPro: true
         }
       ],
       eliteItems: [
