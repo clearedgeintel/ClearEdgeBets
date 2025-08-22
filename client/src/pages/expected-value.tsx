@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   TrendingUp, 
   Calculator, 
@@ -14,7 +15,8 @@ import {
   BarChart3,
   Brain,
   Clock,
-  MapPin
+  MapPin,
+  Calendar
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -73,17 +75,51 @@ export default function ExpectedValue() {
   const [bankroll, setBankroll] = useState<number>(1000);
   const [minimumBet, setMinimumBet] = useState<number>(10);
   const [kellyMultiplier, setKellyMultiplier] = useState<number>(0.25); // Quarter Kelly
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
   const [evBets, setEVBets] = useState<EVBet[]>([]);
 
-  // Fetch real MLB games with odds
+  // Generate date options for today and next few days
+  const getDateOptions = () => {
+    const dates = [];
+    const today = new Date();
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const dateString = date.toISOString().split('T')[0];
+      const displayName = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      dates.push({ value: dateString, label: `${displayName} (${dateString})` });
+    }
+    
+    return dates;
+  };
+
+  // Fetch real MLB games with odds for selected date
   const { data: games, isLoading: gamesLoading } = useQuery({
-    queryKey: ["/api/games"],
+    queryKey: ["/api/games", selectedDate],
+    queryFn: async () => {
+      const response = await fetch(`/api/games?date=${selectedDate}`);
+      if (!response.ok) throw new Error('Failed to fetch games');
+      return response.json();
+    },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  // Fetch enhanced picks for AI-derived probabilities
+  // Fetch enhanced picks for AI-derived probabilities for selected date
   const { data: enhancedPicks, isLoading: picksLoading } = useQuery({
-    queryKey: ["/api/enhanced-picks/all"],
+    queryKey: ["/api/enhanced-picks/all", selectedDate],
+    queryFn: async () => {
+      const response = await fetch(`/api/enhanced-picks/all?date=${selectedDate}`);
+      if (!response.ok) throw new Error('Failed to fetch enhanced picks');
+      return response.json();
+    },
     refetchInterval: 60000, // Refresh every minute
   });
 
@@ -244,7 +280,7 @@ export default function ExpectedValue() {
     // Sort by expected value descending (positive EV first, then negative EV)
     calculatedBets.sort((a, b) => b.expectedValue - a.expectedValue);
     setEVBets(calculatedBets); // Show all bets
-  }, [games, enhancedPicks, bankroll, minimumBet, kellyMultiplier]);
+  }, [games, enhancedPicks, bankroll, minimumBet, kellyMultiplier, selectedDate]);
 
   const positiveEVBets = evBets.filter(bet => bet.expectedValue > 0);
   const negativeEVBets = evBets.filter(bet => bet.expectedValue <= 0);
@@ -267,7 +303,7 @@ export default function ExpectedValue() {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div>
+        <div className="flex-1">
           <h1 className="text-3xl font-bold text-white flex items-center gap-2">
             <Calculator className="h-8 w-8 text-blue-400" />
             Expected Value Calculator
@@ -276,10 +312,28 @@ export default function ExpectedValue() {
             Optimal bet sizing using Kelly Criterion and AI-enhanced probability estimates
           </p>
         </div>
-        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-          <Brain className="h-4 w-4 mr-1" />
-          Real Data + AI Analysis
-        </Badge>
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col items-end">
+            <Label htmlFor="dateSelect" className="text-gray-300 text-sm mb-1">Select Date</Label>
+            <Select value={selectedDate} onValueChange={setSelectedDate}>
+              <SelectTrigger className="w-[200px] bg-gray-700 border-gray-600 text-white">
+                <Calendar className="h-4 w-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-700 border-gray-600">
+                {getDateOptions().map((dateOption) => (
+                  <SelectItem key={dateOption.value} value={dateOption.value} className="text-white hover:bg-gray-600">
+                    {dateOption.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            <Brain className="h-4 w-4 mr-1" />
+            Real Data + AI Analysis
+          </Badge>
+        </div>
       </div>
 
       {/* Settings Panel */}
@@ -425,7 +479,11 @@ export default function ExpectedValue() {
       {/* EV Betting Analysis */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white">Complete EV Analysis - All Games</h2>
+          <h2 className="text-xl font-bold text-white">
+            Complete EV Analysis - {selectedDate === new Date().toISOString().split('T')[0] ? 'Today' : 
+                                   selectedDate === new Date(Date.now() + 86400000).toISOString().split('T')[0] ? 'Tomorrow' : 
+                                   new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+          </h2>
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-500 rounded"></div>
@@ -443,11 +501,13 @@ export default function ExpectedValue() {
             <CardContent className="p-8 text-center">
               <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-white mb-2">
-                No Positive EV Bets Found
+                No EV Analysis Available
               </h3>
               <p className="text-gray-300">
-                No betting opportunities with positive expected value meet your criteria.
-                Try adjusting your minimum bet size or check back when new games are available.
+                No games found for {selectedDate === new Date().toISOString().split('T')[0] ? 'today' : 
+                                  selectedDate === new Date(Date.now() + 86400000).toISOString().split('T')[0] ? 'tomorrow' : 
+                                  'this date'}.
+                Try selecting a different date or check back when games are scheduled.
               </p>
             </CardContent>
           </Card>

@@ -1243,10 +1243,12 @@ Format as JSON:
   // Enhanced picks endpoint for all games sorted by confidence
   app.get('/api/enhanced-picks/all', async (req, res) => {
     try {
-      console.log('All enhanced picks requested');
+      const { date } = req.query;
+      console.log(`All enhanced picks requested for date: ${date || 'today'}`);
       
       // Fetch games directly from the main games endpoint to ensure consistency
-      const gamesResponse = await fetch(`http://localhost:5000/api/games`);
+      const gamesUrl = date ? `http://localhost:5000/api/games?date=${date}` : `http://localhost:5000/api/games`;
+      const gamesResponse = await fetch(gamesUrl);
       const gamesWithAI = await gamesResponse.json();
       
       // Filter games that have AI analysis
