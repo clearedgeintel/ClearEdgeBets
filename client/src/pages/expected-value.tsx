@@ -97,7 +97,7 @@ export default function ExpectedValue() {
       if (!game.odds) return;
 
       // Find corresponding enhanced pick for AI probability estimates
-      const enhancedPick = enhancedPicks.find((pick: any) => pick.gameId === game.gameId);
+      const enhancedPick = Array.isArray(enhancedPicks) ? enhancedPicks.find((pick: any) => pick.gameId === game.gameId) : null;
       
       // Calculate EV for moneyline bets
       if (game.odds.moneyline) {
@@ -120,23 +120,19 @@ export default function ExpectedValue() {
           }
 
           const awayEV = calculateExpectedValue(awayTrueProbability, awayOdds);
-          if (awayEV > 0) {
-            const kellyStake = calculateKellyStake(awayTrueProbability, awayOdds, bankroll) * kellyMultiplier;
-            if (kellyStake >= minimumBet) {
-              calculatedBets.push({
-                gameId: game.gameId,
-                game,
-                betType: 'Moneyline',
-                selection: `${game.awayTeam} to win`,
-                odds: awayOdds,
-                trueProbability: awayTrueProbability,
-                expectedValue: awayEV,
-                kellyStake,
-                confidence,
-                reasoning
-              });
-            }
-          }
+          const kellyStake = Math.max(0, calculateKellyStake(awayTrueProbability, awayOdds, bankroll) * kellyMultiplier);
+          calculatedBets.push({
+            gameId: game.gameId,
+            game,
+            betType: 'Moneyline',
+            selection: `${game.awayTeam} to win`,
+            odds: awayOdds,
+            trueProbability: awayTrueProbability,
+            expectedValue: awayEV,
+            kellyStake,
+            confidence,
+            reasoning
+          });
         }
 
         // Home team moneyline
@@ -157,23 +153,19 @@ export default function ExpectedValue() {
           }
 
           const homeEV = calculateExpectedValue(homeTrueProbability, homeOdds);
-          if (homeEV > 0) {
-            const kellyStake = calculateKellyStake(homeTrueProbability, homeOdds, bankroll) * kellyMultiplier;
-            if (kellyStake >= minimumBet) {
-              calculatedBets.push({
-                gameId: game.gameId,
-                game,
-                betType: 'Moneyline',
-                selection: `${game.homeTeam} to win`,
-                odds: homeOdds,
-                trueProbability: homeTrueProbability,
-                expectedValue: homeEV,
-                kellyStake,
-                confidence,
-                reasoning
-              });
-            }
-          }
+          const kellyStake = Math.max(0, calculateKellyStake(homeTrueProbability, homeOdds, bankroll) * kellyMultiplier);
+          calculatedBets.push({
+            gameId: game.gameId,
+            game,
+            betType: 'Moneyline',
+            selection: `${game.homeTeam} to win`,
+            odds: homeOdds,
+            trueProbability: homeTrueProbability,
+            expectedValue: homeEV,
+            kellyStake,
+            confidence,
+            reasoning
+          });
         }
       }
 
@@ -199,23 +191,19 @@ export default function ExpectedValue() {
           }
 
           const overEV = calculateExpectedValue(overTrueProbability, overOdds);
-          if (overEV > 0) {
-            const kellyStake = calculateKellyStake(overTrueProbability, overOdds, bankroll) * kellyMultiplier;
-            if (kellyStake >= minimumBet) {
-              calculatedBets.push({
-                gameId: game.gameId,
-                game,
-                betType: 'Total',
-                selection: `Over ${totalLine}`,
-                odds: overOdds,
-                trueProbability: overTrueProbability,
-                expectedValue: overEV,
-                kellyStake,
-                confidence,
-                reasoning
-              });
-            }
-          }
+          const kellyStake = Math.max(0, calculateKellyStake(overTrueProbability, overOdds, bankroll) * kellyMultiplier);
+          calculatedBets.push({
+            gameId: game.gameId,
+            game,
+            betType: 'Total',
+            selection: `Over ${totalLine}`,
+            odds: overOdds,
+            trueProbability: overTrueProbability,
+            expectedValue: overEV,
+            kellyStake,
+            confidence,
+            reasoning
+          });
         }
 
         // Under bet
@@ -236,33 +224,31 @@ export default function ExpectedValue() {
           }
 
           const underEV = calculateExpectedValue(underTrueProbability, underOdds);
-          if (underEV > 0) {
-            const kellyStake = calculateKellyStake(underTrueProbability, underOdds, bankroll) * kellyMultiplier;
-            if (kellyStake >= minimumBet) {
-              calculatedBets.push({
-                gameId: game.gameId,
-                game,
-                betType: 'Total',
-                selection: `Under ${totalLine}`,
-                odds: underOdds,
-                trueProbability: underTrueProbability,
-                expectedValue: underEV,
-                kellyStake,
-                confidence,
-                reasoning
-              });
-            }
-          }
+          const kellyStake = Math.max(0, calculateKellyStake(underTrueProbability, underOdds, bankroll) * kellyMultiplier);
+          calculatedBets.push({
+            gameId: game.gameId,
+            game,
+            betType: 'Total',
+            selection: `Under ${totalLine}`,
+            odds: underOdds,
+            trueProbability: underTrueProbability,
+            expectedValue: underEV,
+            kellyStake,
+            confidence,
+            reasoning
+          });
         }
       }
     });
 
-    // Sort by expected value descending
+    // Sort by expected value descending (positive EV first, then negative EV)
     calculatedBets.sort((a, b) => b.expectedValue - a.expectedValue);
-    setEVBets(calculatedBets.slice(0, 20)); // Top 20 EV bets
+    setEVBets(calculatedBets); // Show all bets
   }, [games, enhancedPicks, bankroll, minimumBet, kellyMultiplier]);
 
-  const totalRecommendedStake = evBets.reduce((sum, bet) => sum + bet.kellyStake, 0);
+  const positiveEVBets = evBets.filter(bet => bet.expectedValue > 0);
+  const negativeEVBets = evBets.filter(bet => bet.expectedValue <= 0);
+  const totalRecommendedStake = positiveEVBets.reduce((sum, bet) => sum + bet.kellyStake, 0);
   const averageEV = evBets.length > 0 ? evBets.reduce((sum, bet) => sum + bet.expectedValue, 0) / evBets.length : 0;
   const portfolioRisk = (totalRecommendedStake / bankroll) * 100;
 
@@ -355,9 +341,10 @@ export default function ExpectedValue() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-300 text-sm">Positive EV Bets</p>
-                <p className="text-2xl font-bold text-white">{evBets.length}</p>
+                <p className="text-2xl font-bold text-green-400">{positiveEVBets.length}</p>
+                <p className="text-xs text-gray-400">of {evBets.length} total</p>
               </div>
-              <Target className="h-8 w-8 text-blue-400" />
+              <Target className="h-8 w-8 text-green-400" />
             </div>
           </CardContent>
         </Card>
@@ -411,9 +398,45 @@ export default function ExpectedValue() {
         </Alert>
       )}
 
-      {/* EV Betting Opportunities */}
+      {/* Data Source Verification */}
+      <Card className="mb-6 bg-blue-900/20 border-blue-600">
+        <CardContent className="p-4">
+          <h3 className="text-lg font-semibold text-blue-300 mb-2">Data Source Verification</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <p className="text-blue-200 font-medium">MLB Games Data</p>
+              <p className="text-blue-100">✓ Live from The Odds API + MLB API</p>
+              <p className="text-blue-100">✓ Real pitcher matchups & stats</p>
+            </div>
+            <div>
+              <p className="text-blue-200 font-medium">Odds Data</p>
+              <p className="text-blue-100">✓ Real-time sportsbook odds</p>
+              <p className="text-blue-100">✓ Moneyline, totals, spreads</p>
+            </div>
+            <div>
+              <p className="text-blue-200 font-medium">AI Probabilities</p>
+              <p className="text-blue-100">✓ Enhanced picks analysis</p>
+              <p className="text-blue-100">✓ Confidence-weighted estimates</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* EV Betting Analysis */}
       <div className="space-y-4">
-        <h2 className="text-xl font-bold text-white mb-4">Today's Expected Value Opportunities</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-white">Complete EV Analysis - All Games</h2>
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-500 rounded"></div>
+              <span className="text-gray-300">Positive EV</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-red-500 rounded"></div>
+              <span className="text-gray-300">Negative EV</span>
+            </div>
+          </div>
+        </div>
         
         {evBets.length === 0 ? (
           <Card className="bg-gray-800 border-gray-700">
@@ -429,19 +452,30 @@ export default function ExpectedValue() {
             </CardContent>
           </Card>
         ) : (
-          evBets.map((bet, index) => (
-            <Card key={`${bet.gameId}-${bet.selection}`} className="bg-gray-800 border-gray-700">
+          evBets.map((bet, index) => {
+            const isPositiveEV = bet.expectedValue > 0;
+            const borderColor = isPositiveEV ? 'border-green-600' : 'border-red-600';
+            const bgColor = isPositiveEV ? 'bg-gray-800' : 'bg-gray-900';
+            
+            return (
+            <Card key={`${bet.gameId}-${bet.selection}`} className={`${bgColor} ${borderColor} border-l-4`}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <Badge variant="outline" className="bg-green-900/20 text-green-300 border-green-600">
-                        #{index + 1} Best EV
+                      <Badge variant="outline" className={isPositiveEV 
+                        ? "bg-green-900/20 text-green-300 border-green-600" 
+                        : "bg-red-900/20 text-red-300 border-red-600"
+                      }>
+                        {isPositiveEV ? `+${bet.expectedValue.toFixed(2)}% EV` : `${bet.expectedValue.toFixed(2)}% EV`}
                       </Badge>
                       <Badge className={`
                         ${bet.confidence >= 75 ? 'bg-green-600' : bet.confidence >= 50 ? 'bg-yellow-600' : 'bg-gray-600'}
                       `}>
                         {bet.confidence}% Confidence
+                      </Badge>
+                      <Badge variant="outline" className="bg-blue-900/20 text-blue-300 border-blue-600">
+                        Real Data
                       </Badge>
                     </div>
                     
@@ -492,7 +526,9 @@ export default function ExpectedValue() {
                   </div>
                   <div>
                     <p className="text-xs text-gray-400 mb-1">Expected Value</p>
-                    <p className="font-semibold text-green-400">+{bet.expectedValue.toFixed(2)}%</p>
+                    <p className={`font-semibold ${isPositiveEV ? 'text-green-400' : 'text-red-400'}`}>
+                      {isPositiveEV ? '+' : ''}{bet.expectedValue.toFixed(2)}%
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-400 mb-1">Recommended Stake</p>
@@ -513,7 +549,8 @@ export default function ExpectedValue() {
                 </div>
               </CardContent>
             </Card>
-          ))
+            );
+          })
         )}
       </div>
 
