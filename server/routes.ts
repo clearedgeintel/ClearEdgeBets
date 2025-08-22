@@ -618,10 +618,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Store games in database first, then create formatted response  
       const formattedGames = await Promise.all(gamesWithRealOdds.map(async (gameData) => {
-        // Store game in database if it doesn't exist
-        let existingGame = await storage.getGame(gameData.gameId);
-        if (!existingGame) {
-          await storage.createGame({
+        // Store or update game in database
+        try {
+          await storage.upsertGame({
             gameId: gameData.gameId,
             awayTeam: gameData.awayTeam,
             homeTeam: gameData.homeTeam,
@@ -636,6 +635,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status: "scheduled",
             result: null
           });
+        } catch (error) {
+          console.log(`Error upserting game ${gameData.gameId}:`, error);
         }
         // Format odds array
         const oddsArray = [];
@@ -1249,7 +1250,18 @@ Format as JSON:
       // Fetch games directly from the main games endpoint to ensure consistency
       const gamesUrl = date ? `http://localhost:5000/api/games?date=${date}` : `http://localhost:5000/api/games`;
       const gamesResponse = await fetch(gamesUrl);
+      
+      if (!gamesResponse.ok) {
+        console.log(`Failed to fetch games: ${gamesResponse.status} ${gamesResponse.statusText}`);
+        return res.status(200).json([]); // Return empty array if games fetch fails
+      }
+      
       const gamesWithAI = await gamesResponse.json();
+      
+      if (!Array.isArray(gamesWithAI)) {
+        console.log('Games response is not an array:', gamesWithAI);
+        return res.status(200).json([]);
+      }
       
       // Filter games that have AI analysis
       const gamesWithAnalysis = gamesWithAI.filter(game => game.aiSummary?.summary);

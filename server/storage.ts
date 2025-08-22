@@ -601,6 +601,30 @@ export class DatabaseStorage implements IStorage {
     return game;
   }
 
+  async upsertGame(insertGame: InsertGame): Promise<Game> {
+    const [game] = await db
+      .insert(games)
+      .values(insertGame)
+      .onConflictDoUpdate({
+        target: games.gameId,
+        set: {
+          awayTeam: insertGame.awayTeam,
+          homeTeam: insertGame.homeTeam,
+          awayTeamCode: insertGame.awayTeamCode,
+          homeTeamCode: insertGame.homeTeamCode,
+          gameTime: insertGame.gameTime,
+          venue: insertGame.venue,
+          awayPitcher: insertGame.awayPitcher,
+          homePitcher: insertGame.homePitcher,
+          awayPitcherStats: insertGame.awayPitcherStats,
+          homePitcherStats: insertGame.homePitcherStats,
+          status: insertGame.status
+        }
+      })
+      .returning();
+    return game;
+  }
+
   async updateGame(gameId: string, updates: Partial<Game>): Promise<Game> {
     const [game] = await db
       .update(games)
