@@ -32,20 +32,6 @@ import { STRIPE_PRODUCTS, getProductByTier, getTierByPriceId } from "./stripe-co
 
 // Helper function to generate CFL pick reasoning
 function convertMLBGameToGameFormat(mlbGame: any, targetDate: string) {
-  // Generate realistic odds for the game
-  const homeAdvantage = Math.random() * 0.2 + 0.9; // 0.9 to 1.1
-  const baseOdds = 100 + Math.random() * 50; // 100 to 150
-  
-  const awayOdds = Math.round(baseOdds / homeAdvantage);
-  const homeOdds = Math.round(-baseOdds * homeAdvantage);
-  
-  const totalLine = Math.round((7.5 + Math.random() * 3) * 2) / 2; // 7.5 to 10.5 in 0.5 increments
-  const overOdds = Math.round(-110 + Math.random() * 20 - 10); // -120 to -100, rounded
-  const underOdds = Math.round(-110 + Math.random() * 20 - 10);
-  
-  const runLine = Math.random() > 0.5 ? 1.5 : -1.5;
-  const runLineOdds = Math.round(runLine > 0 ? 140 + Math.random() * 40 : -160 - Math.random() * 40);
-  
   return {
     gameId: `${targetDate}_${mlbGame.awayTeamCode} @ ${mlbGame.homeTeamCode}`,
     awayTeam: mlbGame.awayTeam,
@@ -59,17 +45,7 @@ function convertMLBGameToGameFormat(mlbGame: any, targetDate: string) {
     awayPitcherStats: mlbGame.awayPitcherStats || 'Stats TBD',
     homePitcherStats: mlbGame.homePitcherStats || 'Stats TBD',
     status: "scheduled",
-    odds: {
-      moneyline: { away: awayOdds, home: homeOdds },
-      total: { line: totalLine, over: overOdds, under: underOdds },
-      spread: { 
-        away: runLine, 
-        home: -runLine, 
-        awayOdds: runLine > 0 ? runLineOdds : -runLineOdds,
-        homeOdds: runLine > 0 ? -runLineOdds : runLineOdds
-      }
-    },
-    publicPercentage: Math.floor(Math.random() * 40) + 30 // 30-70%
+    odds: null  // populated by mergeRealOddsWithGames; null means odds unavailable
   };
 }
 
@@ -615,7 +591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Format odds array
         const oddsArray = [];
         
-        if (gameData.odds.moneyline) {
+        if (gameData.odds?.moneyline) {
           oddsArray.push({
             id: Math.floor(Math.random() * 1000000),
             gameId: gameData.gameId,
@@ -623,24 +599,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             market: "moneyline",
             awayOdds: gameData.odds.moneyline.away,
             homeOdds: gameData.odds.moneyline.home,
-            publicPercentage: gameData.publicPercentage || 50
+            publicPercentage: 50
           });
         }
 
-        if (gameData.odds.total && gameData.odds.total.over !== undefined && gameData.odds.total.line !== undefined) {
+        if (gameData.odds?.total && gameData.odds.total.over !== undefined && gameData.odds.total.line !== undefined) {
           oddsArray.push({
             id: Math.floor(Math.random() * 1000000),
             gameId: gameData.gameId,
-            bookmaker: "consensus", 
+            bookmaker: "consensus",
             market: "totals",
             overOdds: Math.round(parseFloat(gameData.odds.total.over.toString())),
             underOdds: Math.round(parseFloat(gameData.odds.total.under.toString())),
             total: (Math.round(parseFloat(gameData.odds.total.line.toString()) * 2) / 2).toString(),
-            publicPercentage: gameData.publicPercentage || 50
+            publicPercentage: 50
           });
         }
 
-        if (gameData.odds.spread && gameData.odds.spread.away !== undefined && gameData.odds.spread.awayOdds !== undefined) {
+        if (gameData.odds?.spread && gameData.odds.spread.away !== undefined && gameData.odds.spread.awayOdds !== undefined) {
           oddsArray.push({
             id: Math.floor(Math.random() * 1000000),
             gameId: gameData.gameId,
@@ -650,7 +626,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             homeSpread: gameData.odds.spread.home.toString(),
             awaySpreadOdds: Math.round(parseFloat(gameData.odds.spread.awayOdds.toString())),
             homeSpreadOdds: Math.round(parseFloat(gameData.odds.spread.homeOdds.toString())),
-            publicPercentage: gameData.publicPercentage || 50
+            publicPercentage: 50
           });
         }
 
@@ -679,16 +655,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               homePitcherStats: gameData.homePitcherStats,
               venue: gameData.venue,
               gameTime: gameData.gameTime,
-              moneylineOdds: gameData.odds.moneyline ? {
+              moneylineOdds: gameData.odds?.moneyline ? {
                 away: gameData.odds.moneyline.away,
                 home: gameData.odds.moneyline.home
               } : undefined,
-              total: gameData.odds.total ? {
+              total: gameData.odds?.total ? {
                 line: gameData.odds.total.line,
                 overOdds: gameData.odds.total.over,
                 underOdds: gameData.odds.total.under
               } : undefined,
-              runLine: gameData.odds.spread ? {
+              runLine: gameData.odds?.spread ? {
                 awaySpread: gameData.odds.spread.away,
                 homeSpread: gameData.odds.spread.home,
                 awayOdds: gameData.odds.spread.awayOdds,
