@@ -86,9 +86,9 @@ const TEAM_CODES: Record<string, string> = {
 };
 
 export async function fetchTodaysGames(): Promise<ProcessedGameData[]> {
-  // Use the working API key directly
-  const apiKey = "c9f36c84742417581eac1f544a38e20c";
-  
+  const apiKey = process.env.ODDS_API_KEY;
+  if (!apiKey) throw new Error("ODDS_API_KEY environment variable is required");
+
   console.log(`Attempting to fetch odds with API key: ${apiKey.slice(0, 8)}...`);
 
   try {

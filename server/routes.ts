@@ -359,32 +359,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Test endpoint to create elite user for admin testing
-  app.post("/api/test/create-elite-user", async (req, res) => {
-    try {
-      const hashedPassword = await bcrypt.hash("admin123", 10);
-      
-      const user = await storage.createUser({
-        username: "admin",
-        email: "admin@test.com",
-        password: hashedPassword,
-        subscriptionTier: "elite"
-      });
-
-      res.json({ 
-        user: { 
-          id: user.id, 
-          username: user.username, 
-          email: user.email,
-          subscriptionTier: user.subscriptionTier 
-        } 
-      });
-    } catch (error) {
-      console.error("Elite user creation error:", error);
-      res.status(500).json({ error: "Failed to create elite user" });
-    }
-  });
-
   app.post("/api/auth/register", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
@@ -1532,6 +1506,11 @@ Format as JSON:
   // Admin endpoint to fetch all bets
   app.get("/api/admin/bets", async (req, res) => {
     try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: "Authentication required" });
+      const sessionUser = await storage.getUser(userId);
+      if (!sessionUser || !sessionUser.isAdmin) return res.status(403).json({ error: "Admin access required" });
+
       const allBets = await storage.getUserBets(); // Get all bets without userId filter
       res.json(allBets);
     } catch (error) {
@@ -1543,6 +1522,11 @@ Format as JSON:
   // Admin endpoint to manually trigger daily picks generation
   app.post("/api/admin/generate-daily-picks", async (req, res) => {
     try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: "Authentication required" });
+      const sessionUser = await storage.getUser(userId);
+      if (!sessionUser || !sessionUser.isAdmin) return res.status(403).json({ error: "Admin access required" });
+
       console.log('Admin manually triggering daily picks generation...');
       await schedulerService.triggerDailyPicks();
       
@@ -2561,6 +2545,11 @@ Format as JSON:
   // Manual virtual bet settlement endpoint
   app.post("/api/admin/settle-virtual-bets", async (req, res) => {
     try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: "Authentication required" });
+      const sessionUser = await storage.getUser(userId);
+      if (!sessionUser || !sessionUser.isAdmin) return res.status(403).json({ error: "Admin access required" });
+
       console.log("Manual virtual bet settlement triggered");
       const regularBetsSettled = await settlePendingBets();
       const virtualBetsSettled = await settleVirtualBets();
@@ -2650,6 +2639,11 @@ Format as JSON:
   // Generate AI summaries for all current games
   app.post("/api/admin/generate-ai-summaries", async (req, res) => {
     try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: "Authentication required" });
+      const sessionUser = await storage.getUser(userId);
+      if (!sessionUser || !sessionUser.isAdmin) return res.status(403).json({ error: "Admin access required" });
+
       const gamesResponse = await fetch(`http://localhost:5000/api/games`);
       let realGames: any[] = [];
       
@@ -3237,8 +3231,13 @@ Format as JSON:
   // Admin stats endpoint
   app.get("/api/admin/stats", async (req, res) => {
     try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: "Authentication required" });
+      const sessionUser = await storage.getUser(userId);
+      if (!sessionUser || !sessionUser.isAdmin) return res.status(403).json({ error: "Admin access required" });
+
       const users = await storage.getAllUsers();
-      
+
       const totalUsers = users.length;
       const freeUsers = users.filter(u => u.subscriptionTier === 'free').length;
       const proUsers = users.filter(u => u.subscriptionTier === 'pro').length;
@@ -3267,8 +3266,13 @@ Format as JSON:
   // Admin users endpoint
   app.get("/api/admin/users", async (req, res) => {
     try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: "Authentication required" });
+      const sessionUser = await storage.getUser(userId);
+      if (!sessionUser || !sessionUser.isAdmin) return res.status(403).json({ error: "Admin access required" });
+
       const users = await storage.getAllUsers();
-      
+
       // Return user data without passwords
       const safeUsers = users.map(user => ({
         id: user.id,
@@ -3292,6 +3296,11 @@ Format as JSON:
   // Admin update tier endpoint
   app.post("/api/admin/update-tier", async (req, res) => {
     try {
+      const sessionUserId = (req.session as any)?.userId;
+      if (!sessionUserId) return res.status(401).json({ error: "Authentication required" });
+      const sessionUser = await storage.getUser(sessionUserId);
+      if (!sessionUser || !sessionUser.isAdmin) return res.status(403).json({ error: "Admin access required" });
+
       const { userId, tier } = req.body;
 
       if (!userId || !tier) {
@@ -3326,6 +3335,11 @@ Format as JSON:
   // Create admin user endpoint
   app.post("/api/admin/create-admin", async (req, res) => {
     try {
+      const sessionUserId = (req.session as any)?.userId;
+      if (!sessionUserId) return res.status(401).json({ error: "Authentication required" });
+      const sessionUser = await storage.getUser(sessionUserId);
+      if (!sessionUser || !sessionUser.isAdmin) return res.status(403).json({ error: "Admin access required" });
+
       const { username, email, password } = req.body;
 
       if (!username || !email || !password) {

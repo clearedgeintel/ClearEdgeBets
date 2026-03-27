@@ -9,12 +9,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Session configuration
+if (!process.env.SESSION_SECRET) {
+  throw new Error("SESSION_SECRET environment variable is required");
+}
 app.use(session({
-  secret: 'mlb-betting-secret-key',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { 
-    secure: false, // Set to true in production with HTTPS
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 1000 * 60 * 60 * 24 // 24 hours
   }

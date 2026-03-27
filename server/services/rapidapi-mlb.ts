@@ -1,7 +1,8 @@
 // RapidAPI MLB service using the same endpoints as the n8n workflow
 import fetch from 'node-fetch';
 
-const RAPIDAPI_KEY = "25bba99bcbmshffc54c14b825acep1bbb33jsn48412e55f747";
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+if (!RAPIDAPI_KEY) throw new Error("RAPIDAPI_KEY environment variable is required");
 const RAPIDAPI_HOST_BASEBALL = "baseball4.p.rapidapi.com";
 const RAPIDAPI_HOST_PINNACLE = "pinnacle-odds.p.rapidapi.com";
 
