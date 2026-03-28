@@ -21,16 +21,14 @@ class SchedulerService {
   private initializeTasks() {
     // Daily picks generation at 8 AM Central Time (before AI tickets)
     // Ensures fresh picks are available when users check the site
-    this.addTask('daily-picks-generation', '0 0 13 * * *', this.generateDailyPicks.bind(this));
-    
+    // timezone: 'America/Chicago' is set in addTask, so hours are Central Time
+    this.addTask('daily-picks-generation', '0 0 8 * * *', this.generateDailyPicks.bind(this));
+
     // Daily AI ticket submission at 9 AM Central Time
-    // Cron expression: 0 9 * * * (second, minute, hour, day, month, day-of-week)
-    // Central Time = UTC-6 (standard) or UTC-5 (daylight)
-    // Using 14:00 UTC which is 9:00 AM Central during daylight saving time
-    this.addTask('daily-ai-ticket', '0 0 14 * * *', this.generateDailyAITicket.bind(this));
-    
-    // Optional: Weekly summary ticket every Monday at 9 AM Central
-    this.addTask('weekly-summary', '0 0 14 * * 1', this.generateWeeklySummaryTicket.bind(this));
+    this.addTask('daily-ai-ticket', '0 0 9 * * *', this.generateDailyAITicket.bind(this));
+
+    // Weekly summary ticket every Monday at 9 AM Central
+    this.addTask('weekly-summary', '0 0 9 * * 1', this.generateWeeklySummaryTicket.bind(this));
     
     // Automatic bet settlement every 15 minutes
     this.addTask('auto-bet-settlement', '0 */15 * * * *', this.runAutomaticBetSettlement.bind(this));
