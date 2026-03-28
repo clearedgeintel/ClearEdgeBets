@@ -24,6 +24,7 @@ import apiManagementRoutes from "./routes/api-management";
 import { baseballReferenceService } from "./services/baseball-reference";
 import { teamPowerScoringService } from "./services/team-power-scoring";
 import { schedulerService } from "./services/scheduler";
+import { getCached, setCache } from "./lib/cache";
 // Note: Auth will be handled by existing system
 import Stripe from "stripe";
 import OpenAI from "openai";
@@ -535,27 +536,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const defaultDate = new Date(easternTime).toISOString().split('T')[0];
       const targetDate = date as string || defaultDate;
       
-      // Try to fetch real MLB games with pitcher details first
-      let realMLBGames: any[] = [];
-      try {
-        const date = new Date(targetDate);
-        realMLBGames = await fetchMLBGameDetails(
-          date.getFullYear(), 
-          date.getMonth() + 1, 
-          date.getDate()
-        );
-        console.log(`Fetched ${realMLBGames.length} real MLB games with pitcher details for ${targetDate}`);
-      } catch (error) {
-        console.log("Failed to fetch real MLB games, using generated data:", error);
+      // Try to fetch real MLB games with pitcher details first (cached 30 min)
+      let realMLBGames: any[] = getCached<any[]>(`mlb-games-${targetDate}`) || [];
+      if (realMLBGames.length === 0) {
+        try {
+          const date = new Date(targetDate);
+          realMLBGames = await fetchMLBGameDetails(
+            date.getFullYear(),
+            date.getMonth() + 1,
+            date.getDate()
+          );
+          if (realMLBGames.length > 0) setCache(`mlb-games-${targetDate}`, realMLBGames, 1800);
+          console.log(`Fetched ${realMLBGames.length} real MLB games with pitcher details for ${targetDate}`);
+        } catch (error) {
+          console.log("Failed to fetch real MLB games, using generated data:", error);
+        }
+      } else {
+        console.log(`Cache hit: ${realMLBGames.length} MLB games for ${targetDate}`);
       }
-      
-      // Fetch real odds from sportsbooks
-      let realOdds: any[] = [];
-      try {
-        realOdds = await fetchRealMLBOdds();
-        console.log(`Fetched real odds for ${realOdds.length} MLB games`);
-      } catch (error) {
-        console.log("Failed to fetch real odds:", error);
+
+      // Fetch real odds from sportsbooks (cached 5 min)
+      let realOdds: any[] = getCached<any[]>('mlb-odds') || [];
+      if (realOdds.length === 0) {
+        try {
+          realOdds = await fetchRealMLBOdds();
+          if (realOdds.length > 0) setCache('mlb-odds', realOdds, 300);
+          console.log(`Fetched real odds for ${realOdds.length} MLB games`);
+        } catch (error) {
+          console.log("Failed to fetch real odds:", error);
+        }
+      } else {
+        console.log(`Cache hit: odds for ${realOdds.length} MLB games`);
       }
       
       // Use real MLB games if available, otherwise return empty array (no mock games)
