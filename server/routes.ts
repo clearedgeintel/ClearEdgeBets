@@ -1077,7 +1077,7 @@ Format as JSON:
 }`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         max_tokens: 1000,
@@ -2774,19 +2774,20 @@ Format as JSON:
   // Subscription management
   app.post("/api/subscription/create", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || !req.user) {
+      const sessionUserId = (req.session as any)?.userId;
+      if (!sessionUserId) {
         return res.status(401).json({ error: "Authentication required" });
       }
 
       const { tier } = req.body;
-      
+
       if (!["pro", "elite"].includes(tier)) {
         return res.status(400).json({ error: "Invalid subscription tier" });
       }
 
       // For demo purposes, we'll simulate subscription creation
       // In a real app, this would integrate with Stripe
-      const updatedUser = await storage.updateUserSubscription(req.user.id, {
+      const updatedUser = await storage.updateUserSubscription(sessionUserId, {
         tier,
         status: "active",
         endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now

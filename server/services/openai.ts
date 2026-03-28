@@ -181,7 +181,7 @@ Create a comprehensive daily betting report including:
 Write in a professional, engaging style for serious bettors. Keep it informative but accessible.`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
@@ -375,7 +375,7 @@ Provide consensus analysis for each market (moneyline, total, spread if availabl
 Focus on identifying public vs sharp money discrepancies and line movement significance.`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
