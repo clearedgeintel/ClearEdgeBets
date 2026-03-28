@@ -21,7 +21,7 @@ import { weatherAPI } from "./services/weather-api";
 import { mlbPicksAPI } from "./services/mlb-picks-api";
 import { enhancedMLBPicks } from "./services/enhanced-mlb-picks";
 import apiManagementRoutes from "./routes/api-management";
-import { baseballReferenceService } from "./services/baseball-reference-simple";
+import { baseballReferenceService } from "./services/baseball-reference";
 import { teamPowerScoringService } from "./services/team-power-scoring";
 import { schedulerService } from "./services/scheduler";
 // Note: Auth will be handled by existing system

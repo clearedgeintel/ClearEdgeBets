@@ -6,7 +6,7 @@
 import express from 'express';
 import { mlbStatsAPI } from '../services/mlb-stats-api';
 import { weatherAPI } from '../services/weather-api';
-import { baseballReferenceService } from '../services/baseball-reference-simple';
+import { baseballReferenceService } from '../services/baseball-reference';
 
 const router = express.Router();
 

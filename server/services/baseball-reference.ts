@@ -2,59 +2,30 @@ import fetch from 'node-fetch';
 
 export interface BaseballReferenceStats {
   team: string;
-  batters: number;
-  battingAge: number;
-  runsPerGame: number;
-  games: number;
-  plateAppearances: number;
-  atBats: number;
-  runs: number;
-  hits: number;
-  doubles: number;
-  triples: number;
-  homeRuns: number;
-  rbis: number;
-  stolenBases: number;
-  caughtStealing: number;
-  walks: number;
-  strikeouts: number;
-  battingAverage: number;
-  obp: number;
-  slg: number;
-  ops: number;
+  games?: number;
+  runs?: number;
+  hits?: number;
+  homeRuns?: number;
+  rbis?: number;
+  walks?: number;
+  strikeouts?: number;
+  battingAverage?: number;
+  obp?: number;
+  slg?: number;
+  ops?: number;
+  runsPerGame?: number;
   lastUpdated: Date;
 }
 
 export interface BaseballReferencePitchingStats {
   team: string;
-  pitchers: number;
-  pitchingAge: number;
-  runsAllowedPerGame: number;
-  games: number;
-  gamesStarted: number;
-  completeGames: number;
-  shutouts: number;
-  saves: number;
-  inningsPitched: number;
-  hits: number;
-  runs: number;
-  earnedRuns: number;
-  homeRuns: number;
-  walks: number;
-  intentionalWalks: number;
-  strikeouts: number;
-  hitByPitch: number;
-  balks: number;
-  wildPitches: number;
-  battersFaced: number;
-  era: number;
-  fip: number;
-  whip: number;
-  h9: number;
-  hr9: number;
-  bb9: number;
-  so9: number;
-  so_w: number;
+  games?: number;
+  era?: number;
+  whip?: number;
+  strikeouts?: number;
+  walks?: number;
+  saves?: number;
+  runsAllowedPerGame?: number;
   lastUpdated: Date;
 }
 
@@ -63,17 +34,12 @@ export class BaseballReferenceService {
 
   async fetchTeamBattingStats(): Promise<BaseballReferenceStats[]> {
     try {
-      const url = `${this.baseUrl}/leagues/majors/2025-standard-batting.shtml`;
       console.log('Fetching Baseball Reference team batting stats...');
       
-      const response = await fetch(url, {
+      const response = await fetch(`${this.baseUrl}/leagues/majors/2025-standard-batting.shtml`, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'Connection': 'keep-alive',
-          'Upgrade-Insecure-Requests': '1',
         }
       });
 
@@ -82,29 +48,76 @@ export class BaseballReferenceService {
       }
 
       const html = await response.text();
-      const stats = this.parseTeamBattingStats(html);
+      console.log(`Fetched ${html.length} chars of HTML`);
       
-      console.log(`Successfully fetched batting stats for ${stats.length} teams`);
+      const stats: BaseballReferenceStats[] = [];
+      
+      // Extract team data from HTML using simple string methods
+      const teamNames = [
+        'Arizona Diamondbacks', 'Athletics', 'Atlanta Braves', 'Baltimore Orioles', 
+        'Boston Red Sox', 'Chicago Cubs', 'Chicago White Sox', 'Cincinnati Reds',
+        'Cleveland Guardians', 'Colorado Rockies', 'Detroit Tigers', 'Houston Astros',
+        'Kansas City Royals', 'Los Angeles Angels', 'Los Angeles Dodgers', 'Miami Marlins',
+        'Milwaukee Brewers', 'Minnesota Twins', 'New York Mets', 'New York Yankees',
+        'Philadelphia Phillies', 'Pittsburgh Pirates', 'San Diego Padres', 
+        'San Francisco Giants', 'Seattle Mariners', 'St. Louis Cardinals',
+        'Tampa Bay Rays', 'Texas Rangers', 'Toronto Blue Jays', 'Washington Nationals'
+      ];
+      
+      for (const teamName of teamNames) {
+        try {
+          const teamIndex = html.indexOf(`>${teamName}</`);
+          if (teamIndex === -1) continue;
+          
+          // Find the row containing this team
+          const rowStart = html.lastIndexOf('<tr', teamIndex);
+          const rowEnd = html.indexOf('</tr>', teamIndex);
+          
+          if (rowStart === -1 || rowEnd === -1) continue;
+          
+          const rowHtml = html.substring(rowStart, rowEnd + 5);
+          
+          // Extract basic stats
+          const games = this.extractNumber(rowHtml, 'data-stat="G"');
+          const runs = this.extractNumber(rowHtml, 'data-stat="R"');
+          const hits = this.extractNumber(rowHtml, 'data-stat="H"');
+          const homeRuns = this.extractNumber(rowHtml, 'data-stat="HR"');
+          const ops = this.extractFloat(rowHtml, 'data-stat="onbase_plus_slugging"');
+          
+          if (games > 0) {
+            stats.push({
+              team: this.getTeamCode(teamName),
+              games,
+              runs,
+              hits,
+              homeRuns,
+              ops,
+              runsPerGame: runs / games,
+              lastUpdated: new Date()
+            });
+          }
+        } catch (error) {
+          console.warn(`Error parsing team ${teamName}:`, error);
+        }
+      }
+      
+      console.log(`Successfully parsed batting stats for ${stats.length} teams`);
       return stats;
+      
     } catch (error) {
-      console.error('Error fetching Baseball Reference data:', error);
-      throw error;
+      console.error('Error fetching Baseball Reference batting data:', error);
+      return [];
     }
   }
 
   async fetchTeamPitchingStats(): Promise<BaseballReferencePitchingStats[]> {
     try {
-      const url = `${this.baseUrl}/leagues/majors/2025-standard-pitching.shtml`;
       console.log('Fetching Baseball Reference team pitching stats...');
       
-      const response = await fetch(url, {
+      const response = await fetch(`${this.baseUrl}/leagues/majors/2025-standard-pitching.shtml`, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'Connection': 'keep-alive',
-          'Upgrade-Insecure-Requests': '1',
         }
       });
 
@@ -113,200 +126,107 @@ export class BaseballReferenceService {
       }
 
       const html = await response.text();
-      const stats = this.parseTeamPitchingStats(html);
+      const stats: BaseballReferencePitchingStats[] = [];
       
-      console.log(`Successfully fetched pitching stats for ${stats.length} teams`);
+      const teamNames = [
+        'Arizona Diamondbacks', 'Athletics', 'Atlanta Braves', 'Baltimore Orioles', 
+        'Boston Red Sox', 'Chicago Cubs', 'Chicago White Sox', 'Cincinnati Reds',
+        'Cleveland Guardians', 'Colorado Rockies', 'Detroit Tigers', 'Houston Astros',
+        'Kansas City Royals', 'Los Angeles Angels', 'Los Angeles Dodgers', 'Miami Marlins',
+        'Milwaukee Brewers', 'Minnesota Twins', 'New York Mets', 'New York Yankees',
+        'Philadelphia Phillies', 'Pittsburgh Pirates', 'San Diego Padres', 
+        'San Francisco Giants', 'Seattle Mariners', 'St. Louis Cardinals',
+        'Tampa Bay Rays', 'Texas Rangers', 'Toronto Blue Jays', 'Washington Nationals'
+      ];
+      
+      for (const teamName of teamNames) {
+        try {
+          const teamIndex = html.indexOf(`>${teamName}</`);
+          if (teamIndex === -1) continue;
+          
+          const rowStart = html.lastIndexOf('<tr', teamIndex);
+          const rowEnd = html.indexOf('</tr>', teamIndex);
+          
+          if (rowStart === -1 || rowEnd === -1) continue;
+          
+          const rowHtml = html.substring(rowStart, rowEnd + 5);
+          
+          const games = this.extractNumber(rowHtml, 'data-stat="G"');
+          const era = this.extractFloat(rowHtml, 'data-stat="earned_run_avg"');
+          const whip = this.extractFloat(rowHtml, 'data-stat="whip"');
+          const saves = this.extractNumber(rowHtml, 'data-stat="SV"');
+          
+          if (games > 0) {
+            stats.push({
+              team: this.getTeamCode(teamName),
+              games,
+              era,
+              whip,
+              saves,
+              lastUpdated: new Date()
+            });
+          }
+        } catch (error) {
+          console.warn(`Error parsing pitching team ${teamName}:`, error);
+        }
+      }
+      
+      console.log(`Successfully parsed pitching stats for ${stats.length} teams`);
       return stats;
+      
     } catch (error) {
       console.error('Error fetching Baseball Reference pitching data:', error);
-      throw error;
-    }
-  }
-
-  private parseTeamBattingStats(html: string): BaseballReferenceStats[] {
-    const stats: BaseballReferenceStats[] = [];
-    
-    try {
-      // Extract team batting table data using regex patterns
-      const tableRegex = /<table[^>]*id="teams_standard_batting"[^>]*>(.*?)<\/table>/gs;
-      const tableMatch = html.match(tableRegex);
-      
-      if (!tableMatch || !tableMatch[1]) {
-        console.warn('Could not find teams_standard_batting table or table content is empty');
-        return [];
-      }
-
-      const tableContent = tableMatch[1];
-      
-      // Extract table rows
-      const rowRegex = /<tr[^>]*>(.*?)<\/tr>/gs;
-      const rowMatches = tableContent.match(rowRegex);
-      
-      if (!rowMatches) {
-        console.warn('No table rows found in batting stats');
-        return [];
-      }
-      
-      const rows = rowMatches.map(row => [row, row.replace(/<tr[^>]*>(.*?)<\/tr>/gs, '$1')]);
-      
-      for (const row of rows) {
-        const rowContent = row[1];
-        
-        // Skip header rows and divider rows
-        if (rowContent.includes('<th') || rowContent.includes('class="thead"')) {
-          continue;
-        }
-        
-        // Extract cell data
-        const cellRegex = /<td[^>]*data-stat="([^"]*)"[^>]*>([^<]*(?:<[^>]*>[^<]*<\/[^>]*>[^<]*)*)<\/td>/g;
-        const cells = [...rowContent.matchAll(cellRegex)];
-        
-        if (cells.length === 0) continue;
-        
-        const teamData: any = {};
-        cells.forEach(cell => {
-          const [, statName, value] = cell;
-          teamData[statName] = value.replace(/<[^>]*>/g, '').trim();
-        });
-        
-        // Only process if we have team data
-        if (!teamData.team_ID || teamData.team_ID === '') continue;
-        
-        try {
-          const teamStats: BaseballReferenceStats = {
-            team: teamData.team_ID || teamData.franchise_ID || 'Unknown',
-            batters: parseInt(teamData.batters_used) || 0,
-            battingAge: parseFloat(teamData.age_bat) || 0,
-            runsPerGame: parseFloat(teamData.R_per_game) || 0,
-            games: parseInt(teamData.G) || 0,
-            plateAppearances: parseInt(teamData.PA) || 0,
-            atBats: parseInt(teamData.AB) || 0,
-            runs: parseInt(teamData.R) || 0,
-            hits: parseInt(teamData.H) || 0,
-            doubles: parseInt(teamData['2B']) || 0,
-            triples: parseInt(teamData['3B']) || 0,
-            homeRuns: parseInt(teamData.HR) || 0,
-            rbis: parseInt(teamData.RBI) || 0,
-            stolenBases: parseInt(teamData.SB) || 0,
-            caughtStealing: parseInt(teamData.CS) || 0,
-            walks: parseInt(teamData.BB) || 0,
-            strikeouts: parseInt(teamData.SO) || 0,
-            battingAverage: parseFloat(teamData.batting_avg) || 0,
-            obp: parseFloat(teamData.onbase_perc) || 0,
-            slg: parseFloat(teamData.slugging_perc) || 0,
-            ops: parseFloat(teamData.onbase_plus_slugging) || 0,
-            lastUpdated: new Date()
-          };
-          
-          stats.push(teamStats);
-        } catch (parseError) {
-          console.warn(`Error parsing team data:`, parseError);
-          continue;
-        }
-      }
-      
-      return stats.filter(stat => stat.team && stat.team !== 'Unknown');
-    } catch (error) {
-      console.error('Error parsing Baseball Reference HTML:', error);
       return [];
     }
   }
 
-  private parseTeamPitchingStats(html: string): BaseballReferencePitchingStats[] {
-    const stats: BaseballReferencePitchingStats[] = [];
-    
-    try {
-      // Extract team pitching table data using regex patterns
-      const tableRegex = /<table[^>]*id="teams_standard_pitching"[^>]*>(.*?)<\/table>/gs;
-      const tableMatch = html.match(tableRegex);
-      
-      if (!tableMatch || !tableMatch[1]) {
-        console.warn('Could not find teams_standard_pitching table or table content is empty');
-        return [];
-      }
+  private extractNumber(html: string, pattern: string): number {
+    const regex = new RegExp(`${pattern}[^>]*>([0-9,]+)`, 'i');
+    const match = html.match(regex);
+    return match ? parseInt(match[1].replace(/,/g, ''), 10) : 0;
+  }
 
-      const tableContent = tableMatch[1];
-      
-      // Extract table rows
-      const rowRegex = /<tr[^>]*>(.*?)<\/tr>/gs;
-      const rowMatches = tableContent.match(rowRegex);
-      
-      if (!rowMatches) {
-        console.warn('No table rows found in pitching stats');
-        return [];
-      }
-      
-      const rows = rowMatches.map(row => [row, row.replace(/<tr[^>]*>(.*?)<\/tr>/gs, '$1')]);
-      
-      for (const row of rows) {
-        const rowContent = row[1];
-        
-        // Skip header rows and divider rows
-        if (rowContent.includes('<th') || rowContent.includes('class="thead"')) {
-          continue;
-        }
-        
-        // Extract cell data
-        const cellRegex = /<td[^>]*data-stat="([^"]*)"[^>]*>([^<]*(?:<[^>]*>[^<]*<\/[^>]*>[^<]*)*)<\/td>/g;
-        const cells = [...rowContent.matchAll(cellRegex)];
-        
-        if (cells.length === 0) continue;
-        
-        const teamData: any = {};
-        cells.forEach(cell => {
-          const [, statName, value] = cell;
-          teamData[statName] = value.replace(/<[^>]*>/g, '').trim();
-        });
-        
-        // Only process if we have team data
-        if (!teamData.team_ID || teamData.team_ID === '') continue;
-        
-        try {
-          const teamStats: BaseballReferencePitchingStats = {
-            team: teamData.team_ID || teamData.franchise_ID || 'Unknown',
-            pitchers: parseInt(teamData.pitchers_used) || 0,
-            pitchingAge: parseFloat(teamData.age_pit) || 0,
-            runsAllowedPerGame: parseFloat(teamData.RA_per_game) || 0,
-            games: parseInt(teamData.G) || 0,
-            gamesStarted: parseInt(teamData.GS) || 0,
-            completeGames: parseInt(teamData.CG) || 0,
-            shutouts: parseInt(teamData.SHO) || 0,
-            saves: parseInt(teamData.SV) || 0,
-            inningsPitched: parseFloat(teamData.IP) || 0,
-            hits: parseInt(teamData.H) || 0,
-            runs: parseInt(teamData.R) || 0,
-            earnedRuns: parseInt(teamData.ER) || 0,
-            homeRuns: parseInt(teamData.HR) || 0,
-            walks: parseInt(teamData.BB) || 0,
-            intentionalWalks: parseInt(teamData.IBB) || 0,
-            strikeouts: parseInt(teamData.SO) || 0,
-            hitByPitch: parseInt(teamData.HBP) || 0,
-            balks: parseInt(teamData.BK) || 0,
-            wildPitches: parseInt(teamData.WP) || 0,
-            battersFaced: parseInt(teamData.BF) || 0,
-            era: parseFloat(teamData.earned_run_avg) || 0,
-            fip: parseFloat(teamData.FIP) || 0,
-            whip: parseFloat(teamData.WHIP) || 0,
-            h9: parseFloat(teamData.H9) || 0,
-            hr9: parseFloat(teamData.HR9) || 0,
-            bb9: parseFloat(teamData.BB9) || 0,
-            so9: parseFloat(teamData.SO9) || 0,
-            so_w: parseFloat(teamData.SO_W) || 0,
-            lastUpdated: new Date()
-          };
-          
-          stats.push(teamStats);
-        } catch (parseError) {
-          console.warn(`Error parsing pitching team data:`, parseError);
-          continue;
-        }
-      }
-      
-      return stats.filter(stat => stat.team && stat.team !== 'Unknown');
-    } catch (error) {
-      console.error('Error parsing Baseball Reference pitching HTML:', error);
-      return [];
-    }
+  private extractFloat(html: string, pattern: string): number {
+    const regex = new RegExp(`${pattern}[^>]*>([0-9,.]+)`, 'i');
+    const match = html.match(regex);
+    return match ? parseFloat(match[1]) : 0.0;
+  }
+
+  private getTeamCode(teamName: string): string {
+    const teamMap: { [key: string]: string } = {
+      'Arizona Diamondbacks': 'ARI',
+      'Athletics': 'OAK',
+      'Atlanta Braves': 'ATL',
+      'Baltimore Orioles': 'BAL',
+      'Boston Red Sox': 'BOS',
+      'Chicago Cubs': 'CHC',
+      'Chicago White Sox': 'CHW',
+      'Cincinnati Reds': 'CIN',
+      'Cleveland Guardians': 'CLE',
+      'Colorado Rockies': 'COL',
+      'Detroit Tigers': 'DET',
+      'Houston Astros': 'HOU',
+      'Kansas City Royals': 'KAN',
+      'Los Angeles Angels': 'LAA',
+      'Los Angeles Dodgers': 'LAD',
+      'Miami Marlins': 'MIA',
+      'Milwaukee Brewers': 'MIL',
+      'Minnesota Twins': 'MIN',
+      'New York Mets': 'NYM',
+      'New York Yankees': 'NYY',
+      'Philadelphia Phillies': 'PHI',
+      'Pittsburgh Pirates': 'PIT',
+      'San Diego Padres': 'SDP',
+      'San Francisco Giants': 'SFG',
+      'Seattle Mariners': 'SEA',
+      'St. Louis Cardinals': 'STL',
+      'Tampa Bay Rays': 'TBR',
+      'Texas Rangers': 'TEX',
+      'Toronto Blue Jays': 'TOR',
+      'Washington Nationals': 'WSN'
+    };
+    
+    return teamMap[teamName] || teamName.substring(0, 3).toUpperCase();
   }
 }
 
