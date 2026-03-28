@@ -715,3 +715,19 @@ export type BaseballReferencePitchingStats = typeof baseballReferencePitchingSta
 
 export type InsertGameEvaluation = typeof gameEvaluations.$inferInsert;
 export type GameEvaluation = typeof gameEvaluations.$inferSelect;
+
+// Odds history for line movement tracking
+export const oddsHistory = pgTable("odds_history", {
+  id: serial("id").primaryKey(),
+  gameId: text("game_id").notNull(),
+  bookmaker: text("bookmaker").notNull(),
+  market: text("market").notNull(), // moneyline, spread, total
+  awayOdds: integer("away_odds"),
+  homeOdds: integer("home_odds"),
+  line: decimal("line", { precision: 5, scale: 1 }), // spread or total line value
+  recordedAt: timestamp("recorded_at").defaultNow().notNull(),
+});
+
+export const insertOddsHistorySchema = createInsertSchema(oddsHistory).omit({ id: true, recordedAt: true });
+export type InsertOddsHistory = z.infer<typeof insertOddsHistorySchema>;
+export type OddsHistory = typeof oddsHistory.$inferSelect;

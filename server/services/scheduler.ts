@@ -2,6 +2,8 @@ import cron from 'node-cron';
 import { storage } from '../storage';
 import { generateAITicket } from './openai';
 import { settlePendingBets, settleVirtualBets, syncLiveGameData } from './bet-settlement';
+import { fetchRealMLBOdds } from './realOdds';
+import { logger } from '../lib/logger';
 
 interface ScheduledTask {
   name: string;
@@ -32,7 +34,10 @@ class SchedulerService {
     
     // Automatic bet settlement every 15 minutes
     this.addTask('auto-bet-settlement', '0 */15 * * * *', this.runAutomaticBetSettlement.bind(this));
-    
+
+    // Odds history snapshot every 30 minutes (builds line movement data)
+    this.addTask('odds-snapshot', '0 */30 * * * *', this.snapshotOdds.bind(this));
+
     console.log('✓ Scheduler service initialized with automated daily picks, AI tickets, and bet settlement');
     console.log('  - Daily picks: 8:00 AM Central Time');
     console.log('  - Daily tickets: 9:00 AM Central Time');
@@ -65,11 +70,11 @@ class SchedulerService {
         }
 
         try {
-          console.log(`[${new Date().toISOString()}] Starting scheduled task: ${name}`);
+          logger.info(`Starting scheduled task: ${name}`, { task: name });
           await taskFunction();
-          console.log(`[${new Date().toISOString()}] Completed scheduled task: ${name}`);
+          logger.info(`Completed scheduled task: ${name}`, { task: name });
         } catch (error) {
-          console.error(`[${new Date().toISOString()}] Error in scheduled task ${name}:`, error);
+          logger.error(`Error in scheduled task ${name}`, { task: name, error: String(error) });
         } finally {
           if (taskInfo) {
             taskInfo.isRunning = false;
@@ -279,7 +284,33 @@ class SchedulerService {
     }
   }
 
-  // Generate daily picks automatically 
+  private async snapshotOdds() {
+    try {
+      const odds = await fetchRealMLBOdds();
+      if (odds.length === 0) return;
+
+      const entries = odds.flatMap(game => {
+        const rows = [];
+        if (game.moneyline) {
+          rows.push({ gameId: game.gameId, bookmaker: 'consensus', market: 'moneyline', awayOdds: game.moneyline.away, homeOdds: game.moneyline.home, line: null });
+        }
+        if (game.spread) {
+          rows.push({ gameId: game.gameId, bookmaker: 'consensus', market: 'spread', awayOdds: (game.spread as any).awayOdds, homeOdds: (game.spread as any).homeOdds, line: String(game.spread.line) });
+        }
+        if (game.total) {
+          rows.push({ gameId: game.gameId, bookmaker: 'consensus', market: 'total', awayOdds: game.total.over, homeOdds: game.total.under, line: String(game.total.line) });
+        }
+        return rows;
+      });
+
+      await storage.recordOddsSnapshot(entries);
+      console.log(`📊 Odds snapshot recorded: ${entries.length} entries for ${odds.length} games`);
+    } catch (error) {
+      console.error('❌ Odds snapshot failed:', error);
+    }
+  }
+
+  // Generate daily picks automatically
   private async generateDailyPicks() {
     try {
       const today = new Date().toISOString().split('T')[0];

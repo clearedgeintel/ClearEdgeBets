@@ -1,4 +1,4 @@
-import { users, games, odds, aiSummaries, bets, props, dailyPicks, gameEvaluations, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, tickets, virtualBets, virtualBettingSlip, phraseDetectionRules, baseballReferenceStats, baseballReferencePitchingStats, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type GameEvaluation, type InsertGameEvaluation, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship, type Ticket, type InsertTicket, type VirtualBet, type InsertVirtualBet, type VirtualBettingSlip, type InsertVirtualBettingSlip, type PhraseDetectionRule, type InsertPhraseDetectionRule, type BaseballReferenceStats, type InsertBaseballReferenceStats, type BaseballReferencePitchingStats, type InsertBaseballReferencePitchingStats } from "@shared/schema";
+import { users, games, odds, aiSummaries, bets, props, dailyPicks, gameEvaluations, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, tickets, virtualBets, virtualBettingSlip, phraseDetectionRules, baseballReferenceStats, baseballReferencePitchingStats, oddsHistory, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type GameEvaluation, type InsertGameEvaluation, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship, type Ticket, type InsertTicket, type VirtualBet, type InsertVirtualBet, type VirtualBettingSlip, type InsertVirtualBettingSlip, type PhraseDetectionRule, type InsertPhraseDetectionRule, type BaseballReferenceStats, type InsertBaseballReferenceStats, type BaseballReferencePitchingStats, type InsertBaseballReferencePitchingStats, type InsertOddsHistory, type OddsHistory } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, gte, lte, desc, lt } from "drizzle-orm";
 
@@ -1763,7 +1763,7 @@ export class DatabaseStorage implements IStorage {
 
   async getTeamBaseballReferencePitchingStats(team: string, date?: string): Promise<BaseballReferencePitchingStats | undefined> {
     const targetDate = date || new Date().toISOString().split('T')[0];
-    
+
     const [stats] = await db
       .select()
       .from(baseballReferencePitchingStats)
@@ -1773,8 +1773,21 @@ export class DatabaseStorage implements IStorage {
           eq(baseballReferencePitchingStats.date, targetDate)
         )
       );
-    
+
     return stats;
+  }
+
+  async recordOddsSnapshot(entries: InsertOddsHistory[]): Promise<void> {
+    if (entries.length === 0) return;
+    await db.insert(oddsHistory).values(entries);
+  }
+
+  async getOddsHistory(gameId: string, market: string): Promise<OddsHistory[]> {
+    return db
+      .select()
+      .from(oddsHistory)
+      .where(and(eq(oddsHistory.gameId, gameId), eq(oddsHistory.market, market)))
+      .orderBy(oddsHistory.recordedAt);
   }
 }
 
