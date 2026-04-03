@@ -73,13 +73,13 @@ export default function PlayerRankings() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Trophy className="h-6 w-6 text-amber-400" />
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-amber-400" />
             Player Power Rankings
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Sortable leaderboards powered by composite scoring</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Sortable leaderboards by composite scoring</p>
         </div>
         <div className="flex items-center gap-1.5">
           <Button size="sm" variant={type === 'hitters' ? 'default' : 'outline'} onClick={() => { setType('hitters'); setSortBy('powerScore'); }} className={type === 'hitters' ? 'bg-emerald-600' : ''}>

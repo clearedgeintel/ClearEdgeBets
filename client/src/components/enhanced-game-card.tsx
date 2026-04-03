@@ -317,7 +317,7 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
       {expanded && (
       <CardContent className="pt-0">
         {/* Quick Odds Display */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
           {moneylineOdds && (
             <div className="text-center p-2.5 bg-zinc-900/50 border border-border/50 rounded-lg">
               <p className="text-[10px] text-muted-foreground font-medium mb-2 uppercase tracking-wider">Moneyline</p>

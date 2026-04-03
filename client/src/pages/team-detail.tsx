@@ -116,23 +116,23 @@ export default function TeamDetailPage() {
       </Link>
 
       {/* Team Header */}
-      <div className="flex items-center gap-6 mb-8">
-        <img src={team.logo} alt={team.teamName} className="h-24 w-24" />
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">{team.teamName}</h1>
-          <div className="flex items-center gap-3 text-muted-foreground text-sm mt-1">
+      <div className="flex items-center gap-4 sm:gap-6 mb-6">
+        <img src={team.logo} alt={team.teamName} className="h-16 w-16 sm:h-24 sm:w-24 flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl sm:text-3xl font-bold text-foreground tracking-tight truncate">{team.teamName}</h1>
+          <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs sm:text-sm mt-1">
             <span>{team.conference} · {team.division}</span>
             <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{team.venue}</span>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-4xl font-bold tabular-nums text-foreground">{team.wins}-{team.losses}</div>
-          <div className="text-sm text-muted-foreground">{wpct} Win%</div>
+        <div className="text-right flex-shrink-0">
+          <div className="text-2xl sm:text-4xl font-bold tabular-nums text-foreground">{team.wins}-{team.losses}</div>
+          <div className="text-xs sm:text-sm text-muted-foreground">{wpct}</div>
         </div>
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-6">
         <Card className="border-border/30">
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-foreground tabular-nums">{team.runsScored}</div>
@@ -291,15 +291,15 @@ export default function TeamDetailPage() {
                 <tr className="text-[10px] text-muted-foreground uppercase tracking-wider border-b border-border/30">
                   <th className="text-left py-2 px-4">Player</th>
                   <th className="text-center py-2 px-2">Pos</th>
-                  <th className="text-center py-2 px-2">B/T</th>
+                  <th className="text-center py-2 px-2 hidden sm:table-cell">B/T</th>
                   <th className="text-center py-2 px-2">GP</th>
                   <th className="text-center py-2 px-2">AVG</th>
                   <th className="text-center py-2 px-2">HR</th>
                   <th className="text-center py-2 px-2">RBI</th>
-                  <th className="text-center py-2 px-2">OBP</th>
-                  <th className="text-center py-2 px-2">SLG</th>
-                  <th className="text-center py-2 px-2">OPS</th>
-                  <th className="text-center py-2 px-2">SB</th>
+                  <th className="text-center py-2 px-2 hidden sm:table-cell">OBP</th>
+                  <th className="text-center py-2 px-2 hidden sm:table-cell">SLG</th>
+                  <th className="text-center py-2 px-2 hidden sm:table-cell">OPS</th>
+                  <th className="text-center py-2 px-2 hidden sm:table-cell">SB</th>
                 </tr>
               </thead>
               <tbody>
@@ -330,15 +330,15 @@ export default function TeamDetailPage() {
                         </div>
                       </td>
                       <td className="text-center py-2 px-2 text-muted-foreground">{p.pos}</td>
-                      <td className="text-center py-2 px-2 text-muted-foreground text-xs">{p.bat}/{p.throw}</td>
+                      <td className="text-center py-2 px-2 text-muted-foreground text-xs hidden sm:table-cell">{p.bat}/{p.throw}</td>
                       <td className="text-center py-2 px-2 tabular-nums">{p.stats?.gamesPlayed || '-'}</td>
                       <td className="text-center py-2 px-2 tabular-nums font-medium">{avg}</td>
                       <td className="text-center py-2 px-2 tabular-nums">{h?.HR || '-'}</td>
                       <td className="text-center py-2 px-2 tabular-nums">{h?.RBI || '-'}</td>
-                      <td className="text-center py-2 px-2 tabular-nums">{h?.OBP || '-'}</td>
-                      <td className="text-center py-2 px-2 tabular-nums">{h?.SLG || '-'}</td>
-                      <td className="text-center py-2 px-2 tabular-nums">{h?.OPS || '-'}</td>
-                      <td className="text-center py-2 px-2 tabular-nums">{h?.SB || '-'}</td>
+                      <td className="text-center py-2 px-2 tabular-nums hidden sm:table-cell">{h?.OBP || '-'}</td>
+                      <td className="text-center py-2 px-2 tabular-nums hidden sm:table-cell">{h?.SLG || '-'}</td>
+                      <td className="text-center py-2 px-2 tabular-nums hidden sm:table-cell">{h?.OPS || '-'}</td>
+                      <td className="text-center py-2 px-2 tabular-nums hidden sm:table-cell">{h?.SB || '-'}</td>
                     </tr>
                   );
                 })}

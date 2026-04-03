@@ -191,7 +191,7 @@ export default function TodaysGames() {
               </p>
 
               {/* Date Navigation */}
-              <div className="flex items-center space-x-4 mt-4">
+              <div className="flex flex-wrap items-center gap-2 mt-4">
                 <Button
                   variant="outline"
                   size="sm"
@@ -248,7 +248,7 @@ export default function TodaysGames() {
             
             {/* Quick Stats */}
             <div className="mt-6 lg:mt-0 lg:ml-8">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-foreground">{stats.totalGames}</div>
                   <div className="text-sm text-muted-foreground">Games</div>

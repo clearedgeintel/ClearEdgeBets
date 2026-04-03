@@ -213,7 +213,7 @@ export default function Home() {
           <div className="space-y-4">
             {/* Featured story — hero */}
             <Link href="/blog">
-              <div className="relative rounded-xl overflow-hidden aspect-[21/9] bg-zinc-900 cursor-pointer group">
+              <div className="relative rounded-xl overflow-hidden aspect-video sm:aspect-[21/9] bg-zinc-900 cursor-pointer group">
                 {featured.heroImage ? (
                   <img src={featured.heroImage} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 ) : (

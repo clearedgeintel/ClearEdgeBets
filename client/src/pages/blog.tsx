@@ -266,7 +266,7 @@ export default function Blog() {
       {/* Featured story (first review) */}
       {featured && (
         <div className="mb-8 cursor-pointer group" onClick={() => setSelectedReview(featured)}>
-          <div className="relative rounded-xl overflow-hidden aspect-[21/9] bg-zinc-900 mb-4">
+          <div className="relative rounded-xl overflow-hidden aspect-video sm:aspect-[21/9] bg-zinc-900 mb-4">
             {featured.heroImage ? (
               <img src={featured.heroImage} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             ) : (
