@@ -845,6 +845,190 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Yesterday's scores (public)
+  app.get('/api/scores/yesterday', async (req, res) => {
+    try {
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      const date = (req.query.date as string) || d.toISOString().split('T')[0];
+      const { fetchTank01Scores } = await import('./services/tank01-mlb');
+      const scores = await fetchTank01Scores(date);
+      res.json(scores);
+    } catch {
+      res.json({});
+    }
+  });
+
+  // ── Editor's Desk: Assign writers to topics/games ──────────────
+
+  // Get all editorial columns (public)
+  app.get('/api/editorial/columns', async (req, res) => {
+    try {
+      const columns = await storage.getEditorialColumns(50);
+      res.json(columns);
+    } catch { res.json([]); }
+  });
+
+  // Get columns for a specific assignment
+  app.get('/api/editorial/assignment/:id', async (req, res) => {
+    try {
+      const columns = await storage.getEditorialColumnsByAssignment(req.params.id);
+      res.json(columns);
+    } catch { res.json([]); }
+  });
+
+  // Get single column by slug
+  app.get('/api/editorial/column/:slug', async (req, res) => {
+    try {
+      const col = await storage.getEditorialColumnBySlug(req.params.slug);
+      if (!col) return res.status(404).json({ error: 'Not found' });
+      res.json(col);
+    } catch { res.status(500).json({ error: 'Failed' }); }
+  });
+
+  // Publish an editorial column to The Morning Roast (admin)
+  app.post('/api/editorial/publish/:id', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
+
+      const colId = parseInt(req.params.id);
+      const columns = await storage.getEditorialColumns(200);
+      const col = columns.find(c => c.id === colId);
+      if (!col) return res.status(404).json({ error: 'Column not found' });
+
+      // Parse game info from gameId if present
+      let awayTeam = 'ClearEdge Sports';
+      let homeTeam = 'Editorial';
+      let awayScore = 0;
+      let homeScore = 0;
+      let gameDate = new Date().toISOString().split('T')[0];
+      let awayLogo: string | undefined;
+      let homeLogo: string | undefined;
+
+      if (col.gameId) {
+        const parts = col.gameId.split('_');
+        const datePart = parts[0] || '';
+        gameDate = datePart.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
+        const teams = (parts[1] || '').split('@');
+        const awayCode = teams[0] || '';
+        const homeCode = teams[1] || '';
+        const { getTeamFullName } = await import('./services/tank01-mlb');
+        awayTeam = getTeamFullName(awayCode);
+        homeTeam = getTeamFullName(homeCode);
+        awayLogo = `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${awayCode.toLowerCase()}.png`;
+        homeLogo = `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${homeCode.toLowerCase()}.png`;
+
+        // Try to get scores from box score data
+        try {
+          const { fetchTank01Scores } = await import('./services/tank01-mlb');
+          const scores = await fetchTank01Scores(gameDate);
+          const gameScores = scores[col.gameId];
+          if (gameScores?.lineScore) {
+            awayScore = parseInt(gameScores.lineScore.away?.R || '0');
+            homeScore = parseInt(gameScores.lineScore.home?.R || '0');
+          }
+        } catch {}
+      }
+
+      const slug = `published-${col.id}-${col.author.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
+
+      const saved = await storage.createBlogReview({
+        gameId: col.gameId || `editorial-${col.id}`,
+        gameDate,
+        awayTeam,
+        homeTeam,
+        awayScore,
+        homeScore,
+        title: col.title,
+        content: col.content,
+        slug,
+        author: col.author,
+        authorMood: col.authorMood,
+        venue: undefined,
+        weather: undefined,
+        attendance: undefined,
+        heroImage: undefined,
+        awayLogo,
+        homeLogo,
+        espnRecap: undefined,
+        boxScoreData: undefined,
+      });
+
+      res.json({ success: true, review: saved });
+    } catch (error: any) {
+      console.error('Error publishing column:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create an assignment: topic + writers → generate columns (admin)
+  app.post('/api/editorial/assign', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
+
+      const { topic, writerNames, gameID } = req.body;
+      if (!topic || !writerNames?.length) return res.status(400).json({ error: 'topic and writerNames required' });
+
+      const { getBeatWriter } = await import('@shared/beat-writers');
+      const { generateWriterColumn } = await import('./services/openai');
+
+      // If a gameID is provided, fetch the box score for context
+      let context = '';
+      if (gameID) {
+        try {
+          const { trackedFetch } = await import('./lib/api-tracker');
+          const boxResp = await trackedFetch(
+            `https://tank01-mlb-live-in-game-real-time-statistics.p.rapidapi.com/getMLBBoxScore?gameID=${gameID}`,
+            { headers: { 'x-rapidapi-host': 'tank01-mlb-live-in-game-real-time-statistics.p.rapidapi.com', 'x-rapidapi-key': process.env.TANK01_API_KEY || '' } }
+          );
+          if (boxResp.ok) {
+            const box = (await boxResp.json() as any).body;
+            context = `Game: ${box.away} ${box.lineScore?.away?.R || '?'} @ ${box.home} ${box.lineScore?.home?.R || '?'}\n`;
+            context += `Venue: ${box.Venue || 'N/A'} | Weather: ${box.Weather || 'N/A'} | Attendance: ${box.Attendance || 'N/A'}\n`;
+            context += `Line Score: ${JSON.stringify(box.lineScore)}\n`;
+            context += `Decisions: ${JSON.stringify(box.decisions)}`;
+          }
+        } catch {}
+      }
+
+      const assignmentId = `ed-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const results: any[] = [];
+
+      // Generate columns sequentially (to avoid OpenAI rate limits)
+      for (const writerName of writerNames) {
+        const writer = getBeatWriter(writerName);
+        if (!writer) continue;
+
+        const column = await generateWriterColumn(writer, topic, context || undefined);
+        const slug = `${assignmentId}-${writer.name.toLowerCase().replace(/\s+/g, '-')}`;
+
+        const saved = await storage.createEditorialColumn({
+          assignmentId,
+          topic,
+          gameId: gameID || null,
+          author: writer.name,
+          authorMood: writer.mood,
+          title: column.title || `${writer.name} on: ${topic}`,
+          content: column.content || 'Column pending.',
+          slug,
+        });
+
+        results.push(saved);
+      }
+
+      res.json({ assignmentId, topic, columns: results });
+    } catch (error: any) {
+      console.error('Error creating editorial assignment:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ── Team Detail Data (public) ──────────────────────────────────
 
   // Get team info + roster + standings

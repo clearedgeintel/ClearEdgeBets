@@ -757,6 +757,24 @@ export const blogReviews = pgTable("blog_reviews", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Editorial columns: ad-hoc or multi-writer assignments
+export const editorialColumns = pgTable("editorial_columns", {
+  id: serial("id").primaryKey(),
+  assignmentId: text("assignment_id").notNull(),     // Groups columns from the same assignment
+  topic: text("topic").notNull(),                     // The assignment/topic text
+  gameId: text("game_id"),                            // Optional linked game
+  author: text("author").notNull(),
+  authorMood: text("author_mood"),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  slug: text("slug").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertEditorialColumnSchema = createInsertSchema(editorialColumns).omit({ id: true, createdAt: true });
+export type InsertEditorialColumn = z.infer<typeof insertEditorialColumnSchema>;
+export type EditorialColumn = typeof editorialColumns.$inferSelect;
+
 export const insertBlogReviewSchema = createInsertSchema(blogReviews).omit({ id: true, createdAt: true });
 export type InsertBlogReview = z.infer<typeof insertBlogReviewSchema>;
 export type BlogReview = typeof blogReviews.$inferSelect;

@@ -144,6 +144,20 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           icon: FileText,
           current: location === "/blog",
           description: "Sarcastic AI game recaps"
+        },
+        {
+          name: "The Newsroom",
+          href: "/writers",
+          icon: Users,
+          current: location === "/writers",
+          description: "Meet our 25 AI beat writers"
+        },
+        {
+          name: "Editor's Desk",
+          href: "/editors-desk",
+          icon: FileText,
+          current: location === "/editors-desk",
+          description: "Assign stories to your newsroom"
         }
       ],
       proItems: [

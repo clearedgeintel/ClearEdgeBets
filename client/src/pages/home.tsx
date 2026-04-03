@@ -1,30 +1,48 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState, useMemo } from "react";
-import GameCard from "@/components/game-card";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Star, TrendingUp, Target, Filter, Crown, Zap, ArrowRight, Users, BarChart3, Shield, Newspaper, Clock, ExternalLink } from "lucide-react";
-
+import { ArrowRight, Newspaper, Pen, Calendar, Clock, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Link } from "wouter";
+import { format, subDays } from "date-fns";
 
-interface MLBNewsArticle {
-  id: string;
-  title: string;
-  summary: string;
-  url: string;
-  publishedAt: string;
-  author?: string;
-  imageUrl?: string;
-  category?: string;
-  source?: string;
+function teamLogo(code: string) {
+  return `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${code.toLowerCase()}.png`;
 }
 
-interface Game {
+interface ScoreGame {
+  gameID: string;
+  away: string;
+  home: string;
+  awayResult?: string;
+  homeResult?: string;
+  gameStatus?: string;
+  gameStatusCode?: string;
+  gameTime?: string;
+  lineScore?: { away?: { R?: string }; home?: { R?: string } };
+}
+
+interface BlogReview {
+  id: number;
+  gameId: string;
+  gameDate: string;
+  awayTeam: string;
+  homeTeam: string;
+  awayScore: number;
+  homeScore: number;
+  title: string;
+  content: string;
+  slug: string;
+  author: string;
+  authorMood?: string;
+  heroImage?: string;
+  awayLogo?: string;
+  homeLogo?: string;
+  createdAt: string;
+}
+
+interface TodayGame {
   id: number;
   gameId: string;
   awayTeam: string;
@@ -35,734 +53,267 @@ interface Game {
   venue: string;
   awayPitcher?: string;
   homePitcher?: string;
-  awayPitcherStats?: string;
-  homePitcherStats?: string;
   status: string;
-  odds: Array<{
-    id: number;
-    gameId: string;
-    bookmaker: string;
-    market: string;
-    awayOdds?: number;
-    homeOdds?: number;
-    overOdds?: number;
-    underOdds?: number;
-    total?: string;
-    awaySpread?: string;
-    homeSpread?: string;
-    awaySpreadOdds?: number;
-    homeSpreadOdds?: number;
-    publicPercentage?: any;
-  }>;
-  aiSummary?: {
-    id: number;
-    gameId: string;
-    summary: string;
-    confidence: number;
-    valuePlays: Array<{
-      type: string;
-      selection: string;
-      reasoning: string;
-      expectedValue: number;
-    }>;
-  };
+  odds: Array<{ market: string; awayOdds?: number; homeOdds?: number; total?: string }>;
 }
 
 export default function Home() {
-  const [filter, setFilter] = useState("all");
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const { user } = useAuth();
+  useAuth(); // ensure auth context is available
+  const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
 
-  const { data: games = [], isLoading } = useQuery<Game[]>({
+  // Today's games
+  const { data: todayGames = [] } = useQuery<TodayGame[]>({
     queryKey: ["/api/games"],
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 60000,
   });
 
-  const { data: userBets = [] } = useQuery<any[]>({
-    queryKey: ["/api/bets"],
+  // Yesterday's scores (public endpoint)
+  const { data: yesterdayScores } = useQuery<Record<string, ScoreGame>>({
+    queryKey: ["/api/scores/yesterday", yesterday],
+    queryFn: () => fetch(`/api/scores/yesterday?date=${yesterday}`).then(r => r.ok ? r.json() : {}),
+    staleTime: 300000,
   });
 
-  // Fetch MLB News
-  const { data: mlbNews = [], isLoading: newsLoading } = useQuery<MLBNewsArticle[]>({
-    queryKey: ["/api/mlb/news"],
-    refetchInterval: 300000, // Refresh every 5 minutes
+  // Morning Roast blog reviews
+  const { data: blogReviews = [] } = useQuery<BlogReview[]>({
+    queryKey: ['/api/blog/reviews'],
+    queryFn: () => fetch('/api/blog/reviews', { credentials: 'include' }).then(r => r.json()),
   });
 
-  // Fetch actual daily picks for AI top picks
-  const today = new Date().toISOString().split('T')[0];
-  const { data: dailyPicks = [] } = useQuery<any[]>({
-    queryKey: ["/api/daily-picks", today],
-    queryFn: () => fetch(`/api/daily-picks?date=${today}`).then(res => res.json()),
-    refetchInterval: 300000, // Refresh every 5 minutes
-  });
-
-  // Check if user is new (no subscription and no bets)
-  const isNewUser = user && user.subscriptionTier === "free" && userBets.length === 0;
-
-  const filteredGames = games.filter(game => {
-    if (filter === "early") {
-      const gameHour = parseInt(game.gameTime.split(":")[0]);
-      return gameHour < 19; // Before 7 PM
-    }
-    if (filter === "late") {
-      const gameHour = parseInt(game.gameTime.split(":")[0]);
-      return gameHour >= 19; // 7 PM or later
-    }
-    return true;
-  }).sort((a, b) => {
-    // Sort by game time in ascending order (earliest first)
-    const timeA = a.gameTime.replace(/[^\d:]/g, ''); // Remove AM/PM, keep just time
-    const timeB = b.gameTime.replace(/[^\d:]/g, ''); // Remove AM/PM, keep just time
-    
-    // Convert to 24-hour format for proper sorting
-    const convertTo24Hour = (time: string, originalTime: string) => {
-      const [hours, minutes] = time.split(':').map(Number);
-      const isPM = originalTime.toLowerCase().includes('pm');
-      const isAM = originalTime.toLowerCase().includes('am');
-      
-      if (isPM && hours !== 12) {
-        return (hours + 12) * 100 + minutes;
-      } else if (isAM && hours === 12) {
-        return minutes;
-      } else {
-        return hours * 100 + minutes;
-      }
-    };
-    
-    const timeValueA = convertTo24Hour(timeA, a.gameTime);
-    const timeValueB = convertTo24Hour(timeB, b.gameTime);
-    
-    return timeValueA - timeValueB;
-  });
-
-  // Use actual daily picks for top AI picks section
-  const displayPicks = (Array.isArray(dailyPicks) ? dailyPicks : [])
-    .sort((a, b) => (b.confidence || 0) - (a.confidence || 0)) // Sort by confidence
-    .slice(0, 3) // Take top 3
-    .map((pick, index) => {
-      // Extract team info from gameId format "Team A @ Team B"
-      const gameIdParts = pick.gameId.split(' @ ');
-      const awayTeamFull = gameIdParts[0] || '';
-      const homeTeamFull = gameIdParts[1] || '';
-      
-      // Create team codes by taking last word of team name
-      const awayTeamCode = awayTeamFull.split(' ').pop() || 'TBD';
-      const homeTeamCode = homeTeamFull.split(' ').pop() || 'TBD';
-      
-      // Find the corresponding game data by matching team names
-      const game = games.find(g => {
-        // Direct match by gameId
-        if (g.gameId === pick.gameId) return true;
-        
-        // Match by full team names
-        if (g.awayTeam === awayTeamFull && g.homeTeam === homeTeamFull) return true;
-        
-        // Match by team codes
-        if (g.awayTeamCode === awayTeamCode && g.homeTeamCode === homeTeamCode) return true;
-        
-        // Partial match by team name inclusion (e.g., "Yankees" in "New York Yankees")
-        const awayMatch = g.awayTeam?.toLowerCase().includes(awayTeamCode.toLowerCase()) || 
-                         awayTeamFull.toLowerCase().includes(g.awayTeam?.toLowerCase() || '');
-        const homeMatch = g.homeTeam?.toLowerCase().includes(homeTeamCode.toLowerCase()) ||
-                         homeTeamFull.toLowerCase().includes(g.homeTeam?.toLowerCase() || '');
-        
-        return awayMatch && homeMatch;
-      });
-      
-      return {
-        selection: pick.selection,
-        reasoning: pick.reasoning,
-        expectedValue: pick.confidence, // Use confidence as expected value display
-        confidence: pick.confidence,
-        result: pick.result, // Add result for display
-        odds: pick.odds, // Add odds from the pick data
-        gameInfo: game ? {
-          awayTeam: game.awayTeam,
-          homeTeam: game.homeTeam,
-          awayTeamCode: game.awayTeamCode,
-          homeTeamCode: game.homeTeamCode,
-          gameTime: (() => {
-            try {
-              // Handle both ISO timestamps and already formatted times
-              if (game.gameTime.includes('T')) {
-                const gameDate = new Date(game.gameTime);
-                return isNaN(gameDate.getTime()) ? "TBD" : gameDate.toLocaleTimeString('en-US', {
-                  hour: 'numeric',
-                  minute: '2-digit',
-                  hour12: true
-                });
-              } else {
-                // Already formatted time string
-                return game.gameTime;
-              }
-            } catch {
-              return "TBD";
-            }
-          })(),
-          venue: game.venue,
-          awayPitcher: game.awayPitcher,
-          homePitcher: game.homePitcher,
-          awayPitcherStats: game.awayPitcherStats,
-          homePitcherStats: game.homePitcherStats,
-        } : {
-          awayTeam: awayTeamFull,
-          homeTeam: homeTeamFull,
-          awayTeamCode: awayTeamCode,
-          homeTeamCode: homeTeamCode,
-          gameTime: '7:05 PM',
-          venue: 'MLB Stadium',
-          awayPitcher: null,
-          homePitcher: null,
-          awayPitcherStats: null,
-          homePitcherStats: null,
-        },
-        gameId: pick.gameId
-      };
-    });
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <main className="lg:col-span-3">
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="bg-card rounded-xl shadow-sm border border-border p-6">
-                    <div className="animate-pulse">
-                      <div className="h-6 bg-muted rounded mb-4"></div>
-                      <div className="h-4 bg-muted rounded mb-2"></div>
-                      <div className="h-4 bg-muted rounded w-3/4"></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </main>
-            <aside className="lg:col-span-1">
-              <div className="bg-card rounded-xl shadow-sm border border-border p-4">
-                <div className="animate-pulse">
-                  <div className="h-6 bg-muted rounded mb-4"></div>
-                  <div className="space-y-3">
-                    {[...Array(2)].map((_, i) => (
-                      <div key={i} className="h-20 bg-muted rounded"></div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </aside>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const featured = blogReviews[0];
+  const moreReviews = blogReviews.slice(1, 4);
+  const yesterdayGamesList = Object.values(yesterdayScores || {});
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Onboarding Modal */}
-      <Dialog open={showOnboarding} onOpenChange={setShowOnboarding}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-center">
-              Welcome to ClearEdge Sports! 
-            </DialogTitle>
-            <DialogDescription className="text-center text-lg mt-4">
-              Get the clear edge with AI-powered sports analytics
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4">
-                <div className="bg-blue-100 p-3 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                  <BarChart3 className="h-6 w-6 text-blue-600" />
-                </div>
-                <h3 className="font-semibold mb-2">AI Analysis</h3>
-                <p className="text-sm text-gray-600">Advanced algorithms analyze every game with 85%+ accuracy</p>
-              </div>
-              
-              <div className="text-center p-4">
-                <div className="bg-green-100 p-3 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-green-600" />
-                </div>
-                <h3 className="font-semibold mb-2">Smart Picks</h3>
-                <p className="text-sm text-gray-600">Daily curated picks based on value and probability</p>
-              </div>
-              
-              <div className="text-center p-4">
-                <div className="bg-purple-100 p-3 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                  <Shield className="h-6 w-6 text-purple-600" />
-                </div>
-                <h3 className="font-semibold mb-2">Risk Management</h3>
-                <p className="text-sm text-gray-600">Kelly calculator and bankroll optimization tools</p>
-              </div>
-            </div>
-            
-            <div className="bg-primary rounded-lg p-6 text-white text-center">
-              <h3 className="text-xl font-bold mb-2">Ready to Start Winning?</h3>
-              <p className="opacity-90 mb-4">Upgrade to Pro for unlimited AI picks and advanced features</p>
-              <div className="flex gap-3 justify-center">
-                <Link href="/subscribe">
-                  <Button className="bg-white text-primary hover:bg-gray-100">
-                    View Plans <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </Link>
-                <Button 
-                  variant="outline" 
-                  className="border-white text-white hover:bg-white/10"
-                  onClick={() => setShowOnboarding(false)}
-                >
-                  Continue Free
-                </Button>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Hero Section — compact, premium */}
-        <div className="text-center mb-8">
-          <div className="mb-4">
-            <img
-              src="/clearedge-logo-new.png"
-              alt="ClearEdge Sports"
-              className="h-16 w-auto mx-auto mb-4 opacity-90"
-            />
-          </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2 tracking-tight">
-            ClearEdge Sports
-          </h1>
-          <p className="text-base text-muted-foreground max-w-xl mx-auto mb-6">
-            AI-powered sports intelligence
-          </p>
+    <div className="max-w-5xl mx-auto px-4 py-6">
 
-          {/* Subscribe Call-to-Action */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-6">
-            <Link href="/subscribe">
-              <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white px-6">
-                <Crown className="h-4 w-4 mr-2" />
-                Upgrade to Pro
-              </Button>
-            </Link>
-            <Link href="/subscribe">
-              <Button variant="outline" size="lg" className="px-6 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
-                View All Plans
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </Link>
+      {/* ── Hero ── */}
+      <div className="text-center mb-8">
+        <img src="/clearedge-logo-new.png" alt="ClearEdge Sports" className="h-14 w-auto mx-auto mb-3 opacity-90" />
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">ClearEdge Sports</h1>
+        <p className="text-sm text-muted-foreground mt-1">AI-powered sports intelligence</p>
+      </div>
+
+      {/* ── Yesterday's Scores ── */}
+      {yesterdayGamesList.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <Clock className="h-3.5 w-3.5" />
+              Yesterday's Final Scores
+            </h2>
+            <span className="text-xs text-zinc-600">{yesterday}</span>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+            {yesterdayGamesList.map((game) => {
+              const awayScore = game.lineScore?.away?.R || '0';
+              const homeScore = game.lineScore?.home?.R || '0';
+              const away = game.away || game.gameID?.split('_')[1]?.split('@')[0] || '';
+              const home = game.home || game.gameID?.split('@')[1] || '';
+              return (
+                <div key={game.gameID} className="flex-shrink-0 w-36 p-2.5 bg-card border border-border/30 rounded-lg">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <img src={teamLogo(away)} alt="" className="h-4 w-4" />
+                      <span className="text-xs font-medium text-foreground">{away}</span>
+                    </div>
+                    <span className="text-xs font-bold tabular-nums text-foreground">{awayScore}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <img src={teamLogo(home)} alt="" className="h-4 w-4" />
+                      <span className="text-xs font-medium text-foreground">{home}</span>
+                    </div>
+                    <span className="text-xs font-bold tabular-nums text-foreground">{homeScore}</span>
+                  </div>
+                  <div className="text-[9px] text-zinc-600 mt-1 text-center">Final</div>
+                </div>
+              );
+            })}
           </div>
         </div>
+      )}
 
-        {/* Welcome Banner for New Users */}
-        {isNewUser && (
-          <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-6 mb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold mb-1 text-foreground">Welcome, {user?.username}!</h2>
-                <p className="text-muted-foreground mb-3 text-sm">
-                  You're on the Free plan. Unlock professional sports insights.
-                </p>
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1.5">
-                    <Users className="h-3.5 w-3.5 text-emerald-400" />
-                    <span>2,847+ fans</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
-                    <span>85%+ accuracy</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Link href="/subscribe">
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                    Upgrade Now
-                  </Button>
-                </Link>
-                <Button
-                  variant="ghost"
-                  className="text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowOnboarding(true)}
-                >
-                  Learn More
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 gap-6">
-          <main className="space-y-6">
-
-            {/* Baseball Section Header */}
-            <Card className="bg-card border-border/50">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-emerald-500/15 rounded-lg flex items-center justify-center border border-emerald-500/20">
-                      <span className="font-bold text-sm">⚾</span>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-foreground">Major League Baseball</h3>
-                      <p className="text-muted-foreground text-sm">
-                        <span className="font-medium text-emerald-400">{games.length} games</span> today with AI analysis
-                      </p>
-                    </div>
-                  </div>
-                  <Link href="/todays-games">
-                    <Button variant="outline" size="sm" className="border-border text-muted-foreground hover:text-foreground hover:border-emerald-500/30">
-                      <ArrowRight className="h-4 w-4 mr-1" />
-                      All Games
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Baseball AI Picks */}
-            {displayPicks.length > 0 && (
-              <div className="animate-fade-in-up bg-card rounded-xl border border-border/50 p-4">
-                <div className="flex items-center space-x-3 mb-4">
-                  <Star className="h-5 w-5 text-amber-400" />
-                  <h3 className="text-lg font-bold text-foreground">Today's Top MLB AI Picks</h3>
-                  <Badge className="bg-zinc-800 text-zinc-400 border border-zinc-700 text-xs">
-                    {new Date().toLocaleDateString('en-US', {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric'
-                    })}
-                  </Badge>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {displayPicks.map((pick, index) => (
-                    <div key={index} className="bg-zinc-900/50 rounded-lg p-4 border border-border/50 hover:border-emerald-500/20 transition-all duration-200">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          {index === 0 ? "Best Value" : index === 1 ? "Sharp Play" : "AI Special"}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          {pick.result && (
-                            <Badge
-                              className={`${
-                                pick.result === 'win'
-                                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
-                                  : pick.result === 'loss'
-                                    ? 'bg-red-500/15 text-red-400 border border-red-500/20'
-                                    : 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
-                              } font-bold text-xs`}
-                            >
-                              {pick.result.toUpperCase()}
-                            </Badge>
-                          )}
-                          <Badge
-                            variant="secondary"
-                            className="bg-zinc-800 text-zinc-300 border border-zinc-700 font-medium"
-                          >
-                            {pick.confidence ? `${pick.confidence}%` : "Hot"}
-                          </Badge>
-                        </div>
+      {/* ── Today's Schedule ── */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+            <Calendar className="h-3.5 w-3.5" />
+            Today's Games ({todayGames.length})
+          </h2>
+          <Link href="/todays-games">
+            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-emerald-400">
+              Full Schedule <ArrowRight className="h-3 w-3 ml-1" />
+            </Button>
+          </Link>
+        </div>
+        {todayGames.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {todayGames.slice(0, 9).map((game) => {
+              const ml = game.odds?.find(o => o.market === 'moneyline');
+              const tot = game.odds?.find(o => o.market === 'totals');
+              return (
+                <Link key={game.gameId} href="/todays-games">
+                  <div className="p-3 bg-card border border-border/30 rounded-lg hover:border-emerald-500/20 transition-colors cursor-pointer group">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <img src={teamLogo(game.awayTeamCode)} alt="" className="h-5 w-5" />
+                        <span className="text-xs font-medium text-foreground truncate">{game.awayTeamCode}</span>
+                        {ml?.awayOdds && <span className="text-[10px] text-blue-400 tabular-nums">{ml.awayOdds > 0 ? '+' : ''}{ml.awayOdds}</span>}
                       </div>
-                      
-                      {/* Game Matchup */}
-                      <div className="mb-3">
-                        <div className="flex items-center justify-between text-sm font-bold text-white">
-                          <span>{pick.gameInfo.awayTeam}</span>
-                          <span className="text-white/80">@</span>
-                          <span>{pick.gameInfo.homeTeam}</span>
-                        </div>
-                        <div className="text-xs text-white/80 mt-1">
-                          {new Date().toLocaleDateString('en-US', { 
-                            weekday: 'short', 
-                            month: 'short', 
-                            day: 'numeric' 
-                          })} • {pick.gameInfo.gameTime} • {pick.gameInfo.venue}
-                        </div>
-                        {/* Pitcher Information */}
-                        {(pick.gameInfo.awayPitcher || pick.gameInfo.homePitcher) && (
-                          <div className="text-xs text-blue-300 mt-2 space-y-1">
-                            {pick.gameInfo.awayPitcher && (
-                              <div>
-                                <span className="font-semibold">{pick.gameInfo.awayPitcher}</span>
-                                {pick.gameInfo.awayPitcherStats && (
-                                  <span className="text-white/70 ml-1">{pick.gameInfo.awayPitcherStats}</span>
-                                )}
-                              </div>
-                            )}
-                            {pick.gameInfo.homePitcher && (
-                              <div>
-                                <span className="font-semibold">{pick.gameInfo.homePitcher}</span>
-                                {pick.gameInfo.homePitcherStats && (
-                                  <span className="text-white/70 ml-1">{pick.gameInfo.homePitcherStats}</span>
-                                )}
-                              </div>
-                            )}
+                      <span className="text-[10px] text-zinc-600 mx-2">{game.gameTime}</span>
+                      <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                        {ml?.homeOdds && <span className="text-[10px] text-blue-400 tabular-nums">{ml.homeOdds > 0 ? '+' : ''}{ml.homeOdds}</span>}
+                        <span className="text-xs font-medium text-foreground truncate">{game.homeTeamCode}</span>
+                        <img src={teamLogo(game.homeTeamCode)} alt="" className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mt-1.5 text-[10px] text-zinc-600">
+                      <span className="truncate">{game.awayPitcher || 'TBD'} vs {game.homePitcher || 'TBD'}</span>
+                      {tot?.total && <span className="text-amber-400/70 ml-1">O/U {tot.total}</span>}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <Card className="border-border/30">
+            <CardContent className="p-6 text-center text-muted-foreground text-sm">
+              No games scheduled for today. Check back later.
+            </CardContent>
+          </Card>
+        )}
+        {todayGames.length > 9 && (
+          <Link href="/todays-games">
+            <div className="text-center mt-2">
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">
+                +{todayGames.length - 9} more games <ArrowRight className="h-3 w-3 ml-1" />
+              </Button>
+            </div>
+          </Link>
+        )}
+      </div>
+
+      {/* ── The Morning Roast ── */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <Newspaper className="h-5 w-5 text-amber-400" />
+            The Morning Roast
+          </h2>
+          <Link href="/blog">
+            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-amber-400">
+              All Stories <ArrowRight className="h-3 w-3 ml-1" />
+            </Button>
+          </Link>
+        </div>
+
+        {featured ? (
+          <div className="space-y-4">
+            {/* Featured story — hero */}
+            <Link href="/blog">
+              <div className="relative rounded-xl overflow-hidden aspect-[21/9] bg-zinc-900 cursor-pointer group">
+                {featured.heroImage ? (
+                  <img src={featured.heroImage} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
+                    <div className="flex items-center gap-6">
+                      {featured.awayLogo && <img src={featured.awayLogo} alt="" className="h-16 w-16 opacity-50" />}
+                      <span className="text-3xl font-bold text-zinc-600 tabular-nums">{featured.awayScore} - {featured.homeScore}</span>
+                      {featured.homeLogo && <img src={featured.homeLogo} alt="" className="h-16 w-16 opacity-50" />}
+                    </div>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-5">
+                  <Badge className="bg-amber-500/90 text-black text-[10px] font-bold mb-2 uppercase tracking-wider">Featured</Badge>
+                  <h3 className="text-xl md:text-2xl font-bold text-white leading-tight mb-1.5 group-hover:text-amber-200 transition-colors">
+                    {featured.title}
+                  </h3>
+                  <div className="flex items-center gap-3 text-white/70 text-xs">
+                    <span className="flex items-center gap-1"><Pen className="h-3 w-3 text-amber-400" />{featured.author}</span>
+                    <span>{featured.awayTeam.split(' ').pop()} {featured.awayScore} - {featured.homeScore} {featured.homeTeam.split(' ').pop()}</span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+
+            {/* More stories grid */}
+            {moreReviews.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {moreReviews.map((review) => (
+                  <Link key={review.id} href="/blog">
+                    <Card className="card-glow cursor-pointer border-border/30 overflow-hidden group h-full">
+                      <div className="relative aspect-video bg-zinc-900 overflow-hidden">
+                        {review.heroImage ? (
+                          <img src={review.heroImage} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
+                            <div className="flex items-center gap-2">
+                              {review.awayLogo && <img src={review.awayLogo} alt="" className="h-8 w-8 opacity-40" />}
+                              <span className="text-sm font-bold text-zinc-600 tabular-nums">{review.awayScore}-{review.homeScore}</span>
+                              {review.homeLogo && <img src={review.homeLogo} alt="" className="h-8 w-8 opacity-40" />}
+                            </div>
                           </div>
                         )}
-                      </div>
-                      
-                      {/* Pick Details */}
-                      <div className="border-t border-white/20 pt-3">
-                        <div className="mb-2">
-                          <p className="text-xs text-white/90 uppercase tracking-wide font-bold">🎯 AI PICK</p>
-                          <p className="text-lg font-bold text-yellow-300 mb-1">{pick.selection}</p>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm text-blue-300 font-semibold">
-                                Value Play
-                              </p>
-                              {pick.odds && (
-                                <span className="text-sm font-bold text-white bg-yellow-500 px-2 py-0.5 rounded">
-                                  {pick.odds > 0 ? `+${pick.odds}` : pick.odds}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs bg-white/20 px-2 py-1 rounded-full text-white">
-                              +EV {pick.expectedValue?.toFixed(1) || "0.0"}%
-                            </p>
-                          </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                        <div className="absolute bottom-1.5 left-2 text-white/60 text-[10px]">
+                          {review.awayTeam.split(' ').pop()} {review.awayScore}-{review.homeScore} {review.homeTeam.split(' ').pop()}
                         </div>
-                        <p className="text-xs text-white/90 leading-relaxed">{pick.reasoning}</p>
                       </div>
-                      
-                      {/* Pitchers (if available) */}
-                      {(pick.gameInfo.awayPitcher || pick.gameInfo.homePitcher) && (
-                        <div className="mt-2 pt-2 border-t border-white/20">
-                          <div className="text-xs text-white/80">
-                            {pick.gameInfo.awayPitcher && (
-                              <div>{pick.gameInfo.awayTeamCode}: {pick.gameInfo.awayPitcher}</div>
-                            )}
-                            {pick.gameInfo.homePitcher && (
-                              <div>{pick.gameInfo.homeTeamCode}: {pick.gameInfo.homePitcher}</div>
-                            )}
-                          </div>
+                      <CardContent className="p-3">
+                        <h4 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 group-hover:text-amber-200 transition-colors mb-1">
+                          {review.title}
+                        </h4>
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <Pen className="h-2.5 w-2.5 text-amber-400/70" />
+                          {review.author}
+                          {review.authorMood === 'grumpy' && <span className="text-red-400">(grumpy)</span>}
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
               </div>
             )}
+          </div>
+        ) : (
+          <Card className="border-border/30 border-dashed">
+            <CardContent className="p-8 text-center">
+              <Sparkles className="h-8 w-8 text-zinc-700 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">No stories yet. Check back tomorrow for sarcastic game recaps.</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
-            {/* MLB News Section */}
-            <Card>
-              <CardHeader className="bg-red-600 text-white">
-                <CardTitle className="flex items-center">
-                  <Newspaper className="h-5 w-5 mr-2" />
-                  Latest MLB News
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {newsLoading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {[...Array(6)].map((_, i) => (
-                      <div key={i} className="space-y-3 p-4 border rounded-lg">
-                        <div className="h-4 bg-muted rounded animate-pulse"></div>
-                        <div className="h-3 bg-muted rounded animate-pulse w-3/4"></div>
-                        <div className="h-3 bg-muted rounded animate-pulse w-1/2"></div>
-                      </div>
-                    ))}
-                  </div>
-                ) : mlbNews.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {mlbNews.slice(0, 6).map((article) => (
-                      <div key={article.id} className="space-y-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                        <h4 className="font-medium leading-tight line-clamp-2">
-                          {article.title}
-                        </h4>
-                        {article.summary && (
-                          <p className="text-sm text-muted-foreground line-clamp-3">
-                            {article.summary}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <div className="flex items-center space-x-3">
-                            <div className="flex items-center">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {new Date(article.publishedAt).toLocaleTimeString([], { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
-                              })}
-                            </div>
-                            {article.source && (
-                              <span className="text-xs">{article.source}</span>
-                            )}
-                          </div>
-                          {article.url !== '#' && (
-                            <a 
-                              href={article.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="flex items-center hover:text-primary"
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          )}
-                        </div>
-                        {article.category && (
-                          <Badge variant="outline" className="text-xs">
-                            {article.category}
-                          </Badge>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Newspaper className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">No MLB news available at the moment</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Baseball Games List */}
-            <Card>
-              <CardHeader className="bg-blue-600 text-white">
-                <CardTitle className="flex items-center">
-                  <Clock className="h-5 w-5 mr-2" />
-                  Today's MLB Games
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                {filteredGames.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-medium mb-2">No MLB games available</h3>
-                    <p className="text-sm">
-                      {games.length === 0 
-                        ? "Check back later for today's MLB games and betting odds."
-                        : "No games match the selected filter. Try adjusting your filters."
-                      }
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {filteredGames.map(game => (
-                      <div key={game.gameId} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="text-right">
-                              <div className="font-medium text-foreground">{game.awayTeam}</div>
-                              {game.awayPitcher && (
-                                <div className="text-xs text-muted-foreground">
-                                  {game.awayPitcher}
-                                  {game.awayPitcherStats && (
-                                    <span className="text-blue-400 ml-1">{game.awayPitcherStats}</span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                            <span className="text-muted-foreground">@</span>
-                            <div className="text-left">
-                              <div className="font-medium text-foreground">{game.homeTeam}</div>
-                              {game.homePitcher && (
-                                <div className="text-xs text-muted-foreground">
-                                  {game.homePitcher}
-                                  {game.homePitcherStats && (
-                                    <span className="text-blue-400 ml-1">{game.homePitcherStats}</span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                          <div className="text-right">
-                            <div className="text-sm font-medium text-muted-foreground">{game.venue}</div>
-                            <div className="text-xs text-muted-foreground">{game.gameTime} ET</div>
-                            {game.status === "completed" && (
-                              <Badge variant="secondary" className="text-xs">Final</Badge>
-                            )}
-                          </div>
-                          <Link href="/todays-games">
-                            <Button variant="outline" size="sm">
-                              <ArrowRight className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Coming Soon - Other Sports */}
-            <div className="space-y-6 mt-12">
-              {/* Football Section */}
-              <Card className="bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">🏈</span>
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-foreground">Canadian Football League</h3>
-                        <p className="text-muted-foreground text-sm">CFL games and sports analysis</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <Badge variant="outline" className="border-orange-300 text-orange-700 dark:text-orange-300">
-                        Available Now
-                      </Badge>
-                      <Link href="/cfl/games">
-                        <Button variant="outline" size="sm">
-                          <ArrowRight className="h-4 w-4 mr-2" />
-                          View CFL Games
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Hockey Section */}
-              <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">🏒</span>
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-foreground">National Hockey League</h3>
-                        <p className="text-muted-foreground text-sm">NHL games, player props, and live betting</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <Badge variant="secondary" className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-                        Coming Soon
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Basketball Section */}
-              <Card className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">🏀</span>
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-foreground">National Basketball Association</h3>
-                        <p className="text-muted-foreground text-sm">NBA games, player props, and advanced analytics</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <Badge variant="secondary" className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-                        Coming Soon
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </main>
-        </div>
+      {/* ── Quick Links ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <Link href="/todays-games">
+          <div className="p-3 bg-card border border-border/30 rounded-lg text-center hover:border-emerald-500/20 transition-colors cursor-pointer">
+            <span className="text-lg">⚾</span>
+            <div className="text-xs font-medium text-foreground mt-1">Games & Odds</div>
+          </div>
+        </Link>
+        <Link href="/team-power-scores">
+          <div className="p-3 bg-card border border-border/30 rounded-lg text-center hover:border-emerald-500/20 transition-colors cursor-pointer">
+            <span className="text-lg">📊</span>
+            <div className="text-xs font-medium text-foreground mt-1">Power Rankings</div>
+          </div>
+        </Link>
+        <Link href="/blog">
+          <div className="p-3 bg-card border border-border/30 rounded-lg text-center hover:border-amber-500/20 transition-colors cursor-pointer">
+            <span className="text-lg">☕</span>
+            <div className="text-xs font-medium text-foreground mt-1">Morning Roast</div>
+          </div>
+        </Link>
+        <Link href="/daily-picks">
+          <div className="p-3 bg-card border border-border/30 rounded-lg text-center hover:border-emerald-500/20 transition-colors cursor-pointer">
+            <span className="text-lg">🎯</span>
+            <div className="text-xs font-medium text-foreground mt-1">Daily Picks</div>
+          </div>
+        </Link>
       </div>
     </div>
   );

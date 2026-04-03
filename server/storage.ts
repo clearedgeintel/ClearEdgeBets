@@ -1,4 +1,4 @@
-import { users, games, odds, aiSummaries, bets, props, dailyPicks, gameEvaluations, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, tickets, virtualBets, virtualBettingSlip, phraseDetectionRules, baseballReferenceStats, baseballReferencePitchingStats, oddsHistory, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type GameEvaluation, type InsertGameEvaluation, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship, type Ticket, type InsertTicket, type VirtualBet, type InsertVirtualBet, type VirtualBettingSlip, type InsertVirtualBettingSlip, type PhraseDetectionRule, type InsertPhraseDetectionRule, type BaseballReferenceStats, type InsertBaseballReferenceStats, type BaseballReferencePitchingStats, type InsertBaseballReferencePitchingStats, type InsertOddsHistory, type OddsHistory, blogReviews, type BlogReview, type InsertBlogReview } from "@shared/schema";
+import { users, games, odds, aiSummaries, bets, props, dailyPicks, gameEvaluations, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, tickets, virtualBets, virtualBettingSlip, phraseDetectionRules, baseballReferenceStats, baseballReferencePitchingStats, oddsHistory, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type GameEvaluation, type InsertGameEvaluation, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship, type Ticket, type InsertTicket, type VirtualBet, type InsertVirtualBet, type VirtualBettingSlip, type InsertVirtualBettingSlip, type PhraseDetectionRule, type InsertPhraseDetectionRule, type BaseballReferenceStats, type InsertBaseballReferenceStats, type BaseballReferencePitchingStats, type InsertBaseballReferencePitchingStats, type InsertOddsHistory, type OddsHistory, blogReviews, type BlogReview, type InsertBlogReview, editorialColumns, type EditorialColumn, type InsertEditorialColumn } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, gte, lte, desc, lt } from "drizzle-orm";
 
@@ -1812,6 +1812,25 @@ export class DatabaseStorage implements IStorage {
 
   async getBlogReviewsByDate(gameDate: string): Promise<BlogReview[]> {
     return db.select().from(blogReviews).where(eq(blogReviews.gameDate, gameDate)).orderBy(desc(blogReviews.createdAt));
+  }
+
+  // ── Editorial Columns ──
+  async createEditorialColumn(col: InsertEditorialColumn): Promise<EditorialColumn> {
+    const [created] = await db.insert(editorialColumns).values(col).returning();
+    return created;
+  }
+
+  async getEditorialColumns(limit = 50): Promise<EditorialColumn[]> {
+    return db.select().from(editorialColumns).orderBy(desc(editorialColumns.createdAt)).limit(limit);
+  }
+
+  async getEditorialColumnsByAssignment(assignmentId: string): Promise<EditorialColumn[]> {
+    return db.select().from(editorialColumns).where(eq(editorialColumns.assignmentId, assignmentId)).orderBy(editorialColumns.createdAt);
+  }
+
+  async getEditorialColumnBySlug(slug: string): Promise<EditorialColumn | undefined> {
+    const [col] = await db.select().from(editorialColumns).where(eq(editorialColumns.slug, slug));
+    return col;
   }
 }
 

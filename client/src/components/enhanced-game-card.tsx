@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronUp, Brain, User, Target, TrendingUp, DollarSign, Wind, Thermometer, CloudRain } from "lucide-react";
 import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { LiveScore } from "@/components/live-score";
+import { Link } from "wouter";
 
 interface Game {
   id: number;
@@ -199,9 +200,13 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
         <div className="flex items-center gap-3">
           {/* Away team */}
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <img src={teamLogoUrl(game.awayTeamCode)} alt={game.awayTeamCode} className="h-8 w-8 flex-shrink-0" />
+            <Link href={`/team/${game.awayTeamCode}`}>
+              <img src={teamLogoUrl(game.awayTeamCode)} alt={game.awayTeamCode} className="h-8 w-8 flex-shrink-0 hover:scale-110 transition-transform cursor-pointer" />
+            </Link>
             <div className="min-w-0">
-              <div className="font-semibold text-sm text-foreground truncate">{game.awayTeam}</div>
+              <Link href={`/team/${game.awayTeamCode}`} className="hover:text-emerald-400 transition-colors">
+                <div className="font-semibold text-sm text-foreground truncate">{game.awayTeam}</div>
+              </Link>
               <div className="text-[10px] text-muted-foreground truncate">
                 {game.awayPitcher && <>{game.awayPitcher} {game.awayPitcherStats && <span className="text-zinc-500">{game.awayPitcherStats}</span>}</>}
               </div>
@@ -221,12 +226,16 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
           {/* Home team */}
           <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
             <div className="min-w-0 text-right">
-              <div className="font-semibold text-sm text-foreground truncate">{game.homeTeam}</div>
+              <Link href={`/team/${game.homeTeamCode}`} className="hover:text-emerald-400 transition-colors">
+                <div className="font-semibold text-sm text-foreground truncate">{game.homeTeam}</div>
+              </Link>
               <div className="text-[10px] text-muted-foreground truncate">
                 {game.homePitcher && <>{game.homePitcher} {game.homePitcherStats && <span className="text-zinc-500">{game.homePitcherStats}</span>}</>}
               </div>
             </div>
-            <img src={teamLogoUrl(game.homeTeamCode)} alt={game.homeTeamCode} className="h-8 w-8 flex-shrink-0" />
+            <Link href={`/team/${game.homeTeamCode}`}>
+              <img src={teamLogoUrl(game.homeTeamCode)} alt={game.homeTeamCode} className="h-8 w-8 flex-shrink-0 hover:scale-110 transition-transform cursor-pointer" />
+            </Link>
           </div>
         </div>
 
