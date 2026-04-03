@@ -75,7 +75,29 @@ export default function Footer() {
           </div>
         </div>
         
-        <div className="mt-8 pt-8 border-t border-border">
+        {/* Newsletter subscribe */}
+        <div className="mt-8 pt-8 border-t border-border mb-8">
+          <div className="max-w-md">
+            <h3 className="text-sm font-semibold text-foreground mb-2">The Daily Brief</h3>
+            <p className="text-xs text-muted-foreground mb-3">Get yesterday's results and today's quick picks in your inbox every morning.</p>
+            <form className="flex gap-2" onSubmit={async (e) => {
+              e.preventDefault();
+              const form = e.target as HTMLFormElement;
+              const email = (form.elements.namedItem('footerEmail') as HTMLInputElement).value;
+              if (!email) return;
+              try {
+                await fetch('/api/newsletter/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+                (form.elements.namedItem('footerEmail') as HTMLInputElement).value = '';
+                (form.elements.namedItem('footerEmail') as HTMLInputElement).placeholder = 'Subscribed!';
+              } catch {}
+            }}>
+              <input name="footerEmail" type="email" placeholder="you@email.com" className="flex-1 h-8 px-3 text-xs bg-zinc-900 border border-border/50 rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500/50" />
+              <button type="submit" className="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-md">Subscribe</button>
+            </form>
+          </div>
+        </div>
+
+        <div className="pt-6 border-t border-border">
           <div className="flex flex-col sm:flex-row justify-between items-center">
             <p className="text-sm text-muted-foreground">
               © 2025 ClearEdge Sports. All rights reserved.

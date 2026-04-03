@@ -55,12 +55,16 @@ const Blog = lazy(() => import("@/pages/blog"));
 const TeamDetail = lazy(() => import("@/pages/team-detail"));
 const Writers = lazy(() => import("@/pages/writers"));
 const EditorsDesk = lazy(() => import("@/pages/editors-desk"));
+const NewsletterPage = lazy(() => import("@/pages/newsletter"));
+const PlayerRankings = lazy(() => import("@/pages/player-rankings"));
+const Wiki = lazy(() => import("@/pages/wiki"));
+const AdminNewsletter = lazy(() => import("@/pages/admin-newsletter"));
 const WeatherSummary = lazy(() => import("@/pages/WeatherSummary"));
 const MLBPicks = lazy(() => import("@/pages/MLBPicks"));
 const TeamPowerScores = lazy(() => import("@/pages/TeamPowerScores"));
 const DailyDose = lazy(() => import("@/pages/DailyDose"));
 const EnhancedOdds = lazy(() => import("@/pages/EnhancedOdds"));
-const EnhancedPicks = lazy(() => import("@/pages/enhanced-picks"));
+
 const ExpectedValue = lazy(() => import("@/pages/expected-value"));
 
 function PageLoader() {
@@ -101,6 +105,10 @@ function Router() {
           <Route path="/team/:teamAbv" component={TeamDetail} />
           <Route path="/writers" component={Writers} />
           <Route path="/editors-desk" component={EditorsDesk} />
+          <Route path="/newsletter" component={NewsletterPage} />
+          <Route path="/admin/newsletter" component={AdminNewsletter} />
+          <Route path="/player-rankings" component={PlayerRankings} />
+          <Route path="/wiki" component={Wiki} />
           <Route path="/weather-summary" component={WeatherSummary} />
           <Route path="/mlb-picks" component={MLBPicks} />
           <Route path="/cfl" component={CFLHub} />
@@ -124,7 +132,6 @@ function Router() {
           <Route path="/player-prop-builder" component={PlayerPropBuilder} />
           <Route path="/daily-dose" component={DailyDose} />
           <Route path="/enhanced-odds" component={EnhancedOdds} />
-          <Route path="/enhanced-picks" component={EnhancedPicks} />
           <Route path="/expected-value" component={ExpectedValue} />
           <Route path="/help" component={Help} />
           <Route path="/auth" component={AuthPage} />

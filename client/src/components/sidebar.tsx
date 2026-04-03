@@ -139,6 +139,20 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           description: "Live MLB team rankings and power scores"
         },
         {
+          name: "Player Rankings",
+          href: "/player-rankings",
+          icon: Trophy,
+          current: location === "/player-rankings",
+          description: "Sort hitters and pitchers by power score"
+        },
+        {
+          name: "Wiki",
+          href: "/wiki",
+          icon: HelpCircle,
+          current: location === "/wiki",
+          description: "Scoring methodology and park factors"
+        },
+        {
           name: "The Morning Roast",
           href: "/blog",
           icon: FileText,
@@ -158,6 +172,13 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           icon: FileText,
           current: location === "/editors-desk",
           description: "Assign stories to your newsroom"
+        },
+        {
+          name: "Daily Brief",
+          href: "/newsletter",
+          icon: FileText,
+          current: location === "/newsletter",
+          description: "Subscribe to our daily newsletter"
         }
       ],
       proItems: [
@@ -199,14 +220,6 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           icon: Calculator,
           current: location === "/enhanced-odds",
           description: "Detailed odds analysis and implied probability breakdown",
-          requiresPro: true
-        },
-        { 
-          name: "Enhanced Picks", 
-          href: "/enhanced-picks", 
-          icon: Brain,
-          current: location === "/enhanced-picks",
-          description: "AI-powered game predictions using analysis + odds",
           requiresPro: true
         },
         { 

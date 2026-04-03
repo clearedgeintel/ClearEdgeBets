@@ -361,7 +361,7 @@ export default function TodaysGames() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {filteredGames.map((game) => (
               <EnhancedGameCard key={game.id} game={game} />
             ))}

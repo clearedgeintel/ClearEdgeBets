@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Pen, Send, Clock, ChevronDown, ChevronUp, Sparkles, CheckCircle, Quote, Newspaper, Upload } from "lucide-react";
+import { Pen, Send, Clock, ChevronDown, ChevronUp, Sparkles, CheckCircle, Quote, Newspaper, Upload, User, MessageSquare, Ruler, Flame } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BEAT_WRITERS, type BeatWriter } from "@shared/beat-writers";
 import { format, subDays } from "date-fns";
 
@@ -52,6 +53,10 @@ export default function EditorsDesk() {
   const [selectedWriters, setSelectedWriters] = useState<Set<string>>(new Set());
   const [showWriterPicker, setShowWriterPicker] = useState(false);
   const [expandedColumn, setExpandedColumn] = useState<number | null>(null);
+  const [playerFocus, setPlayerFocus] = useState('');
+  const [storyLength, setStoryLength] = useState<'short' | 'medium' | 'long'>('medium');
+  const [tone, setTone] = useState<'sarcastic' | 'analytical' | 'dramatic' | 'heartfelt'>('sarcastic');
+  const [angle, setAngle] = useState<'recap' | 'opinion' | 'breakdown' | 'human-interest' | 'rivalry' | 'what-if'>('recap');
 
   const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
 
@@ -81,17 +86,18 @@ export default function EditorsDesk() {
 
   const assignMutation = useMutation({
     mutationFn: async () => {
-      const finalTopic = selectedGame
-        ? `Write your take on yesterday's ${selectedGame} game. ${topic ? `Editor's angle: ${topic}` : 'Give us your full sarcastic recap.'}`
-        : topic;
       const resp = await fetch('/api/editorial/assign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          topic: finalTopic,
+          topic,
           writerNames: [...selectedWriters],
           gameID: selectedGame || undefined,
+          playerFocus: playerFocus || undefined,
+          storyLength,
+          tone,
+          angle,
         }),
       });
       if (!resp.ok) throw new Error((await resp.json()).error || 'Failed');
@@ -111,9 +117,11 @@ export default function EditorsDesk() {
 
   const publishMutation = useMutation({
     mutationFn: async (columnId: number) => {
-      const resp = await fetch(`/api/editorial/publish/${columnId}`, {
+      const resp = await fetch('/api/admin/editorial-publish', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        body: JSON.stringify({ columnId }),
       });
       if (!resp.ok) throw new Error((await resp.json()).error || 'Failed');
       return resp.json();
@@ -189,6 +197,73 @@ export default function EditorsDesk() {
                   <img src={teamLogo(g.home)} alt="" className="h-3.5 w-3.5 ml-1" />
                 </Button>
               ))}
+            </div>
+          </div>
+
+          {/* Story options row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+              <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium block mb-1.5">
+                <Ruler className="h-3 w-3 inline mr-1" />Length
+              </label>
+              <Select value={storyLength} onValueChange={(v: any) => setStoryLength(v)}>
+                <SelectTrigger className="h-8 text-xs bg-zinc-900/50 border-border/50">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="short">Short (2-3 paragraphs)</SelectItem>
+                  <SelectItem value="medium">Medium (4-5 paragraphs)</SelectItem>
+                  <SelectItem value="long">Long (6-8 paragraphs)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium block mb-1.5">
+                <Flame className="h-3 w-3 inline mr-1" />Tone Override
+              </label>
+              <Select value={tone} onValueChange={(v: any) => setTone(v)}>
+                <SelectTrigger className="h-8 text-xs bg-zinc-900/50 border-border/50">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sarcastic">Sarcastic (default)</SelectItem>
+                  <SelectItem value="analytical">Analytical</SelectItem>
+                  <SelectItem value="dramatic">Dramatic</SelectItem>
+                  <SelectItem value="heartfelt">Heartfelt</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium block mb-1.5">
+                <MessageSquare className="h-3 w-3 inline mr-1" />Story Angle
+              </label>
+              <Select value={angle} onValueChange={(v: any) => setAngle(v)}>
+                <SelectTrigger className="h-8 text-xs bg-zinc-900/50 border-border/50">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recap">Game Recap</SelectItem>
+                  <SelectItem value="opinion">Hot Take / Opinion</SelectItem>
+                  <SelectItem value="breakdown">Statistical Breakdown</SelectItem>
+                  <SelectItem value="human-interest">Human Interest</SelectItem>
+                  <SelectItem value="rivalry">Rivalry / History</SelectItem>
+                  <SelectItem value="what-if">What If / Hypothetical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium block mb-1.5">
+                <User className="h-3 w-3 inline mr-1" />Player Focus (optional)
+              </label>
+              <Input
+                placeholder="e.g. Aaron Judge, Shohei Ohtani"
+                value={playerFocus}
+                onChange={(e) => setPlayerFocus(e.target.value)}
+                className="h-8 text-xs bg-zinc-900/50 border-border/50"
+              />
             </div>
           </div>
 

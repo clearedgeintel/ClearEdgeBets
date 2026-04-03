@@ -887,14 +887,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Publish an editorial column to The Morning Roast (admin)
-  app.post('/api/editorial/publish/:id', async (req, res) => {
+  app.post('/api/admin/editorial-publish', async (req, res) => {
     try {
       const userId = (req.session as any)?.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
 
-      const colId = parseInt(req.params.id);
+      const colId = parseInt(req.body.columnId);
       const columns = await storage.getEditorialColumns(200);
       const col = columns.find(c => c.id === colId);
       if (!col) return res.status(404).json({ error: 'Column not found' });
@@ -936,7 +936,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const slug = `published-${col.id}-${col.author.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
 
       const saved = await storage.createBlogReview({
-        gameId: col.gameId || `editorial-${col.id}`,
+        gameId: `${col.gameId || 'editorial'}-col${col.id}`,
         gameDate,
         awayTeam,
         homeTeam,
@@ -972,8 +972,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
 
-      const { topic, writerNames, gameID } = req.body;
-      if (!topic || !writerNames?.length) return res.status(400).json({ error: 'topic and writerNames required' });
+      const { topic, writerNames, gameID, playerFocus, storyLength, tone, angle } = req.body;
+      if ((!topic && !gameID) || !writerNames?.length) return res.status(400).json({ error: 'topic (or gameID) and writerNames required' });
 
       const { getBeatWriter } = await import('@shared/beat-writers');
       const { generateWriterColumn } = await import('./services/openai');
@@ -997,6 +997,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch {}
       }
 
+      // Build editorial directives for the AI
+      const lengthMap: Record<string, string> = { short: '2-3 paragraphs', medium: '4-5 paragraphs', long: '6-8 paragraphs, go deep' };
+      const toneMap: Record<string, string> = { sarcastic: 'Sarcastic and funny', analytical: 'Data-driven and analytical', dramatic: 'Dramatic and emotional', heartfelt: 'Warm and heartfelt' };
+      const angleMap: Record<string, string> = { recap: 'Game recap — what happened and why it matters', opinion: 'Hot take opinion piece — be bold and controversial', breakdown: 'Statistical breakdown — dig into the numbers', 'human-interest': 'Human interest angle — find the personal story', rivalry: 'Rivalry and history angle — add historical context', 'what-if': 'What-if hypothetical — explore alternate scenarios' };
+
+      let editorialDirectives = '';
+      if (storyLength) editorialDirectives += `\n**Length:** ${lengthMap[storyLength] || 'medium'}`;
+      if (tone && tone !== 'sarcastic') editorialDirectives += `\n**Tone override:** ${toneMap[tone] || tone} (blend this with your natural personality)`;
+      if (angle) editorialDirectives += `\n**Story angle:** ${angleMap[angle] || angle}`;
+      if (playerFocus) editorialDirectives += `\n**Player focus:** Center the story around ${playerFocus}. Their performance, impact, and what it means.`;
+
+      const fullTopic = gameID && !topic
+        ? `Write your take on the ${gameID} game.${editorialDirectives}`
+        : `${topic}${editorialDirectives}`;
+
       const assignmentId = `ed-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const results: any[] = [];
 
@@ -1005,12 +1020,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const writer = getBeatWriter(writerName);
         if (!writer) continue;
 
-        const column = await generateWriterColumn(writer, topic, context || undefined);
+        const column = await generateWriterColumn(writer, fullTopic, context || undefined);
         const slug = `${assignmentId}-${writer.name.toLowerCase().replace(/\s+/g, '-')}`;
 
         const saved = await storage.createEditorialColumn({
           assignmentId,
-          topic,
+          topic: topic || fullTopic,
           gameId: gameID || null,
           author: writer.name,
           authorMood: writer.mood,
@@ -1026,6 +1041,373 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error creating editorial assignment:', error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ── Newsletter System ─────────────────────────────────────────────
+
+  // Subscribe (public)
+  app.post('/api/newsletter/subscribe', async (req, res) => {
+    try {
+      const { email, name } = req.body;
+      if (!email) return res.status(400).json({ error: 'Email required' });
+      const existing = await storage.getSubscriberByEmail(email);
+      if (existing?.status === 'active') return res.json({ success: true, message: 'Already subscribed' });
+      const token = `unsub-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      if (existing) {
+        // Resubscribe
+        await storage.addSubscriber({ email, name, status: 'active', unsubscribeToken: token, source: 'website' });
+      } else {
+        await storage.addSubscriber({ email, name, status: 'active', unsubscribeToken: token, source: 'website' });
+      }
+      res.json({ success: true, message: 'Subscribed!' });
+    } catch (error: any) {
+      if (error.message?.includes('unique')) return res.json({ success: true, message: 'Already subscribed' });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Unsubscribe (public, via token)
+  app.get('/api/newsletter/unsubscribe/:token', async (req, res) => {
+    try {
+      const success = await storage.unsubscribe(req.params.token);
+      res.send(success ? '<html><body style="background:#09090b;color:#fafafa;font-family:sans-serif;text-align:center;padding:60px"><h2>Unsubscribed</h2><p>You have been removed from the ClearEdge Sports newsletter.</p></body></html>' : '<html><body style="background:#09090b;color:#fafafa;font-family:sans-serif;text-align:center;padding:60px"><h2>Link expired</h2></body></html>');
+    } catch { res.status(500).send('Error'); }
+  });
+
+  // Newsletter archive (public)
+  app.get('/api/newsletter/archive', async (req, res) => {
+    try {
+      const all = await storage.getNewsletters(50);
+      const sent = all.filter(n => n.status === 'sent' || n.status === 'draft');
+      res.json(sent.map(n => ({ id: n.id, subject: n.subject, previewText: n.previewText, edition: n.edition, slug: n.slug, status: n.status, sentAt: n.sentAt, createdAt: n.createdAt })));
+    } catch { res.json([]); }
+  });
+
+  // View single newsletter (public)
+  app.get('/api/newsletter/:slug', async (req, res) => {
+    try {
+      const nl = await storage.getNewsletterBySlug(req.params.slug);
+      if (!nl) return res.status(404).json({ error: 'Not found' });
+      res.json(nl);
+    } catch { res.status(500).json({ error: 'Failed' }); }
+  });
+
+  // Render newsletter HTML for browser viewing
+  app.get('/api/newsletter/:slug/view', async (req, res) => {
+    try {
+      const nl = await storage.getNewsletterBySlug(req.params.slug);
+      if (!nl) return res.status(404).send('Not found');
+      res.setHeader('Content-Type', 'text/html');
+      res.send(nl.htmlContent);
+    } catch { res.status(500).send('Error'); }
+  });
+
+  // Admin: subscriber list + metrics
+  app.get('/api/admin/newsletter/subscribers', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
+      const subs = await storage.getAllSubscribers();
+      const active = subs.filter(s => s.status === 'active').length;
+      const unsubscribed = subs.filter(s => s.status === 'unsubscribed').length;
+      res.json({ total: subs.length, active, unsubscribed, subscribers: subs });
+    } catch (error: any) { res.status(500).json({ error: error.message }); }
+  });
+
+  // Admin: all newsletters with full metrics
+  app.get('/api/admin/newsletter/all', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
+      res.json(await storage.getNewsletters(100));
+    } catch (error: any) { res.status(500).json({ error: error.message }); }
+  });
+
+  // Admin: generate newsletter
+  app.post('/api/admin/newsletter/generate', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
+
+      const today = new Date().toISOString().split('T')[0];
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+      // Fetch data
+      const { fetchTank01Games, fetchTank01Scores, fetchTank01Odds, getConsensusOdds, parseMultiBookOdds, getTeamFullName } = await import('./services/tank01-mlb');
+      const [todayGames, yesterdayScores, todayOdds] = await Promise.all([
+        fetchTank01Games(today),
+        fetchTank01Scores(yesterday),
+        fetchTank01Odds(today),
+      ]);
+
+      const yScores = Object.values(yesterdayScores).filter((g: any) => g.gameStatusCode === '2' || g.gameStatus === 'Completed').map((g: any) => ({
+        away: getTeamFullName(g.away),
+        home: getTeamFullName(g.home),
+        awayScore: parseInt(g.lineScore?.away?.R || '0'),
+        homeScore: parseInt(g.lineScore?.home?.R || '0'),
+      }));
+
+      const tGames = todayGames.map(g => {
+        const odds = todayOdds[g.gameID];
+        const books = odds ? parseMultiBookOdds(odds) : [];
+        const consensus = books.length > 0 ? getConsensusOdds(books) : { moneyline: null, total: null };
+        return {
+          away: getTeamFullName(g.away),
+          home: getTeamFullName(g.home),
+          gameTime: g.gameTime,
+          moneyline: consensus.moneyline || undefined,
+          total: consensus.total?.line || undefined,
+        };
+      });
+
+      const { generateDailyNewsletter } = await import('./services/openai');
+      const result = await generateDailyNewsletter({ date: today, yesterdayScores: yScores, todayGames: tGames });
+
+      const slug = `newsletter-${today}`;
+      const nl = await storage.createNewsletter({
+        subject: result.subject,
+        previewText: result.previewText,
+        htmlContent: result.html,
+        textContent: result.text,
+        slug,
+        edition: today,
+        quickPicks: result.quickPicks,
+        yesterdayRecap: yScores,
+        status: 'draft',
+        sentAt: null,
+        recipientCount: 0,
+        openCount: 0,
+        clickCount: 0,
+      });
+
+      res.json({ success: true, newsletter: nl });
+    } catch (error: any) {
+      console.error('Error generating newsletter:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: mark newsletter as "sent" (actual email sending is external)
+  app.post('/api/admin/newsletter/mark-sent/:id', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
+      const subs = await storage.getActiveSubscribers();
+      const updated = await storage.updateNewsletter(parseInt(req.params.id), { status: 'sent', sentAt: new Date(), recipientCount: subs.length });
+      res.json({ success: true, newsletter: updated });
+    } catch (error: any) { res.status(500).json({ error: error.message }); }
+  });
+
+  // ── Player Power Rankings ─────────────────────────────────────────
+
+  app.get('/api/player-rankings', async (req, res) => {
+    try {
+      const type = (req.query.type as string) || 'hitters'; // hitters | pitchers
+      const cacheKey = `player-rankings-${type}`;
+      const cached = getCached<any>(cacheKey);
+      if (cached) return res.json(cached);
+
+      const { fetchTank01Teams, fetchTank01Roster, fetchTank01Player, getTeamLogo } = await import('./services/tank01-mlb');
+      const teams = await fetchTank01Teams();
+
+      // Fetch rosters for all 30 teams in parallel (batched by 6)
+      const allPlayers: any[] = [];
+      for (let i = 0; i < teams.length; i += 6) {
+        const batch = teams.slice(i, i + 6);
+        const rosters = await Promise.all(batch.map(t => fetchTank01Roster(t.teamAbv)));
+        rosters.forEach((roster, idx) => {
+          const team = batch[idx];
+          roster.forEach(p => {
+            if (type === 'hitters' && p.pos !== 'P') allPlayers.push({ ...p, teamLogo: getTeamLogo(team.teamAbv) });
+            if (type === 'pitchers' && p.pos === 'P') allPlayers.push({ ...p, teamLogo: getTeamLogo(team.teamAbv) });
+          });
+        });
+      }
+
+      // Fetch stats for top players (limit to avoid rate limits — sample 120)
+      const sample = allPlayers.slice(0, 120);
+      const enriched: any[] = [];
+
+      for (let i = 0; i < sample.length; i += 10) {
+        const batch = sample.slice(i, i + 10);
+        const stats = await Promise.all(batch.map(p => fetchTank01Player(p.playerID, true)));
+        stats.forEach((s, idx) => {
+          const p = batch[idx];
+          if (!s?.stats) return;
+
+          if (type === 'hitters') {
+            const h = s.stats.Hitting;
+            if (!h || parseInt(h.AB || '0') < 1) return;
+            const ab = parseInt(h.AB || '0');
+            const hits = parseInt(h.H || '0');
+            const hr = parseInt(h.HR || '0');
+            const rbi = parseInt(h.RBI || '0');
+            const runs = parseInt(h.R || '0');
+            const bb = parseInt(h.BB || '0');
+            const so = parseInt(h.SO || '0');
+            const ops = parseFloat(h.OPS || '0');
+            const tb = parseInt(h.TB || '0');
+            const avg = ab > 0 ? hits / ab : 0;
+            const slg = ab > 0 ? tb / ab : 0;
+
+            // Hitter power score: OPS (30%) + HR rate (20%) + SLG (15%) + BB rate (15%) + RBI rate (10%) + K rate penalty (10%)
+            const opsScore = Math.min(ops * 100, 100);
+            const hrRate = Math.min((hr / Math.max(ab, 1)) * 1000, 100);
+            const slgScore = Math.min(slg * 150, 100);  // .667 SLG = 100
+            const bbRate = Math.min((bb / Math.max(ab, 1)) * 500, 100);
+            const rbiRate = Math.min((rbi / Math.max(ab, 1)) * 500, 100);
+            const kPenalty = Math.max(100 - (so / Math.max(ab, 1)) * 300, 0);
+            const powerScore = Math.round(opsScore * 0.30 + hrRate * 0.20 + slgScore * 0.15 + bbRate * 0.15 + rbiRate * 0.10 + kPenalty * 0.10);
+
+            enriched.push({
+              playerID: p.playerID, name: s.longName, pos: p.pos, team: p.teamAbv, teamLogo: p.teamLogo,
+              headshot: p.espnHeadshot || s.espnHeadshot || s.mlbHeadshot,
+              jerseyNum: p.jerseyNum, gp: s.stats.gamesPlayed || '0',
+              powerScore,
+              powerBreakdown: [
+                { label: 'OPS', raw: ops.toFixed(3), score: Math.round(opsScore), weight: 30, pts: Math.round(opsScore * 0.30) },
+                { label: 'HR Rate', raw: `${(hr / Math.max(ab, 1)).toFixed(3)}/AB`, score: Math.round(hrRate), weight: 20, pts: Math.round(hrRate * 0.20) },
+                { label: 'SLG', raw: slg.toFixed(3), score: Math.round(slgScore), weight: 15, pts: Math.round(slgScore * 0.15) },
+                { label: 'BB Rate', raw: `${(bb / Math.max(ab, 1)).toFixed(3)}/AB`, score: Math.round(bbRate), weight: 15, pts: Math.round(bbRate * 0.15) },
+                { label: 'RBI Rate', raw: `${(rbi / Math.max(ab, 1)).toFixed(3)}/AB`, score: Math.round(rbiRate), weight: 10, pts: Math.round(rbiRate * 0.10) },
+                { label: 'K Penalty', raw: `${(so / Math.max(ab, 1)).toFixed(3)}/AB`, score: Math.round(kPenalty), weight: 10, pts: Math.round(kPenalty * 0.10) },
+              ],
+              avg: avg.toFixed(3), hr, rbi, runs, bb, so, ops: ops.toFixed(3), slg: slg.toFixed(3), ab, hits,
+              injury: p.injury?.description ? p.injury : null,
+            });
+          } else {
+            const pt = s.stats.Pitching;
+            if (!pt || parseFloat(pt.InningsPitched || '0') < 0.1) return;
+            const era = parseFloat(pt.ERA || '9.99');
+            const whip = parseFloat(pt.WHIP || '9.99');
+            const soNum = parseInt(pt.SO || '0');
+            const ip = parseFloat(pt.InningsPitched || '0');
+            const wins = parseInt(pt.Win || '0');
+            const losses = parseInt(pt.Loss || '0');
+            const saves = parseInt(pt.Save || '0');
+            const bbNum = parseInt(pt.BB || '0');
+
+            // Pitcher power score: ERA inv (35%) + WHIP inv (25%) + K rate (20%) + Win rate (10%) + Save rate (10%)
+            const eraScore = Math.min(Math.max((6.0 - era) * 25, 0), 100);
+            const whipScore = Math.min(Math.max((2.0 - whip) * 80, 0), 100);
+            const kRate = ip > 0 ? Math.min((soNum / ip) * 9 * 10, 100) : 0;
+            const winScore = Math.min(wins * 20, 100);
+            const saveScore = Math.min(saves * 25, 100);
+            const powerScore = Math.round(eraScore * 0.35 + whipScore * 0.25 + kRate * 0.20 + winScore * 0.10 + saveScore * 0.10);
+
+            enriched.push({
+              playerID: p.playerID, name: s.longName, pos: p.pos, team: p.teamAbv, teamLogo: p.teamLogo,
+              headshot: p.espnHeadshot || s.espnHeadshot || s.mlbHeadshot,
+              jerseyNum: p.jerseyNum, gp: s.stats.gamesPlayed || '0', gs: s.stats.gamesStarted || '0',
+              powerScore,
+              powerBreakdown: [
+                { label: 'ERA', raw: era.toFixed(2), score: Math.round(eraScore), weight: 35, pts: Math.round(eraScore * 0.35) },
+                { label: 'WHIP', raw: whip.toFixed(2), score: Math.round(whipScore), weight: 25, pts: Math.round(whipScore * 0.25) },
+                { label: 'K Rate', raw: ip > 0 ? ((soNum / ip) * 9).toFixed(1) + ' K/9' : '0', score: Math.round(kRate), weight: 20, pts: Math.round(kRate * 0.20) },
+                { label: 'Wins', raw: String(wins), score: Math.round(winScore), weight: 10, pts: Math.round(winScore * 0.10) },
+                { label: 'Saves', raw: String(saves), score: Math.round(saveScore), weight: 10, pts: Math.round(saveScore * 0.10) },
+              ],
+              era: era.toFixed(2), whip: whip.toFixed(2), so: soNum, ip: pt.InningsPitched, wins, losses, saves, bb: bbNum,
+              injury: p.injury?.description ? p.injury : null,
+            });
+          }
+        });
+      }
+
+      // Sort by power score
+      enriched.sort((a, b) => b.powerScore - a.powerScore);
+      // Add rank
+      const ranked = enriched.map((p, i) => ({ ...p, rank: i + 1 }));
+
+      setCache(cacheKey, ranked, 1800); // 30 min cache
+      res.json(ranked);
+    } catch (error: any) {
+      console.error('Error fetching player rankings:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Stadium coordinates + weather for map view (public)
+  app.get('/api/weather/map', async (req, res) => {
+    try {
+      const games = await fetchTank01Games((req.query.date as string) || new Date().toISOString().split('T')[0]);
+      const stadiums: Record<string, { lat: number; lon: number; city: string; venue: string }> = {
+        ARI: { lat: 33.45, lon: -112.07, city: 'Phoenix', venue: 'Chase Field' },
+        ATL: { lat: 33.89, lon: -84.47, city: 'Atlanta', venue: 'Truist Park' },
+        BAL: { lat: 39.28, lon: -76.62, city: 'Baltimore', venue: 'Oriole Park' },
+        BOS: { lat: 42.35, lon: -71.10, city: 'Boston', venue: 'Fenway Park' },
+        CHC: { lat: 41.95, lon: -87.66, city: 'Chicago', venue: 'Wrigley Field' },
+        CHW: { lat: 41.83, lon: -87.63, city: 'Chicago', venue: 'Guaranteed Rate' },
+        CIN: { lat: 39.10, lon: -84.51, city: 'Cincinnati', venue: 'Great American' },
+        CLE: { lat: 41.50, lon: -81.69, city: 'Cleveland', venue: 'Progressive Field' },
+        COL: { lat: 39.76, lon: -105.00, city: 'Denver', venue: 'Coors Field' },
+        DET: { lat: 42.34, lon: -83.05, city: 'Detroit', venue: 'Comerica Park' },
+        HOU: { lat: 29.76, lon: -95.36, city: 'Houston', venue: 'Minute Maid Park' },
+        KC:  { lat: 39.05, lon: -94.48, city: 'Kansas City', venue: 'Kauffman Stadium' },
+        LAA: { lat: 33.80, lon: -117.88, city: 'Anaheim', venue: 'Angel Stadium' },
+        LAD: { lat: 34.07, lon: -118.24, city: 'Los Angeles', venue: 'Dodger Stadium' },
+        MIA: { lat: 25.78, lon: -80.22, city: 'Miami', venue: 'loanDepot Park' },
+        MIL: { lat: 43.03, lon: -87.97, city: 'Milwaukee', venue: 'American Family' },
+        MIN: { lat: 44.98, lon: -93.28, city: 'Minneapolis', venue: 'Target Field' },
+        NYM: { lat: 40.76, lon: -73.85, city: 'New York', venue: 'Citi Field' },
+        NYY: { lat: 40.83, lon: -73.93, city: 'New York', venue: 'Yankee Stadium' },
+        OAK: { lat: 37.75, lon: -122.20, city: 'Oakland', venue: 'Coliseum' },
+        PHI: { lat: 39.91, lon: -75.17, city: 'Philadelphia', venue: 'Citizens Bank' },
+        PIT: { lat: 40.45, lon: -80.01, city: 'Pittsburgh', venue: 'PNC Park' },
+        SD:  { lat: 32.71, lon: -117.16, city: 'San Diego', venue: 'Petco Park' },
+        SEA: { lat: 47.59, lon: -122.33, city: 'Seattle', venue: 'T-Mobile Park' },
+        SF:  { lat: 37.78, lon: -122.39, city: 'San Francisco', venue: 'Oracle Park' },
+        STL: { lat: 38.62, lon: -90.19, city: 'St. Louis', venue: 'Busch Stadium' },
+        TB:  { lat: 27.77, lon: -82.65, city: 'St. Petersburg', venue: 'Tropicana Field' },
+        TEX: { lat: 32.75, lon: -97.08, city: 'Arlington', venue: 'Globe Life Field' },
+        TOR: { lat: 43.64, lon: -79.39, city: 'Toronto', venue: 'Rogers Centre' },
+        WSH: { lat: 38.87, lon: -77.01, city: 'Washington', venue: 'Nationals Park' },
+      };
+
+      const pins = await Promise.all(games.map(async (g) => {
+        const homeCode = g.home;
+        const stadium = stadiums[homeCode];
+        if (!stadium) return null;
+
+        // Get weather
+        let weather = null;
+        try {
+          const cacheKey = `weather-${homeCode}`;
+          weather = getCached<any>(cacheKey);
+          if (!weather) {
+            const full = await weatherAPI.getGameWeather(`${g.away}@${homeCode}`);
+            if (full) {
+              weather = { temperature: full.temperature, condition: full.condition, windSpeed: full.windSpeed, windDirection: full.windDirection, humidity: full.humidity, precipitation: full.precipitation, totalRunsImpact: full.impact.totalRunsImpact, gameDelay: full.impact.gameDelay };
+              setCache(cacheKey, weather, 1800);
+            }
+          }
+        } catch {}
+
+        return {
+          gameID: g.gameID,
+          away: g.away,
+          home: g.home,
+          gameTime: g.gameTime,
+          lat: stadium.lat,
+          lon: stadium.lon,
+          city: stadium.city,
+          venue: stadium.venue,
+          weather,
+        };
+      }));
+
+      res.json(pins.filter(Boolean));
+    } catch (error) {
+      res.json([]);
     }
   });
 

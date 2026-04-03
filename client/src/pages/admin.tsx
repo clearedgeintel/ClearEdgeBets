@@ -377,6 +377,12 @@ function SettleVirtualBetsButton() {
                   Stripe Setup
                 </Button>
               </Link>
+              <Link href="/admin/newsletter">
+                <Button className="bg-emerald-600 hover:bg-emerald-700">
+                  <Shield className="w-4 h-4 mr-2" />
+                  Newsletter
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

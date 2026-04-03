@@ -604,7 +604,7 @@ Focus on value betting opportunities where your analysis suggests the true proba
 
 // ── Sarcastic Game Review Generator ──────────────────────────────────
 
-import { BEAT_WRITERS, getRandomBeatWriter, type BeatWriter } from '@shared/beat-writers';
+import { BEAT_WRITERS, getRandomBeatWriter, getBeatWriter, type BeatWriter } from '@shared/beat-writers';
 
 export interface GameReviewInput {
   gameId: string;
@@ -760,6 +760,176 @@ Return JSON: { "title": "...", "content": "..." }`;
     return {
       title: `${writer.name} Has Thoughts`,
       content: `${writer.name} stared at the blank page, muttered "${writer.catchphrase}", and went to get coffee. Column forthcoming.`,
+    };
+  }
+}
+
+// ── Daily Newsletter Generator ──────────────────────────────────
+
+export interface NewsletterInput {
+  date: string;                 // "2026-04-03"
+  yesterdayScores: Array<{ away: string; home: string; awayScore: number; homeScore: number }>;
+  todayGames: Array<{ away: string; home: string; gameTime: string; awayPitcher?: string; homePitcher?: string; moneyline?: { away: number; home: number }; total?: string }>;
+  topPick?: { selection: string; reasoning: string; confidence: number };
+}
+
+export async function generateDailyNewsletter(input: NewsletterInput): Promise<{ subject: string; previewText: string; html: string; text: string; quickPicks: any[] }> {
+  const yesterdayLines = input.yesterdayScores.map(g =>
+    `${g.away} ${g.awayScore} @ ${g.home} ${g.homeScore}`
+  ).join('\n');
+
+  const todayLines = input.todayGames.map(g => {
+    let line = `${g.away} @ ${g.home} (${g.gameTime})`;
+    if (g.awayPitcher || g.homePitcher) line += ` — ${g.awayPitcher || 'TBD'} vs ${g.homePitcher || 'TBD'}`;
+    if (g.moneyline) line += ` [ML: ${g.moneyline.away > 0 ? '+' : ''}${g.moneyline.away}/${g.moneyline.home > 0 ? '+' : ''}${g.moneyline.home}]`;
+    if (g.total) line += ` [O/U: ${g.total}]`;
+    return line;
+  }).join('\n');
+
+  const prompt = `Generate a daily sports newsletter for ClearEdge Sports. Date: ${input.date}
+
+**Yesterday's Results:**
+${yesterdayLines || 'No games yesterday'}
+
+**Today's Schedule:**
+${todayLines || 'No games today'}
+
+${input.topPick ? `**Editor's Top Pick:** ${input.topPick.selection} (${input.topPick.confidence}% confidence) — ${input.topPick.reasoning}` : ''}
+
+Create a newsletter with these sections:
+1. **Subject line** — catchy, 50 chars max
+2. **Preview text** — 100 chars for email preview
+3. **Quick Picks** — 3 value plays from today's slate with brief reasoning (return as JSON array with selection, reasoning, confidence)
+4. **Yesterday's Recap** — 2-3 sentences covering the highlights
+5. **Today's Slate Preview** — Key matchups and pitching highlights
+6. **Weather Watch** — Brief note about any weather-impacted games
+7. **Parting Shot** — One sarcastic one-liner to close
+
+Tone: Knowledgeable but fun. Like a smart friend texting you about baseball. Keep it scannable — short paragraphs, bold key names/numbers.
+
+Return JSON: {
+  "subject": "...",
+  "previewText": "...",
+  "quickPicks": [{ "selection": "...", "reasoning": "...", "confidence": 75 }],
+  "recap": "...",
+  "slatePreview": "...",
+  "weatherWatch": "...",
+  "partingShot": "..."
+}`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.85,
+      max_tokens: 2000,
+    });
+
+    const r = JSON.parse(response.choices[0].message.content || '{}');
+
+    // Build email-friendly HTML
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #09090b; color: #d4d4d8; margin: 0; padding: 0; }
+  .container { max-width: 600px; margin: 0 auto; padding: 24px 16px; }
+  .header { text-align: center; padding: 20px 0; border-bottom: 1px solid #27272a; margin-bottom: 24px; }
+  .header h1 { color: #22c55e; font-size: 24px; margin: 0 0 4px; }
+  .header p { color: #71717a; font-size: 13px; margin: 0; }
+  .section { margin-bottom: 24px; }
+  .section h2 { color: #fafafa; font-size: 16px; margin: 0 0 8px; border-left: 3px solid #22c55e; padding-left: 10px; }
+  .section p { color: #a1a1aa; font-size: 14px; line-height: 1.6; margin: 0 0 8px; }
+  .pick-card { background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
+  .pick-card .selection { color: #22c55e; font-weight: 700; font-size: 15px; }
+  .pick-card .reasoning { color: #a1a1aa; font-size: 13px; margin-top: 4px; }
+  .pick-card .confidence { display: inline-block; background: #27272a; color: #d4d4d8; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-top: 6px; }
+  .scores { background: #18181b; border-radius: 8px; padding: 12px; }
+  .scores .game { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #1e1e22; font-size: 13px; }
+  .scores .game:last-child { border: none; }
+  .scores .game .teams { color: #d4d4d8; }
+  .scores .game .score { color: #22c55e; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .parting { background: #22c55e10; border: 1px solid #22c55e30; border-radius: 8px; padding: 16px; text-align: center; color: #22c55e; font-style: italic; font-size: 14px; }
+  .footer { text-align: center; padding: 20px 0; border-top: 1px solid #27272a; margin-top: 24px; color: #52525b; font-size: 11px; }
+  .footer a { color: #71717a; }
+</style></head><body>
+<div class="container">
+  <div class="header">
+    <h1>ClearEdge Sports</h1>
+    <p>Daily Intelligence Brief — ${input.date}</p>
+  </div>
+
+  <div class="section">
+    <h2>⚡ Quick Picks</h2>
+    ${(r.quickPicks || []).map((p: any) => `
+    <div class="pick-card">
+      <div class="selection">${p.selection}</div>
+      <div class="reasoning">${p.reasoning}</div>
+      <span class="confidence">${p.confidence}% confidence</span>
+    </div>`).join('')}
+  </div>
+
+  <div class="section">
+    <h2>📊 Yesterday's Recap</h2>
+    <p>${r.recap || 'No recap available.'}</p>
+    ${input.yesterdayScores.length > 0 ? `<div class="scores">${input.yesterdayScores.map(g => `<div class="game"><span class="teams">${g.away} @ ${g.home}</span><span class="score">${g.awayScore} - ${g.homeScore}</span></div>`).join('')}</div>` : ''}
+  </div>
+
+  <div class="section">
+    <h2>⚾ Today's Slate</h2>
+    <p>${r.slatePreview || 'Check the app for today\'s games.'}</p>
+  </div>
+
+  <div class="section">
+    <h2>🌦️ Weather Watch</h2>
+    <p>${r.weatherWatch || 'All clear across the league.'}</p>
+  </div>
+
+  <div class="parting">${r.partingShot || 'Play ball.'}</div>
+
+  <div class="footer">
+    <p>ClearEdge Sports · AI-Powered Sports Intelligence</p>
+    <p>For entertainment purposes only · <a href="{{unsubscribe_url}}">Unsubscribe</a></p>
+  </div>
+</div></body></html>`;
+
+    // Plain text version
+    const text = `CLEAREDGE SPORTS — Daily Brief (${input.date})
+
+QUICK PICKS:
+${(r.quickPicks || []).map((p: any) => `→ ${p.selection} (${p.confidence}%) — ${p.reasoning}`).join('\n')}
+
+YESTERDAY'S RECAP:
+${r.recap || 'No recap.'}
+
+${input.yesterdayScores.map(g => `  ${g.away} ${g.awayScore} @ ${g.home} ${g.homeScore}`).join('\n')}
+
+TODAY'S SLATE:
+${r.slatePreview || 'Check the app.'}
+
+WEATHER WATCH:
+${r.weatherWatch || 'All clear.'}
+
+${r.partingShot || 'Play ball.'}
+
+---
+ClearEdge Sports · Unsubscribe: {{unsubscribe_url}}`;
+
+    return {
+      subject: r.subject || `ClearEdge Daily — ${input.date}`,
+      previewText: r.previewText || 'Your daily sports intelligence brief',
+      html,
+      text,
+      quickPicks: r.quickPicks || [],
+    };
+  } catch (error) {
+    console.error('Error generating newsletter:', error);
+    return {
+      subject: `ClearEdge Daily — ${input.date}`,
+      previewText: 'Your daily sports intelligence brief',
+      html: '<p>Newsletter generation failed. Try again.</p>',
+      text: 'Newsletter generation failed.',
+      quickPicks: [],
     };
   }
 }

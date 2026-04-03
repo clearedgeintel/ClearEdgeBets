@@ -735,7 +735,7 @@ export type OddsHistory = typeof oddsHistory.$inferSelect;
 // Blog: AI-generated sarcastic game reviews
 export const blogReviews = pgTable("blog_reviews", {
   id: serial("id").primaryKey(),
-  gameId: text("game_id").notNull().unique(),     // "20260402_NYM@SF"
+  gameId: text("game_id").notNull(),               // "20260402_NYM@SF" (not unique — multiple writers can cover same game)
   gameDate: text("game_date").notNull(),           // "2026-04-02"
   awayTeam: text("away_team").notNull(),
   homeTeam: text("home_team").notNull(),
@@ -778,3 +778,42 @@ export type EditorialColumn = typeof editorialColumns.$inferSelect;
 export const insertBlogReviewSchema = createInsertSchema(blogReviews).omit({ id: true, createdAt: true });
 export type InsertBlogReview = z.infer<typeof insertBlogReviewSchema>;
 export type BlogReview = typeof blogReviews.$inferSelect;
+
+// Newsletter subscribers
+export const newsletterSubscribers = pgTable("newsletter_subscribers", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name"),
+  status: text("status").notNull().default("active"),  // active, unsubscribed, bounced
+  source: text("source").default("website"),            // website, admin, import
+  unsubscribeToken: text("unsubscribe_token").notNull(),
+  subscribedAt: timestamp("subscribed_at").defaultNow().notNull(),
+  unsubscribedAt: timestamp("unsubscribed_at"),
+});
+
+export const insertNewsletterSubscriberSchema = createInsertSchema(newsletterSubscribers).omit({ id: true, subscribedAt: true });
+export type InsertNewsletterSubscriber = z.infer<typeof insertNewsletterSubscriberSchema>;
+export type NewsletterSubscriber = typeof newsletterSubscribers.$inferSelect;
+
+// Newsletters (archived editions)
+export const newsletters = pgTable("newsletters", {
+  id: serial("id").primaryKey(),
+  subject: text("subject").notNull(),
+  previewText: text("preview_text"),
+  htmlContent: text("html_content").notNull(),          // Full email-ready HTML
+  textContent: text("text_content"),                    // Plain text fallback
+  slug: text("slug").notNull().unique(),
+  edition: text("edition").notNull(),                   // e.g. "2026-04-03"
+  quickPicks: jsonb("quick_picks"),                     // Array of picks included
+  yesterdayRecap: jsonb("yesterday_recap"),              // Summary of yesterday's results
+  status: text("status").notNull().default("draft"),    // draft, sent, scheduled
+  sentAt: timestamp("sent_at"),
+  recipientCount: integer("recipient_count").default(0),
+  openCount: integer("open_count").default(0),
+  clickCount: integer("click_count").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertNewsletterSchema = createInsertSchema(newsletters).omit({ id: true, createdAt: true });
+export type InsertNewsletter = z.infer<typeof insertNewsletterSchema>;
+export type Newsletter = typeof newsletters.$inferSelect;

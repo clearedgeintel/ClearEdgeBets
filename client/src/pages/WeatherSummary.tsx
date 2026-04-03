@@ -1,314 +1,283 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Sun, 
-  Cloud, 
-  CloudRain, 
-  CloudSnow, 
-  CloudDrizzle,
-  Wind,
-  Eye,
-  Thermometer,
-  Droplets,
-  Activity
-} from "lucide-react";
+import { useState } from "react";
+import { Cloud, CloudRain, Sun, Thermometer, Wind, Droplets, X } from "lucide-react";
 import { format } from "date-fns";
 
-interface WeatherData {
-  city: string;
-  temperature: number;
-  condition: string;
-  humidity: number;
-  windSpeed: number;
-  windDirection: string;
-  visibility: number;
-  pressure: number;
-  feelsLike: number;
-  gameImpact: 'favorable' | 'neutral' | 'challenging';
-  impact: string;
-}
-
-interface GameWeatherInfo {
-  gameId: string;
-  awayTeam: string;
-  homeTeam: string;
-  venue: string;
+interface MapPin {
+  gameID: string;
+  away: string;
+  home: string;
   gameTime: string;
-  weather: WeatherData;
+  lat: number;
+  lon: number;
+  city: string;
+  venue: string;
+  weather: {
+    temperature: number;
+    condition: string;
+    windSpeed: number;
+    windDirection: number;
+    humidity: number;
+    precipitation: number;
+    totalRunsImpact: 'favor_over' | 'favor_under' | 'neutral';
+    gameDelay: string;
+  } | null;
 }
 
-// Baseball-themed weather icons
-const getBaseballWeatherIcon = (condition: string, size: number = 48) => {
-  const iconProps = { size, className: "text-blue-500" };
-  
-  switch (condition.toLowerCase()) {
-    case 'clear':
-    case 'sunny':
-      return <Sun {...iconProps} className="text-yellow-500" />;
-    case 'partly cloudy':
-    case 'cloudy':
-      return <Cloud {...iconProps} className="text-gray-500" />;
-    case 'rain':
-    case 'light rain':
-      return <CloudRain {...iconProps} className="text-blue-600" />;
-    case 'drizzle':
-      return <CloudDrizzle {...iconProps} className="text-blue-400" />;
-    case 'snow':
-      return <CloudSnow {...iconProps} className="text-gray-200" />;
-    default:
-      return <Cloud {...iconProps} className="text-gray-500" />;
-  }
-};
+function teamLogo(code: string) {
+  return `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${code.toLowerCase()}.png`;
+}
 
-// Fun baseball weather descriptions
-const getBaseballWeatherDescription = (weather: WeatherData) => {
-  const temp = weather.temperature;
-  const condition = weather.condition.toLowerCase();
-  
-  if (condition.includes('rain')) {
-    return "⚾ Rain delay possible - keep those gloves dry!";
-  } else if (condition.includes('snow')) {
-    return "❄️ Snow game special - think frozen ropes and cold bats!";
-  } else if (temp > 85) {
-    return "🔥 Hot weather baseball - hydrate those players!";
-  } else if (temp < 50) {
-    return "🧊 Chilly conditions - pitchers might have extra grip!";
-  } else if (weather.windSpeed > 15) {
-    return "💨 Windy conditions - fly balls could get interesting!";
-  } else {
-    return "⚾ Perfect baseball weather - play ball!";
-  }
-};
+// Convert lat/lon to SVG x/y on a simplified USA projection
+// US bounds roughly: lat 24-50, lon -125 to -66
+function geoToSvg(lat: number, lon: number): { x: number; y: number } {
+  const x = ((lon + 125) / (125 - 66)) * 900 + 50;
+  const y = ((50 - lat) / (50 - 24)) * 500 + 30;
+  return { x, y };
+}
 
-// Impact color coding
-const getImpactColor = (impact: string) => {
-  switch (impact) {
-    case 'favorable':
-      return 'bg-green-100 text-green-800';
-    case 'challenging':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-blue-100 text-blue-800';
-  }
-};
+function weatherColor(temp: number | undefined): string {
+  if (!temp) return '#3f3f46';
+  if (temp >= 85) return '#ef4444';  // hot red
+  if (temp >= 75) return '#f59e0b';  // warm amber
+  if (temp >= 60) return '#22c55e';  // nice green
+  if (temp >= 45) return '#3b82f6';  // cool blue
+  return '#8b5cf6';                   // cold purple
+}
+
+function conditionIcon(condition: string | undefined) {
+  if (!condition) return <Cloud className="h-3 w-3" />;
+  const c = condition.toLowerCase();
+  if (c.includes('rain') || c.includes('drizzle')) return <CloudRain className="h-3 w-3 text-blue-400" />;
+  if (c.includes('clear') || c.includes('sun')) return <Sun className="h-3 w-3 text-amber-400" />;
+  return <Cloud className="h-3 w-3 text-zinc-400" />;
+}
 
 export default function WeatherSummary() {
-  const { data: games, isLoading: gamesLoading } = useQuery({
-    queryKey: ['/api/games'],
+  const [selectedPin, setSelectedPin] = useState<MapPin | null>(null);
+
+  const { data: pins = [], isLoading } = useQuery<MapPin[]>({
+    queryKey: ['/api/weather/map'],
+    queryFn: () => fetch('/api/weather/map').then(r => r.json()),
+    refetchInterval: 300000,
   });
-
-  const { data: weatherSummary, isLoading: weatherLoading } = useQuery({
-    queryKey: ['/api/weather/summary'],
-    enabled: !!games,
-  });
-
-  if (gamesLoading || weatherLoading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
-          <div className="grid gap-4">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const todaysGames = Array.isArray(games) ? games.slice(0, 8) : []; // Show first 8 games
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-4xl font-bold text-foreground flex items-center justify-center gap-3">
-          <Activity className="text-blue-500" size={40} />
-          MLB Weather Central
-          <Activity className="text-blue-500" size={40} />
-        </h1>
-        <p className="text-muted-foreground text-lg">
-          Today's Game Conditions • {format(new Date(), 'EEEE, MMMM do, yyyy')}
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">MLB Weather Map</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          {format(new Date(), 'EEEE, MMMM do')} · {pins.length} games · Click a pin for details
         </p>
       </div>
 
-      {/* Weather Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Card className="text-center">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-center mb-2">
-              <Thermometer className="text-red-500" size={24} />
-            </div>
-            <div className="text-2xl font-bold">73°F</div>
-            <p className="text-sm text-muted-foreground">Avg Temperature</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="text-center">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-center mb-2">
-              <Wind className="text-blue-500" size={24} />
-            </div>
-            <div className="text-2xl font-bold">8 mph</div>
-            <p className="text-sm text-muted-foreground">Avg Wind Speed</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="text-center">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-center mb-2">
-              <Droplets className="text-cyan-500" size={24} />
-            </div>
-            <div className="text-2xl font-bold">45%</div>
-            <p className="text-sm text-muted-foreground">Avg Humidity</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="text-center">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-center mb-2">
-              <Sun className="text-yellow-500" size={24} />
-            </div>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-sm text-muted-foreground">Clear Skies</p>
-          </CardContent>
-        </Card>
+      {/* Temperature legend */}
+      <div className="flex items-center justify-center gap-4 mb-4 text-[10px] text-muted-foreground">
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>&lt;45°</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>45-59°</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>60-74°</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>75-84°</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>85°+</span>
       </div>
 
-      {/* Weather Map Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {todaysGames.map((game: any, index: number) => {
-          // Mock weather data for each game location (in production, would fetch real data)
-          const mockWeather: WeatherData = {
-            city: game.venue.split(' ')[0] || 'Stadium',
-            temperature: 68 + Math.floor(Math.random() * 25), // 68-93°F
-            condition: ['Clear', 'Partly Cloudy', 'Cloudy', 'Light Rain'][Math.floor(Math.random() * 4)],
-            humidity: 40 + Math.floor(Math.random() * 40), // 40-80%
-            windSpeed: 3 + Math.floor(Math.random() * 15), // 3-18 mph
-            windDirection: ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.floor(Math.random() * 8)],
-            visibility: 8 + Math.floor(Math.random() * 5), // 8-12 miles
-            pressure: 29.8 + (Math.random() * 0.6), // 29.8-30.4 inHg
-            feelsLike: 70 + Math.floor(Math.random() * 20), // Feels like temp
-            gameImpact: Math.random() > 0.7 ? 'challenging' : Math.random() > 0.3 ? 'neutral' : 'favorable',
-            impact: 'Perfect conditions for baseball'
-          };
+      {/* Map container */}
+      <div className="relative">
+        <Card className="border-border/30 overflow-hidden bg-zinc-950">
+          <CardContent className="p-0">
+            <svg viewBox="0 0 1000 560" className="w-full h-auto">
+              {/* Background gradient */}
+              <defs>
+                <radialGradient id="mapBg" cx="50%" cy="50%" r="60%">
+                  <stop offset="0%" stopColor="#18181b" />
+                  <stop offset="100%" stopColor="#09090b" />
+                </radialGradient>
+                {/* Glow filter for pins */}
+                <filter id="glow">
+                  <feGaussianBlur stdDeviation="3" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+              <rect width="1000" height="560" fill="url(#mapBg)" />
 
-          return (
-            <Card key={game.gameId} className="overflow-hidden hover:shadow-lg transition-shadow">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950">
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {getBaseballWeatherIcon(mockWeather.condition, 32)}
-                    <div>
-                      <div className="text-lg font-bold">
-                        {game.awayTeamCode} @ {game.homeTeamCode}
+              {/* Simplified USA outline — continental US */}
+              <path
+                d="M120,180 L130,160 L160,140 L200,120 L230,100 L260,80 L300,70 L350,60 L400,55 L450,50 L500,55 L540,60 L580,55 L620,50 L660,55 L700,60 L740,70 L780,90 L800,110 L810,130 L820,150 L830,170 L825,200 L815,220 L800,250 L790,270 L780,290 L760,310 L740,330 L720,350 L700,360 L680,370 L650,380 L620,390 L580,400 L540,410 L500,420 L460,425 L420,430 L380,435 L340,430 L300,420 L260,410 L220,400 L180,390 L150,380 L130,360 L120,340 L110,310 L100,280 L95,250 L100,220 L110,200 Z"
+                fill="none"
+                stroke="#27272a"
+                strokeWidth="1.5"
+                opacity="0.6"
+              />
+
+              {/* State-ish grid lines for reference */}
+              {[100, 200, 300, 400, 500].map(y => (
+                <line key={`h${y}`} x1="50" y1={y} x2="950" y2={y} stroke="#1a1a1f" strokeWidth="0.5" />
+              ))}
+              {[200, 400, 600, 800].map(x => (
+                <line key={`v${x}`} x1={x} y1="30" x2={x} y2="530" stroke="#1a1a1f" strokeWidth="0.5" />
+              ))}
+
+              {/* Weather pins */}
+              {pins.map((pin) => {
+                const { x, y } = geoToSvg(pin.lat, pin.lon);
+                const color = weatherColor(pin.weather?.temperature);
+                const isSelected = selectedPin?.gameID === pin.gameID;
+                const hasRain = pin.weather?.condition?.toLowerCase().includes('rain');
+
+                return (
+                  <g
+                    key={pin.gameID}
+                    onClick={() => setSelectedPin(isSelected ? null : pin)}
+                    className="cursor-pointer"
+                  >
+                    {/* Glow ring */}
+                    <circle cx={x} cy={y} r={isSelected ? 18 : 12} fill={color} opacity={0.15} filter="url(#glow)" />
+                    {/* Pin circle */}
+                    <circle
+                      cx={x} cy={y}
+                      r={isSelected ? 10 : 7}
+                      fill={color}
+                      stroke={isSelected ? '#fafafa' : '#27272a'}
+                      strokeWidth={isSelected ? 2 : 1}
+                      opacity={0.9}
+                    />
+                    {/* Rain indicator */}
+                    {hasRain && <circle cx={x + 6} cy={y - 6} r={3} fill="#3b82f6" stroke="#09090b" strokeWidth={1} />}
+                    {/* Temperature label */}
+                    <text x={x} y={y + 20} textAnchor="middle" fill="#a1a1aa" fontSize="9" fontFamily="Inter, sans-serif">
+                      {pin.weather ? `${Math.round(pin.weather.temperature)}°` : ''}
+                    </text>
+                    {/* Team codes */}
+                    <text x={x} y={y - 14} textAnchor="middle" fill="#d4d4d8" fontSize="8" fontWeight="600" fontFamily="Inter, sans-serif">
+                      {pin.away}@{pin.home}
+                    </text>
+                  </g>
+                );
+              })}
+
+              {/* Loading text */}
+              {isLoading && (
+                <text x="500" y="280" textAnchor="middle" fill="#71717a" fontSize="14">Loading weather data...</text>
+              )}
+              {!isLoading && pins.length === 0 && (
+                <text x="500" y="280" textAnchor="middle" fill="#71717a" fontSize="14">No games scheduled today</text>
+              )}
+            </svg>
+          </CardContent>
+        </Card>
+
+        {/* Selected game detail popup */}
+        {selectedPin && (
+          <div className="absolute top-4 right-4 w-72 z-10 animate-fade-in-up">
+            <Card className="border-border/50 bg-card/95 backdrop-blur-md shadow-2xl">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <img src={teamLogo(selectedPin.away)} alt="" className="h-6 w-6" />
+                    <span className="text-sm font-bold text-foreground">{selectedPin.away} @ {selectedPin.home}</span>
+                    <img src={teamLogo(selectedPin.home)} alt="" className="h-6 w-6" />
+                  </div>
+                  <button onClick={() => setSelectedPin(null)} className="text-muted-foreground hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="text-xs text-muted-foreground mb-3">
+                  {selectedPin.venue} · {selectedPin.city} · {selectedPin.gameTime}
+                </div>
+
+                {selectedPin.weather ? (
+                  <div className="space-y-3">
+                    {/* Big temp */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="text-3xl font-bold tabular-nums" style={{ color: weatherColor(selectedPin.weather.temperature) }}>
+                          {Math.round(selectedPin.weather.temperature)}°F
+                        </div>
+                        {conditionIcon(selectedPin.weather.condition)}
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {game.venue} • {game.gameTime}
+                      <div className="text-right">
+                        <div className="text-xs text-foreground capitalize">{selectedPin.weather.condition}</div>
+                        {selectedPin.weather.totalRunsImpact !== 'neutral' && (
+                          <Badge className={`text-[9px] mt-1 border ${selectedPin.weather.totalRunsImpact === 'favor_over' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : 'bg-blue-500/15 text-blue-400 border-blue-500/20'}`}>
+                            Favors {selectedPin.weather.totalRunsImpact === 'favor_over' ? 'Over' : 'Under'}
+                          </Badge>
+                        )}
                       </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-3xl font-bold text-blue-600">
-                      {mockWeather.temperature}°F
+
+                    {/* Stats grid */}
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="p-2 bg-zinc-900/50 rounded">
+                        <Wind className="h-3 w-3 mx-auto text-blue-400 mb-1" />
+                        <div className="text-xs font-medium tabular-nums">{Math.round(selectedPin.weather.windSpeed)} mph</div>
+                        <div className="text-[9px] text-muted-foreground">Wind</div>
+                      </div>
+                      <div className="p-2 bg-zinc-900/50 rounded">
+                        <Droplets className="h-3 w-3 mx-auto text-cyan-400 mb-1" />
+                        <div className="text-xs font-medium tabular-nums">{selectedPin.weather.humidity}%</div>
+                        <div className="text-[9px] text-muted-foreground">Humidity</div>
+                      </div>
+                      <div className="p-2 bg-zinc-900/50 rounded">
+                        <CloudRain className="h-3 w-3 mx-auto text-blue-400 mb-1" />
+                        <div className="text-xs font-medium tabular-nums">{selectedPin.weather.precipitation.toFixed(1)}"</div>
+                        <div className="text-[9px] text-muted-foreground">Precip</div>
+                      </div>
                     </div>
-                    <Badge 
-                      variant="secondary" 
-                      className={getImpactColor(mockWeather.gameImpact)}
-                    >
-                      {mockWeather.gameImpact}
-                    </Badge>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              
-              <CardContent className="pt-6">
-                {/* Fun Baseball Description */}
-                <div className="bg-yellow-50 dark:bg-yellow-950 rounded-lg p-3 mb-4">
-                  <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                    {getBaseballWeatherDescription(mockWeather)}
-                  </p>
-                </div>
 
-                {/* Weather Details Grid */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Eye className="text-gray-500" size={16} />
-                    <span className="text-muted-foreground">Visibility:</span>
-                    <span className="font-medium">{mockWeather.visibility} mi</span>
+                    {/* Delay risk */}
+                    {(selectedPin.weather.gameDelay === 'high' || selectedPin.weather.gameDelay === 'very_high') && (
+                      <Badge className="w-full justify-center bg-red-500/15 text-red-400 border border-red-500/20 text-xs">
+                        ⚠️ Rain Delay Risk
+                      </Badge>
+                    )}
                   </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Wind className="text-blue-500" size={16} />
-                    <span className="text-muted-foreground">Wind:</span>
-                    <span className="font-medium">
-                      {mockWeather.windSpeed} mph {mockWeather.windDirection}
-                    </span>
+                ) : (
+                  <div className="text-center py-4 text-xs text-muted-foreground">
+                    Weather data unavailable
                   </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Droplets className="text-cyan-500" size={16} />
-                    <span className="text-muted-foreground">Humidity:</span>
-                    <span className="font-medium">{mockWeather.humidity}%</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Thermometer className="text-red-500" size={16} />
-                    <span className="text-muted-foreground">Feels Like:</span>
-                    <span className="font-medium">{mockWeather.feelsLike}°F</span>
-                  </div>
-                </div>
-
-                {/* Pitcher Weather Impact */}
-                <div className="mt-4 pt-4 border-t">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">
-                      🥎 Pitching: {mockWeather.condition} conditions
-                    </span>
-                    <span className="text-muted-foreground">
-                      ⚾ Hitting: {mockWeather.windSpeed > 10 ? 'Windy' : 'Calm'} air
-                    </span>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
-          );
-        })}
+          </div>
+        )}
       </div>
 
-      {/* Weather Legend */}
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle className="text-center flex items-center justify-center gap-2">
-            <Activity className="text-blue-500" size={20} />
-            Weather Impact Guide
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div className="text-center space-y-2">
-              <Badge className="bg-green-100 text-green-800 w-full">Favorable</Badge>
-              <p className="text-muted-foreground">
-                Perfect conditions for batting and fielding
-              </p>
-            </div>
-            <div className="text-center space-y-2">
-              <Badge className="bg-blue-100 text-blue-800 w-full">Neutral</Badge>
-              <p className="text-muted-foreground">
-                Standard playing conditions expected
-              </p>
-            </div>
-            <div className="text-center space-y-2">
-              <Badge className="bg-red-100 text-red-800 w-full">Challenging</Badge>
-              <p className="text-muted-foreground">
-                Wind, rain, or temperature may affect play
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Game list below map */}
+      {pins.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mt-4">
+          {pins.map(pin => (
+            <button
+              key={pin.gameID}
+              onClick={() => setSelectedPin(selectedPin?.gameID === pin.gameID ? null : pin)}
+              className={`p-2.5 rounded-lg border text-left transition-all ${
+                selectedPin?.gameID === pin.gameID
+                  ? 'border-emerald-500/30 bg-emerald-500/5'
+                  : 'border-border/30 bg-card hover:border-zinc-600'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 mb-1">
+                <img src={teamLogo(pin.away)} alt="" className="h-4 w-4" />
+                <span className="text-[10px] text-muted-foreground">@</span>
+                <img src={teamLogo(pin.home)} alt="" className="h-4 w-4" />
+                <span className="text-[10px] text-muted-foreground ml-auto">{pin.gameTime}</span>
+              </div>
+              {pin.weather && (
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="tabular-nums font-medium" style={{ color: weatherColor(pin.weather.temperature) }}>
+                    {Math.round(pin.weather.temperature)}°F
+                  </span>
+                  <span className="text-muted-foreground capitalize">{pin.weather.condition}</span>
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

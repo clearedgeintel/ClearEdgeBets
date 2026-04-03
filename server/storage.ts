@@ -1,4 +1,4 @@
-import { users, games, odds, aiSummaries, bets, props, dailyPicks, gameEvaluations, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, tickets, virtualBets, virtualBettingSlip, phraseDetectionRules, baseballReferenceStats, baseballReferencePitchingStats, oddsHistory, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type GameEvaluation, type InsertGameEvaluation, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship, type Ticket, type InsertTicket, type VirtualBet, type InsertVirtualBet, type VirtualBettingSlip, type InsertVirtualBettingSlip, type PhraseDetectionRule, type InsertPhraseDetectionRule, type BaseballReferenceStats, type InsertBaseballReferenceStats, type BaseballReferencePitchingStats, type InsertBaseballReferencePitchingStats, type InsertOddsHistory, type OddsHistory, blogReviews, type BlogReview, type InsertBlogReview, editorialColumns, type EditorialColumn, type InsertEditorialColumn } from "@shared/schema";
+import { users, games, odds, aiSummaries, bets, props, dailyPicks, gameEvaluations, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, tickets, virtualBets, virtualBettingSlip, phraseDetectionRules, baseballReferenceStats, baseballReferencePitchingStats, oddsHistory, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type GameEvaluation, type InsertGameEvaluation, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship, type Ticket, type InsertTicket, type VirtualBet, type InsertVirtualBet, type VirtualBettingSlip, type InsertVirtualBettingSlip, type PhraseDetectionRule, type InsertPhraseDetectionRule, type BaseballReferenceStats, type InsertBaseballReferenceStats, type BaseballReferencePitchingStats, type InsertBaseballReferencePitchingStats, type InsertOddsHistory, type OddsHistory, blogReviews, type BlogReview, type InsertBlogReview, editorialColumns, type EditorialColumn, type InsertEditorialColumn, newsletterSubscribers, type NewsletterSubscriber, type InsertNewsletterSubscriber, newsletters, type Newsletter, type InsertNewsletter } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, gte, lte, desc, lt } from "drizzle-orm";
 
@@ -1831,6 +1831,55 @@ export class DatabaseStorage implements IStorage {
   async getEditorialColumnBySlug(slug: string): Promise<EditorialColumn | undefined> {
     const [col] = await db.select().from(editorialColumns).where(eq(editorialColumns.slug, slug));
     return col;
+  }
+
+  // ── Newsletter Subscribers ──
+  async addSubscriber(sub: InsertNewsletterSubscriber): Promise<NewsletterSubscriber> {
+    const [created] = await db.insert(newsletterSubscribers).values(sub).returning();
+    return created;
+  }
+
+  async getSubscriberByEmail(email: string): Promise<NewsletterSubscriber | undefined> {
+    const [sub] = await db.select().from(newsletterSubscribers).where(eq(newsletterSubscribers.email, email));
+    return sub;
+  }
+
+  async getSubscriberByToken(token: string): Promise<NewsletterSubscriber | undefined> {
+    const [sub] = await db.select().from(newsletterSubscribers).where(eq(newsletterSubscribers.unsubscribeToken, token));
+    return sub;
+  }
+
+  async getActiveSubscribers(): Promise<NewsletterSubscriber[]> {
+    return db.select().from(newsletterSubscribers).where(eq(newsletterSubscribers.status, 'active')).orderBy(desc(newsletterSubscribers.subscribedAt));
+  }
+
+  async getAllSubscribers(): Promise<NewsletterSubscriber[]> {
+    return db.select().from(newsletterSubscribers).orderBy(desc(newsletterSubscribers.subscribedAt));
+  }
+
+  async unsubscribe(token: string): Promise<boolean> {
+    const result = await db.update(newsletterSubscribers).set({ status: 'unsubscribed', unsubscribedAt: new Date() }).where(eq(newsletterSubscribers.unsubscribeToken, token)).returning();
+    return result.length > 0;
+  }
+
+  // ── Newsletters ──
+  async createNewsletter(nl: InsertNewsletter): Promise<Newsletter> {
+    const [created] = await db.insert(newsletters).values(nl).returning();
+    return created;
+  }
+
+  async getNewsletters(limit = 50): Promise<Newsletter[]> {
+    return db.select().from(newsletters).orderBy(desc(newsletters.createdAt)).limit(limit);
+  }
+
+  async getNewsletterBySlug(slug: string): Promise<Newsletter | undefined> {
+    const [nl] = await db.select().from(newsletters).where(eq(newsletters.slug, slug));
+    return nl;
+  }
+
+  async updateNewsletter(id: number, data: Partial<InsertNewsletter>): Promise<Newsletter> {
+    const [updated] = await db.update(newsletters).set(data).where(eq(newsletters.id, id)).returning();
+    return updated;
   }
 }
 
