@@ -160,7 +160,7 @@ export default function WeeklyLeaderboard() {
                 <div className="text-center">
                   <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No competitors yet</h3>
-                  <p className="text-muted-foreground">Be the first to place bets this week!</p>
+                  <p className="text-muted-foreground">Be the first to make picks this week!</p>
                 </div>
               </CardContent>
             </Card>
@@ -322,7 +322,7 @@ export default function WeeklyLeaderboard() {
               <div>
                 <h4 className="font-semibold mb-2">Getting Started</h4>
                 <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                  <li>Visit the Virtual Sportsbook to place bets</li>
+                  <li>Visit the Prediction Game to make picks</li>
                   <li>All users start with $1,000 virtual balance</li>
                   <li>Make smart betting decisions to climb the leaderboard</li>
                   <li>Check back weekly to see your ranking improve</li>

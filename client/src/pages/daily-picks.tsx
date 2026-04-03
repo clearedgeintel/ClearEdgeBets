@@ -60,7 +60,7 @@ export default function DailyPicks() {
               <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h1 className="text-2xl font-bold mb-4">Pro Feature Required</h1>
               <p className="text-muted-foreground mb-6">
-                Daily Picks is a Pro feature that provides AI-powered betting recommendations with detailed analysis and confidence scoring.
+                Daily Picks is a Pro feature that provides AI-powered game predictions with detailed analysis and confidence scoring.
               </p>
               <div className="space-y-4">
                 <div className="flex items-center justify-center space-x-2">
@@ -99,7 +99,7 @@ export default function DailyPicks() {
       queryClient.invalidateQueries({ queryKey: ["/api/daily-picks"] });
       toast({
         title: "Daily picks generated",
-        description: "AI has analyzed today's games and created new betting recommendations.",
+        description: "AI has analyzed today's games and created new game predictions.",
       });
     },
     onError: () => {
@@ -149,7 +149,7 @@ export default function DailyPicks() {
     },
     onError: (error) => {
       toast({
-        title: "Failed to place bets",
+        title: "Failed to make picks",
         description: "There was an error placing your bets. Please try again.",
         variant: "destructive",
       });
@@ -168,8 +168,8 @@ export default function DailyPicks() {
     
     addBet(bet);
     toast({
-      title: "Added to betting slip",
-      description: `${pick.selection} has been added to your betting slip.`,
+      title: "Added to pick slip",
+      description: `${pick.selection} has been added to your pick slip.`,
     });
   };
 
@@ -204,7 +204,7 @@ export default function DailyPicks() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Daily Picks</h1>
           <p className="text-muted-foreground">
-            AI-powered betting recommendations with detailed analysis and confidence scoring
+            AI-powered game predictions with detailed analysis and confidence scoring
           </p>
         </div>
 
@@ -229,13 +229,13 @@ export default function DailyPicks() {
           </Button>
         </div>
 
-        {/* Betting Slip Display */}
+        {/* Pick Slip Display */}
         {bets.length > 0 && (
           <Card className="mb-6 border-blue-200 dark:border-blue-800">
             <CardHeader className="bg-blue-50 dark:bg-blue-950/20">
               <CardTitle className="flex items-center gap-2">
                 <ShoppingCart className="h-5 w-5" />
-                Your Betting Slip
+                Your Pick Slip
                 <Badge variant="secondary" className="ml-auto">
                   {bets.length} {bets.length === 1 ? 'bet' : 'bets'}
                 </Badge>
@@ -309,7 +309,7 @@ export default function DailyPicks() {
                     disabled={getTotalStake() === 0 || placeBetsMutation.isPending}
                     onClick={() => placeBetsMutation.mutate(bets)}
                   >
-                    {placeBetsMutation.isPending ? "Placing Bets..." : `Place Bets ($${getTotalStake().toFixed(2)})`}
+                    {placeBetsMutation.isPending ? "Placing Bets..." : `Make Picks ($${getTotalStake().toFixed(2)})`}
                   </Button>
                 </div>
               </div>

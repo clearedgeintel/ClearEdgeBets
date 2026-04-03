@@ -365,7 +365,7 @@ export default function StripeSetup() {
                 <div className="text-2xl font-bold text-white">$0</div>
                 <div className="text-sm text-gray-400">Forever</div>
                 <div className="mt-2 text-xs text-gray-500">
-                  Kelly Calculator, Games, My Bets
+                  Kelly Calculator, Games, My Picks
                 </div>
               </div>
               <div className="bg-blue-600/20 p-4 rounded-lg text-center border border-blue-600/30">

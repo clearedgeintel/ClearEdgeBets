@@ -90,7 +90,7 @@ function CFLPickCard({ pick, onUpdateResult }: { pick: CFLPick; onUpdateResult: 
       });
       
       toast({
-        title: "Added to Betting Slip",
+        title: "Added to Pick Slip",
         description: `${pick.selection} at ${formatOdds(pick.odds)}`,
       });
     } catch (error) {
@@ -254,7 +254,7 @@ function CFLPickCard({ pick, onUpdateResult }: { pick: CFLPick; onUpdateResult: 
                 size="lg"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add to Betting Slip
+                Add to Pick Slip
               </Button>
             </div>
           </div>
@@ -401,7 +401,7 @@ export default function CFLPicks() {
                 <span>CFL Daily Picks</span>
               </h1>
               <p className="text-muted-foreground mt-2">
-                AI-powered betting recommendations for today's CFL games
+                AI-powered game predictions for today's CFL games
               </p>
             </div>
             
@@ -537,7 +537,7 @@ export default function CFLPicks() {
             <Trophy className="h-8 w-8 text-primary mx-auto mb-3" />
             <h3 className="text-lg font-semibold text-foreground mb-2">Enhanced CFL Analytics Coming Soon</h3>
             <p className="text-muted-foreground mb-4">
-              We're developing advanced CFL betting models with player props, weather analysis, 
+              We're developing advanced CFL prediction models with player props, weather analysis, 
               and comprehensive team statistics for the 2025 season.
             </p>
             <Button variant="outline">

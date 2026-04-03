@@ -731,3 +731,32 @@ export const oddsHistory = pgTable("odds_history", {
 export const insertOddsHistorySchema = createInsertSchema(oddsHistory).omit({ id: true, recordedAt: true });
 export type InsertOddsHistory = z.infer<typeof insertOddsHistorySchema>;
 export type OddsHistory = typeof oddsHistory.$inferSelect;
+
+// Blog: AI-generated sarcastic game reviews
+export const blogReviews = pgTable("blog_reviews", {
+  id: serial("id").primaryKey(),
+  gameId: text("game_id").notNull().unique(),     // "20260402_NYM@SF"
+  gameDate: text("game_date").notNull(),           // "2026-04-02"
+  awayTeam: text("away_team").notNull(),
+  homeTeam: text("home_team").notNull(),
+  awayScore: integer("away_score").notNull(),
+  homeScore: integer("home_score").notNull(),
+  title: text("title").notNull(),                  // AI-generated headline
+  content: text("content").notNull(),              // Full sarcastic review (markdown)
+  slug: text("slug").notNull().unique(),           // URL-friendly slug
+  author: text("author").notNull().default('Staff Writer'),  // Beat writer name
+  authorMood: text("author_mood").default('witty'),           // witty | grumpy
+  venue: text("venue"),
+  weather: text("weather"),
+  attendance: text("attendance"),
+  heroImage: text("hero_image"),                    // ESPN video thumbnail or action photo
+  awayLogo: text("away_logo"),                      // Team logo URL
+  homeLogo: text("home_logo"),                      // Team logo URL
+  espnRecap: text("espn_recap"),                    // ESPN headline for reference
+  boxScoreData: jsonb("box_score_data"),           // Raw box score for reference
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertBlogReviewSchema = createInsertSchema(blogReviews).omit({ id: true, createdAt: true });
+export type InsertBlogReview = z.infer<typeof insertBlogReviewSchema>;
+export type BlogReview = typeof blogReviews.$inferSelect;

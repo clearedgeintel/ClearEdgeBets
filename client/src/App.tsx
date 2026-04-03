@@ -49,6 +49,10 @@ const Help = lazy(() => import("@/pages/help"));
 const VirtualPerformance = lazy(() => import("@/pages/virtual-performance"));
 const APIManagement = lazy(() => import("@/pages/APIManagement"));
 const AIManagement = lazy(() => import("@/pages/ai-management"));
+const AdminAPIPlayground = lazy(() => import("@/pages/admin-api-playground"));
+const AdminOperations = lazy(() => import("@/pages/admin-operations"));
+const Blog = lazy(() => import("@/pages/blog"));
+const TeamDetail = lazy(() => import("@/pages/team-detail"));
 const WeatherSummary = lazy(() => import("@/pages/WeatherSummary"));
 const MLBPicks = lazy(() => import("@/pages/MLBPicks"));
 const TeamPowerScores = lazy(() => import("@/pages/TeamPowerScores"));
@@ -89,6 +93,10 @@ function Router() {
           <Route path="/admin/ticket-dashboard" component={TicketDashboard} />
           <Route path="/admin/api-management" component={APIManagement} />
           <Route path="/admin/ai-management" component={AIManagement} />
+          <Route path="/admin/api-playground" component={AdminAPIPlayground} />
+          <Route path="/admin/operations" component={AdminOperations} />
+          <Route path="/blog" component={Blog} />
+          <Route path="/team/:teamAbv" component={TeamDetail} />
           <Route path="/weather-summary" component={WeatherSummary} />
           <Route path="/mlb-picks" component={MLBPicks} />
           <Route path="/cfl" component={CFLHub} />

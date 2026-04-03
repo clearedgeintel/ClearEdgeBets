@@ -64,7 +64,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
 
   const sportsNavigation = [
     {
-      sport: "Virtual Sportsbook",
+      sport: "Prediction Game",
       icon: CircleDot,
       expanded: virtualSportsbookExpanded,
       setExpanded: setVirtualSportsbookExpanded,
@@ -75,7 +75,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           href: "/virtual-sportsbook", 
           icon: CircleDot,
           current: location === "/virtual-sportsbook",
-          description: "Practice betting with $1,000 virtual money"
+          description: "Practice predictions with $1,000 virtual balance"
         },
         { 
           name: "Weekly Leaderboard", 
@@ -110,11 +110,11 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           description: "MLB games and odds for any date"
         },
         { 
-          name: "My Bets", 
+          name: "My Picks", 
           href: "/my-bets", 
           icon: History,
           current: location === "/my-bets",
-          description: "Your MLB betting history"
+          description: "Your MLB prediction history"
         },
         { 
           name: "Kelly Calculator", 
@@ -131,12 +131,19 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           description: "Fun weather map for today's MLB games"
         },
 
-        { 
-          name: "Team Power Scores", 
-          href: "/team-power-scores", 
+        {
+          name: "Team Power Scores",
+          href: "/team-power-scores",
           icon: BarChart3,
           current: location === "/team-power-scores",
           description: "Live MLB team rankings and power scores"
+        },
+        {
+          name: "The Morning Roast",
+          href: "/blog",
+          icon: FileText,
+          current: location === "/blog",
+          description: "Sarcastic AI game recaps"
         }
       ],
       proItems: [
@@ -145,7 +152,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           href: "/daily-picks", 
           icon: Target,
           current: location === "/daily-picks",
-          description: "AI-powered betting recommendations",
+          description: "AI-powered game predictions",
           requiresPro: true
         },
         { 
@@ -153,7 +160,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           href: "/daily-dose", 
           icon: FileText,
           current: location === "/daily-dose",
-          description: "Professional betting newsletter with Kelly analysis",
+          description: "Professional sports newsletter with Kelly analysis",
           requiresPro: true
         },
         { 
@@ -169,7 +176,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           href: "/hot-trends", 
           icon: TrendingUp,
           current: location === "/hot-trends",
-          description: "Discover trending betting patterns",
+          description: "Discover trending sports patterns",
           requiresPro: true
         },
         { 
@@ -185,7 +192,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           href: "/enhanced-picks", 
           icon: Brain,
           current: location === "/enhanced-picks",
-          description: "AI-powered betting recommendations using analysis + odds",
+          description: "AI-powered game predictions using analysis + odds",
           requiresPro: true
         },
         { 
@@ -203,7 +210,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           href: "/analytics", 
           icon: BarChart3,
           current: location === "/analytics",
-          description: "Advanced betting performance insights",
+          description: "Advanced prediction performance insights",
           requiresElite: true
         },
         { 
@@ -211,7 +218,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           href: "/ai-assistant", 
           icon: Brain,
           current: location === "/ai-assistant",
-          description: "Chat with AI for betting insights",
+          description: "Chat with AI for sports insights",
           requiresElite: true
         },
         { 
@@ -243,7 +250,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           href: "/strategies", 
           icon: Target,
           current: location === "/strategies",
-          description: "Create and manage betting strategies",
+          description: "Create and manage prediction strategies",
           requiresElite: true
         },
         { 
@@ -251,7 +258,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           href: "#", 
           icon: Users,
           current: false,
-          description: "1-on-1 sessions with betting experts",
+          description: "1-on-1 sessions with sports experts",
           disabled: true,
           comingSoon: true
         },
@@ -301,7 +308,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           href: "/cfl/picks", 
           icon: Target,
           current: location === "/cfl/picks",
-          description: "AI-powered CFL betting picks"
+          description: "AI-powered CFL predictions"
         },
         { 
           name: "NFL", 
@@ -444,31 +451,31 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
       href: "/admin/ticket-dashboard", 
       icon: TicketIcon,
       current: location === "/admin/ticket-dashboard",
-      description: "Manage support tickets and betting slips"
+      description: "Manage support tickets and pick slips"
     }
   ] : [];
 
 
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-gray-900 text-white">
+    <div className="flex flex-col h-full bg-[#0a0a0c] text-zinc-100">
       {/* Header */}
-      <div className="p-6 border-b border-gray-700">
+      <div className="p-6 border-b border-border/50">
         <div className="flex items-center space-x-3">
           <div>
             <img 
               src="/clearedge-logo-new.png" 
-              alt="ClearEdge Bets" 
+              alt="ClearEdge Sports" 
               className="h-12 w-auto"
             />
-            <p className="text-sm text-gray-400 mt-1">Betting Platform</p>
+            <p className="text-sm text-zinc-500 mt-1">Sports Intelligence</p>
           </div>
         </div>
       </div>
 
       {/* Live Status */}
       <div className="p-4">
-        <div className="flex items-center space-x-2 bg-gray-800 px-3 py-2 rounded-lg">
+        <div className="flex items-center space-x-2 bg-zinc-800/50 px-3 py-2 rounded-lg">
           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
           <span className="text-sm font-medium text-green-400">Live Odds</span>
         </div>
@@ -481,18 +488,18 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           href="/"
           className={`flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors group ${
             location === "/"
-              ? "bg-gray-800 text-white"
-              : "text-gray-300 hover:bg-gray-800 hover:text-white"
+              ? "bg-zinc-800/50 text-white"
+              : "text-zinc-400 hover:bg-zinc-800/50 hover:text-white"
           }`}
           onClick={() => {
             if (isMobileSheet && onNavigate) onNavigate();
             setMobileOpen(false);
           }}
         >
-          <Home className={`h-5 w-5 ${location === "/" ? "text-white" : "text-gray-400 group-hover:text-white"}`} />
+          <Home className={`h-5 w-5 ${location === "/" ? "text-white" : "text-zinc-500 group-hover:text-white"}`} />
           <div className="flex-1">
             <div className="font-medium">Home</div>
-            <div className="text-xs text-gray-400 group-hover:text-gray-300">
+            <div className="text-xs text-zinc-500 group-hover:text-zinc-400">
               Dashboard and daily insights
             </div>
           </div>
@@ -507,12 +514,12 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
                 onClick={() => sport.setExpanded(!sport.expanded)}
                 className={`w-full flex items-center justify-between px-3 py-3 rounded-lg transition-all duration-200 group ${
                   sport.active
-                    ? "bg-gray-800 text-white"
-                    : "text-gray-300 hover:bg-gray-800/50 hover:text-white"
+                    ? "bg-zinc-800/50 text-white"
+                    : "text-zinc-400 hover:bg-zinc-800/30 hover:text-white"
                 }`}
               >
                 <div className="flex items-center space-x-3">
-                  <SportIcon className={`h-5 w-5 transition-colors duration-200 ${sport.active ? "text-white" : "text-gray-400 group-hover:text-white"}`} />
+                  <SportIcon className={`h-5 w-5 transition-colors duration-200 ${sport.active ? "text-white" : "text-zinc-500 group-hover:text-white"}`} />
                   <span className="font-semibold transition-colors duration-200">{sport.sport}</span>
                 </div>
                 {sport.expanded ? 
@@ -527,7 +534,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
                   <div className="px-3 mb-2">
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Free</span>
+                      <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Free</span>
                     </div>
                   </div>
                   {sport.freeItems.map((item) => {
@@ -540,8 +547,8 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
                           item.current
                             ? "bg-secondary text-white"
                             : (item as any).disabled
-                            ? "text-gray-500 cursor-not-allowed"
-                            : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                            ? "text-zinc-600 cursor-not-allowed"
+                            : "text-zinc-400 hover:bg-zinc-800/50 hover:text-white"
                         }`}
                         onClick={() => {
                           if (isMobileSheet && onNavigate) onNavigate();
@@ -550,15 +557,15 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
                       >
                         <Icon className={`h-4 w-4 ${
                           item.current ? "text-white" : 
-                          (item as any).disabled ? "text-gray-500" :
-                          "text-gray-400 group-hover:text-white"
+                          (item as any).disabled ? "text-zinc-600" :
+                          "text-zinc-500 group-hover:text-white"
                         }`} />
                         <div className="flex-1">
                           <div className={`text-sm font-medium ${(item as any).featured ? "flex items-center" : ""}`}>
                             {item.name}
                             {(item as any).featured && <Star className="h-3 w-3 ml-1 text-accent" />}
                           </div>
-                          <div className="text-xs text-gray-400 group-hover:text-gray-300">
+                          <div className="text-xs text-zinc-500 group-hover:text-zinc-400">
                             {item.description}
                           </div>
                         </div>
@@ -577,7 +584,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
                           </div>
                           {!user || !hasAccess("pro") ? (
                             <Link href="/subscribe">
-                              <Button size="sm" variant="outline" className="h-6 text-xs border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white">
+                              <Button size="sm" variant="outline" className="h-6 text-xs border-blue-500/30 text-blue-400/80 hover:bg-blue-500/15 hover:text-blue-300">
                                 Upgrade
                               </Button>
                             </Link>
@@ -595,15 +602,15 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
                               key={item.name}
                               className="flex items-center space-x-3 px-3 py-2 rounded-lg opacity-60 cursor-not-allowed"
                             >
-                              <Icon className="h-4 w-4 text-gray-500" />
+                              <Icon className="h-4 w-4 text-zinc-600" />
                               <div className="flex-1">
                                 <div className="flex items-center space-x-2">
-                                  <span className="text-sm font-medium text-gray-500">{item.name}</span>
-                                  <Badge variant="secondary" className="text-xs bg-blue-600/20 text-blue-400 border border-blue-600/30">
+                                  <span className="text-sm font-medium text-zinc-600">{item.name}</span>
+                                  <Badge variant="secondary" className="text-xs bg-blue-600/20 text-blue-400/80 border border-blue-600/30">
                                     Pro
                                   </Badge>
                                 </div>
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-zinc-600">
                                   {item.description}
                                 </div>
                               </div>
@@ -617,8 +624,8 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
                             href={item.href}
                             className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors group ${
                               item.current
-                                ? "bg-blue-600 text-white"
-                                : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                                ? "bg-emerald-500/15 text-emerald-400"
+                                : "text-zinc-400 hover:bg-zinc-800/50 hover:text-white"
                             }`}
                             onClick={() => {
                               if (isMobileSheet && onNavigate) onNavigate();
@@ -626,11 +633,11 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
                             }}
                           >
                             <Icon className={`h-4 w-4 ${
-                              item.current ? "text-white" : "text-blue-400 group-hover:text-white"
+                              item.current ? "text-white" : "text-blue-400/80 group-hover:text-white"
                             }`} />
                             <div className="flex-1">
                               <div className="text-sm font-medium">{item.name}</div>
-                              <div className="text-xs text-gray-400 group-hover:text-gray-300">
+                              <div className="text-xs text-zinc-500 group-hover:text-zinc-400">
                                 {item.description}
                               </div>
                             </div>
@@ -651,7 +658,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
                           </div>
                           {!user || !hasAccess("elite") ? (
                             <Link href="/subscribe">
-                              <Button size="sm" variant="outline" className="h-6 text-xs border-yellow-600 text-yellow-600 hover:bg-yellow-600 hover:text-white">
+                              <Button size="sm" variant="outline" className="h-6 text-xs border-amber-500/30 text-amber-400 hover:bg-amber-500/15 hover:text-amber-300">
                                 Upgrade
                               </Button>
                             </Link>
@@ -671,17 +678,17 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
                               key={item.name}
                               className="flex items-center space-x-3 px-3 py-2 rounded-lg opacity-60 cursor-not-allowed"
                             >
-                              <Icon className="h-4 w-4 text-gray-500" />
+                              <Icon className="h-4 w-4 text-zinc-600" />
                               <div className="flex-1">
                                 <div className="flex items-center space-x-2">
-                                  <span className="text-sm font-medium text-gray-500">{item.name}</span>
+                                  <span className="text-sm font-medium text-zinc-600">{item.name}</span>
                                   {isComingSoon && (
-                                    <Badge variant="secondary" className="text-xs bg-gray-700 text-gray-300">
+                                    <Badge variant="secondary" className="text-xs bg-gray-700 text-zinc-400">
                                       Coming Soon
                                     </Badge>
                                   )}
                                 </div>
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-zinc-600">
                                   {item.description}
                                 </div>
                               </div>
@@ -695,15 +702,15 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
                               key={item.name}
                               className="flex items-center space-x-3 px-3 py-2 rounded-lg opacity-60 cursor-not-allowed"
                             >
-                              <Icon className="h-4 w-4 text-gray-500" />
+                              <Icon className="h-4 w-4 text-zinc-600" />
                               <div className="flex-1">
                                 <div className="flex items-center space-x-2">
-                                  <span className="text-sm font-medium text-gray-500">{item.name}</span>
+                                  <span className="text-sm font-medium text-zinc-600">{item.name}</span>
                                   <Badge variant="secondary" className="text-xs bg-yellow-600/20 text-yellow-400 border border-yellow-600/30">
                                     Elite
                                   </Badge>
                                 </div>
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-zinc-600">
                                   {item.description}
                                 </div>
                               </div>
@@ -718,17 +725,17 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
                             className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors group ${
                               item.current
                                 ? "bg-yellow-600/20 text-yellow-400"
-                                : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                                : "text-zinc-400 hover:bg-zinc-800/50 hover:text-white"
                             }`}
                             onClick={() => {
                               if (isMobileSheet && onNavigate) onNavigate();
                               setMobileOpen(false);
                             }}
                           >
-                            <Icon className={`h-4 w-4 ${item.current ? "text-yellow-400" : "text-gray-400 group-hover:text-white"}`} />
+                            <Icon className={`h-4 w-4 ${item.current ? "text-yellow-400" : "text-zinc-500 group-hover:text-white"}`} />
                             <div className="flex-1">
                               <div className="text-sm font-medium">{item.name}</div>
-                              <div className="text-xs text-gray-400 group-hover:text-gray-300">
+                              <div className="text-xs text-zinc-500 group-hover:text-zinc-400">
                                 {item.description}
                               </div>
                             </div>
@@ -751,17 +758,17 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors group border-t border-gray-700 mt-4 pt-4 ${
+              className={`flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors group border-t border-border/50 mt-4 pt-4 ${
                 item.current
                   ? "bg-accent text-white"
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  : "text-zinc-400 hover:bg-zinc-800/50 hover:text-white"
               }`}
               onClick={() => setMobileOpen(false)}
             >
-              <Icon className={`h-5 w-5 ${item.current ? "text-white" : "text-gray-400 group-hover:text-white"}`} />
+              <Icon className={`h-5 w-5 ${item.current ? "text-white" : "text-zinc-500 group-hover:text-white"}`} />
               <div className="flex-1">
                 <div className="font-medium">{item.name}</div>
-                <div className="text-xs text-gray-400 group-hover:text-gray-300">
+                <div className="text-xs text-zinc-500 group-hover:text-zinc-400">
                   {item.description}
                 </div>
               </div>
@@ -769,20 +776,20 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           );
         })}
         {/* Help Section */}
-        <div className="mt-6 pt-4 border-t border-gray-700">
+        <div className="mt-6 pt-4 border-t border-border/50">
           <Link
             href="/help"
             className={`flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors group ${
               location === "/help"
-                ? "bg-gray-800 text-white"
-                : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                ? "bg-zinc-800/50 text-white"
+                : "text-zinc-400 hover:bg-zinc-800/50 hover:text-white"
             }`}
             onClick={() => setMobileOpen(false)}
           >
-            <HelpCircle className={`h-5 w-5 ${location === "/help" ? "text-white" : "text-gray-400 group-hover:text-white"}`} />
+            <HelpCircle className={`h-5 w-5 ${location === "/help" ? "text-white" : "text-zinc-500 group-hover:text-white"}`} />
             <div className="flex-1">
               <div className="font-medium">Help & Guide</div>
-              <div className="text-xs text-gray-400 group-hover:text-gray-300">
+              <div className="text-xs text-zinc-500 group-hover:text-zinc-400">
                 Platform features and best practices
               </div>
             </div>
@@ -792,11 +799,11 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
 
       <Separator className="bg-gray-700" />
 
-      {/* Betting Slip Summary */}
+      {/* Pick Slip Summary */}
       <div className="p-4">
-        <div className="bg-gray-800 rounded-lg p-4">
+        <div className="bg-zinc-800/50 rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
-            <span className="font-medium">Betting Slip</span>
+            <span className="font-medium">Pick Slip</span>
             <Badge variant="secondary" className="bg-blue-600">
               {bets.length}
             </Badge>
@@ -804,10 +811,10 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           
           {bets.length > 0 ? (
             <div className="space-y-2">
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-zinc-500">
                 Total Stake: ${bets.reduce((sum, bet) => sum + bet.stake, 0).toFixed(2)}
               </div>
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-zinc-500">
                 Potential Win: ${bets.reduce((sum, bet) => sum + bet.potentialWin, 0).toFixed(2)}
               </div>
               <Dialog>
@@ -823,14 +830,14 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
                   onInteractOutside={(e) => e.preventDefault()}
                 >
                   <DialogHeader>
-                    <DialogTitle>Betting Slip</DialogTitle>
+                    <DialogTitle>Pick Slip</DialogTitle>
                   </DialogHeader>
                   <BettingSlip />
                 </DialogContent>
               </Dialog>
             </div>
           ) : (
-            <p className="text-sm text-gray-400">No active bets</p>
+            <p className="text-sm text-zinc-500">No active bets</p>
           )}
         </div>
       </div>

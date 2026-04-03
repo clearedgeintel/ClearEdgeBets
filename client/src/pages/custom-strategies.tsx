@@ -140,7 +140,7 @@ export default function CustomStrategies() {
   const handleCreateStrategy = () => {
     toast({
       title: "Strategy created",
-      description: "Your custom betting strategy has been saved successfully.",
+      description: "Your custom prediction strategy has been saved successfully.",
     });
     setShowCreateDialog(false);
   };
@@ -459,7 +459,7 @@ export default function CustomStrategies() {
               <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg">
                 <h4 className="font-semibold text-blue-800 mb-2">Suggested: "Home Underdog Special"</h4>
                 <p className="text-sm text-blue-700 mb-3">
-                  Based on your betting history, consider targeting home underdogs with 70%+ AI confidence in day games.
+                  Based on your prediction history, consider targeting home underdogs with 70%+ AI confidence in day games.
                 </p>
                 <div className="flex items-center justify-between">
                   <div className="text-xs text-blue-600">

@@ -123,7 +123,7 @@ export default function ExpertConsultation() {
       type: "analysis",
       status: "scheduled",
       expertName: "Sarah Chen",
-      notes: "Review prop betting performance and discuss new market opportunities."
+      notes: "Review prop prediction performance and discuss new market opportunities."
     }
   ]);
 
@@ -188,7 +188,7 @@ export default function ExpertConsultation() {
               </Badge>
             </div>
             <p className="text-muted-foreground">
-              Book 1-on-1 sessions with professional sports betting analysts and strategists.
+              Book 1-on-1 sessions with professional sports analytics analysts and strategists.
             </p>
           </div>
 

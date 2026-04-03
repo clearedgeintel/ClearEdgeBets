@@ -264,7 +264,7 @@ export default function VirtualPerformance() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Virtual Betting Performance</h1>
-          <p className="text-slate-400">Comprehensive analytics and betting history for your virtual sportsbook</p>
+          <p className="text-slate-400">Comprehensive analytics and prediction history for your prediction game</p>
         </div>
 
         {/* Performance Overview Cards */}

@@ -310,7 +310,7 @@ function SettleVirtualBetsButton() {
       className="bg-orange-600 hover:bg-orange-700"
     >
       <CheckCircle className={`w-4 h-4 mr-2 ${settleMutation.isPending ? 'animate-spin' : ''}`} />
-      {settleMutation.isPending ? 'Settling...' : 'Settle Virtual Bets'}
+      {settleMutation.isPending ? 'Settling...' : 'Settle Predictions'}
     </Button>
   );
 }
@@ -332,7 +332,7 @@ function SettleVirtualBetsButton() {
                 Manage users, subscriptions, and system settings
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4 lg:mt-0">
               <SyncLiveDataButton />
               <SettleVirtualBetsButton />
               <Link href="/admin/users">
@@ -345,6 +345,12 @@ function SettleVirtualBetsButton() {
                 <Button className="bg-green-600 hover:bg-green-700">
                   <Ticket className="w-4 h-4 mr-2" />
                   Referral Codes
+                </Button>
+              </Link>
+              <Link href="/admin/operations">
+                <Button className="bg-amber-600 hover:bg-amber-700">
+                  <Activity className="w-4 h-4 mr-2" />
+                  Operations Center
                 </Button>
               </Link>
               <Link href="/admin/api-management">

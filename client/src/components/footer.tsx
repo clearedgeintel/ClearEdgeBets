@@ -9,16 +9,16 @@ export default function Footer() {
             <div className="flex items-center mb-4">
               <img 
                 src="/clearedge-logo.png" 
-                alt="ClearEdge Bets" 
+                alt="ClearEdge Sports" 
                 className="h-10 w-auto"
               />
             </div>
             <p className="text-muted-foreground text-sm max-w-md">
-              Professional MLB betting intelligence powered by AI. Get your clear edge with real-time analysis, expert picks, and smart bankroll management.
+              Professional sports intelligence powered by AI. Get your clear edge with real-time analysis, game predictions, and performance tracking.
             </p>
             <div className="mt-4 flex items-center space-x-2 text-sm text-muted-foreground">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span>Live odds and analysis</span>
+              <span>Live stats and analysis</span>
             </div>
           </div>
           
@@ -42,7 +42,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/my-bets" className="text-sm text-muted-foreground hover:text-primary">
-                  My Bets
+                  My Picks
                 </Link>
               </li>
             </ul>
@@ -78,14 +78,14 @@ export default function Footer() {
         <div className="mt-8 pt-8 border-t border-border">
           <div className="flex flex-col sm:flex-row justify-between items-center">
             <p className="text-sm text-muted-foreground">
-              © 2025 ClearEdge Bets. All rights reserved.
+              © 2025 ClearEdge Sports. All rights reserved.
             </p>
             <div className="mt-4 sm:mt-0 flex items-center space-x-6">
               <span className="text-sm text-gray-500">
-                Responsible Gaming
+                For Entertainment Purposes
               </span>
               <span className="text-sm text-gray-500">
-                21+ Only
+                Not Financial Advice
               </span>
             </div>
           </div>

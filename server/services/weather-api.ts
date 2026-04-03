@@ -6,8 +6,9 @@
  * Rate Limit: 60 calls/minute
  */
 
-const WEATHER_API_KEY = process.env.OPENWEATHERMAP_API_KEY || '08ddce5b876d93f18535f6fc512c7e04';
+const WEATHER_API_KEY = process.env.OPENWEATHERMAP_API_KEY || '';
 const WEATHER_API_BASE = 'https://api.openweathermap.org/data/2.5';
+import { trackedFetch } from '../lib/api-tracker';
 
 export interface GameWeatherData {
   gameId: string;
@@ -103,7 +104,7 @@ class WeatherAPIService {
     
     try {
       const url = `${this.baseUrl}${endpoint}&appid=${this.apiKey}&units=imperial`;
-      const response = await fetch(url);
+      const response = await trackedFetch(url);
       
       if (!response.ok) {
         throw new Error(`Weather API error: ${response.status} ${response.statusText}`);

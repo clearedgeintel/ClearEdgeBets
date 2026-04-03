@@ -25,6 +25,9 @@ import { baseballReferenceService } from "./services/baseball-reference";
 import { teamPowerScoringService } from "./services/team-power-scoring";
 import { schedulerService } from "./services/scheduler";
 import { getCached, setCache } from "./lib/cache";
+import { getParkFactor } from "./lib/park-factors";
+import { getAPICallLog, getAPICallStats } from "./lib/api-tracker";
+import { fetchTank01Games, fetchTank01Odds, fetchTank01Player, resolvePitchers, parseMultiBookOdds, getConsensusOdds, getTeamFullName, getTeamVenue } from "./services/tank01-mlb";
 // Note: Auth will be handled by existing system
 import Stripe from "stripe";
 import OpenAI from "openai";
@@ -531,206 +534,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/games", async (req, res) => {
     try {
       const { date } = req.query;
-      // Use Eastern Time for default date to match user's timezone
       const easternTime = new Date().toLocaleString("en-US", {timeZone: "America/New_York"});
       const defaultDate = new Date(easternTime).toISOString().split('T')[0];
       const targetDate = date as string || defaultDate;
-      
-      // Try to fetch real MLB games with pitcher details first (cached 30 min)
-      let realMLBGames: any[] = getCached<any[]>(`mlb-games-${targetDate}`) || [];
-      if (realMLBGames.length === 0) {
+
+      // ── Fetch games + odds from Tank01 in parallel ──
+      const [tank01Games, tank01OddsMap] = await Promise.all([
+        fetchTank01Games(targetDate),
+        fetchTank01Odds(targetDate),
+      ]);
+
+      // Fall back to ESPN if Tank01 returns nothing
+      let gamesList = tank01Games;
+      let usedTank01 = tank01Games.length > 0;
+      if (!usedTank01) {
         try {
-          const date = new Date(targetDate);
-          realMLBGames = await fetchMLBGameDetails(
-            date.getFullYear(),
-            date.getMonth() + 1,
-            date.getDate()
-          );
-          if (realMLBGames.length > 0) setCache(`mlb-games-${targetDate}`, realMLBGames, 1800);
-          console.log(`Fetched ${realMLBGames.length} real MLB games with pitcher details for ${targetDate}`);
-        } catch (error) {
-          console.log("Failed to fetch real MLB games, using generated data:", error);
-        }
-      } else {
-        console.log(`Cache hit: ${realMLBGames.length} MLB games for ${targetDate}`);
-      }
-
-      // Fetch real odds from sportsbooks (cached 5 min)
-      let realOdds: any[] = getCached<any[]>('mlb-odds') || [];
-      if (realOdds.length === 0) {
-        try {
-          realOdds = await fetchRealMLBOdds();
-          if (realOdds.length > 0) setCache('mlb-odds', realOdds, 300);
-          console.log(`Fetched real odds for ${realOdds.length} MLB games`);
-        } catch (error) {
-          console.log("Failed to fetch real odds:", error);
-        }
-      } else {
-        console.log(`Cache hit: odds for ${realOdds.length} MLB games`);
-      }
-      
-      // Use real MLB games if available, otherwise return empty array (no mock games)
-      const gamesWithOdds = realMLBGames.length > 0 ? 
-        realMLBGames.map((game: any) => convertMLBGameToGameFormat(game, targetDate)) :
-        [];
-      
-      // Merge real odds with games
-      const gamesWithRealOdds = mergeRealOddsWithGames(gamesWithOdds, realOdds);
-      
-      // Store games in database first, then create formatted response  
-      const formattedGames = await Promise.all(gamesWithRealOdds.map(async (gameData) => {
-        // Store or update game in database
-        try {
-          await storage.upsertGame({
-            gameId: gameData.gameId,
-            awayTeam: gameData.awayTeam,
-            homeTeam: gameData.homeTeam,
-            awayTeamCode: gameData.awayTeamCode,
-            homeTeamCode: gameData.homeTeamCode,
-            gameTime: gameData.gameTime,
-            venue: gameData.venue,
-            awayPitcher: gameData.awayPitcher,
-            homePitcher: gameData.homePitcher,
-            awayPitcherStats: gameData.awayPitcherStats,
-            homePitcherStats: gameData.homePitcherStats,
-            status: "scheduled",
-            result: null
-          });
-        } catch (error) {
-          console.log(`Error upserting game ${gameData.gameId}:`, error);
-        }
-        // Format odds array
-        const oddsArray = [];
-        
-        if (gameData.odds?.moneyline) {
-          oddsArray.push({
-            id: Math.floor(Math.random() * 1000000),
-            gameId: gameData.gameId,
-            bookmaker: "consensus",
-            market: "moneyline",
-            awayOdds: gameData.odds.moneyline.away,
-            homeOdds: gameData.odds.moneyline.home,
-            publicPercentage: 50
-          });
-        }
-
-        if (gameData.odds?.total && gameData.odds.total.over !== undefined && gameData.odds.total.line !== undefined) {
-          oddsArray.push({
-            id: Math.floor(Math.random() * 1000000),
-            gameId: gameData.gameId,
-            bookmaker: "consensus",
-            market: "totals",
-            overOdds: Math.round(parseFloat(gameData.odds.total.over.toString())),
-            underOdds: Math.round(parseFloat(gameData.odds.total.under.toString())),
-            total: (Math.round(parseFloat(gameData.odds.total.line.toString()) * 2) / 2).toString(),
-            publicPercentage: 50
-          });
-        }
-
-        if (gameData.odds?.spread && gameData.odds.spread.away !== undefined && gameData.odds.spread.awayOdds !== undefined) {
-          oddsArray.push({
-            id: Math.floor(Math.random() * 1000000),
-            gameId: gameData.gameId,
-            bookmaker: "consensus",
-            market: "spreads",
-            awaySpread: gameData.odds.spread.away.toString(),
-            homeSpread: gameData.odds.spread.home.toString(),
-            awaySpreadOdds: Math.round(parseFloat(gameData.odds.spread.awayOdds.toString())),
-            homeSpreadOdds: Math.round(parseFloat(gameData.odds.spread.homeOdds.toString())),
-            publicPercentage: 50
-          });
-        }
-
-        // Fetch or generate AI summary
-        let aiSummary = null;
-        try {
-          // Try to get existing AI summary from database
-          const existingSummary = await storage.getAiSummary(gameData.gameId);
-          if (existingSummary) {
-            aiSummary = {
-              id: existingSummary.id,
-              gameId: existingSummary.gameId,
-              summary: existingSummary.summary,
-              confidence: existingSummary.confidence,
-              valuePlays: existingSummary.valuePlays,
-              createdAt: existingSummary.createdAt
-            };
-          } else {
-            // Generate new AI analysis if none exists
-            const analysisData: GameAnalysisData = {
-              awayTeam: gameData.awayTeam,
-              homeTeam: gameData.homeTeam,
-              awayPitcher: gameData.awayPitcher,
-              homePitcher: gameData.homePitcher,
-              awayPitcherStats: gameData.awayPitcherStats,
-              homePitcherStats: gameData.homePitcherStats,
-              venue: gameData.venue,
-              gameTime: gameData.gameTime,
-              moneylineOdds: gameData.odds?.moneyline ? {
-                away: gameData.odds.moneyline.away,
-                home: gameData.odds.moneyline.home
-              } : undefined,
-              total: gameData.odds?.total ? {
-                line: gameData.odds.total.line,
-                overOdds: gameData.odds.total.over,
-                underOdds: gameData.odds.total.under
-              } : undefined,
-              runLine: gameData.odds?.spread ? {
-                awaySpread: gameData.odds.spread.away,
-                homeSpread: gameData.odds.spread.home,
-                awayOdds: gameData.odds.spread.awayOdds,
-                homeOdds: gameData.odds.spread.homeOdds
-              } : undefined
-            };
-
-            const analysis = await generateGameAnalysis(analysisData);
-            
-            // Store the new analysis
-            const newSummary = await storage.createAiSummary({
-              gameId: gameData.gameId,
-              summary: analysis.summary,
-              confidence: analysis.confidence,
-              valuePlays: analysis.valuePlays
-            });
-
-            aiSummary = {
-              id: newSummary.id,
-              gameId: newSummary.gameId,
-              summary: newSummary.summary,
-              confidence: newSummary.confidence,
-              valuePlays: newSummary.valuePlays,
-              createdAt: newSummary.createdAt
-            };
+          const d = new Date(targetDate);
+          const espnGames = await fetchMLBGameDetails(d.getFullYear(), d.getMonth() + 1, d.getDate());
+          if (espnGames.length > 0) {
+            console.log(`Tank01 returned 0 games, ESPN fallback: ${espnGames.length} games`);
+            // ESPN path — use old flow
+            const gamesWithOdds = espnGames.map((g: any) => convertMLBGameToGameFormat(g, targetDate));
+            let realOdds: any[] = getCached<any[]>('mlb-odds') || [];
+            if (realOdds.length === 0) {
+              try { realOdds = await fetchRealMLBOdds(); if (realOdds.length > 0) setCache('mlb-odds', realOdds, 300); } catch {}
+            }
+            const merged = mergeRealOddsWithGames(gamesWithOdds, realOdds);
+            // Process ESPN games with the old odds format
+            const espnFormatted = await Promise.all(merged.map(async (gd: any) => {
+              const oddsArr: any[] = [];
+              if (gd.odds?.moneyline) oddsArr.push({ id: Math.floor(Math.random()*1e6), gameId: gd.gameId, bookmaker:'consensus', market:'moneyline', awayOdds: gd.odds.moneyline.away, homeOdds: gd.odds.moneyline.home });
+              if (gd.odds?.total?.over !== undefined) oddsArr.push({ id: Math.floor(Math.random()*1e6), gameId: gd.gameId, bookmaker:'consensus', market:'totals', overOdds: Math.round(parseFloat(String(gd.odds.total.over))), underOdds: Math.round(parseFloat(String(gd.odds.total.under))), total: String(Math.round(parseFloat(String(gd.odds.total.line))*2)/2) });
+              if (gd.odds?.spread?.awayOdds !== undefined) oddsArr.push({ id: Math.floor(Math.random()*1e6), gameId: gd.gameId, bookmaker:'consensus', market:'spreads', awaySpread: String(gd.odds.spread.away), homeSpread: String(gd.odds.spread.home), awaySpreadOdds: Math.round(parseFloat(String(gd.odds.spread.awayOdds))), homeSpreadOdds: Math.round(parseFloat(String(gd.odds.spread.homeOdds))) });
+              const aiSummary = await getOrCreateAiSummary(gd);
+              const weather = await getWeather(gd.homeTeamCode, gd.gameId);
+              const parkFactor = getParkFactor(gd.homeTeamCode);
+              return { id: Math.floor(Math.random()*1e6), gameId: gd.gameId, awayTeam: gd.awayTeam, homeTeam: gd.homeTeam, awayTeamCode: gd.awayTeamCode, homeTeamCode: gd.homeTeamCode, gameTime: gd.gameTime, venue: gd.venue, awayPitcher: gd.awayPitcher, homePitcher: gd.homePitcher, awayPitcherStats: gd.awayPitcherStats, homePitcherStats: gd.homePitcherStats, status: 'scheduled', odds: oddsArr, aiSummary, weather, parkFactor: parkFactor ? { factor: parkFactor.factor, label: parkFactor.label } : null, multiBookOdds: null };
+            }));
+            return res.json(espnFormatted);
           }
-        } catch (error) {
-          console.error("Error handling AI summary for game", gameData.gameId, error);
-          // Fallback to basic summary if AI generation fails
-          aiSummary = {
-            id: Math.floor(Math.random() * 1000000),
-            gameId: gameData.gameId,
-            summary: `Analysis pending for ${gameData.awayTeam} @ ${gameData.homeTeam}. Check back later for detailed insights.`,
-            confidence: 0,
-            valuePlays: [],
-            createdAt: new Date().toISOString()
-          };
+        } catch (err) {
+          console.log('ESPN fallback also failed:', err);
         }
+        return res.json([]);
+      }
+
+      console.log(`Tank01: ${gamesList.length} games, ${Object.keys(tank01OddsMap).length} odds for ${targetDate}`);
+
+      // ── Resolve pitcher names + stats in parallel (batched) ──
+      const pitcherPromises = gamesList.map(g =>
+        resolvePitchers(g.probableStartingPitchers?.away || '', g.probableStartingPitchers?.home || '')
+      );
+      const pitcherResults = await Promise.all(pitcherPromises);
+
+      // ── Build formatted response ──
+      const formattedGames = await Promise.all(gamesList.map(async (game, idx) => {
+        const awayCode = game.away;
+        const homeCode = game.home;
+        const gameId = `${targetDate}_${awayCode} @ ${homeCode}`;
+        const pitcher = pitcherResults[idx];
+
+        // Multi-book odds
+        const gameOdds = tank01OddsMap[game.gameID];
+        const multiBooks = gameOdds ? parseMultiBookOdds(gameOdds) : [];
+        const consensus = multiBooks.length > 0 ? getConsensusOdds(multiBooks) : { moneyline: null, spread: null, total: null };
+
+        // Build odds array (consensus for backwards compatibility)
+        const oddsArray: any[] = [];
+        if (consensus.moneyline) {
+          oddsArray.push({ id: Math.floor(Math.random()*1e6), gameId, bookmaker: 'consensus', market: 'moneyline', awayOdds: consensus.moneyline.away, homeOdds: consensus.moneyline.home });
+        }
+        if (consensus.total) {
+          oddsArray.push({ id: Math.floor(Math.random()*1e6), gameId, bookmaker: 'consensus', market: 'totals', overOdds: consensus.total.over, underOdds: consensus.total.under, total: consensus.total.line });
+        }
+        if (consensus.spread) {
+          oddsArray.push({ id: Math.floor(Math.random()*1e6), gameId, bookmaker: 'consensus', market: 'spreads', awaySpread: consensus.spread.away, homeSpread: consensus.spread.home, awaySpreadOdds: consensus.spread.awayOdds, homeSpreadOdds: consensus.spread.homeOdds });
+        }
+
+        const awayTeam = getTeamFullName(awayCode);
+        const homeTeam = getTeamFullName(homeCode);
+        const venue = getTeamVenue(homeCode);
+
+        // Convert game time to ET display
+        let gameTime = game.gameTime || '';
+        if (game.gameTime_epoch) {
+          try {
+            gameTime = new Date(parseFloat(game.gameTime_epoch) * 1000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' });
+          } catch {}
+        }
+
+        // Upsert game in DB (best-effort)
+        try {
+          await storage.upsertGame({ gameId, awayTeam, homeTeam, awayTeamCode: awayCode, homeTeamCode: homeCode, gameTime, venue, awayPitcher: pitcher.awayPitcher, homePitcher: pitcher.homePitcher, awayPitcherStats: pitcher.awayPitcherStats, homePitcherStats: pitcher.homePitcherStats, status: 'scheduled' });
+        } catch {}
+
+        // AI summary (from DB or generate)
+        const gameDataForAI = { gameId, awayTeam, homeTeam, awayPitcher: pitcher.awayPitcher, homePitcher: pitcher.homePitcher, awayPitcherStats: pitcher.awayPitcherStats, homePitcherStats: pitcher.homePitcherStats, venue, gameTime, odds: { moneyline: consensus.moneyline, total: consensus.total ? { line: parseFloat(consensus.total.line), over: consensus.total.over, under: consensus.total.under } : null, spread: consensus.spread } };
+        const aiSummary = await getOrCreateAiSummary(gameDataForAI);
+
+        // Weather + park factor
+        const weather = await getWeather(homeCode, gameId);
+        const parkFactor = getParkFactor(homeCode);
 
         return {
-          id: Math.floor(Math.random() * 1000000),
-          gameId: gameData.gameId,
-          awayTeam: gameData.awayTeam,
-          homeTeam: gameData.homeTeam,
-          awayTeamCode: gameData.awayTeamCode,
-          homeTeamCode: gameData.homeTeamCode,
-          gameTime: gameData.gameTime,
-          venue: gameData.venue,
-          awayPitcher: gameData.awayPitcher,
-          homePitcher: gameData.homePitcher,
-          awayPitcherStats: gameData.awayPitcherStats,
-          homePitcherStats: gameData.homePitcherStats,
-          status: "scheduled",
+          id: Math.floor(Math.random()*1e6),
+          gameId,
+          awayTeam,
+          homeTeam,
+          awayTeamCode: awayCode,
+          homeTeamCode: homeCode,
+          gameTime,
+          venue,
+          awayPitcher: pitcher.awayPitcher,
+          homePitcher: pitcher.homePitcher,
+          awayPitcherStats: pitcher.awayPitcherStats,
+          homePitcherStats: pitcher.homePitcherStats,
+          awayPitcherHeadshot: pitcher.awayPitcherHeadshot,
+          homePitcherHeadshot: pitcher.homePitcherHeadshot,
+          status: 'scheduled',
           odds: oddsArray,
-          aiSummary: aiSummary
+          multiBookOdds: multiBooks.length > 0 ? multiBooks : null,
+          aiSummary,
+          weather,
+          parkFactor: parkFactor ? { factor: parkFactor.factor, label: parkFactor.label } : null,
         };
       }));
 
@@ -738,6 +664,477 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching games:", error);
       res.status(500).json({ error: "Failed to fetch games" });
+    }
+  });
+
+  // ── Helper: get or create AI summary ──
+  async function getOrCreateAiSummary(gameData: any) {
+    try {
+      const existing = await storage.getAiSummary(gameData.gameId);
+      if (existing) {
+        return { id: existing.id, gameId: existing.gameId, summary: existing.summary, confidence: existing.confidence, valuePlays: existing.valuePlays, createdAt: existing.createdAt };
+      }
+      const analysisData: GameAnalysisData = {
+        awayTeam: gameData.awayTeam, homeTeam: gameData.homeTeam,
+        awayPitcher: gameData.awayPitcher, homePitcher: gameData.homePitcher,
+        awayPitcherStats: gameData.awayPitcherStats, homePitcherStats: gameData.homePitcherStats,
+        venue: gameData.venue, gameTime: gameData.gameTime,
+        moneylineOdds: gameData.odds?.moneyline ? { away: gameData.odds.moneyline.away, home: gameData.odds.moneyline.home } : undefined,
+        total: gameData.odds?.total ? { line: gameData.odds.total.line, overOdds: gameData.odds.total.over, underOdds: gameData.odds.total.under } : undefined,
+        runLine: gameData.odds?.spread ? { awaySpread: gameData.odds.spread.away, homeSpread: gameData.odds.spread.home, awayOdds: gameData.odds.spread.awayOdds, homeOdds: gameData.odds.spread.homeOdds } : undefined,
+      };
+      const analysis = await generateGameAnalysis(analysisData);
+      const newSummary = await storage.createAiSummary({ gameId: gameData.gameId, summary: analysis.summary, confidence: analysis.confidence, valuePlays: analysis.valuePlays });
+      return { id: newSummary.id, gameId: newSummary.gameId, summary: newSummary.summary, confidence: newSummary.confidence, valuePlays: newSummary.valuePlays, createdAt: newSummary.createdAt };
+    } catch (error) {
+      console.error("AI summary error for", gameData.gameId, error);
+      return { id: 0, gameId: gameData.gameId, summary: `Analysis pending for ${gameData.awayTeam} @ ${gameData.homeTeam}.`, confidence: 0, valuePlays: [], createdAt: new Date().toISOString() };
+    }
+  }
+
+  // ── Helper: get weather (cached) ──
+  async function getWeather(homeTeamCode: string, gameId: string) {
+    try {
+      const cacheKey = `weather-${homeTeamCode}`;
+      let weather = getCached<any>(cacheKey);
+      if (!weather) {
+        const full = await weatherAPI.getGameWeather(gameId);
+        if (full) {
+          weather = { temperature: full.temperature, condition: full.condition, windSpeed: full.windSpeed, windDirection: full.windDirection, windGust: full.windGust, precipitation: full.precipitation, totalRunsImpact: full.impact.totalRunsImpact, gameDelay: full.impact.gameDelay };
+          setCache(cacheKey, weather, 1800);
+        }
+      }
+      return weather;
+    } catch { return null; }
+  }
+
+  // Pitcher Recent Stats Endpoint (last 5 starts via free MLB Stats API)
+  app.get('/api/pitcher-recent/:name', async (req, res) => {
+    try {
+      const { name } = req.params;
+      if (!name) return res.status(400).json({ error: 'Pitcher name required' });
+
+      const cacheKey = `pitcher-recent-${name.toLowerCase().replace(/\s+/g, '-')}`;
+      const cached = getCached<any>(cacheKey);
+      if (cached) return res.json(cached);
+
+      // Search for pitcher by name in MLB Stats API (free, no auth required)
+      const searchUrl = `https://statsapi.mlb.com/api/v1/people/search?names=${encodeURIComponent(name)}&sportIds=1`;
+      const searchResp = await fetch(searchUrl);
+      if (!searchResp.ok) return res.json(null);
+
+      const searchData: any = await searchResp.json();
+      const people = searchData?.people ?? [];
+      // Find an active pitcher
+      const pitcher = people.find((p: any) => p.primaryPosition?.code === '1') ?? people[0];
+      if (!pitcher) return res.json(null);
+
+      const personId = pitcher.id;
+
+      // Fetch game log for 2025 season pitching
+      const logUrl = `https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=gameLog&group=pitching&season=2025&gameType=R`;
+      const logResp = await fetch(logUrl);
+      if (!logResp.ok) return res.json(null);
+
+      const logData: any = await logResp.json();
+      const splits: any[] = logData?.stats?.[0]?.splits ?? [];
+
+      // Take the last 5 starts (most recent first in the API response reversed)
+      const last5 = splits.slice(-5).reverse();
+
+      if (last5.length === 0) return res.json(null);
+
+      // Calculate aggregate ERA over last 5 starts
+      const totalER = last5.reduce((sum: number, s: any) => sum + (s.stat?.earnedRuns ?? 0), 0);
+      const totalIP = last5.reduce((sum: number, s: any) => {
+        const ip = parseFloat(s.stat?.inningsPitched ?? '0');
+        // Convert X.1, X.2 notation to actual decimal innings
+        const full = Math.floor(ip);
+        const partial = Math.round((ip - full) * 10);
+        return sum + full + partial / 3;
+      }, 0);
+      const l5ERA = totalIP > 0 ? parseFloat(((totalER / totalIP) * 9).toFixed(2)) : null;
+
+      const result = {
+        name: pitcher.fullName,
+        l5ERA,
+        starts: last5.length,
+        games: last5.map((s: any) => ({
+          date: s.date,
+          opponent: s.team?.name,
+          ip: s.stat?.inningsPitched,
+          er: s.stat?.earnedRuns,
+          so: s.stat?.strikeOuts,
+          bb: s.stat?.baseOnBalls,
+          decision: s.stat?.wins > 0 ? 'W' : s.stat?.losses > 0 ? 'L' : 'ND',
+        })),
+      };
+
+      setCache(cacheKey, result, 3600); // Cache 1 hour
+      return res.json(result);
+    } catch (error) {
+      console.error('Error fetching pitcher recent stats:', error);
+      return res.json(null); // Graceful fallback
+    }
+  });
+
+  // ── Tank01 Direct Test Endpoints (admin) ──
+
+  // Tank01: raw games for a date
+  app.get('/api/admin/tank01/games', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: "Not authenticated" });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
+      const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
+      const games = await fetchTank01Games(date);
+      res.json({ date, count: games.length, games });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Tank01: raw multi-book odds for a date
+  app.get('/api/admin/tank01/odds', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: "Not authenticated" });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
+      const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
+      const odds = await fetchTank01Odds(date);
+      const gameCount = Object.keys(odds).length;
+      // Count books per game
+      const bookCounts = Object.entries(odds).map(([id, o]) => {
+        const books = Object.keys(o).filter(k => !['awayTeam','homeTeam','gameDate','gameID'].includes(k));
+        return { gameID: id, books: books.length, bookmakers: books };
+      });
+      res.json({ date, games: gameCount, bookCounts, rawOdds: odds });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Tank01: player lookup by ID
+  app.get('/api/admin/tank01/player/:id', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: "Not authenticated" });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
+      const player = await fetchTank01Player(req.params.id, true);
+      res.json(player);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Tank01: teams with standings
+  app.get('/api/admin/tank01/teams', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: "Not authenticated" });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
+      const { fetchTank01Teams } = await import('./services/tank01-mlb');
+      const teams = await fetchTank01Teams();
+      res.json({ count: teams.length, teams });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ── Team Detail Data (public) ──────────────────────────────────
+
+  // Get team info + roster + standings
+  app.get('/api/team/:teamAbv', async (req, res) => {
+    try {
+      const { teamAbv } = req.params;
+      const code = teamAbv.toUpperCase();
+
+      const { fetchTank01Teams, fetchTank01Roster, fetchTank01Player, getTeamFullName, getTeamVenue, getTeamLogo } = await import('./services/tank01-mlb');
+
+      // Fetch team info, roster, and power score in parallel
+      const [teams, roster, powerScoreResp] = await Promise.all([
+        fetchTank01Teams(),
+        fetchTank01Roster(code),
+        (async () => { try { return await storage.getTeamPowerScore?.(code); } catch { return null; } })(),
+      ]);
+
+      const team = teams.find(t => t.teamAbv === code);
+      if (!team) return res.status(404).json({ error: `Team ${code} not found` });
+
+      // Enrich roster with season stats for key players (top 10 by position priority)
+      const pitchers = roster.filter(p => p.pos === 'P').slice(0, 8);
+      const positionPlayers = roster.filter(p => p.pos !== 'P').slice(0, 12);
+      const keyPlayers = [...positionPlayers, ...pitchers];
+
+      const enrichedRoster = await Promise.all(
+        keyPlayers.map(async (p) => {
+          const stats = await fetchTank01Player(p.playerID, true);
+          return {
+            playerID: p.playerID,
+            name: p.longName,
+            pos: p.pos,
+            jerseyNum: p.jerseyNum,
+            bat: p.bat,
+            throw: p.throw,
+            height: p.height,
+            weight: p.weight,
+            headshot: p.espnHeadshot || p.mlbHeadshot || stats?.espnHeadshot || stats?.mlbHeadshot,
+            injury: p.injury?.description ? p.injury : null,
+            stats: stats?.stats || null,
+          };
+        })
+      );
+
+      res.json({
+        teamAbv: code,
+        teamName: getTeamFullName(code),
+        teamCity: team.teamCity,
+        shortName: team.teamName,
+        logo: getTeamLogo(code),
+        venue: getTeamVenue(code),
+        division: team.division,
+        conference: team.conference,
+        wins: parseInt(team.wins || '0'),
+        losses: parseInt(team.loss || '0'),
+        runsScored: parseInt(team.RS || '0'),
+        runsAllowed: parseInt(team.RA || '0'),
+        runDiff: parseInt(team.DIFF || '0'),
+        roster: enrichedRoster,
+        powerScore: powerScoreResp || null,
+      });
+    } catch (error: any) {
+      console.error('Error fetching team detail:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ── Blog: Sarcastic Game Reviews ──────────────────────────────────
+
+  // Get recent blog reviews (public)
+  app.get('/api/blog/reviews', async (req, res) => {
+    try {
+      const { date } = req.query;
+      const reviews = date
+        ? await storage.getBlogReviewsByDate(date as string)
+        : await storage.getRecentBlogReviews(30);
+      res.json(reviews);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch reviews' });
+    }
+  });
+
+  // Get single review by slug (public)
+  app.get('/api/blog/reviews/:slug', async (req, res) => {
+    try {
+      const review = await storage.getBlogReviewBySlug(req.params.slug);
+      if (!review) return res.status(404).json({ error: 'Review not found' });
+      res.json(review);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch review' });
+    }
+  });
+
+  // Get yesterday's completed games available for review (admin)
+  app.get('/api/blog/available-games', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
+
+      const date = (req.query.date as string) || (() => {
+        const d = new Date();
+        d.setDate(d.getDate() - 1);
+        return d.toISOString().split('T')[0];
+      })();
+      const tank01Date = date.replace(/-/g, '');
+
+      const { fetchTank01Scores } = await import('./services/tank01-mlb');
+      const scores = await fetchTank01Scores(date);
+
+      // Filter to completed games only
+      const completed = Object.entries(scores)
+        .filter(([, g]) => g.gameStatusCode === '2' || g.gameStatus === 'Completed')
+        .map(([id, g]) => ({
+          gameID: id,
+          away: g.away,
+          home: g.home,
+          awayScore: parseInt(String(g.lineScore?.away?.R || g.awayResult?.replace(/\D/g, '') || '0')),
+          homeScore: parseInt(String(g.lineScore?.home?.R || g.homeResult?.replace(/\D/g, '') || '0')),
+          awayResult: g.awayResult,
+          homeResult: g.homeResult,
+        }));
+
+      // Check which already have reviews
+      const existingReviews = await storage.getBlogReviewsByDate(date);
+      const reviewedIds = new Set(existingReviews.map(r => r.gameId));
+
+      const games = completed.map(g => ({
+        ...g,
+        hasReview: reviewedIds.has(g.gameID),
+        date,
+      }));
+
+      res.json({ date, games, reviewedCount: existingReviews.length, totalCompleted: completed.length });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Generate a sarcastic review for a specific game (admin)
+  app.post('/api/blog/generate-review', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
+
+      const { gameID, date } = req.body;
+      if (!gameID) return res.status(400).json({ error: 'gameID required' });
+
+      // Check if already reviewed
+      const existing = await storage.getBlogReview(gameID);
+      if (existing) return res.json({ review: existing, alreadyExisted: true });
+
+      // Fetch box score from Tank01
+      const { trackedFetch } = await import('./lib/api-tracker');
+      const boxResp = await trackedFetch(
+        `https://tank01-mlb-live-in-game-real-time-statistics.p.rapidapi.com/getMLBBoxScore?gameID=${gameID}`,
+        { headers: { 'x-rapidapi-host': 'tank01-mlb-live-in-game-real-time-statistics.p.rapidapi.com', 'x-rapidapi-key': process.env.TANK01_API_KEY || process.env.RAPIDAPI_KEY || '' } }
+      );
+      if (!boxResp.ok) return res.status(502).json({ error: `Tank01 box score failed: ${boxResp.status}` });
+      const boxData = (await boxResp.json() as any).body;
+
+      // Build player highlights from box score
+      const playerStats = boxData.playerStats || {};
+      const highlights: string[] = [];
+      const { fetchTank01Player } = await import('./services/tank01-mlb');
+
+      // Get top hitters (most hits or HRs)
+      const hitters = Object.values(playerStats)
+        .filter((p: any) => p.Hitting && parseInt(p.Hitting.H || '0') > 0)
+        .sort((a: any, b: any) => {
+          const aScore = parseInt(a.Hitting.HR || '0') * 5 + parseInt(a.Hitting.H || '0') + parseInt(a.Hitting.RBI || '0') * 2;
+          const bScore = parseInt(b.Hitting.HR || '0') * 5 + parseInt(b.Hitting.H || '0') + parseInt(b.Hitting.RBI || '0') * 2;
+          return bScore - aScore;
+        })
+        .slice(0, 6) as any[];
+
+      for (const h of hitters) {
+        const info = await fetchTank01Player(h.playerID, false);
+        const name = info?.longName || `Player #${h.playerID}`;
+        const hit = h.Hitting;
+        const parts = [];
+        if (parseInt(hit.HR || '0') > 0) parts.push(`${hit.HR} HR`);
+        parts.push(`${hit.H}-${hit.AB}`);
+        if (parseInt(hit.RBI || '0') > 0) parts.push(`${hit.RBI} RBI`);
+        if (parseInt(hit.R || '0') > 0) parts.push(`${hit.R} R`);
+        if (parseInt(hit.BB || '0') > 0) parts.push(`${hit.BB} BB`);
+        if (parseInt(hit.SO || '0') > 0) parts.push(`${hit.SO} K`);
+        highlights.push(`${name} (${h.team}): ${parts.join(', ')}`);
+      }
+
+      // Get pitchers with decisions
+      const decisions = boxData.decisions || [];
+      for (const d of decisions) {
+        const info = await fetchTank01Player(d.playerID, false);
+        const name = info?.longName || `Player #${d.playerID}`;
+        const pitcher = Object.values(playerStats).find((p: any) => p.playerID === d.playerID) as any;
+        if (pitcher?.Pitching) {
+          const p = pitcher.Pitching;
+          highlights.push(`${name} (${d.team}, ${d.decision}): ${p.InningsPitched} IP, ${p.H} H, ${p.ER} ER, ${p.SO} K, ${p.BB} BB`);
+        }
+      }
+
+      const awayScore = parseInt(boxData.lineScore?.away?.R || '0');
+      const homeScore = parseInt(boxData.lineScore?.home?.R || '0');
+      const gameDate = date || gameID.split('_')[0]?.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3') || '';
+
+      const { generateSarcasticGameReview } = await import('./services/openai');
+      const { getTeamFullName } = await import('./services/tank01-mlb');
+      const review = await generateSarcasticGameReview({
+        gameId: gameID,
+        awayTeam: getTeamFullName(boxData.away || gameID.split('_')[1]?.split('@')[0] || ''),
+        homeTeam: getTeamFullName(boxData.home || gameID.split('@')[1] || ''),
+        awayScore,
+        homeScore,
+        venue: boxData.Venue || '',
+        weather: boxData.Weather || '',
+        attendance: boxData.Attendance || '',
+        wind: boxData.Wind || '',
+        lineScore: boxData.lineScore,
+        decisions,
+        playerHighlights: highlights.join('\n'),
+      });
+
+      // Fetch ESPN game images (hero thumbnail + team logos)
+      let heroImage: string | undefined;
+      let awayLogo: string | undefined;
+      let homeLogo: string | undefined;
+      let espnRecap: string | undefined;
+      try {
+        const espnDate = gameDate.replace(/-/g, '');
+        const espnResp = await fetch(`https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${espnDate}`);
+        if (espnResp.ok) {
+          const espnData = await espnResp.json() as any;
+          const awayCode = boxData.away || gameID.split('_')[1]?.split('@')[0];
+          const homeCode = boxData.home || gameID.split('@')[1];
+          const match = espnData.events?.find((ev: any) => {
+            const comp = ev.competitions?.[0];
+            const a = comp?.competitors?.find((c: any) => c.homeAway === 'away');
+            const h = comp?.competitors?.find((c: any) => c.homeAway === 'home');
+            return a?.team?.abbreviation === awayCode || h?.team?.abbreviation === homeCode;
+          });
+          if (match) {
+            const comp = match.competitions?.[0];
+            const headline = comp?.headlines?.[0];
+            heroImage = headline?.video?.[0]?.thumbnail;
+            espnRecap = headline?.shortLinkText;
+            const awayCmp = comp?.competitors?.find((c: any) => c.homeAway === 'away');
+            const homeCmp = comp?.competitors?.find((c: any) => c.homeAway === 'home');
+            awayLogo = awayCmp?.team?.logo;
+            homeLogo = homeCmp?.team?.logo;
+          }
+        }
+      } catch { /* ESPN images are best-effort */ }
+
+      // Fallback logos from ESPN CDN pattern
+      const awayCode = boxData.away || '';
+      const homeCode2 = boxData.home || '';
+      if (!awayLogo && awayCode) awayLogo = `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${awayCode.toLowerCase()}.png`;
+      if (!homeLogo && homeCode2) homeLogo = `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${homeCode2.toLowerCase()}.png`;
+
+      // Save to database
+      const saved = await storage.createBlogReview({
+        gameId: gameID,
+        gameDate,
+        awayTeam: getTeamFullName(boxData.away || ''),
+        homeTeam: getTeamFullName(boxData.home || ''),
+        awayScore,
+        homeScore,
+        title: review.title,
+        content: review.content,
+        slug: review.slug,
+        author: review.author,
+        authorMood: review.authorMood,
+        venue: boxData.Venue,
+        weather: boxData.Weather,
+        attendance: boxData.Attendance,
+        heroImage,
+        awayLogo,
+        homeLogo,
+        espnRecap,
+        boxScoreData: boxData,
+      });
+
+      res.json({ review: saved, alreadyExisted: false });
+    } catch (error: any) {
+      console.error('Error generating blog review:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 
@@ -2869,6 +3266,80 @@ Format as JSON:
     } catch (error) {
       console.error("Error generating consensus data:", error);
       res.status(500).json({ error: "Failed to generate consensus data" });
+    }
+  });
+
+  // Scheduler status & manual triggers
+  app.get("/api/admin/scheduler-status", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: "Not authenticated" });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
+      res.json(schedulerService.listTasks());
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch scheduler status" });
+    }
+  });
+
+  app.post("/api/admin/trigger-task", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: "Not authenticated" });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
+
+      const { task } = req.body;
+      switch (task) {
+        case 'daily-picks':
+          await schedulerService.triggerDailyPicks();
+          break;
+        case 'daily-ticket':
+          await schedulerService.triggerDailyTicket();
+          break;
+        case 'weekly-summary':
+          await schedulerService.triggerWeeklyTicket();
+          break;
+        case 'settle-bets':
+          const { settlePendingBets: settle, settleVirtualBets: settleVirtual, syncLiveGameData: sync } = await import('./services/bet-settlement');
+          await sync();
+          await settle();
+          await settleVirtual();
+          break;
+        case 'odds-snapshot':
+          await schedulerService.snapshotOdds();
+          break;
+        default:
+          return res.status(400).json({ error: `Unknown task: ${task}` });
+      }
+      res.json({ success: true, task, triggeredAt: new Date().toISOString() });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to trigger task" });
+    }
+  });
+
+  // API Call Tracking endpoints
+  app.get("/api/admin/api-calls", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: "Not authenticated" });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
+      res.json(getAPICallLog());
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch API call log" });
+    }
+  });
+
+  app.get("/api/admin/api-stats", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: "Not authenticated" });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
+      res.json(getAPICallStats());
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch API stats" });
     }
   });
 
@@ -5908,6 +6379,81 @@ Format as JSON:
   });
 
   // Get power score for specific team
+  // Detailed power score breakdown with component math
+  app.get("/api/team-power-breakdown/:team", async (req, res) => {
+    try {
+      const { team } = req.params;
+      const code = team.toUpperCase();
+      const targetDate = (req.query.date as string) || new Date().toISOString().split('T')[0];
+
+      const [battingStats, pitchingStats] = await Promise.all([
+        storage.getTeamBaseballReferenceStats(code, targetDate),
+        storage.getTeamBaseballReferencePitchingStats(code, targetDate)
+      ]);
+
+      if (!battingStats || !pitchingStats) {
+        return res.json({ available: false, team: code });
+      }
+
+      // Replicate the exact scoring math from TeamPowerScoringService
+      const ops = parseFloat(battingStats.ops?.toString() || '0');
+      const runsPerGame = parseFloat(battingStats.runsPerGame?.toString() || '0');
+      const homeRuns = battingStats.homeRuns || 0;
+      const battingAverage = parseFloat(battingStats.battingAverage?.toString() || '0');
+      const walks = battingStats.walks || 0;
+      const batGames = battingStats.games || 1;
+
+      const opsScore = Math.min(ops * 100, 100);
+      const runsScore = Math.min(runsPerGame * 15, 100);
+      const hrScore = Math.min((homeRuns / batGames) * 500, 100);
+      const baScore = Math.min(battingAverage * 400, 100);
+      const walkScore = Math.min((walks / batGames) * 25, 100);
+      const advBattingScore = Math.min(Math.round(opsScore * 0.40 + runsScore * 0.25 + hrScore * 0.15 + baScore * 0.10 + walkScore * 0.10), 100);
+
+      const era = parseFloat(pitchingStats.era?.toString() || '9.00');
+      const whip = parseFloat(pitchingStats.whip?.toString() || '2.00');
+      const so9 = parseFloat(pitchingStats.so9?.toString() || '0');
+      const saves = pitchingStats.saves || 0;
+      const completeGames = pitchingStats.completeGames || 0;
+      const pitGames = pitchingStats.games || 1;
+
+      const eraScore = Math.min(Math.max((6.0 - era) * 25, 0), 100);
+      const whipScore = Math.min(Math.max((2.0 - whip) * 80, 0), 100);
+      const strikeoutScore = Math.min(so9 * 10, 100);
+      const saveScore = Math.min((saves / pitGames) * 200, 100);
+      const cgScore = Math.min((completeGames / pitGames) * 1000, 100);
+      const pitchingScoreVal = Math.min(Math.round(eraScore * 0.35 + whipScore * 0.25 + strikeoutScore * 0.20 + saveScore * 0.10 + cgScore * 0.10), 100);
+
+      res.json({
+        available: true,
+        team: code,
+        totalPower: advBattingScore + pitchingScoreVal,
+        batting: {
+          total: advBattingScore,
+          components: [
+            { name: 'OPS', rawValue: ops.toFixed(3), score: Math.round(opsScore), weight: 40, weighted: Math.round(opsScore * 0.40), formula: 'OPS × 100 (capped 100)' },
+            { name: 'Runs/Game', rawValue: runsPerGame.toFixed(2), score: Math.round(runsScore), weight: 25, weighted: Math.round(runsScore * 0.25), formula: 'R/G × 15 (capped 100)' },
+            { name: 'HR Rate', rawValue: (homeRuns / batGames).toFixed(2) + '/G', score: Math.round(hrScore), weight: 15, weighted: Math.round(hrScore * 0.15), formula: '(HR/G) × 500 (capped 100)' },
+            { name: 'Batting Avg', rawValue: battingAverage.toFixed(3), score: Math.round(baScore), weight: 10, weighted: Math.round(baScore * 0.10), formula: 'BA × 400 (capped 100)' },
+            { name: 'Walk Rate', rawValue: (walks / batGames).toFixed(1) + '/G', score: Math.round(walkScore), weight: 10, weighted: Math.round(walkScore * 0.10), formula: '(BB/G) × 25 (capped 100)' },
+          ]
+        },
+        pitching: {
+          total: pitchingScoreVal,
+          components: [
+            { name: 'ERA', rawValue: era.toFixed(2), score: Math.round(eraScore), weight: 35, weighted: Math.round(eraScore * 0.35), formula: '(6.0 − ERA) × 25' },
+            { name: 'WHIP', rawValue: whip.toFixed(2), score: Math.round(whipScore), weight: 25, weighted: Math.round(whipScore * 0.25), formula: '(2.0 − WHIP) × 80' },
+            { name: 'K/9', rawValue: so9.toFixed(1), score: Math.round(strikeoutScore), weight: 20, weighted: Math.round(strikeoutScore * 0.20), formula: 'K/9 × 10 (capped 100)' },
+            { name: 'Save Rate', rawValue: (saves / pitGames).toFixed(2) + '/G', score: Math.round(saveScore), weight: 10, weighted: Math.round(saveScore * 0.10), formula: '(SV/G) × 200' },
+            { name: 'CG Rate', rawValue: (completeGames / pitGames).toFixed(3) + '/G', score: Math.round(cgScore), weight: 10, weighted: Math.round(cgScore * 0.10), formula: '(CG/G) × 1000' },
+          ]
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ available: false, error: error.message });
+    }
+  });
+
   app.get("/api/team-power-scores/:team", async (req, res) => {
     try {
       const { team } = req.params;

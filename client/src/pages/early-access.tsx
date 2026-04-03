@@ -44,7 +44,7 @@ export default function EarlyAccess() {
     {
       id: "1",
       name: "NFL Integration",
-      description: "Complete NFL betting analysis with advanced metrics, playoff predictions, and live injury updates.",
+      description: "Complete NFL sports analysis with advanced metrics, playoff predictions, and live injury updates.",
       category: "analytics",
       status: "beta",
       progress: 85,
@@ -88,7 +88,7 @@ export default function EarlyAccess() {
     {
       id: "5",
       name: "Social Trading",
-      description: "Follow top bettors, copy strategies, and create betting groups with friends.",
+      description: "Follow top predictors, copy strategies, and create prediction groups with friends.",
       category: "integrations",
       status: "preview",
       progress: 30,
@@ -185,7 +185,7 @@ export default function EarlyAccess() {
             </Badge>
           </div>
           <p className="text-muted-foreground">
-            Get exclusive previews and beta access to upcoming ClearEdge Bets features before they're released to the public.
+            Get exclusive previews and beta access to upcoming ClearEdge Sports features before they're released to the public.
           </p>
         </div>
 

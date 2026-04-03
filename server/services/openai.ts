@@ -601,3 +601,134 @@ Focus on value betting opportunities where your analysis suggests the true proba
     };
   }
 }
+
+// ── Sarcastic Game Review Generator ──────────────────────────────────
+
+const BEAT_WRITERS = [
+  { name: 'Chip Dalloway', mood: 'witty' },
+  { name: 'Rocco Blandini', mood: 'witty' },
+  { name: 'Norm Putzker', mood: 'witty' },
+  { name: 'Skip Homerfield', mood: 'witty' },
+  { name: 'Denny Grumblestein', mood: 'grumpy' },
+  { name: 'Sal Fogerty', mood: 'witty' },
+  { name: 'Terry Schnozzle', mood: 'witty' },
+  { name: 'Vic Mundsley', mood: 'witty' },
+  { name: 'Lou Sighsmore', mood: 'grumpy' },
+  { name: 'Biff Kowalczyk', mood: 'witty' },
+  { name: 'Marty Butterworth', mood: 'witty' },
+  { name: 'Gene Prattling', mood: 'witty' },
+  { name: 'Wally Bumstead', mood: 'witty' },
+  { name: 'Hank Crabbowitz', mood: 'grumpy' },
+  { name: 'Chet Noodleman', mood: 'witty' },
+  { name: 'Dale Lindqvist', mood: 'witty' },
+  { name: 'Sven Basepath', mood: 'witty' },
+  { name: 'Gordy Metrodome', mood: 'witty' },
+  { name: 'Lars Strikeberry', mood: 'witty' },
+  { name: 'Doug Duluthman', mood: 'witty' },
+  { name: 'Randy Twinsfield', mood: 'witty' },
+  { name: 'Ole Buntsgaard', mood: 'witty' },
+  { name: 'Kenny Lefthander', mood: 'witty' },
+  { name: 'Bjorn Groundout', mood: 'witty' },
+  { name: 'Gary Bloomington', mood: 'witty' },
+];
+
+function pickBeatWriter(): typeof BEAT_WRITERS[0] {
+  return BEAT_WRITERS[Math.floor(Math.random() * BEAT_WRITERS.length)];
+}
+
+export interface GameReviewInput {
+  gameId: string;
+  awayTeam: string;
+  homeTeam: string;
+  awayScore: number;
+  homeScore: number;
+  venue: string;
+  weather: string;
+  attendance: string;
+  wind: string;
+  lineScore: any;
+  decisions: any[];
+  playerHighlights: string;
+}
+
+export interface GameReviewResult {
+  title: string;
+  content: string;
+  slug: string;
+  author: string;
+  authorMood: string;
+}
+
+export async function generateSarcasticGameReview(input: GameReviewInput): Promise<GameReviewResult> {
+  const blowout = Math.abs(input.awayScore - input.homeScore) >= 6;
+  const shutout = input.awayScore === 0 || input.homeScore === 0;
+  const extras = input.lineScore?.away?.scoresByInning && Object.keys(input.lineScore.away.scoresByInning).length > 9;
+  const winner = input.awayScore > input.homeScore ? input.awayTeam : input.homeTeam;
+  const loser = input.awayScore > input.homeScore ? input.homeTeam : input.awayTeam;
+  const writer = pickBeatWriter();
+
+  const moodDirective = writer.mood === 'grumpy'
+    ? `You are ${writer.name}, a perpetually annoyed, world-weary beat writer who has seen too many bad baseball games and isn't afraid to let everyone know it. You complain about everything — the weather, the fans, the hot dogs, the umpires, and especially the losing team. You write like a man who was promised a desk job but got stuck covering baseball in the rain. Every sentence drips with exasperated disappointment. You occasionally let slip that you actually love the game, but you'd never admit it.`
+    : `You are ${writer.name}, a hilariously sarcastic sports columnist. You write game recaps that make people spit out their coffee. Think Bill Simmons meets The Onion meets your drunk uncle who actually knows baseball. You're having the time of your life roasting these teams and you want the reader to have fun too.`;
+
+  const prompt = `${moodDirective}
+
+Write your game review for this MLB game:
+
+**${input.awayTeam} ${input.awayScore} @ ${input.homeTeam} ${input.homeScore}**
+Venue: ${input.venue} | Weather: ${input.weather} | Wind: ${input.wind} | Attendance: ${input.attendance}
+${blowout ? 'BLOWOUT ALERT' : ''}${shutout ? 'SHUTOUT' : ''}${extras ? 'EXTRA INNINGS' : ''}
+
+**Line Score:**
+${JSON.stringify(input.lineScore, null, 2)}
+
+**Decisions:** ${JSON.stringify(input.decisions)}
+
+**Key Performances:**
+${input.playerHighlights}
+
+REQUIREMENTS:
+1. Write a clickbait-worthy headline in YOUR voice (sarcastic, funny, max 15 words)
+2. Write a 3-5 paragraph review in markdown format — in character as ${writer.name}
+3. Reference specific stats, innings, and player performances from the data above
+4. Roast the losing team mercilessly but with love
+5. Give backhanded compliments to the winning team
+6. Make at least one reference to the weather, venue, or attendance
+7. Include one ridiculous metaphor or analogy that fits YOUR personality
+8. End with a "**Final Verdict:**" one-liner that's pure ${writer.mood === 'grumpy' ? 'grumpy gold' : 'chef\'s kiss'}
+9. Tone: ${writer.mood === 'grumpy' ? '90% grumpy exasperation, 10% begrudging respect' : '80% sarcasm, 20% actual analysis'} — readers should learn what happened while laughing
+10. Stay in character as ${writer.name} throughout — this is YOUR column, YOUR voice
+
+Return JSON: { "title": "...", "content": "..." }`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.95,
+      max_tokens: 1500,
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || '{}');
+    const dateStr = input.gameId.split('_')[0] || '';
+    const slug = `${dateStr}-${input.awayTeam.toLowerCase().replace(/[^a-z]/g, '')}-vs-${input.homeTeam.toLowerCase().replace(/[^a-z]/g, '')}`;
+
+    return {
+      title: result.title || `${winner} defeats ${loser}`,
+      content: result.content || 'Review generation failed.',
+      slug,
+      author: writer.name,
+      authorMood: writer.mood,
+    };
+  } catch (error) {
+    console.error('Error generating sarcastic review:', error);
+    return {
+      title: `${winner} Beat ${loser} and We Have Thoughts`,
+      content: `${writer.name} called in sick today, but ${winner} won. More details when our beat writer recovers from whatever is ailing them.`,
+      slug: input.gameId.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase(),
+      author: writer.name,
+      authorMood: writer.mood,
+    };
+  }
+}

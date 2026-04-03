@@ -373,7 +373,7 @@ export default function AdminPhraseDetection() {
               Phrase Detection Management
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage AI analysis phrase detection rules for moneyline and total runs betting suggestions
+              Manage AI analysis phrase detection rules for moneyline and total runs prediction suggestions
             </p>
           </div>
           <AddPhraseDialog onSuccess={() => refetch()} />

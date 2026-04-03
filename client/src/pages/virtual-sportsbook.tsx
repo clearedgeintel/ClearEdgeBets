@@ -144,7 +144,7 @@ export default function VirtualSportsbook() {
     return { isSelected, displayOdds: originalOdds, betKey };
   };
 
-  // Helper functions for betting slip management
+  // Helper functions for pick slip management
   const createNewBettingSlip = (): BettingSlip => {
     const newSlip: BettingSlip = {
       id: `slip-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -207,7 +207,7 @@ export default function VirtualSportsbook() {
     if (selectedBets.has(betKey)) {
       toast({
         title: "Bet Already Selected",
-        description: "This bet is already in your betting slip.",
+        description: "This bet is already in your pick slip.",
         variant: "destructive",
       });
       return;
@@ -250,12 +250,12 @@ export default function VirtualSportsbook() {
 
     setCurrentSlip(updatedSlip);
     setBettingSlips(prev => prev.map(s => s.id === slip!.id ? updatedSlip : s));
-    // Remove auto-show betting slip
+    // Remove auto-show pick slip
     // setShowBettingSlip(true);
 
     toast({
-      title: "Added to Betting Slip",
-      description: `${selection} added to your betting slip.`,
+      title: "Added to Pick Slip",
+      description: `${selection} added to your pick slip.`,
     });
   };
 
@@ -373,7 +373,7 @@ export default function VirtualSportsbook() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
       toast({
-        title: "Virtual Sportsbook Initialized",
+        title: "Prediction Game Initialized",
         description: "Your virtual balance is ready! Start with $1,000.",
       });
     },
@@ -596,7 +596,7 @@ export default function VirtualSportsbook() {
           <CardHeader className="text-center">
             <CardTitle className="flex items-center justify-center gap-2">
               <Target className="h-6 w-6 text-primary" />
-              Virtual Sportsbook
+              Prediction Game
             </CardTitle>
             <CardDescription>
               Sign in to start with $1,000 virtual money for practice betting
@@ -605,7 +605,7 @@ export default function VirtualSportsbook() {
           <CardContent>
             <div className="text-center space-y-4">
               <p className="text-sm text-muted-foreground">
-                You need to be signed in to access the virtual sportsbook.
+                You need to be signed in to access the prediction game.
               </p>
               <Button 
                 onClick={() => window.location.href = '/auth'} 
@@ -621,7 +621,7 @@ export default function VirtualSportsbook() {
               <ul className="text-left space-y-1">
                 <li>• Start with $1,000 virtual money</li>
                 <li>• Real MLB odds and games</li>
-                <li>• Track your betting performance</li>
+                <li>• Track your prediction performance</li>
                 <li>• Reset balance anytime</li>
               </ul>
             </div>
@@ -653,7 +653,7 @@ export default function VirtualSportsbook() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              Virtual Sportsbook
+              Prediction Game
             </h1>
             <p className="text-muted-foreground">
               Practice your betting skills with simulated money. Start with $1,000 and track your performance!
@@ -825,7 +825,7 @@ export default function VirtualSportsbook() {
             </Badge>
           </CardTitle>
           <CardDescription>
-            Track all your virtual bets and their profit/loss results. This is your complete betting history for paper trading.
+            Track all your virtual bets and their profit/loss results. This is your complete prediction history for paper trading.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -940,7 +940,7 @@ export default function VirtualSportsbook() {
               AI Generated Bet Slip
             </CardTitle>
             <CardDescription>
-              Optimized betting recommendations using 10% of your bankroll with confidence-based stake allocation.
+              Optimized game predictions using 10% of your bankroll with confidence-based stake allocation.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1033,13 +1033,13 @@ export default function VirtualSportsbook() {
         </Card>
       )}
 
-      {/* Betting Slip Section */}
+      {/* Pick Slip Section */}
       {currentSlip && currentSlip.items.length > 0 && (
         <Card className="mb-6 border-blue-200 dark:border-blue-800">
           <CardHeader className="bg-blue-50 dark:bg-blue-950/20">
             <CardTitle className="flex items-center gap-2">
               <Receipt className="h-5 w-5" />
-              Your Betting Slip
+              Your Pick Slip
               <Badge variant="secondary" className="ml-auto">
                 {currentSlip.items.length} {currentSlip.items.length === 1 ? 'bet' : 'bets'}
               </Badge>
@@ -1077,7 +1077,7 @@ export default function VirtualSportsbook() {
                         )}
                       </div>
 
-                      {/* Save to My Bets Checkbox */}
+                      {/* Save to My Picks Checkbox */}
                       <div className="flex items-center gap-2 mt-1">
                         <Checkbox
                           id={`save-${bet.id}`}
@@ -1085,7 +1085,7 @@ export default function VirtualSportsbook() {
                           onCheckedChange={(checked) => updateSaveToMyBets(bet.id, checked as boolean)}
                         />
                         <Label htmlFor={`save-${bet.id}`} className="text-xs text-muted-foreground cursor-pointer">
-                          Save to My Bets
+                          Save to My Picks
                         </Label>
                       </div>
                     </div>
@@ -1195,7 +1195,7 @@ export default function VirtualSportsbook() {
               </div>
             )}
 
-            {/* Betting Slip Summary */}
+            {/* Pick Slip Summary */}
             <div className="p-4 bg-muted/50 border-t">
               <div className="flex items-center justify-between mb-3">
                 <div>
@@ -1207,7 +1207,7 @@ export default function VirtualSportsbook() {
                     {isParlayMode && <span className="ml-1 text-blue-600">• Parlay</span>}
                   </div>
                   
-                  {/* Save All to My Bets Toggle */}
+                  {/* Save All to My Picks Toggle */}
                   <div className="flex items-center gap-2 mt-2">
                     <Checkbox
                       id="saveAllToMyBets"
@@ -1219,7 +1219,7 @@ export default function VirtualSportsbook() {
                       }}
                     />
                     <Label htmlFor="saveAllToMyBets" className="text-xs text-muted-foreground cursor-pointer">
-                      Save all bets to My Bets for long-term tracking
+                      Save all bets to My Picks for long-term tracking
                     </Label>
                   </div>
                 </div>
@@ -1236,7 +1236,7 @@ export default function VirtualSportsbook() {
                   <div className="text-xs text-muted-foreground mt-1">
                     {currentSlip.items.filter(item => item.saveToMyBets).length > 0 && (
                       <span className="text-blue-600">
-                        {currentSlip.items.filter(item => item.saveToMyBets).length} bet{currentSlip.items.filter(item => item.saveToMyBets).length === 1 ? '' : 's'} will be saved to My Bets
+                        {currentSlip.items.filter(item => item.saveToMyBets).length} bet{currentSlip.items.filter(item => item.saveToMyBets).length === 1 ? '' : 's'} will be saved to My Picks
                       </span>
                     )}
                   </div>
@@ -1268,7 +1268,7 @@ export default function VirtualSportsbook() {
                     // Save bets to database
                     saveBetsMutation.mutate(betsToSave, {
                       onSuccess: () => {
-                        // Also save to My Bets if any bets have saveToMyBets checked
+                        // Also save to My Picks if any bets have saveToMyBets checked
                         const betsForMyBets = currentSlip.items
                           .filter(item => item.saveToMyBets)
                           .map(item => ({
@@ -1281,17 +1281,17 @@ export default function VirtualSportsbook() {
                           }));
 
                         if (betsForMyBets.length > 0) {
-                          // Save to My Bets (regular bets endpoint)
+                          // Save to My Picks (regular bets endpoint)
                           apiRequest("POST", "/api/bets", betsForMyBets).then(() => {
                             toast({
                               title: "Bets Saved!",
-                              description: `${betsForMyBets.length} bet${betsForMyBets.length === 1 ? '' : 's'} saved to My Bets for long-term tracking`,
+                              description: `${betsForMyBets.length} bet${betsForMyBets.length === 1 ? '' : 's'} saved to My Picks for long-term tracking`,
                             });
                           }).catch((error) => {
-                            console.error("Failed to save to My Bets:", error);
+                            console.error("Failed to save to My Picks:", error);
                             toast({
                               title: "Error",
-                              description: "Failed to save some bets to My Bets",
+                              description: "Failed to save some bets to My Picks",
                               variant: "destructive",
                             });
                           });
@@ -1299,7 +1299,7 @@ export default function VirtualSportsbook() {
 
                         toast({
                           title: "Virtual Bets Placed!",
-                          description: `${betDescription} placed for $${totalStake.toFixed(2)} in virtual sportsbook`,
+                          description: `${betDescription} placed for $${totalStake.toFixed(2)} in prediction game`,
                         });
                         
                         // Clear all selected bets
@@ -1318,7 +1318,7 @@ export default function VirtualSportsbook() {
                     ? "Placing Bets..." 
                     : isParlayMode 
                       ? `Place Parlay ($${parlayStake.toFixed(2)})` 
-                      : `Place Bets ($${currentSlip.totalStake.toFixed(2)})`
+                      : `Make Picks ($${currentSlip.totalStake.toFixed(2)})`
                   }
                 </Button>
                 <Button 

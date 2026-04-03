@@ -1,3 +1,5 @@
+import { trackedFetch } from '../lib/api-tracker';
+
 interface OddsAPIResponse {
   id: string;
   sport_key: string;
@@ -87,7 +89,7 @@ export async function fetchRealMLBOdds(): Promise<ProcessedOdds[]> {
   try {
     const oddsUrl = `https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${apiKey}&regions=us&markets=h2h,spreads,totals&oddsFormat=american&bookmakers=draftkings,fanduel,betmgm`;
     
-    const response = await fetch(oddsUrl);
+    const response = await trackedFetch(oddsUrl);
     
     if (!response.ok) {
       console.error('Failed to fetch odds:', response.status, response.statusText);

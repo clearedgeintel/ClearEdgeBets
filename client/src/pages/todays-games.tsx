@@ -59,6 +59,26 @@ interface Game {
       expectedValue: number;
     }>;
   };
+  weather?: {
+    temperature: number;
+    condition: string;
+    windSpeed: number;
+    windDirection: number;
+    windGust?: number;
+    precipitation: number;
+    totalRunsImpact: 'favor_over' | 'favor_under' | 'neutral';
+    gameDelay: 'low' | 'medium' | 'high' | 'very_high';
+  } | null;
+  parkFactor?: {
+    factor: number;
+    label: string;
+  } | null;
+  multiBookOdds?: Array<{
+    bookmaker: string;
+    moneyline: { away: number; home: number } | null;
+    runline: { awaySpread: string; homeSpread: string; awayOdds: number; homeOdds: number } | null;
+    total: { line: string; overOdds: number; underOdds: number } | null;
+  }> | null;
 }
 
 export default function TodaysGames() {
@@ -136,31 +156,26 @@ export default function TodaysGames() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div className="h-6 bg-muted rounded w-3/4"></div>
-                    <div className="h-4 bg-muted rounded w-1/2"></div>
-                    <div className="h-20 bg-muted rounded"></div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="h-6 bg-muted rounded w-3/4"></div>
+                  <div className="h-4 bg-muted rounded w-1/2"></div>
+                  <div className="h-20 bg-muted rounded"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <div>
       
       {/* Page Header */}
       <div className="bg-background border-b">
@@ -172,7 +187,7 @@ export default function TodaysGames() {
                 <span>MLB Games</span>
               </h1>
               <p className="text-muted-foreground mt-2">
-                Live odds, AI analysis, and betting insights for {isSameDay(selectedDate, new Date()) ? "today's" : format(selectedDate, "MMMM d")} matchups
+                Live odds, AI analysis, and sports insights for {isSameDay(selectedDate, new Date()) ? "today's" : format(selectedDate, "MMMM d")} matchups
               </p>
 
               {/* Date Navigation */}
@@ -354,7 +369,6 @@ export default function TodaysGames() {
         )}
       </div>
 
-      <Footer />
     </div>
   );
 }

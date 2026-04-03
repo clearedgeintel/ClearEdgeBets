@@ -284,7 +284,7 @@ class SchedulerService {
     }
   }
 
-  private async snapshotOdds() {
+  public async snapshotOdds() {
     try {
       const odds = await fetchRealMLBOdds();
       if (odds.length === 0) return;

@@ -21,7 +21,7 @@ export default function Help() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Help & User Guide</h1>
         <p className="text-muted-foreground">
-          Get the most out of ClearEdge Bets with our comprehensive platform guide
+          Get the most out of ClearEdge Sports with our comprehensive platform guide
         </p>
       </div>
 
@@ -108,7 +108,7 @@ export default function Help() {
               </p>
               <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                 <li><strong>Win Probability:</strong> Enter your estimated chance of winning (convert from confidence %)</li>
-                <li><strong>Bankroll:</strong> Your total betting budget</li>
+                <li><strong>Bankroll:</strong> Your total prediction budget</li>
                 <li><strong>Odds:</strong> Use American format (-110, +150, etc.)</li>
                 <li><strong>Suggested Bet:</strong> Recommended stake size (typically 1-5% of bankroll)</li>
               </ul>
@@ -139,7 +139,7 @@ export default function Help() {
                 Performance Analytics
               </h3>
               <p className="text-sm text-muted-foreground mb-2">
-                Track your betting performance with detailed monthly breakdowns.
+                Track your prediction performance with detailed monthly breakdowns.
               </p>
               <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                 <li>Click on any month to see detailed bet-by-bet analysis</li>

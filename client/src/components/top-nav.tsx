@@ -28,29 +28,29 @@ export default function TopNav() {
   const getTierBadge = (tier: string) => {
     switch (tier) {
       case 'free':
-        return <Badge variant="outline" className="bg-gray-100 text-gray-700">Free</Badge>;
+        return <Badge variant="outline" className="bg-zinc-800 text-zinc-400 border-zinc-700">Free</Badge>;
       case 'pro':
-        return <Badge className="bg-blue-600 text-white"><Crown className="h-3 w-3 mr-1" />Pro</Badge>;
+        return <Badge className="bg-blue-500/15 text-blue-400 border border-blue-500/25"><Crown className="h-3 w-3 mr-1" />Pro</Badge>;
       case 'elite':
-        return <Badge className="bg-purple-600 text-white"><Zap className="h-3 w-3 mr-1" />Elite</Badge>;
+        return <Badge className="bg-amber-500/15 text-amber-400 border border-amber-500/25"><Zap className="h-3 w-3 mr-1" />Elite</Badge>;
       default:
-        return <Badge variant="outline">Free</Badge>;
+        return <Badge variant="outline" className="bg-zinc-800 text-zinc-400 border-zinc-700">Free</Badge>;
     }
   };
 
   const getTierIcon = (tier: string) => {
     switch (tier) {
       case 'pro':
-        return <Crown className="h-4 w-4 text-blue-600" />;
+        return <Crown className="h-4 w-4 text-blue-400" />;
       case 'elite':
-        return <Zap className="h-4 w-4 text-purple-600" />;
+        return <Zap className="h-4 w-4 text-amber-400" />;
       default:
-        return <Shield className="h-4 w-4 text-gray-500" />;
+        return <Shield className="h-4 w-4 text-zinc-500" />;
     }
   };
 
   return (
-    <header className="bg-card border-b border-border sticky top-0 z-50 backdrop-blur-sm">
+    <header className="bg-background/80 border-b border-border/50 sticky top-0 z-50 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
@@ -70,11 +70,11 @@ export default function TopNav() {
                       <div className="flex items-center space-x-3">
                         <img 
                           src="/clearedge-logo-new.png" 
-                          alt="ClearEdge Bets" 
+                          alt="ClearEdge Sports" 
                           className="h-8 w-auto"
                         />
                         <span className="text-lg font-bold text-foreground">
-                          ClearEdge Bets
+                          ClearEdge Sports
                         </span>
                       </div>
                     </div>
@@ -88,11 +88,11 @@ export default function TopNav() {
             <Link href="/" className="flex items-center space-x-3">
               <img 
                 src="/clearedge-logo-new.png" 
-                alt="ClearEdge Bets" 
+                alt="ClearEdge Sports" 
                 className="h-8 w-auto"
               />
               <span className="text-xl font-bold text-foreground hidden sm:block">
-                ClearEdge Bets
+                ClearEdge Sports
               </span>
             </Link>
           </div>
@@ -100,7 +100,7 @@ export default function TopNav() {
           {/* Center - Status */}
           <div className="hidden md:flex items-center space-x-4">
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+              <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></div>
               <span>Live Updates</span>
             </div>
             <div className="text-sm text-muted-foreground">
@@ -177,7 +177,7 @@ export default function TopNav() {
                   <DropdownMenuItem asChild>
                     <Link href="/my-bets" className="flex items-center w-full">
                       <User className="h-4 w-4 mr-2" />
-                      My Bets
+                      My Picks
                     </Link>
                   </DropdownMenuItem>
                   
@@ -229,7 +229,7 @@ export default function TopNav() {
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>
-                        {authMode === 'login' ? 'Welcome Back' : 'Join ClearEdge Bets'}
+                        {authMode === 'login' ? 'Welcome Back' : 'Join ClearEdge Sports'}
                       </DialogTitle>
                     </DialogHeader>
                     {authMode === 'login' ? (

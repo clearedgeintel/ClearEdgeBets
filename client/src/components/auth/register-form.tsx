@@ -46,7 +46,7 @@ export default function RegisterForm({ onSuccess, onToggleMode }: RegisterFormPr
     try {
       await register(username, email, password);
       toast({
-        title: "Welcome to ClearEdge Bets!",
+        title: "Welcome to ClearEdge Sports!",
         description: "Your account has been created successfully.",
       });
       onSuccess?.();
@@ -66,7 +66,7 @@ export default function RegisterForm({ onSuccess, onToggleMode }: RegisterFormPr
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl">Create Account</CardTitle>
         <CardDescription>
-          Join ClearEdge Bets and start winning with AI-powered insights
+          Join ClearEdge Sports and start winning with AI-powered insights
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

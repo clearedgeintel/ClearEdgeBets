@@ -57,7 +57,7 @@ export default function PerformanceAnalytics() {
             <Award className="h-12 w-12 mx-auto mb-4 text-yellow-600" />
             <h2 className="text-2xl font-bold mb-2">Elite Feature</h2>
             <p className="text-muted-foreground mb-4">
-              Performance Analytics is an Elite tier feature. Upgrade to access advanced betting insights and detailed performance tracking.
+              Performance Analytics is an Elite tier feature. Upgrade to access advanced sports insights and detailed performance tracking.
             </p>
             <Badge className="bg-yellow-600 text-white">
               <Award className="h-3 w-3 mr-1" />
@@ -132,7 +132,7 @@ export default function PerformanceAnalytics() {
             </Badge>
           </div>
           <p className="text-muted-foreground">
-            Advanced insights into your betting performance with detailed breakdowns and trends.
+            Advanced insights into your prediction performance with detailed breakdowns and trends.
           </p>
         </div>
 

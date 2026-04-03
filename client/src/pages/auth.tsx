@@ -35,7 +35,7 @@ export default function AuthPage() {
       await login(loginEmail, loginPassword);
       toast({
         title: "Welcome back!",
-        description: "You've successfully signed in to ClearEdge Bets.",
+        description: "You've successfully signed in to ClearEdge Sports.",
       });
       setLocation("/");
     } catch (error: any) {
@@ -57,7 +57,7 @@ export default function AuthPage() {
       await register(registerUsername, registerEmail, registerPassword);
       toast({
         title: "Account created!",
-        description: "Welcome to ClearEdge Bets. Your account has been created successfully.",
+        description: "Welcome to ClearEdge Sports. Your account has been created successfully.",
       });
       setLocation("/");
     } catch (error: any) {
@@ -75,8 +75,8 @@ export default function AuthPage() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2">ClearEdge Bets</h1>
-          <p className="text-muted-foreground">Join the betting intelligence platform</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">ClearEdge Sports</h1>
+          <p className="text-muted-foreground">Join the sports intelligence platform</p>
         </div>
 
         <Tabs defaultValue="login" className="w-full">
@@ -161,7 +161,7 @@ export default function AuthPage() {
               <CardHeader className="space-y-1">
                 <CardTitle className="text-2xl">Create Account</CardTitle>
                 <CardDescription>
-                  Join ClearEdge Bets and get access to premium betting insights
+                  Join ClearEdge Sports and get access to premium sports insights
                 </CardDescription>
               </CardHeader>
               <form onSubmit={handleRegister}>

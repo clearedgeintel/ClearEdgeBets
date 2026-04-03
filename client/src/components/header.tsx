@@ -22,7 +22,7 @@ export default function Header() {
             <Link href="/" className="flex items-center">
               <img 
                 src="/clearedge-logo-new.png"
-                alt="ClearEdge Bets" 
+                alt="ClearEdge Sports" 
                 className="h-12 w-auto"
               />
             </Link>

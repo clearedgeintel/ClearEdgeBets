@@ -129,7 +129,7 @@ const quickQuestions: QuickQuestion[] = [
   },
   {
     id: '15',
-    question: "What are the best live betting opportunities?",
+    question: "What are the best live analysis opportunities?",
     category: "Live Betting",
     icon: Radio
   },
@@ -171,7 +171,7 @@ export default function AIAssistant() {
     {
       id: '1',
       type: 'assistant',
-      content: "Hello! I'm your AI betting assistant. I can help you analyze today's games, find value bets, and answer questions about pitcher matchups, weather impacts, and betting strategies. What would you like to know?",
+      content: "Hello! I'm your AI sports assistant. I can help you analyze today's games, find value plays, and answer questions about pitcher matchups, weather impacts, and game strategies. What would you like to know?",
       timestamp: new Date()
     }
   ]);
@@ -253,12 +253,12 @@ export default function AIAssistant() {
 
     // Handle contrarian questions
     if (lowerQuestion.includes('contrarian') || lowerQuestion.includes('public')) {
-      return `Contrarian opportunities today:\n\n• **Fading the Public**: Look for heavily bet favorites with inflated lines\n• **Value Underdogs**: Home underdogs often provide excellent value\n• **Reverse Line Movement**: When lines move against public betting percentages\n\nStrategy: Target games where 70%+ of bets are on one side but the line isn't moving accordingly. This often indicates sharp money on the other side.`;
+      return `Contrarian opportunities today:\n\n• **Fading the Public**: Look for heavily bet favorites with inflated lines\n• **Value Underdogs**: Home underdogs often provide excellent value\n• **Reverse Line Movement**: When lines move against public market percentages\n\nStrategy: Target games where 70%+ of bets are on one side but the line isn't moving accordingly. This often indicates sharp money on the other side.`;
     }
 
     // Handle parlay questions
     if (lowerQuestion.includes('parlay') || lowerQuestion.includes('combo')) {
-      return `Same-game parlay strategy for today:\n\n• **Correlated Legs**: Look for outcomes that support each other\n• **Example Combos**: Under total + pitcher strikeout props\n• **Value Spots**: Combine team total over with individual RBI props\n\nToday's best correlations:\n1. Under 8.5 total + Starting pitcher over 6.5 Ks\n2. Team total over 4.5 + Star player RBI prop\n3. First 5 innings under + Game total under\n\nAvoid negative correlations like betting both team totals over with the game total under.`;
+      return `Same-game parlay strategy for today:\n\n• **Correlated Legs**: Look for outcomes that support each other\n• **Example Combos**: Under total + pitcher strikeout props\n• **Value Spots**: Combine team total over with individual RBI props\n\nToday's best correlations:\n1. Under 8.5 total + Starting pitcher over 6.5 Ks\n2. Team total over 4.5 + Star player RBI prop\n3. First 5 innings under + Game total under\n\nAvoid negative correlations like picking both team totals over with the game total under.`;
     }
 
     // Handle bullpen questions
@@ -286,7 +286,7 @@ export default function AIAssistant() {
 
       return `Here are today's best under plays with edge:\n\n${topUnders.map((pick, index) => 
         `${index + 1}. **${(pick.gameId || 'Game TBD').replace('2025-06-30_', '').replace(' @ ', ' vs ')}** - Under ${pick.reasoning?.includes('total') ? pick.reasoning.match(/under (\d+\.?\d*)/i)?.[1] || 'TBD' : 'TBD'}\n   Confidence: ${pick.confidence || 65}% | Edge based on pitcher stats and weather conditions`
-      ).join('\n\n')}\n\nKey factors: Strong pitching matchups, potential weather impact, and public over-betting create value on the under side.`;
+      ).join('\n\n')}\n\nKey factors: Strong pitching matchups, potential weather impact, and public over-valuation create value on the under side.`;
     }
 
     if (lowerQuestion.includes('highest confidence') || lowerQuestion.includes('best pick')) {
@@ -314,7 +314,7 @@ export default function AIAssistant() {
     }
 
     if (lowerQuestion.includes('contrarian') || lowerQuestion.includes('fade')) {
-      return `Today's contrarian opportunities:\n\n1. **Public favorites getting heavy action** - Look for value on underdogs in games with 70%+ public betting\n\n2. **Over-inflated totals** - Weather and pitcher matchups suggest unders in high-total games\n\n3. **Divisional underdogs** - Familiarity breeds close games, especially with quality pitching\n\nThe key is finding spots where public perception doesn't match analytical value.`;
+      return `Today's contrarian opportunities:\n\n1. **Public favorites getting heavy action** - Look for value on underdogs in games with 70%+ public sentiment\n\n2. **Over-inflated totals** - Weather and pitcher matchups suggest unders in high-total games\n\n3. **Divisional underdogs** - Familiarity breeds close games, especially with quality pitching\n\nThe key is finding spots where public perception doesn't match analytical value.`;
     }
 
     if (lowerQuestion.includes('weather')) {
@@ -334,11 +334,11 @@ export default function AIAssistant() {
 
     // Handle general strategy questions
     if (lowerQuestion.includes('strategy') || lowerQuestion.includes('approach')) {
-      return `Optimal betting strategy approach:\n\n• **Bankroll Management**: Never risk more than 2-3% per bet\n• **Value Focus**: Target +EV opportunities even at lower odds\n• **Line Shopping**: Compare odds across multiple books\n• **Specialization**: Focus on 1-2 leagues for expertise\n\nToday's focus: Target pitcher matchups with clear statistical edges and avoid high-variance plays without supporting data.`;
+      return `Optimal prediction strategy approach:\n\n• **Bankroll Management**: Never risk more than 2-3% per bet\n• **Value Focus**: Target +EV opportunities even at lower odds\n• **Line Shopping**: Compare odds across multiple books\n• **Specialization**: Focus on 1-2 leagues for expertise\n\nToday's focus: Target pitcher matchups with clear statistical edges and avoid high-variance plays without supporting data.`;
     }
 
     // Default response for unrecognized questions
-    return `I can help you analyze today's betting opportunities! Try asking about:\n\n• Value plays and edge opportunities\n• Highest confidence picks\n• Pitcher matchup analysis\n• Contrarian betting spots\n• Weather impact on games\n• Parlay and combo strategies\n• Bankroll management\n• Bullpen analysis\n\nWhat specific aspect of today's games would you like me to analyze?`;
+    return `I can help you analyze today's analysis opportunities! Try asking about:\n\n• Value plays and edge opportunities\n• Highest confidence picks\n• Pitcher matchup analysis\n• Contrarian analysis spots\n• Weather impact on games\n• Parlay and combo strategies\n• Bankroll management\n• Bullpen analysis\n\nWhat specific aspect of today's games would you like me to analyze?`;
   };
 
   const handleQuickQuestion = (question: string) => {
@@ -360,7 +360,7 @@ export default function AIAssistant() {
                 </Badge>
               </div>
               <p className="text-xl text-muted-foreground">
-                Get instant answers to your betting questions with AI-powered analysis
+                Get instant answers to your sports questions with AI-powered analysis
               </p>
             </div>
 
@@ -371,7 +371,7 @@ export default function AIAssistant() {
                     <Zap className="h-12 w-12 text-purple-600 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-purple-800 mb-2">Elite Feature</h3>
                     <p className="text-purple-700">
-                      Access our AI betting assistant to get instant analysis and answers to questions like "Which unders have edge today?" and "What are your highest confidence picks?"
+                      Access our AI sports assistant to get instant analysis and answers to questions like "Which unders have edge today?" and "What are your highest confidence picks?"
                     </p>
                   </div>
                   
@@ -421,7 +421,7 @@ export default function AIAssistant() {
               </Badge>
             </div>
             <p className="text-muted-foreground">
-              Ask questions about today's games and get instant AI-powered betting insights
+              Ask questions about today's games and get instant AI-powered sports insights
             </p>
           </div>
 

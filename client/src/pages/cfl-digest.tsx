@@ -22,7 +22,7 @@ interface DigestSection {
   title: string;
   content: string;
   confidence: number;
-  category: "games" | "weather" | "injuries" | "trends" | "betting";
+  category: "games" | "weather" | "injuries" | "trends" | "analysis";
 }
 
 interface CFLDigest {
@@ -56,7 +56,7 @@ function DigestSectionCard({ section }: { section: DigestSection }) {
       case "weather": return <Activity className="h-4 w-4" />;
       case "injuries": return <Users className="h-4 w-4" />;
       case "trends": return <TrendingUp className="h-4 w-4" />;
-      case "betting": return <Target className="h-4 w-4" />;
+      case "analysis": return <Target className="h-4 w-4" />;
       default: return <FileText className="h-4 w-4" />;
     }
   };
@@ -67,7 +67,7 @@ function DigestSectionCard({ section }: { section: DigestSection }) {
       case "weather": return "text-green-600 bg-green-50 border-green-200";
       case "injuries": return "text-red-600 bg-red-50 border-red-200";
       case "trends": return "text-purple-600 bg-purple-50 border-purple-200";
-      case "betting": return "text-orange-600 bg-orange-50 border-orange-200";
+      case "analysis": return "text-orange-600 bg-orange-50 border-orange-200";
       default: return "text-gray-600 bg-gray-50 border-gray-200";
     }
   };
@@ -106,7 +106,7 @@ export default function CFLDigest() {
       id: 1,
       date: today,
       title: "CFL Week 1 Spotlight: Season Openers Set the Stage",
-      summary: "The 2025 CFL season kicks off with compelling matchups across Canada. Key storylines include Calgary's revamped offense, Toronto's new defensive coordinator impact, and weather concerns in several markets that could significantly affect betting lines.",
+      summary: "The 2025 CFL season kicks off with compelling matchups across Canada. Key storylines include Calgary's revamped offense, Toronto's new defensive coordinator impact, and weather concerns in several markets that could significantly affect game lines.",
       sections: [
         {
           title: "Featured Game: Stampeders @ Argonauts",
@@ -130,7 +130,7 @@ export default function CFLDigest() {
           title: "Betting Trends: Sharp Money Movement",
           content: "Professional bettors are showing strong interest in road underdogs this week, with 67% of sharp money on away teams getting points. Historical analysis shows Week 1 often provides value on underdogs as public perception hasn't adjusted to offseason changes. Line movement suggests respected money on Calgary +3.5.",
           confidence: 81,
-          category: "betting"
+          category: "analysis"
         }
       ],
       keyGames: [
@@ -157,7 +157,7 @@ export default function CFLDigest() {
         {
           topic: "New CFL Rules Impact",
           impact: "high",
-          description: "Several rule changes could affect scoring and betting totals"
+          description: "Several rule changes could affect scoring and game totals"
         },
         {
           topic: "Roster Turnover",

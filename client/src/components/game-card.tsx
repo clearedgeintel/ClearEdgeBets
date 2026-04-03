@@ -451,7 +451,7 @@ export default function GameCard({ game }: GameCardProps) {
                   <Lock className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
                   <h4 className="text-sm font-semibold text-foreground mb-2">Premium Feature</h4>
                   <p className="text-muted-foreground text-sm mb-3">
-                    AI-powered game analysis with confidence scoring and betting insights is available to Pro and Elite subscribers.
+                    AI-powered game analysis with confidence scoring and sports insights is available to Pro and Elite subscribers.
                   </p>
                   {!user ? (
                     <>

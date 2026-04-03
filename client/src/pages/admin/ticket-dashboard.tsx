@@ -210,7 +210,7 @@ export default function TicketDashboard() {
                 <span>Ticket Dashboard</span>
               </h1>
               <p className="text-muted-foreground mt-2">
-                Manage support tickets and monitor betting activity
+                Manage support tickets and monitor platform activity
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0">

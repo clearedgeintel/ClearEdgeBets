@@ -31,7 +31,7 @@ export default function BettingSlip() {
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to place bets. Please try again.",
+        description: "Failed to make picks. Please try again.",
         variant: "destructive",
       });
     },
@@ -85,7 +85,7 @@ export default function BettingSlip() {
     <Card className="overflow-hidden">
       <CardHeader className="bg-primary text-white p-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Betting Slip</CardTitle>
+          <CardTitle className="text-lg font-semibold">Pick Slip</CardTitle>
           <Badge variant="secondary" className="bg-white/20 text-white border-0">
             {bets.length} Bet{bets.length !== 1 ? 's' : ''}
           </Badge>
@@ -127,7 +127,7 @@ export default function BettingSlip() {
                         value={bet.odds}
                         onChange={(e) => handleOddsChange(bet.gameId, bet.betType, bet.selection, parseInt(e.target.value) || 0)}
                         className="flex-1 text-xs h-8"
-                        title="Adjust odds to match your actual betting ticket"
+                        title="Adjust odds for your prediction"
                       />
                     </div>
                     <div className="flex items-center space-x-2">
@@ -164,7 +164,7 @@ export default function BettingSlip() {
                   onClick={handlePlaceBets}
                   disabled={placeBetsMutation.isPending || getTotalStake() === 0}
                 >
-                  {placeBetsMutation.isPending ? "Placing Bets..." : "Place Bets"}
+                  {placeBetsMutation.isPending ? "Placing Bets..." : "Make Picks"}
                 </Button>
                 <Button 
                   variant="outline" 

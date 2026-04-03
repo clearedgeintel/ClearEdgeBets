@@ -40,7 +40,7 @@ export default function MyBets() {
   
 
 
-  // Mutation to place bets from betting slip
+  // Mutation to make picks from pick slip
   const placeBetsMutation = useMutation({
     mutationFn: async (betsToPlace: typeof bets) => {
       const promises = betsToPlace.map(bet => 
@@ -59,7 +59,7 @@ export default function MyBets() {
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to place bets. Please try again.",
+        description: "Failed to make picks. Please try again.",
         variant: "destructive",
       });
     },
@@ -88,12 +88,12 @@ export default function MyBets() {
 
 
 
-  // Remove bet from local betting slip
+  // Remove bet from local pick slip
   const removeBet = (bet: any) => {
     clearBet(bet.gameId, bet.betType, bet.selection);
     toast({
       title: "Bet removed",
-      description: "Bet has been removed from your betting slip.",
+      description: "Bet has been removed from your pick slip.",
     });
   };
 
@@ -198,8 +198,8 @@ export default function MyBets() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">My Bets</h1>
-            <p className="text-muted-foreground mt-1">Track your betting history and performance</p>
+            <h1 className="text-3xl font-bold text-foreground">My Picks</h1>
+            <p className="text-muted-foreground mt-1">Track your prediction history and performance</p>
           </div>
           <div className="flex gap-2">
             <Button
@@ -283,7 +283,7 @@ export default function MyBets() {
           <TabsList>
             <TabsTrigger value="slip">
               <ShoppingCart className="h-4 w-4 mr-2" />
-              Betting Slip ({bets.length})
+              Pick Slip ({bets.length})
             </TabsTrigger>
             <TabsTrigger value="pending">Pending Bets ({pendingBets.length})</TabsTrigger>
             <TabsTrigger value="settled">Betting History ({settledBets.length})</TabsTrigger>
@@ -296,7 +296,7 @@ export default function MyBets() {
                   <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-medium mb-2">No bets in slip</h3>
                   <p className="text-muted-foreground">
-                    Add bets from games to build your betting slip
+                    Add bets from games to build your pick slip
                   </p>
                 </CardContent>
               </Card>
@@ -404,7 +404,7 @@ export default function MyBets() {
                   <div className="text-muted-foreground">
                     <img 
                       src="/clearedge-logo-final.png" 
-                      alt="ClearEdge Bets" 
+                      alt="ClearEdge Sports" 
                       className="h-16 w-auto mx-auto mb-4 opacity-60"
                     />
                     <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -527,11 +527,11 @@ export default function MyBets() {
                   <div className="text-gray-500">
                     <img 
                       src="/clearedge-logo-final.png" 
-                      alt="ClearEdge Bets" 
+                      alt="ClearEdge Sports" 
                       className="h-16 w-auto mx-auto mb-4 opacity-60"
                     />
                     <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-medium mb-2">No betting history</h3>
+                    <h3 className="text-lg font-medium mb-2">No prediction history</h3>
                     <p className="text-sm">Your completed bets will appear here.</p>
                   </div>
                 </CardContent>

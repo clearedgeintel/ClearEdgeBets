@@ -136,7 +136,7 @@ export default function Home() {
   });
 
   // Use actual daily picks for top AI picks section
-  const displayPicks = dailyPicks
+  const displayPicks = (Array.isArray(dailyPicks) ? dailyPicks : [])
     .sort((a, b) => (b.confidence || 0) - (a.confidence || 0)) // Sort by confidence
     .slice(0, 3) // Take top 3
     .map((pick, index) => {
@@ -263,7 +263,7 @@ export default function Home() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-center">
-              Welcome to ClearEdge Bets! 
+              Welcome to ClearEdge Sports! 
             </DialogTitle>
             <DialogDescription className="text-center text-lg mt-4">
               Get the clear edge with AI-powered sports analytics
@@ -320,32 +320,32 @@ export default function Home() {
       </Dialog>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Hero Section with New Logo */}
-        <div className="text-center mb-12">
-          <div className="mb-8">
-            <img 
-              src="/clearedge-logo-new.png" 
-              alt="ClearEdge Bets" 
-              className="h-24 w-auto mx-auto mb-6"
+        {/* Hero Section — compact, premium */}
+        <div className="text-center mb-8">
+          <div className="mb-4">
+            <img
+              src="/clearedge-logo-new.png"
+              alt="ClearEdge Sports"
+              className="h-16 w-auto mx-auto mb-4 opacity-90"
             />
           </div>
-          <h1 className="text-4xl font-bold text-foreground mb-4">
-            Welcome to ClearEdge Bets
+          <h1 className="text-3xl font-bold text-foreground mb-2 tracking-tight">
+            ClearEdge Sports
           </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-            Your ultimate sports betting intelligence platform powered by advanced AI analytics
+          <p className="text-base text-muted-foreground max-w-xl mx-auto mb-6">
+            AI-powered sports intelligence
           </p>
-          
+
           {/* Subscribe Call-to-Action */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-6">
             <Link href="/subscribe">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3">
-                <Crown className="h-5 w-5 mr-2" />
+              <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white px-6">
+                <Crown className="h-4 w-4 mr-2" />
                 Upgrade to Pro
               </Button>
             </Link>
             <Link href="/subscribe">
-              <Button variant="outline" size="lg" className="px-8 py-3 border-red-600 text-red-600 hover:bg-red-600 hover:text-white">
+              <Button variant="outline" size="lg" className="px-6 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
                 View All Plans
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
@@ -355,33 +355,33 @@ export default function Home() {
 
         {/* Welcome Banner for New Users */}
         {isNewUser && (
-          <div className="bg-blue-600 rounded-xl shadow-lg p-6 mb-6">
+          <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-6 mb-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold mb-2 text-white">Welcome, {user?.username}!</h2>
-                <p className="opacity-90 mb-4 text-white">
-                  You're on the Free plan. Ready to unlock professional betting insights?
+                <h2 className="text-xl font-bold mb-1 text-foreground">Welcome, {user?.username}!</h2>
+                <p className="text-muted-foreground mb-3 text-sm">
+                  You're on the Free plan. Unlock professional sports insights.
                 </p>
-                <div className="flex items-center gap-4 text-sm text-white">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    <span>Join 2,847+ successful bettors</span>
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <Users className="h-3.5 w-3.5 text-emerald-400" />
+                    <span>2,847+ fans</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4" />
-                    <span>85%+ prediction accuracy</span>
+                  <div className="flex items-center gap-1.5">
+                    <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
+                    <span>85%+ accuracy</span>
                   </div>
                 </div>
               </div>
               <div className="flex flex-col gap-2">
                 <Link href="/subscribe">
-                  <Button className="bg-white text-blue-600 hover:bg-gray-100">
+                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
                     Upgrade Now
                   </Button>
                 </Link>
-                <Button 
-                  variant="ghost" 
-                  className="text-white border-white/30 hover:bg-white/10"
+                <Button
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-foreground"
                   onClick={() => setShowOnboarding(true)}
                 >
                   Learn More
@@ -395,81 +395,70 @@ export default function Home() {
           <main className="space-y-6">
 
             {/* Baseball Section Header */}
-            <Card className="bg-blue-600 border-blue-500">
-              <CardContent className="p-6">
+            <Card className="bg-card border-border/50">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">⚾</span>
+                    <div className="w-8 h-8 bg-emerald-500/15 rounded-lg flex items-center justify-center border border-emerald-500/20">
+                      <span className="font-bold text-sm">⚾</span>
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-white">Major League Baseball</h3>
-                      <p className="text-blue-200 text-sm">
-                        <span className="font-medium text-white">{games.length} games</span> today with complete AI analysis
+                      <h3 className="text-lg font-bold text-foreground">Major League Baseball</h3>
+                      <p className="text-muted-foreground text-sm">
+                        <span className="font-medium text-emerald-400">{games.length} games</span> today with AI analysis
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <Link href="/todays-games">
-                      <Button variant="outline" size="sm" className="border-white text-white hover:bg-white hover:text-blue-900">
-                        <ArrowRight className="h-4 w-4 mr-2" />
-                        View All Games
-                      </Button>
-                    </Link>
-                  </div>
+                  <Link href="/todays-games">
+                    <Button variant="outline" size="sm" className="border-border text-muted-foreground hover:text-foreground hover:border-emerald-500/30">
+                      <ArrowRight className="h-4 w-4 mr-1" />
+                      All Games
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
 
             {/* Baseball AI Picks */}
             {displayPicks.length > 0 && (
-              <div className="ai-card animate-fade-in-up bg-blue-600 rounded-xl border border-blue-500">
+              <div className="animate-fade-in-up bg-card rounded-xl border border-border/50 p-4">
                 <div className="flex items-center space-x-3 mb-4">
-                  <Star className="h-5 w-5 text-white" />
-                  <h3 className="text-xl font-bold text-white">Today's Top MLB AI Picks</h3>
-                  <div className="badge bg-white/20 text-white border-white/30">
-                    {new Date().toLocaleDateString('en-US', { 
-                      weekday: 'short', 
-                      month: 'short', 
-                      day: 'numeric' 
+                  <Star className="h-5 w-5 text-amber-400" />
+                  <h3 className="text-lg font-bold text-foreground">Today's Top MLB AI Picks</h3>
+                  <Badge className="bg-zinc-800 text-zinc-400 border border-zinc-700 text-xs">
+                    {new Date().toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric'
                     })}
-                  </div>
-                  <div className="badge bg-white/20 text-white border-white/30">
-                    Updated {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} ET
-                  </div>
+                  </Badge>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {displayPicks.map((pick, index) => (
-                    <div key={index} className="bg-white/10 rounded-lg p-4 border border-white/20 hover:bg-white/15 hover:border-white/30 transition-all duration-200 shadow-lg">
+                    <div key={index} className="bg-zinc-900/50 rounded-lg p-4 border border-border/50 hover:border-emerald-500/20 transition-all duration-200">
                       <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm font-medium text-white">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                           {index === 0 ? "Best Value" : index === 1 ? "Sharp Play" : "AI Special"}
                         </span>
                         <div className="flex items-center gap-2">
                           {pick.result && (
-                            <Badge 
+                            <Badge
                               className={`${
-                                pick.result === 'win' 
-                                  ? 'bg-blue-600 text-white border-blue-500' 
-                                  : pick.result === 'loss' 
-                                    ? 'bg-red-600 text-white border-red-500' 
-                                    : 'bg-yellow-600 text-white border-yellow-500'
-                              } border font-bold text-xs`}
+                                pick.result === 'win'
+                                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
+                                  : pick.result === 'loss'
+                                    ? 'bg-red-500/15 text-red-400 border border-red-500/20'
+                                    : 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
+                              } font-bold text-xs`}
                             >
                               {pick.result.toUpperCase()}
                             </Badge>
                           )}
-                          <Badge 
-                            variant="secondary" 
-                            className={`${
-                              index === 0 
-                                ? 'bg-blue-500 text-white' 
-                                : index === 1 
-                                  ? 'bg-yellow-500 text-gray-900' 
-                                  : 'bg-red-500 text-white'
-                            } border-0 font-bold`}
+                          <Badge
+                            variant="secondary"
+                            className="bg-zinc-800 text-zinc-300 border border-zinc-700 font-medium"
                           >
-                            {pick.confidence ? `${pick.confidence}% Confidence` : "Hot"}
+                            {pick.confidence ? `${pick.confidence}%` : "Hot"}
                           </Badge>
                         </div>
                       </div>
@@ -710,7 +699,7 @@ export default function Home() {
                       </div>
                       <div>
                         <h3 className="text-xl font-bold text-foreground">Canadian Football League</h3>
-                        <p className="text-muted-foreground text-sm">CFL games and betting analysis</p>
+                        <p className="text-muted-foreground text-sm">CFL games and sports analysis</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">

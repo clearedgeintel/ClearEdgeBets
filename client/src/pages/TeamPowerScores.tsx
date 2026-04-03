@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { TrendingUp, TrendingDown, Activity, Target, Zap, Shield } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getTeamName, getTeamDivision } from "@shared/team-lookup";
+import { Link } from "wouter";
 
 interface TeamPowerScore {
   team: string;
@@ -204,10 +205,17 @@ export default function TeamPowerScores() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div>
-                      <div className="font-bold text-lg">{getTeamName(team.team)}</div>
-                      <div className="text-xs text-muted-foreground">{team.team} • {getTeamDivision(team.team)}</div>
-                    </div>
+                    <Link href={`/team/${team.team}`} className="flex items-center gap-3 group">
+                      <img
+                        src={`https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${team.team.toLowerCase()}.png`}
+                        alt={team.team}
+                        className="h-8 w-8 group-hover:scale-110 transition-transform"
+                      />
+                      <div>
+                        <div className="font-bold text-base group-hover:text-emerald-400 transition-colors">{getTeamName(team.team)}</div>
+                        <div className="text-xs text-muted-foreground">{team.team} • {getTeamDivision(team.team)}</div>
+                      </div>
+                    </Link>
                   </TableCell>
                   <TableCell className="text-center">
                     <div className="text-2xl font-bold">{team.teamPowerScore}</div>

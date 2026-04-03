@@ -6,7 +6,7 @@ export default function MobileNav() {
 
   const navigation = [
     { name: "Games", href: "/", icon: Home, current: location === "/" },
-    { name: "My Bets", href: "/my-bets", icon: TrendingUp, current: location === "/my-bets" },
+    { name: "My Picks", href: "/my-bets", icon: TrendingUp, current: location === "/my-bets" },
     { name: "Digest", href: "/daily-digest", icon: FileText, current: location === "/daily-digest" },
     { name: "Profile", href: "#", icon: User, current: false },
   ];

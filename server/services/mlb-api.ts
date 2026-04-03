@@ -1,4 +1,5 @@
 import type { ProcessedGameData } from './odds';
+import { trackedFetch } from '../lib/api-tracker';
 
 export interface MLBGameData {
   gameId: string;
@@ -98,27 +99,51 @@ const TEAM_MAPPINGS: Record<string, { name: string; code: string }> = {
 };
 
 export async function fetchMLBScoreboard(year: number, month: number, day: number): Promise<MLBGameData[]> {
-  if (!process.env.RAPIDAPI_KEY) {
-    throw new Error('RAPIDAPI_KEY environment variable is required');
+  // Try RapidAPI first, then fall back to free ESPN API
+  if (process.env.RAPIDAPI_KEY) {
+    try {
+      const rapidResp = await trackedFetch(
+        `https://major-league-baseball-mlb.p.rapidapi.com/scoreboard?year=${year}&month=${month.toString().padStart(2, '0')}&day=${day.toString().padStart(2, '0')}`,
+        {
+          method: 'GET',
+          headers: {
+            'x-rapidapi-host': 'major-league-baseball-mlb.p.rapidapi.com',
+            'x-rapidapi-key': process.env.RAPIDAPI_KEY,
+          },
+        }
+      );
+      if (rapidResp.ok) {
+        const rapidData = await rapidResp.json() as any;
+        if (rapidData?.events) {
+          console.log(`RapidAPI returned ${rapidData.events.length} games`);
+          return parseESPNEvents(rapidData);
+        }
+      }
+      console.log(`RapidAPI failed (${rapidResp.status}), falling back to ESPN`);
+    } catch (err) {
+      console.log('RapidAPI error, falling back to ESPN:', err);
+    }
   }
 
+  // Free ESPN API fallback (no key required)
   try {
-    const response = await fetch(
-      `https://major-league-baseball-mlb.p.rapidapi.com/scoreboard?year=${year}&month=${month.toString().padStart(2, '0')}&day=${day.toString().padStart(2, '0')}`,
-      {
-        method: 'GET',
-        headers: {
-          'x-rapidapi-host': 'major-league-baseball-mlb.p.rapidapi.com',
-          'x-rapidapi-key': process.env.RAPIDAPI_KEY,
-        },
-      }
+    const dateStr = `${year}${month.toString().padStart(2, '0')}${day.toString().padStart(2, '0')}`;
+    const response = await trackedFetch(
+      `https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${dateStr}`
     );
-
     if (!response.ok) {
-      throw new Error(`MLB API request failed: ${response.status} ${response.statusText}`);
+      throw new Error(`ESPN API request failed: ${response.status}`);
     }
+    const data = await response.json() as any;
+    console.log(`ESPN API returned ${data?.events?.length || 0} games`);
+    return parseESPNEvents(data);
+  } catch (error) {
+    console.error('ESPN API error:', error);
+    return [];
+  }
+}
 
-    const data: MLBScoreboardResponse = await response.json();
+function parseESPNEvents(data: any): MLBGameData[] {
     
     // Handle different API response structures
     if (!data || !data.events) {
@@ -189,10 +214,6 @@ export async function fetchMLBScoreboard(year: number, month: number, day: numbe
         } : undefined
       };
     }).filter(game => game !== null) as MLBGameData[];
-  } catch (error) {
-    console.error('Error fetching MLB scoreboard:', error);
-    throw error;
-  }
 }
 
 export async function fetchTodaysMLBGames(): Promise<MLBGameData[]> {
@@ -209,34 +230,52 @@ export async function fetchMLBGamesForDate(dateString: string): Promise<MLBGameD
 
 // Fetch detailed game information including pitcher data
 export async function fetchMLBGameDetails(year: number, month: number, day: number): Promise<MLBGameData[]> {
-  if (!process.env.RAPIDAPI_KEY) {
-    throw new Error('RAPIDAPI_KEY environment variable is required');
+  let data: any = null;
+
+  // Try RapidAPI first
+  if (process.env.RAPIDAPI_KEY) {
+    try {
+      const response = await trackedFetch(
+        `https://major-league-baseball-mlb.p.rapidapi.com/scoreboard?year=${year}&month=${month.toString().padStart(2, '0')}&day=${day.toString().padStart(2, '0')}`,
+        {
+          method: 'GET',
+          headers: {
+            'x-rapidapi-host': 'major-league-baseball-mlb.p.rapidapi.com',
+            'x-rapidapi-key': process.env.RAPIDAPI_KEY,
+          },
+        }
+      );
+      if (response.ok) {
+        data = await response.json();
+        if (!data?.events) data = null;
+        else console.log(`RapidAPI game details: ${data.events.length} games`);
+      } else {
+        console.log(`RapidAPI game details failed (${response.status}), trying ESPN`);
+      }
+    } catch (err) {
+      console.log('RapidAPI game details error, trying ESPN:', err);
+    }
   }
 
-  try {
-    const response = await fetch(
-      `https://major-league-baseball-mlb.p.rapidapi.com/scoreboard?year=${year}&month=${month.toString().padStart(2, '0')}&day=${day.toString().padStart(2, '0')}`,
-      {
-        method: 'GET',
-        headers: {
-          'x-rapidapi-host': 'major-league-baseball-mlb.p.rapidapi.com',
-          'x-rapidapi-key': process.env.RAPIDAPI_KEY,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`MLB API request failed: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    
-    if (!data || !data.events) {
-      console.log("MLB API returned unexpected format - no events array found");
+  // ESPN fallback (free, no key)
+  if (!data) {
+    try {
+      const dateStr = `${year}${month.toString().padStart(2, '0')}${day.toString().padStart(2, '0')}`;
+      const response = await trackedFetch(
+        `https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${dateStr}`
+      );
+      if (!response.ok) return [];
+      data = await response.json();
+      console.log(`ESPN game details fallback: ${data?.events?.length || 0} games`);
+    } catch (err) {
+      console.error('ESPN game details fallback error:', err);
       return [];
     }
-    
-    return data.events.map((event: any) => {
+  }
+
+  if (!data?.events) return [];
+
+  return data.events.map((event: any) => {
       if (!event.competitions || event.competitions.length === 0) {
         return null;
       }
@@ -342,10 +381,6 @@ export async function fetchMLBGameDetails(year: number, month: number, day: numb
         homePitcherStats: homePitcherStats || undefined
       };
     }).filter((game: any) => game !== null) as MLBGameData[];
-  } catch (error) {
-    console.error('Error fetching MLB game details:', error);
-    throw error;
-  }
 }
 
 // Check if a specific game result is available

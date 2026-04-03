@@ -1,4 +1,4 @@
-import { users, games, odds, aiSummaries, bets, props, dailyPicks, gameEvaluations, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, tickets, virtualBets, virtualBettingSlip, phraseDetectionRules, baseballReferenceStats, baseballReferencePitchingStats, oddsHistory, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type GameEvaluation, type InsertGameEvaluation, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship, type Ticket, type InsertTicket, type VirtualBet, type InsertVirtualBet, type VirtualBettingSlip, type InsertVirtualBettingSlip, type PhraseDetectionRule, type InsertPhraseDetectionRule, type BaseballReferenceStats, type InsertBaseballReferenceStats, type BaseballReferencePitchingStats, type InsertBaseballReferencePitchingStats, type InsertOddsHistory, type OddsHistory } from "@shared/schema";
+import { users, games, odds, aiSummaries, bets, props, dailyPicks, gameEvaluations, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, tickets, virtualBets, virtualBettingSlip, phraseDetectionRules, baseballReferenceStats, baseballReferencePitchingStats, oddsHistory, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type GameEvaluation, type InsertGameEvaluation, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship, type Ticket, type InsertTicket, type VirtualBet, type InsertVirtualBet, type VirtualBettingSlip, type InsertVirtualBettingSlip, type PhraseDetectionRule, type InsertPhraseDetectionRule, type BaseballReferenceStats, type InsertBaseballReferenceStats, type BaseballReferencePitchingStats, type InsertBaseballReferencePitchingStats, type InsertOddsHistory, type OddsHistory, blogReviews, type BlogReview, type InsertBlogReview } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, gte, lte, desc, lt } from "drizzle-orm";
 
@@ -1788,6 +1788,30 @@ export class DatabaseStorage implements IStorage {
       .from(oddsHistory)
       .where(and(eq(oddsHistory.gameId, gameId), eq(oddsHistory.market, market)))
       .orderBy(oddsHistory.recordedAt);
+  }
+
+  // ── Blog Reviews ──
+  async createBlogReview(review: InsertBlogReview): Promise<BlogReview> {
+    const [created] = await db.insert(blogReviews).values(review).returning();
+    return created;
+  }
+
+  async getBlogReview(gameId: string): Promise<BlogReview | undefined> {
+    const [review] = await db.select().from(blogReviews).where(eq(blogReviews.gameId, gameId));
+    return review;
+  }
+
+  async getBlogReviewBySlug(slug: string): Promise<BlogReview | undefined> {
+    const [review] = await db.select().from(blogReviews).where(eq(blogReviews.slug, slug));
+    return review;
+  }
+
+  async getRecentBlogReviews(limit = 20): Promise<BlogReview[]> {
+    return db.select().from(blogReviews).orderBy(desc(blogReviews.createdAt)).limit(limit);
+  }
+
+  async getBlogReviewsByDate(gameDate: string): Promise<BlogReview[]> {
+    return db.select().from(blogReviews).where(eq(blogReviews.gameDate, gameDate)).orderBy(desc(blogReviews.createdAt));
   }
 }
 

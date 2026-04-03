@@ -145,8 +145,8 @@ export default function Subscribe() {
             Get Your ClearEdge Advantage
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Unlock professional-grade MLB betting insights powered by AI. 
-            Join thousands of successful bettors who trust ClearEdge Bets analytics.
+            Unlock professional-grade MLB sports insights powered by AI. 
+            Join thousands of sports fans who trust ClearEdge Sports analytics.
           </p>
         </div>
 
@@ -283,7 +283,7 @@ export default function Subscribe() {
         {/* Features Comparison */}
         <div className="mt-20">
           <h2 className="text-3xl font-bold text-center text-foreground mb-12">
-            Why Choose ClearEdge Bets?
+            Why Choose ClearEdge Sports?
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
@@ -328,7 +328,7 @@ export default function Subscribe() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="p-6 bg-muted/50 rounded-lg">
               <p className="text-foreground mb-4">
-                "The virtual sportsbook helped me practice before risking real money. Now I'm consistently profitable."
+                "The prediction game helped me practice before risking real money. Now I'm consistently profitable."
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">

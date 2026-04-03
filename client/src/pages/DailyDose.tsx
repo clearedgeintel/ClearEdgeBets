@@ -96,7 +96,7 @@ export default function DailyDose() {
             <h1 className="text-4xl font-bold text-foreground">📬 The Daily Dose</h1>
           </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Professional MLB betting newsletter featuring top value bets, Kelly criterion analysis, 
+            Professional MLB sports newsletter featuring top value bets, Kelly criterion analysis, 
             and comprehensive game insights powered by authentic Baseball Reference data.
           </p>
         </div>

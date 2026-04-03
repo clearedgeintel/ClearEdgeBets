@@ -300,14 +300,14 @@ export default function CFLHub() {
             <TabsTrigger value="teams">Teams</TabsTrigger>
             <TabsTrigger value="schedule">Schedule</TabsTrigger>
             <TabsTrigger value="standings">Standings</TabsTrigger>
-            <TabsTrigger value="betting">Betting Hub</TabsTrigger>
+            <TabsTrigger value="betting">Analysis Hub</TabsTrigger>
           </TabsList>
 
           <TabsContent value="teams" className="space-y-6">
             <div className="text-center space-y-4 mb-8">
               <h2 className="text-3xl font-bold text-foreground">CFL Teams</h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                Complete coverage of all 9 Canadian Football League teams with betting analysis, 
+                Complete coverage of all 9 Canadian Football League teams with sports analysis, 
                 player stats, and expert insights.
               </p>
             </div>
@@ -422,7 +422,7 @@ export default function CFLHub() {
 
           <TabsContent value="betting" className="space-y-6">
             <div className="text-center space-y-4 mb-8">
-              <h2 className="text-3xl font-bold text-foreground">CFL Betting Hub</h2>
+              <h2 className="text-3xl font-bold text-foreground">CFL Analysis Hub</h2>
               <p className="text-muted-foreground">
                 Expert analysis, AI-powered picks, and comprehensive betting intelligence.
               </p>

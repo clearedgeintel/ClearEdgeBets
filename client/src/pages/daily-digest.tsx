@@ -78,7 +78,7 @@ export default function DailyDigest() {
                 <span>Daily MLB Digest</span>
               </h1>
               <p className="text-muted-foreground mt-1">
-                AI-powered analysis and betting insights for today's games
+                AI-powered analysis and sports insights for today's games
               </p>
             </div>
             <div className="flex items-center space-x-3">

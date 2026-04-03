@@ -34,7 +34,7 @@ export function useBettingSlip() {
       try {
         setBets(JSON.parse(savedBets));
       } catch (error) {
-        console.error("Error loading betting slip:", error);
+        console.error("Error loading pick slip:", error);
       }
     }
 

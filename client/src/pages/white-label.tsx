@@ -82,7 +82,7 @@ export default function WhiteLabel() {
             <Award className="h-12 w-12 mx-auto mb-4 text-yellow-600" />
             <h2 className="text-2xl font-bold mb-2">Elite Feature</h2>
             <p className="text-muted-foreground mb-4">
-              White-Label Options is an Elite tier feature. Create fully branded versions of ClearEdge Bets for your business or clients.
+              White-Label Options is an Elite tier feature. Create fully branded versions of ClearEdge Sports for your business or clients.
             </p>
             <Badge className="bg-yellow-600 text-white">
               <Award className="h-3 w-3 mr-1" />
@@ -123,7 +123,7 @@ export default function WhiteLabel() {
               </Badge>
             </div>
             <p className="text-muted-foreground">
-              Create fully branded versions of ClearEdge Bets for your business, clients, or partners.
+              Create fully branded versions of ClearEdge Sports for your business, clients, or partners.
             </p>
           </div>
 
@@ -267,7 +267,7 @@ export default function WhiteLabel() {
                         <div>
                           <h4 className="font-medium">Hide ClearEdge Branding</h4>
                           <p className="text-sm text-muted-foreground">
-                            Remove all ClearEdge Bets references and logos
+                            Remove all ClearEdge Sports references and logos
                           </p>
                         </div>
                         <input

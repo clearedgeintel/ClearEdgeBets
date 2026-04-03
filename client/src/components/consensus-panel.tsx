@@ -66,7 +66,7 @@ export default function ConsensusPanel({ gameId }: ConsensusPanelProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/consensus", gameId] });
       toast({
         title: "Consensus data updated",
-        description: "Latest betting sentiment and market analysis generated.",
+        description: "Latest market sentiment and market analysis generated.",
       });
     },
     onError: () => {
