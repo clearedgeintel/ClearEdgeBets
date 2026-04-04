@@ -1,49 +1,49 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Dark Command Center Theme */
-  --background: #09090b;
-  --foreground: #fafafa;
-  --card: #111113;
-  --card-foreground: #fafafa;
-  --popover: #111113;
-  --popover-foreground: #fafafa;
-  --primary: #22c55e;          /* Money green */
-  --primary-foreground: #052e16;
-  --secondary: #3b82f6;        /* Data blue */
+  /* ClearEdge Sports — Premium Sports Publication Theme */
+  --background: #0f0f11;        /* Softer dark (was #09090b) */
+  --foreground: #e4e4e7;        /* Slightly warm white */
+  --card: #141416;              /* Lifted card surface */
+  --card-foreground: #e4e4e7;
+  --popover: #141416;
+  --popover-foreground: #e4e4e7;
+  --primary: #d97706;           /* Amber/gold — editorial warmth (was emerald) */
+  --primary-foreground: #451a03;
+  --secondary: #3b82f6;         /* Data blue — analytics */
   --secondary-foreground: #fafafa;
-  --muted: #18181b;
+  --muted: #1a1a1e;
   --muted-foreground: #71717a;
-  --accent: #eab308;           /* Gold highlight */
-  --accent-foreground: #422006;
+  --accent: #22c55e;            /* Green — positive indicators only */
+  --accent-foreground: #052e16;
   --destructive: #ef4444;
   --destructive-foreground: #fafafa;
-  --border: #1e1e22;
-  --input: #1e1e22;
-  --ring: #22c55e;
+  --border: #1e1e24;
+  --input: #1e1e24;
+  --ring: #d97706;
   --radius: 0.5rem;
   --warning: #f59e0b;
 
   /* Chart colors */
-  --chart-1: #22c55e;
+  --chart-1: #d97706;
   --chart-2: #3b82f6;
   --chart-3: #a855f7;
-  --chart-4: #eab308;
+  --chart-4: #22c55e;
   --chart-5: #ef4444;
 
   /* Sidebar */
-  --sidebar-background: #0a0a0c;
+  --sidebar-background: #0c0c0e;
   --sidebar-foreground: #a1a1aa;
-  --sidebar-primary: #22c55e;
-  --sidebar-primary-foreground: #052e16;
-  --sidebar-accent: #18181b;
+  --sidebar-primary: #d97706;
+  --sidebar-primary-foreground: #451a03;
+  --sidebar-accent: #1a1a1e;
   --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: #1e1e22;
-  --sidebar-ring: #22c55e;
+  --sidebar-border: #1e1e24;
+  --sidebar-ring: #d97706;
 }
 
 @layer base {
@@ -70,19 +70,25 @@
   .font-mono, [data-odds], .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
+
+  /* Serif font for long-form article content */
+  .font-serif {
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
+  }
 }
 
 @layer components {
-  /* Subtle card glow on hover */
+  /* Subtle card glow on hover — amber instead of green */
   .card-glow {
-    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
   }
   .card-glow:hover {
-    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.1), 0 4px 20px rgba(0, 0, 0, 0.3);
-    border-color: rgba(34, 197, 94, 0.15);
+    box-shadow: 0 0 0 1px rgba(217, 119, 6, 0.1), 0 4px 20px rgba(0, 0, 0, 0.3);
+    border-color: rgba(217, 119, 6, 0.15);
+    transform: translateY(-1px);
   }
 
-  /* Value indicator — green pulse for positive EV */
+  /* Value pulse — green for positive only */
   .value-pulse {
     animation: valuePulse 2s ease-in-out infinite;
   }
@@ -91,16 +97,36 @@
     50% { box-shadow: 0 0 0 4px rgba(34, 197, 94, 0); }
   }
 
-  /* Odds badge — compact, scannable */
+  /* Odds badge */
   .odds-badge {
     @apply px-2 py-0.5 rounded text-xs font-medium tabular-nums;
     transition: background-color 0.15s ease;
   }
 
-  /* Confidence bar */
+  /* Confidence bar — amber to blue gradient */
   .confidence-bar {
     @apply h-1 rounded-full;
     background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+  }
+
+  /* Page transition wrapper */
+  .page-enter {
+    animation: pageIn 0.15s ease-out;
+  }
+  @keyframes pageIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Scroll-triggered fade in */
+  .scroll-fade {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+  }
+  .scroll-fade.visible {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -125,7 +151,11 @@
 }
 
 /* Scrollbar — minimal */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }

@@ -19,7 +19,7 @@ export default function MobileNav() {
           const active = href === "/" ? location === "/" : location.startsWith(href);
           return (
             <Link key={href} href={href}>
-              <button className={`flex flex-col items-center justify-center gap-0.5 w-16 py-1 transition-colors ${active ? 'text-emerald-400' : 'text-zinc-500'}`}>
+              <button className={`flex flex-col items-center justify-center gap-0.5 w-16 py-1 transition-colors ${active ? 'text-amber-400' : 'text-zinc-500'}`}>
                 <Icon className="h-5 w-5" />
                 <span className="text-[9px] font-medium">{label}</span>
               </button>

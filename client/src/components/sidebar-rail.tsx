@@ -27,8 +27,8 @@ export default function SidebarRail() {
     <div className="flex flex-col items-center py-4 gap-1 w-16">
       {/* Logo */}
       <Link href="/">
-        <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-4 cursor-pointer hover:bg-emerald-500/20 transition-colors">
-          <Home className="h-4 w-4 text-emerald-400" />
+        <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-emerald-500/20 flex items-center justify-center mb-4 cursor-pointer hover:bg-amber-500/20 transition-colors">
+          <Home className="h-4 w-4 text-amber-400" />
         </div>
       </Link>
 
@@ -39,7 +39,7 @@ export default function SidebarRail() {
           <Link key={href} href={href}>
             <button
               className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors relative group/icon ${
-                active ? 'bg-emerald-500/15 text-emerald-400' : 'text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800/50'
+                active ? 'bg-amber-500/15 text-amber-400' : 'text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800/50'
               }`}
               title={label}
             >
