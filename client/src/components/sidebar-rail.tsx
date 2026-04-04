@@ -5,7 +5,7 @@
 import { Link, useLocation } from "wouter";
 import {
   Home, Target, Calendar, BarChart3, Trophy, HelpCircle,
-  FileText, Newspaper, History, Rss, CircleDot
+  FileText, Newspaper, Rss, CircleDot, Pen
 } from "lucide-react";
 
 const RAIL_ITEMS = [
@@ -17,6 +17,7 @@ const RAIL_ITEMS = [
   { href: "/player-rankings", icon: Trophy, label: "Players" },
   { href: "/trivia", icon: HelpCircle, label: "Trivia" },
   { href: "/newsletter", icon: FileText, label: "Newsletter" },
+  { href: "/editors-desk", icon: Pen, label: "Editor's Desk" },
   { href: "/virtual-sportsbook", icon: CircleDot, label: "Play" },
 ];
 

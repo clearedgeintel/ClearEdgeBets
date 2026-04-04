@@ -206,17 +206,41 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
     }
   ];
 
+  const editorialNavigation = user?.isAdmin ? [
+    {
+      name: "Editor's Desk",
+      href: "/editors-desk",
+      icon: FileText,
+      current: location === "/editors-desk",
+      description: "Today's slate, assign writers, create stories"
+    },
+    {
+      name: "The Newsroom",
+      href: "/writers",
+      icon: Users,
+      current: location === "/writers",
+      description: "Meet the 25 AI beat writers"
+    },
+    {
+      name: "Weather Map",
+      href: "/weather-summary",
+      icon: Cloud,
+      current: location === "/weather-summary",
+      description: "Stadium weather conditions"
+    },
+  ] : [];
+
   const adminNavigation = user && hasAccess("elite") ? [
-    { 
-      name: "Admin Dashboard", 
-      href: "/admin", 
+    {
+      name: "Admin Dashboard",
+      href: "/admin",
       icon: Settings,
       current: location === "/admin",
       description: "System analytics and management"
     },
-    { 
-      name: "Ticket Dashboard", 
-      href: "/admin/ticket-dashboard", 
+    {
+      name: "Ticket Dashboard",
+      href: "/admin/ticket-dashboard",
       icon: TicketIcon,
       current: location === "/admin/ticket-dashboard",
       description: "Manage support tickets and pick slips"
@@ -519,6 +543,34 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
         })}
 
         
+        {/* Editorial Tools (admin only) */}
+        {editorialNavigation.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-border/30">
+            <span className="text-[9px] text-zinc-600 uppercase tracking-wider font-medium px-3">Editorial</span>
+            {editorialNavigation.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors group ${
+                    item.current
+                      ? "bg-amber-500/10 text-amber-400"
+                      : "text-zinc-400 hover:bg-zinc-800/50 hover:text-white"
+                  }`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <Icon className={`h-4 w-4 ${item.current ? "text-amber-400" : "text-zinc-600 group-hover:text-white"}`} />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">{item.name}</div>
+                    <div className="text-[10px] text-zinc-600 group-hover:text-zinc-500">{item.description}</div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
         {/* Admin Navigation */}
         {adminNavigation.map((item) => {
           const Icon = item.icon;
