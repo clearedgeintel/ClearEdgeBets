@@ -7,7 +7,6 @@ import { ChevronDown, ChevronUp, Brain, User, Target, TrendingUp, DollarSign, Wi
 import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { LiveScore } from "@/components/live-score";
 import { Link } from "wouter";
-import { getBeatWriterForGame } from "@shared/beat-writers";
 
 interface Game {
   id: number;
@@ -181,10 +180,6 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
     } catch { return null; }
   })();
 
-  // Beat writer for this game
-  const beatWriter = (() => {
-    try { return getBeatWriterForGame(game.homeTeamCode || '', game.awayTeamCode || ''); } catch { return null; }
-  })();
 
   // Compute play lean: combines odds gap + expert consensus + AI confidence
   const playLean = (() => {
@@ -332,13 +327,7 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
           </div>
         </div>
 
-        {/* Beat writer + Consensus / Debate indicators */}
-        {beatWriter && (
-          <div className="flex items-center gap-1 mt-1.5 text-[10px] text-zinc-500">
-            <span>{beatWriter.avatar}</span>
-            <span>Covered by <span className="text-zinc-400">{beatWriter.name}</span></span>
-          </div>
-        )}
+        {/* Consensus / Debate indicators */}
         <div className="flex flex-wrap items-center gap-1.5 mt-2">
           {consensus && (
             <Badge className="bg-orange-500/15 text-orange-400 border border-orange-500/20 text-[10px] px-1.5 py-0">
@@ -421,15 +410,23 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
               }`}>PF {game.parkFactor.factor.toFixed(2)}</Badge>
             )}
             {game.venue && <span className="text-zinc-600 hidden sm:inline">{game.venue}</span>}
-            {game.beatWriter && (
-              <span className="flex items-center gap-1 text-amber-400/70 hidden sm:flex">
-                <span>{game.beatWriter.avatar}</span>
-                <span>{game.beatWriter.name}</span>
-              </span>
-            )}
           </div>
 
-          {/* Expert picks + AI confidence + expand */}
+          {/* Inline expert pick summary (visible without expanding) */}
+          {expertPicks.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mt-1.5">
+              {expertPicks.slice(0, 3).map((pick: any) => (
+                <div key={pick.id} className="flex items-center gap-1 text-[10px]">
+                  <span>{pick.expertId === 'contrarian' ? '🕵️‍♂️' : pick.expertId === 'quant' ? '🧑‍💻' : pick.expertId === 'sharp' ? '🎯' : pick.expertId === 'homie' ? '😄' : '⏰'}</span>
+                  <span className="text-foreground font-medium">{pick.selection}</span>
+                  <Badge className={`text-[8px] px-1 py-0 border tabular-nums ${pick.confidence >= 75 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-zinc-800 text-zinc-500 border-zinc-700'}`}>{pick.confidence}%</Badge>
+                </div>
+              ))}
+              {expertPicks.length > 3 && <span className="text-[10px] text-zinc-600">+{expertPicks.length - 3} more</span>}
+            </div>
+          )}
+
+          {/* AI confidence + expand */}
           <div className="flex items-center gap-1.5">
             {expertPicks.length > 0 && (
               <Badge className="bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[10px] px-1.5 py-0">
