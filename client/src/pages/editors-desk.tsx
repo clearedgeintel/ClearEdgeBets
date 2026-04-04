@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Pen, Send, Clock, ChevronDown, ChevronUp, Sparkles, CheckCircle, Quote, Newspaper, Upload, User, MessageSquare, Ruler, Flame } from "lucide-react";
+import { Pen, Send, Clock, ChevronDown, ChevronUp, Sparkles, CheckCircle, Quote, Newspaper, Upload, User, MessageSquare, Ruler, Flame, CalendarCheck } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BEAT_WRITERS, type BeatWriter } from "@shared/beat-writers";
 import { format, subDays } from "date-fns";
@@ -59,6 +59,19 @@ export default function EditorsDesk() {
   const [angle, setAngle] = useState<'recap' | 'opinion' | 'breakdown' | 'human-interest' | 'rivalry' | 'what-if'>('recap');
 
   const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+  const today = new Date().toISOString().split('T')[0];
+
+  // Today's editorial slate
+  const { data: slateData } = useQuery<{ date: string; games: number; slate: Array<{
+    gameID: string; away: string; home: string; awayName: string; homeName: string;
+    gameTime: string; venue: string; awayPitcher: string; homePitcher: string;
+    moneyline?: { away: number; home: number } | null; total?: string;
+    beatWriter: string | null; beatWriterAvatar: string | null;
+    hasReview: boolean; hasAssignment: boolean; status: string;
+  }> }>({
+    queryKey: ['/api/editorial/slate', today],
+    queryFn: () => fetch(`/api/editorial/slate?date=${today}`, { credentials: 'include' }).then(r => r.json()),
+  });
 
   // Yesterday's games for game picker
   const { data: availableData } = useQuery<{ games: AvailableGame[] }>({
@@ -152,6 +165,72 @@ export default function EditorsDesk() {
           Assign topics to writers. Pick a game, type a topic, select your newsroom — hit send.
         </p>
       </div>
+
+      {/* ── Today's Editorial Slate ── */}
+      {slateData?.slate && slateData.slate.length > 0 && (
+        <Card className="mb-8 border-border/30">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium flex items-center gap-1.5">
+                <CalendarCheck className="h-3.5 w-3.5 text-emerald-400" />
+                Today's Slate — {slateData.games} games
+              </h3>
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>Published</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"></span>Assigned</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-zinc-600"></span>Unassigned</span>
+              </div>
+            </div>
+            <div className="space-y-1">
+              {slateData.slate.map(game => (
+                <div key={game.gameID} className="flex items-center justify-between p-2.5 bg-zinc-900/30 border border-border/20 rounded-lg hover:border-border/40 transition-colors">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {/* Status dot */}
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${game.status === 'published' ? 'bg-emerald-500' : game.status === 'assigned' ? 'bg-amber-500' : 'bg-zinc-600'}`} />
+
+                    {/* Teams */}
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <img src={teamLogo(game.away)} alt="" className="h-4 w-4 flex-shrink-0" />
+                      <span className="text-xs font-medium text-foreground">{game.away}</span>
+                      <span className="text-[10px] text-zinc-600">@</span>
+                      <span className="text-xs font-medium text-foreground">{game.home}</span>
+                      <img src={teamLogo(game.home)} alt="" className="h-4 w-4 flex-shrink-0" />
+                    </div>
+
+                    {/* Game info */}
+                    <span className="text-[10px] text-zinc-600 flex-shrink-0">{game.gameTime}</span>
+                    <span className="text-[10px] text-zinc-700 hidden sm:inline truncate">{game.awayPitcher} vs {game.homePitcher}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                    {/* Beat writer */}
+                    {game.beatWriter && (
+                      <span className="text-[10px] text-zinc-500 hidden sm:flex items-center gap-1">
+                        <span>{game.beatWriterAvatar}</span>
+                        {game.beatWriter}
+                      </span>
+                    )}
+
+                    {/* Status badge */}
+                    {game.status === 'published' && (
+                      <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 text-[9px]">Published</Badge>
+                    )}
+                    {game.status === 'assigned' && (
+                      <Badge className="bg-amber-500/15 text-amber-400 border border-amber-500/20 text-[9px]">Assigned</Badge>
+                    )}
+                    {game.status === 'unassigned' && (
+                      <Button size="sm" variant="outline" className="h-6 text-[10px] border-border/30"
+                        onClick={() => { setSelectedGame(game.gameID); setTopic(`Recap of ${game.awayName} @ ${game.homeName}`); if (game.beatWriter) setSelectedWriters(new Set([game.beatWriter])); }}>
+                        Assign
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Assignment Form */}
       <Card className="mb-8 border-amber-500/20">

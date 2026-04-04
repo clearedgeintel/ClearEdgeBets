@@ -1037,6 +1037,66 @@ Return JSON:
     }
   });
 
+  // ── Today's editorial slate — games with beat writer assignments ──
+
+  app.get('/api/editorial/slate', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
+
+      const today = (req.query.date as string) || new Date().toISOString().split('T')[0];
+      const { fetchTank01Games, fetchTank01Odds, getTeamFullName, getTeamVenue, resolvePitchers, getConsensusOdds, parseMultiBookOdds } = await import('./services/tank01-mlb');
+      const { getBeatWriterForGame } = await import('@shared/beat-writers');
+
+      const [games, oddsMap] = await Promise.all([
+        fetchTank01Games(today),
+        fetchTank01Odds(today),
+      ]);
+
+      // Check which games already have Morning Roast reviews
+      const reviews = await storage.getBlogReviewsByDate(today);
+      const reviewedGameIds = new Set(reviews.map(r => r.gameId));
+
+      // Check which games have editorial columns today
+      const columns = await storage.getEditorialColumns(100);
+      const todayColumns = columns.filter(c => c.createdAt && new Date(c.createdAt).toISOString().startsWith(today));
+      const assignedGameIds = new Set(todayColumns.filter(c => c.gameId).map(c => c.gameId));
+
+      const slate = await Promise.all(games.map(async g => {
+        const odds = oddsMap[g.gameID];
+        const books = odds ? parseMultiBookOdds(odds) : [];
+        const consensus = books.length > 0 ? getConsensusOdds(books) : { moneyline: null, total: null };
+        const pitchers = await resolvePitchers(g.probableStartingPitchers?.away || '', g.probableStartingPitchers?.home || '');
+        const writer = getBeatWriterForGame ? getBeatWriterForGame(g.home, g.away) : null;
+
+        return {
+          gameID: g.gameID,
+          away: g.away,
+          home: g.home,
+          awayName: getTeamFullName(g.away),
+          homeName: getTeamFullName(g.home),
+          gameTime: g.gameTime,
+          venue: getTeamVenue(g.home),
+          awayPitcher: pitchers.awayPitcher || 'TBD',
+          homePitcher: pitchers.homePitcher || 'TBD',
+          moneyline: consensus.moneyline,
+          total: consensus.total?.line,
+          beatWriter: writer?.name || null,
+          beatWriterAvatar: writer?.avatar || null,
+          hasReview: reviewedGameIds.has(g.gameID),
+          hasAssignment: assignedGameIds.has(g.gameID),
+          status: reviewedGameIds.has(g.gameID) ? 'published' : assignedGameIds.has(g.gameID) ? 'assigned' : 'unassigned',
+        };
+      }));
+
+      res.json({ date: today, games: slate.length, slate });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ── Editor's Desk: Assign writers to topics/games ──────────────
 
   // Get all editorial columns (public)
