@@ -181,6 +181,47 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
   })();
 
 
+  // Compute Edge Score from real signals (replaces AI confidence)
+  const edgeScore = (() => {
+    try {
+      let score = 0;
+      const signals: string[] = [];
+
+      // 1. Moneyline gap (0-25 pts)
+      const awayML = Math.abs(moneylineOdds?.awayOdds || 0);
+      const homeML = Math.abs(moneylineOdds?.homeOdds || 0);
+      const mlGap = Math.abs((moneylineOdds?.awayOdds || 0) - (moneylineOdds?.homeOdds || 0));
+      if (mlGap >= 150) { score += 25; signals.push('Large line gap'); }
+      else if (mlGap >= 80) { score += 15; signals.push('Clear favorite'); }
+      else if (mlGap >= 40) { score += 8; }
+
+      // 2. Expert agreement (0-30 pts)
+      const expertCount = Array.isArray(expertPicks) ? expertPicks.length : 0;
+      if (expertCount >= 3) { score += 30; signals.push(`${expertCount} experts`); }
+      else if (expertCount >= 2) { score += 20; signals.push('2 experts'); }
+      else if (expertCount >= 1) { score += 10; }
+
+      // 3. Park factor (0-15 pts)
+      const pf = game.parkFactor?.factor || 1.0;
+      if (pf >= 1.10) { score += 15; signals.push('Hitter park'); }
+      else if (pf >= 1.05) { score += 10; }
+      else if (pf <= 0.92) { score += 15; signals.push('Pitcher park'); }
+      else if (pf <= 0.95) { score += 8; }
+
+      // 4. Weather impact (0-10 pts)
+      if (game.weather?.totalRunsImpact === 'favor_over' || game.weather?.totalRunsImpact === 'favor_under') {
+        score += 10; signals.push('Weather edge');
+      }
+      if (game.weather?.windSpeed && game.weather.windSpeed >= 15) { score += 5; }
+
+      // 5. Consensus boost (0-20 pts)
+      if (consensus) { score += 20; signals.push('Consensus pick'); }
+      else if (debate) { score += 5; } // Debate means interesting game
+
+      return { score: Math.min(score, 100), signals };
+    } catch { return { score: 0, signals: [] }; }
+  })();
+
   // Compute play lean: combines odds gap + expert consensus + AI confidence
   const playLean = (() => {
     try {
@@ -433,9 +474,10 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
                 <Target className="h-2.5 w-2.5 mr-0.5" />{expertPicks.length} expert{expertPicks.length !== 1 ? 's' : ''}
               </Badge>
             )}
-            {game.aiSummary && game.aiSummary.confidence > 0 && (
-              <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] px-1.5 py-0">
-                <Brain className="h-2.5 w-2.5 mr-0.5" />{game.aiSummary.confidence}%
+            {edgeScore.score > 0 && (
+              <Badge className={`text-[10px] px-1.5 py-0 border tabular-nums ${edgeScore.score >= 60 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : edgeScore.score >= 30 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-zinc-800 text-zinc-500 border-zinc-700'}`}
+                title={edgeScore.signals.join(' · ')}>
+                Edge {edgeScore.score}
               </Badge>
             )}
             <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground" onClick={() => setExpanded(!expanded)}>
@@ -602,11 +644,16 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
             {game.aiSummary && (
               <div className="mb-4 p-3 bg-zinc-900/50 border border-border/50 rounded-lg">
                 <div className="flex items-center space-x-2 mb-2">
-                  <Brain className="h-4 w-4 text-emerald-400" />
+                  <Brain className="h-4 w-4 text-amber-400" />
                   <h4 className="text-sm font-medium text-foreground">AI Game Analysis</h4>
-                  <Badge variant="outline" className="text-xs border-emerald-500/30 text-emerald-400">
-                    {game.aiSummary.confidence}%
-                  </Badge>
+                  {edgeScore.score > 0 && (
+                    <Badge className={`text-xs border ${edgeScore.score >= 60 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : edgeScore.score >= 30 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-zinc-800 text-zinc-500 border-zinc-700'}`}>
+                      Edge {edgeScore.score}
+                    </Badge>
+                  )}
+                  {edgeScore.signals.length > 0 && (
+                    <span className="text-[10px] text-zinc-500">{edgeScore.signals.join(' · ')}</span>
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {game.aiSummary.summary}
