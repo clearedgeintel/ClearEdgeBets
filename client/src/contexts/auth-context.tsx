@@ -7,6 +7,7 @@ interface User {
   email: string;
   subscriptionTier: "free" | "pro" | "elite";
   subscriptionStatus: string | null;
+  isAdmin?: boolean;
   createdAt?: Date | string;
   subscriptionEndDate?: Date | string;
 }

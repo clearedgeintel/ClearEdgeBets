@@ -230,7 +230,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
     },
   ] : [];
 
-  const adminNavigation = user && hasAccess("elite") ? [
+  const adminNavigation = user?.isAdmin ? [
     {
       name: "Admin Dashboard",
       href: "/admin",

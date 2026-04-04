@@ -428,14 +428,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "User not found" });
       }
 
-      res.json({ 
-        user: { 
-          id: user.id, 
-          username: user.username, 
+      res.json({
+        user: {
+          id: user.id,
+          username: user.username,
           email: user.email,
           subscriptionTier: user.subscriptionTier,
-          subscriptionStatus: user.subscriptionStatus
-        } 
+          subscriptionStatus: user.subscriptionStatus,
+          isAdmin: user.isAdmin || false
+        }
       });
     } catch (error) {
       console.error("Auth check error:", error);
