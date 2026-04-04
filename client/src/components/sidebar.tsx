@@ -70,9 +70,16 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
       setExpanded: setBaseballExpanded,
       active: location === "/" || location.startsWith("/baseball") || location === "/games" || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets" || location === "/performance-tracking",
       freeItems: [
-        { 
-          name: "Games", 
-          href: "/games", 
+        {
+          name: "Expert Panel",
+          href: "/experts",
+          icon: Target,
+          current: location === "/experts",
+          description: "5 AI analysts with tracked picks"
+        },
+        {
+          name: "Games",
+          href: "/games",
           icon: Home,
           current: location === "/games" || location === "/todays-games",
           description: "MLB games and odds for any date"

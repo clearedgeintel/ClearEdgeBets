@@ -602,6 +602,89 @@ Focus on value betting opportunities where your analysis suggests the true proba
   }
 }
 
+// ── Expert Panel Pick Generator ──────────────────────────────────────
+
+import type { ExpertAnalyst } from '@shared/expert-panel';
+
+export interface ExpertPickInput {
+  expert: ExpertAnalyst;
+  games: Array<{
+    gameId: string;
+    away: string;
+    home: string;
+    gameTime: string;
+    awayPitcher?: string;
+    homePitcher?: string;
+    moneyline?: { away: number; home: number };
+    total?: { line: string };
+    runline?: { away: string; home: string };
+    parkFactor?: number;
+    weather?: string;
+  }>;
+}
+
+export async function generateExpertPicks(input: ExpertPickInput): Promise<Array<{
+  gameId: string;
+  pickType: string;
+  selection: string;
+  odds: number;
+  confidence: number;
+  rationale: string;
+  units: number;
+}>> {
+  const { expert, games } = input;
+  if (games.length === 0) return [];
+
+  const gameLines = games.map(g => {
+    let line = `${g.away} @ ${g.home} (${g.gameTime})`;
+    if (g.awayPitcher || g.homePitcher) line += ` | ${g.awayPitcher || 'TBD'} vs ${g.homePitcher || 'TBD'}`;
+    if (g.moneyline) line += ` | ML: ${g.moneyline.away > 0 ? '+' : ''}${g.moneyline.away} / ${g.moneyline.home > 0 ? '+' : ''}${g.moneyline.home}`;
+    if (g.total) line += ` | O/U: ${g.total.line}`;
+    if (g.runline) line += ` | RL: ${g.away} ${g.runline.away} / ${g.home} ${g.runline.home}`;
+    if (g.parkFactor) line += ` | PF: ${g.parkFactor}`;
+    if (g.weather) line += ` | ${g.weather}`;
+    return line;
+  }).join('\n');
+
+  const prompt = `${expert.voiceDirective}
+
+You are analyzing today's MLB slate. Pick ${expert.maxPicksPerDay} games maximum. Only pick games where you have a genuine edge based on your specialty.
+
+**Your preferred bet types:** ${expert.pickTypes.join(', ')}
+**Your risk level:** ${expert.riskLevel}
+
+**Today's games:**
+${gameLines}
+
+For each pick, provide:
+- gameId: the away@home code (e.g. "NYY@BOS")
+- pickType: moneyline, total, or runline
+- selection: the specific pick (e.g. "NYY ML", "Over 8.5", "LAD -1.5")
+- odds: the odds number (e.g. -130, +150)
+- confidence: 1-100 how confident you are
+- rationale: 1-2 sentences in YOUR voice explaining why
+- units: how many units to risk (0.5 to 3.0 based on confidence)
+
+Return JSON: { "picks": [...] }
+If no games have enough edge for your style, return { "picks": [] } — it's fine to pass.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+      temperature: 0.85,
+      max_tokens: 1200,
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || '{}');
+    return (result.picks || []).slice(0, expert.maxPicksPerDay);
+  } catch (error) {
+    console.error(`Error generating picks for ${expert.name}:`, error);
+    return [];
+  }
+}
+
 // ── Sarcastic Game Review Generator ──────────────────────────────────
 
 import { BEAT_WRITERS, getRandomBeatWriter, getBeatWriter, type BeatWriter } from '@shared/beat-writers';

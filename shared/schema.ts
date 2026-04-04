@@ -817,3 +817,37 @@ export const newsletters = pgTable("newsletters", {
 export const insertNewsletterSchema = createInsertSchema(newsletters).omit({ id: true, createdAt: true });
 export type InsertNewsletter = z.infer<typeof insertNewsletterSchema>;
 export type Newsletter = typeof newsletters.$inferSelect;
+
+// Expert picks — AI analyst predictions
+export const expertPicks = pgTable("expert_picks", {
+  id: serial("id").primaryKey(),
+  expertId: text("expert_id").notNull(),              // "contrarian", "quant", "sharp", "homie", "closer"
+  gameId: text("game_id").notNull(),
+  gameDate: text("game_date").notNull(),
+  pickType: text("pick_type").notNull(),              // moneyline, total, runline, parlay
+  selection: text("selection").notNull(),              // "NYY ML -130", "Over 8.5", "LAD -1.5"
+  odds: integer("odds"),                              // -130, +150, etc.
+  confidence: integer("confidence").notNull(),         // 1-100
+  rationale: text("rationale").notNull(),
+  result: text("result"),                             // win, loss, push, pending
+  units: decimal("units", { precision: 4, scale: 1 }).default("1.0"),
+  gradedAt: timestamp("graded_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertExpertPickSchema = createInsertSchema(expertPicks).omit({ id: true, createdAt: true });
+export type InsertExpertPick = z.infer<typeof insertExpertPickSchema>;
+export type ExpertPick = typeof expertPicks.$inferSelect;
+
+// User expert follows — follow or fade
+export const userExpertFollows = pgTable("user_expert_follows", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  expertId: text("expert_id").notNull(),              // "contrarian", etc.
+  mode: text("mode").notNull().default("follow"),     // "follow" or "fade"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertUserExpertFollowSchema = createInsertSchema(userExpertFollows).omit({ id: true, createdAt: true });
+export type InsertUserExpertFollow = z.infer<typeof insertUserExpertFollowSchema>;
+export type UserExpertFollow = typeof userExpertFollows.$inferSelect;

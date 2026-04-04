@@ -1,4 +1,4 @@
-import { users, games, odds, aiSummaries, bets, props, dailyPicks, gameEvaluations, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, tickets, virtualBets, virtualBettingSlip, phraseDetectionRules, baseballReferenceStats, baseballReferencePitchingStats, oddsHistory, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type GameEvaluation, type InsertGameEvaluation, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship, type Ticket, type InsertTicket, type VirtualBet, type InsertVirtualBet, type VirtualBettingSlip, type InsertVirtualBettingSlip, type PhraseDetectionRule, type InsertPhraseDetectionRule, type BaseballReferenceStats, type InsertBaseballReferenceStats, type BaseballReferencePitchingStats, type InsertBaseballReferencePitchingStats, type InsertOddsHistory, type OddsHistory, blogReviews, type BlogReview, type InsertBlogReview, editorialColumns, type EditorialColumn, type InsertEditorialColumn, newsletterSubscribers, type NewsletterSubscriber, type InsertNewsletterSubscriber, newsletters, type Newsletter, type InsertNewsletter } from "@shared/schema";
+import { users, games, odds, aiSummaries, bets, props, dailyPicks, gameEvaluations, consensusData, performanceTracking, referralCodes, weeklyLeaderboard, groups, groupMemberships, friendInvitations, friendships, tickets, virtualBets, virtualBettingSlip, phraseDetectionRules, baseballReferenceStats, baseballReferencePitchingStats, oddsHistory, type User, type InsertUser, type Game, type InsertGame, type Odds, type InsertOdds, type AiSummary, type InsertAiSummary, type Bet, type InsertBet, type Prop, type InsertProp, type DailyPick, type InsertDailyPick, type GameEvaluation, type InsertGameEvaluation, type ConsensusData, type InsertConsensusData, type PerformanceTracking, type InsertPerformanceTracking, type ReferralCode, type InsertReferralCode, type WeeklyLeaderboard, type InsertWeeklyLeaderboard, type Group, type InsertGroup, type GroupMembership, type InsertGroupMembership, type FriendInvitation, type InsertFriendInvitation, type Friendship, type InsertFriendship, type Ticket, type InsertTicket, type VirtualBet, type InsertVirtualBet, type VirtualBettingSlip, type InsertVirtualBettingSlip, type PhraseDetectionRule, type InsertPhraseDetectionRule, type BaseballReferenceStats, type InsertBaseballReferenceStats, type BaseballReferencePitchingStats, type InsertBaseballReferencePitchingStats, type InsertOddsHistory, type OddsHistory, blogReviews, type BlogReview, type InsertBlogReview, editorialColumns, type EditorialColumn, type InsertEditorialColumn, newsletterSubscribers, type NewsletterSubscriber, type InsertNewsletterSubscriber, newsletters, type Newsletter, type InsertNewsletter, expertPicks, type ExpertPick, type InsertExpertPick, userExpertFollows, type UserExpertFollow, type InsertUserExpertFollow } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, gte, lte, desc, lt } from "drizzle-orm";
 
@@ -1880,6 +1880,66 @@ export class DatabaseStorage implements IStorage {
   async updateNewsletter(id: number, data: Partial<InsertNewsletter>): Promise<Newsletter> {
     const [updated] = await db.update(newsletters).set(data).where(eq(newsletters.id, id)).returning();
     return updated;
+  }
+
+  // ── Expert Picks ──
+  async createExpertPick(pick: InsertExpertPick): Promise<ExpertPick> {
+    const [created] = await db.insert(expertPicks).values(pick).returning();
+    return created;
+  }
+
+  async getExpertPicksByDate(gameDate: string): Promise<ExpertPick[]> {
+    return db.select().from(expertPicks).where(eq(expertPicks.gameDate, gameDate)).orderBy(desc(expertPicks.createdAt));
+  }
+
+  async getExpertPicksByExpert(expertId: string, limit = 50): Promise<ExpertPick[]> {
+    return db.select().from(expertPicks).where(eq(expertPicks.expertId, expertId)).orderBy(desc(expertPicks.createdAt)).limit(limit);
+  }
+
+  async getExpertPicksByGame(gameId: string): Promise<ExpertPick[]> {
+    return db.select().from(expertPicks).where(eq(expertPicks.gameId, gameId));
+  }
+
+  async getPendingExpertPicks(): Promise<ExpertPick[]> {
+    return db.select().from(expertPicks).where(eq(expertPicks.result, 'pending')).orderBy(expertPicks.createdAt);
+  }
+
+  async gradeExpertPick(id: number, result: string): Promise<ExpertPick> {
+    const [updated] = await db.update(expertPicks).set({ result, gradedAt: new Date() }).where(eq(expertPicks.id, id)).returning();
+    return updated;
+  }
+
+  async getExpertRecord(expertId: string): Promise<{ wins: number; losses: number; pushes: number; pending: number }> {
+    const picks = await db.select().from(expertPicks).where(eq(expertPicks.expertId, expertId));
+    return {
+      wins: picks.filter(p => p.result === 'win').length,
+      losses: picks.filter(p => p.result === 'loss').length,
+      pushes: picks.filter(p => p.result === 'push').length,
+      pending: picks.filter(p => !p.result || p.result === 'pending').length,
+    };
+  }
+
+  // ── User Expert Follows ──
+  async toggleExpertFollow(userId: number, expertId: string, mode: string): Promise<UserExpertFollow | null> {
+    // Check existing
+    const [existing] = await db.select().from(userExpertFollows)
+      .where(and(eq(userExpertFollows.userId, userId), eq(userExpertFollows.expertId, expertId)));
+    if (existing) {
+      if (existing.mode === mode) {
+        // Unfollow
+        await db.delete(userExpertFollows).where(eq(userExpertFollows.id, existing.id));
+        return null;
+      }
+      // Switch mode
+      const [updated] = await db.update(userExpertFollows).set({ mode }).where(eq(userExpertFollows.id, existing.id)).returning();
+      return updated;
+    }
+    const [created] = await db.insert(userExpertFollows).values({ userId, expertId, mode }).returning();
+    return created;
+  }
+
+  async getUserExpertFollows(userId: number): Promise<UserExpertFollow[]> {
+    return db.select().from(userExpertFollows).where(eq(userExpertFollows.userId, userId));
   }
 }
 

@@ -1116,6 +1116,135 @@ Return JSON:
     }
   });
 
+  // ── Expert Panel ─────────────────────────────────────────────────
+
+  // Get all experts with their records (public)
+  app.get('/api/experts', async (req, res) => {
+    try {
+      const { getAllExperts } = await import('@shared/expert-panel');
+      const experts = getAllExperts();
+      const records = await Promise.all(experts.map(async e => {
+        const record = await storage.getExpertRecord(e.id);
+        const total = record.wins + record.losses;
+        return {
+          ...e,
+          record,
+          winRate: total > 0 ? Math.round((record.wins / total) * 100) : 0,
+          roi: 0, // Would need unit tracking for real ROI
+        };
+      }));
+      res.json(records);
+    } catch (error: any) { res.status(500).json({ error: error.message }); }
+  });
+
+  // Get today's expert picks (public)
+  app.get('/api/expert-picks', async (req, res) => {
+    try {
+      const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
+      const picks = await storage.getExpertPicksByDate(date);
+      res.json(picks);
+    } catch { res.json([]); }
+  });
+
+  // Get picks for a specific game (public)
+  app.get('/api/expert-picks/game/:gameId', async (req, res) => {
+    try {
+      res.json(await storage.getExpertPicksByGame(req.params.gameId));
+    } catch { res.json([]); }
+  });
+
+  // Get a single expert's pick history (public)
+  app.get('/api/expert-picks/expert/:id', async (req, res) => {
+    try {
+      res.json(await storage.getExpertPicksByExpert(req.params.id));
+    } catch { res.json([]); }
+  });
+
+  // Follow/fade toggle (authenticated)
+  app.post('/api/expert-follow', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const { expertId, mode } = req.body;
+      if (!expertId || !mode) return res.status(400).json({ error: 'expertId and mode required' });
+      const result = await storage.toggleExpertFollow(userId, expertId, mode);
+      res.json({ followed: !!result, mode: result?.mode || null });
+    } catch (error: any) { res.status(500).json({ error: error.message }); }
+  });
+
+  // Get user's follows (authenticated)
+  app.get('/api/expert-follows', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.json([]);
+      res.json(await storage.getUserExpertFollows(userId));
+    } catch { res.json([]); }
+  });
+
+  // Admin: generate expert picks for today
+  app.post('/api/admin/generate-expert-picks', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
+
+      const today = new Date().toISOString().split('T')[0];
+      const { getAllExperts } = await import('@shared/expert-panel');
+      const { generateExpertPicks } = await import('./services/openai');
+
+      // Fetch today's games with odds
+      const games = await fetchTank01Games(today);
+      const oddsMap = await fetchTank01Odds(today);
+
+      const gameData = await Promise.all(games.map(async g => {
+        const odds = oddsMap[g.gameID];
+        const books = odds ? parseMultiBookOdds(odds) : [];
+        const consensus = books.length > 0 ? getConsensusOdds(books) : { moneyline: null, total: null, spread: null };
+        const pitchers = await resolvePitchers(g.probableStartingPitchers?.away || '', g.probableStartingPitchers?.home || '');
+        const parkFactor = getParkFactor(g.home);
+        return {
+          gameId: `${g.away}@${g.home}`,
+          away: getTeamFullName(g.away),
+          home: getTeamFullName(g.home),
+          gameTime: g.gameTime,
+          awayPitcher: pitchers.awayPitcher,
+          homePitcher: pitchers.homePitcher,
+          moneyline: consensus.moneyline || undefined,
+          total: consensus.total ? { line: consensus.total.line } : undefined,
+          runline: consensus.spread ? { away: consensus.spread.away, home: consensus.spread.home } : undefined,
+          parkFactor: parkFactor?.factor,
+        };
+      }));
+
+      const allPicks: any[] = [];
+      for (const expert of getAllExperts()) {
+        const picks = await generateExpertPicks({ expert, games: gameData });
+        for (const pick of picks) {
+          const saved = await storage.createExpertPick({
+            expertId: expert.id,
+            gameId: pick.gameId,
+            gameDate: today,
+            pickType: pick.pickType,
+            selection: pick.selection,
+            odds: pick.odds,
+            confidence: pick.confidence,
+            rationale: pick.rationale,
+            units: String(pick.units || 1),
+            result: 'pending',
+            gradedAt: null,
+          });
+          allPicks.push(saved);
+        }
+      }
+
+      res.json({ success: true, totalPicks: allPicks.length, picks: allPicks });
+    } catch (error: any) {
+      console.error('Error generating expert picks:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ── Newsletter System ─────────────────────────────────────────────
 
   // Subscribe (public)
