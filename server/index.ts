@@ -15,11 +15,23 @@ app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders:
 app.use('/api/admin/generate', rateLimit({ windowMs: 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false }));
 app.use('/api/games', rateLimit({ windowMs: 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false }));
 
-// Session configuration
+// Session configuration — stored in Supabase PostgreSQL
 if (!process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET environment variable is required");
 }
+import pgSession from 'connect-pg-simple';
+import pg from 'pg';
+const PgStore = pgSession(session);
+const sessionPool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
 app.use(session({
+  store: new PgStore({
+    pool: sessionPool,
+    tableName: 'session',
+    createTableIfMissing: true,
+  }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
