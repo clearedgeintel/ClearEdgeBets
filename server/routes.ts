@@ -1255,6 +1255,61 @@ Return JSON: { "questions": [{ "question": "...", "options": ["A answer", "B ans
     }
   });
 
+  // ── Coin Store (Stripe one-time payments) ────────────────────────
+
+  const COIN_PACKS = [
+    { id: 'pack_5k', coins: 5000, price: 499, label: '5,000 Coins', priceLabel: '$4.99' },
+    { id: 'pack_12k', coins: 12000, price: 999, label: '12,000 Coins', priceLabel: '$9.99', popular: true },
+    { id: 'pack_35k', coins: 35000, price: 2499, label: '35,000 Coins', priceLabel: '$24.99', bonus: '40% bonus' },
+  ];
+
+  app.get('/api/coin-store', (req, res) => {
+    res.json(COIN_PACKS);
+  });
+
+  app.post('/api/coin-store/purchase', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+
+      const { packId } = req.body;
+      const pack = COIN_PACKS.find(p => p.id === packId);
+      if (!pack) return res.status(400).json({ error: 'Invalid pack' });
+
+      const stripeKey = process.env.STRIPE_SECRET_KEY;
+      if (!stripeKey || stripeKey.startsWith('pk_')) {
+        // No valid Stripe key — just award coins directly (dev mode)
+        const { db } = await import('./db');
+        const { users } = await import('@shared/schema');
+        const { eq, sql } = await import('drizzle-orm');
+        await db.update(users).set({ virtualBalance: sql`${users.virtualBalance} + ${pack.coins}` }).where(eq(users.id, userId));
+        return res.json({ success: true, coins: pack.coins, mode: 'dev' });
+      }
+
+      // Production: create Stripe checkout session
+      const stripe = new (await import('stripe')).default(stripeKey);
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: { name: `ClearEdge Sports — ${pack.label}` },
+            unit_amount: pack.price,
+          },
+          quantity: 1,
+        }],
+        mode: 'payment',
+        success_url: `${req.headers.origin || 'http://localhost:5000'}/virtual-sportsbook?coins=purchased`,
+        cancel_url: `${req.headers.origin || 'http://localhost:5000'}/virtual-sportsbook`,
+        metadata: { userId: String(userId), packId: pack.id, coins: String(pack.coins) },
+      });
+
+      res.json({ sessionId: session.id, url: session.url });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ── Injury Impact Scorer ─────────────────────────────────────────
 
   app.get('/api/injury-impact/:teamAbv', async (req, res) => {
@@ -1321,11 +1376,32 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
     } catch (error: any) { res.status(500).json({ error: error.message }); }
   });
 
-  // Get today's expert picks (public)
+  // Get today's expert picks (tier-gated)
   app.get('/api/expert-picks', async (req, res) => {
     try {
       const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
-      const picks = await storage.getExpertPicksByDate(date);
+      let picks = await storage.getExpertPicksByDate(date);
+
+      // Apply tier-based filtering
+      const userId = (req.session as any)?.userId;
+      const user = userId ? await storage.getUser(userId) : null;
+      const { normalizeTier, FREE_TIER_LIMITS } = await import('./stripe-config');
+      const tier = normalizeTier(user?.subscriptionTier || 'free');
+
+      if (tier === 'free') {
+        // Free: hide Sharp & Closer picks, delay others by 30 min
+        const premiumExperts = ['sharp', 'closer'];
+        picks = picks.filter(p => !premiumExperts.includes(p.expertId));
+
+        // Delay: only show picks older than 30 min
+        const delayMs = FREE_TIER_LIMITS.pickDelay * 60 * 1000;
+        const cutoff = new Date(Date.now() - delayMs);
+        picks = picks.filter(p => new Date(p.createdAt) < cutoff);
+      } else if (tier === 'edge') {
+        // Edge: all experts, real-time, no restrictions
+      }
+      // Sharp: everything
+
       res.json(picks);
     } catch { res.json([]); }
   });
@@ -1344,13 +1420,28 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
     } catch { res.json([]); }
   });
 
-  // Follow/fade toggle (authenticated)
+  // Follow/fade toggle (authenticated, tier-gated)
   app.post('/api/expert-follow', async (req, res) => {
     try {
       const userId = (req.session as any)?.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
       const { expertId, mode } = req.body;
       if (!expertId || !mode) return res.status(400).json({ error: 'expertId and mode required' });
+
+      const user = await storage.getUser(userId);
+      const { normalizeTier, FREE_TIER_LIMITS } = await import('./stripe-config');
+      const tier = normalizeTier(user?.subscriptionTier || 'free');
+
+      // Free tier: no fade, max 1 follow
+      if (tier === 'free') {
+        if (mode === 'fade') return res.status(403).json({ error: 'Fade mode requires Edge Pass or higher', upgrade: true });
+        const follows = await storage.getUserExpertFollows(userId);
+        const activeFollows = follows.filter(f => f.expertId !== expertId);
+        if (activeFollows.length >= FREE_TIER_LIMITS.maxExpertFollows) {
+          return res.status(403).json({ error: `Free tier allows ${FREE_TIER_LIMITS.maxExpertFollows} follow. Upgrade for unlimited.`, upgrade: true });
+        }
+      }
+
       const result = await storage.toggleExpertFollow(userId, expertId, mode);
       res.json({ followed: !!result, mode: result?.mode || null });
     } catch (error: any) { res.status(500).json({ error: error.message }); }
