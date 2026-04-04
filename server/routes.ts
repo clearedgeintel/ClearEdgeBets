@@ -6911,128 +6911,133 @@ Format as JSON:
 
   // Team Power Scoring API endpoints
   // Calculate and retrieve current team power scores
+  // Team power scores — computed from Tank01 roster stats (no Baseball Reference)
   app.get("/api/team-power-scores", async (req, res) => {
     try {
-      const { date } = req.query;
-      const targetDate = date ? String(date) : new Date().toISOString().split('T')[0];
-      
-      console.log(`Calculating team power scores for date: ${targetDate}`);
-      
-      // Get batting and pitching stats for the target date
-      const [battingStats, pitchingStats] = await Promise.all([
-        storage.getBaseballReferenceSnapshot(targetDate),
-        storage.getBaseballReferencePitchingSnapshot(targetDate)
-      ]);
-      
-      if (battingStats.length === 0 || pitchingStats.length === 0) {
-        return res.status(404).json({
-          success: false,
-          error: "No batting or pitching stats found for the specified date",
-          date: targetDate,
-          battingTeams: battingStats.length,
-          pitchingTeams: pitchingStats.length
-        });
+      const { aggregateAllTeamStats, getTeamFullName } = await import('./services/tank01-mlb');
+      const allStats = await aggregateAllTeamStats();
+
+      if (allStats.length === 0) {
+        return res.status(404).json({ success: false, error: 'No team stats available' });
       }
-      
-      // Calculate power scores
-      const teamPowerScores = teamPowerScoringService.calculateAllTeamPowerScores(
-        battingStats,
-        pitchingStats
-      );
-      
-      // Get rankings with percentiles
-      const rankedScores = teamPowerScoringService.getTeamPowerRankings(teamPowerScores);
-      
+
+      // Calculate power scores using the aggregated Tank01 data
+      const scored = allStats.map(ts => {
+        const b = ts.batting;
+        const p = ts.pitching;
+        const gp = ts.gamesPlayed;
+
+        // Batting score (same formula as wiki)
+        const opsScore = Math.min(b.ops * 100, 100);
+        const runsScore = Math.min(b.runsPerGame * 15, 100);
+        const hrScore = Math.min(b.hrPerGame * 500, 100);
+        const baScore = Math.min(b.avg * 400, 100);
+        const walkScore = Math.min(b.bbPerGame * 25, 100);
+        const advBattingScore = Math.min(Math.round(opsScore * 0.40 + runsScore * 0.25 + hrScore * 0.15 + baScore * 0.10 + walkScore * 0.10), 100);
+
+        // Pitching score
+        const eraScore = Math.min(Math.max((6.0 - p.era) * 25, 0), 100);
+        const whipScore = Math.min(Math.max((2.0 - p.whip) * 80, 0), 100);
+        const strikeoutScore = Math.min(p.k9 * 10, 100);
+        const saveScore = Math.min(p.svPerGame * 200, 100);
+        const cgScore = Math.min(p.cgPerGame * 1000, 100);
+        const pitchingScore = Math.min(Math.round(eraScore * 0.35 + whipScore * 0.25 + strikeoutScore * 0.20 + saveScore * 0.10 + cgScore * 0.10), 100);
+
+        return {
+          team: getTeamFullName(ts.teamAbv),
+          teamCode: ts.teamAbv,
+          advBattingScore,
+          pitchingScore,
+          teamPowerScore: advBattingScore + pitchingScore,
+          lastUpdated: new Date().toISOString(),
+        };
+      });
+
+      scored.sort((a, b) => b.teamPowerScore - a.teamPowerScore);
+
+      // Add ranks and percentiles
+      const totalTeams = scored.length;
+      const battingRanked = [...scored].sort((a, b) => b.advBattingScore - a.advBattingScore);
+      const pitchingRanked = [...scored].sort((a, b) => b.pitchingScore - a.pitchingScore);
+
+      const rankedScores = scored.map((t, idx) => ({
+        ...t,
+        rank: idx + 1,
+        percentile: Math.round(((totalTeams - idx) / totalTeams) * 100),
+        battingRank: battingRanked.findIndex(x => x.teamCode === t.teamCode) + 1,
+        pitchingRank: pitchingRanked.findIndex(x => x.teamCode === t.teamCode) + 1,
+      }));
+
       res.json({
         success: true,
-        date: targetDate,
+        date: new Date().toISOString().split('T')[0],
         data: rankedScores,
         count: rankedScores.length,
+        source: 'Tank01 (aggregated roster stats)',
         summary: {
           topTeam: rankedScores[0],
-          averagePowerScore: Math.round(rankedScores.reduce((sum, team) => sum + team.teamPowerScore, 0) / rankedScores.length),
+          averagePowerScore: Math.round(rankedScores.reduce((s, t) => s + t.teamPowerScore, 0) / rankedScores.length),
           highestBattingScore: Math.max(...rankedScores.map(t => t.advBattingScore)),
-          highestPitchingScore: Math.max(...rankedScores.map(t => t.pitchingScore))
-        }
+          highestPitchingScore: Math.max(...rankedScores.map(t => t.pitchingScore)),
+        },
       });
-    } catch (error) {
-      console.error("Error calculating team power scores:", error);
-      res.status(500).json({
-        success: false,
-        error: "Failed to calculate team power scores",
-        message: error instanceof Error ? error.message : "Unknown error"
-      });
+    } catch (error: any) {
+      console.error('Error calculating team power scores:', error);
+      res.status(500).json({ success: false, error: error.message });
     }
   });
 
-  // Get power score for specific team
-  // Detailed power score breakdown with component math
+  // Detailed power score breakdown for a single team (Tank01-based)
   app.get("/api/team-power-breakdown/:team", async (req, res) => {
     try {
-      const { team } = req.params;
-      const code = team.toUpperCase();
-      const targetDate = (req.query.date as string) || new Date().toISOString().split('T')[0];
+      const code = req.params.team.toUpperCase();
+      const { aggregateTeamStats } = await import('./services/tank01-mlb');
+      const ts = await aggregateTeamStats(code);
 
-      const [battingStats, pitchingStats] = await Promise.all([
-        storage.getTeamBaseballReferenceStats(code, targetDate),
-        storage.getTeamBaseballReferencePitchingStats(code, targetDate)
-      ]);
+      if (!ts) return res.json({ available: false, team: code });
 
-      if (!battingStats || !pitchingStats) {
-        return res.json({ available: false, team: code });
-      }
+      const b = ts.batting;
+      const p = ts.pitching;
+      const gp = ts.gamesPlayed;
 
-      // Replicate the exact scoring math from TeamPowerScoringService
-      const ops = parseFloat(battingStats.ops?.toString() || '0');
-      const runsPerGame = parseFloat(battingStats.runsPerGame?.toString() || '0');
-      const homeRuns = battingStats.homeRuns || 0;
-      const battingAverage = parseFloat(battingStats.battingAverage?.toString() || '0');
-      const walks = battingStats.walks || 0;
-      const batGames = battingStats.games || 1;
-
-      const opsScore = Math.min(ops * 100, 100);
-      const runsScore = Math.min(runsPerGame * 15, 100);
-      const hrScore = Math.min((homeRuns / batGames) * 500, 100);
-      const baScore = Math.min(battingAverage * 400, 100);
-      const walkScore = Math.min((walks / batGames) * 25, 100);
+      const opsScore = Math.min(b.ops * 100, 100);
+      const runsScore = Math.min(b.runsPerGame * 15, 100);
+      const hrScore = Math.min(b.hrPerGame * 500, 100);
+      const baScore = Math.min(b.avg * 400, 100);
+      const walkScore = Math.min(b.bbPerGame * 25, 100);
       const advBattingScore = Math.min(Math.round(opsScore * 0.40 + runsScore * 0.25 + hrScore * 0.15 + baScore * 0.10 + walkScore * 0.10), 100);
 
-      const era = parseFloat(pitchingStats.era?.toString() || '9.00');
-      const whip = parseFloat(pitchingStats.whip?.toString() || '2.00');
-      const so9 = parseFloat(pitchingStats.so9?.toString() || '0');
-      const saves = pitchingStats.saves || 0;
-      const completeGames = pitchingStats.completeGames || 0;
-      const pitGames = pitchingStats.games || 1;
-
-      const eraScore = Math.min(Math.max((6.0 - era) * 25, 0), 100);
-      const whipScore = Math.min(Math.max((2.0 - whip) * 80, 0), 100);
-      const strikeoutScore = Math.min(so9 * 10, 100);
-      const saveScore = Math.min((saves / pitGames) * 200, 100);
-      const cgScore = Math.min((completeGames / pitGames) * 1000, 100);
+      const eraScore = Math.min(Math.max((6.0 - p.era) * 25, 0), 100);
+      const whipScore = Math.min(Math.max((2.0 - p.whip) * 80, 0), 100);
+      const strikeoutScore = Math.min(p.k9 * 10, 100);
+      const saveScore = Math.min(p.svPerGame * 200, 100);
+      const cgScore = Math.min(p.cgPerGame * 1000, 100);
       const pitchingScoreVal = Math.min(Math.round(eraScore * 0.35 + whipScore * 0.25 + strikeoutScore * 0.20 + saveScore * 0.10 + cgScore * 0.10), 100);
 
       res.json({
         available: true,
         team: code,
+        source: 'Tank01',
+        gamesPlayed: gp,
         totalPower: advBattingScore + pitchingScoreVal,
         batting: {
           total: advBattingScore,
           components: [
-            { name: 'OPS', rawValue: ops.toFixed(3), score: Math.round(opsScore), weight: 40, weighted: Math.round(opsScore * 0.40), formula: 'OPS × 100 (capped 100)' },
-            { name: 'Runs/Game', rawValue: runsPerGame.toFixed(2), score: Math.round(runsScore), weight: 25, weighted: Math.round(runsScore * 0.25), formula: 'R/G × 15 (capped 100)' },
-            { name: 'HR Rate', rawValue: (homeRuns / batGames).toFixed(2) + '/G', score: Math.round(hrScore), weight: 15, weighted: Math.round(hrScore * 0.15), formula: '(HR/G) × 500 (capped 100)' },
-            { name: 'Batting Avg', rawValue: battingAverage.toFixed(3), score: Math.round(baScore), weight: 10, weighted: Math.round(baScore * 0.10), formula: 'BA × 400 (capped 100)' },
-            { name: 'Walk Rate', rawValue: (walks / batGames).toFixed(1) + '/G', score: Math.round(walkScore), weight: 10, weighted: Math.round(walkScore * 0.10), formula: '(BB/G) × 25 (capped 100)' },
+            { name: 'OPS', rawValue: b.ops.toFixed(3), score: Math.round(opsScore), weight: 40, weighted: Math.round(opsScore * 0.40), formula: 'OPS × 100 (capped 100)' },
+            { name: 'Runs/Game', rawValue: b.runsPerGame.toFixed(2), score: Math.round(runsScore), weight: 25, weighted: Math.round(runsScore * 0.25), formula: 'R/G × 15 (capped 100)' },
+            { name: 'HR Rate', rawValue: b.hrPerGame.toFixed(2) + '/G', score: Math.round(hrScore), weight: 15, weighted: Math.round(hrScore * 0.15), formula: '(HR/G) × 500 (capped 100)' },
+            { name: 'Batting Avg', rawValue: b.avg.toFixed(3), score: Math.round(baScore), weight: 10, weighted: Math.round(baScore * 0.10), formula: 'BA × 400 (capped 100)' },
+            { name: 'Walk Rate', rawValue: b.bbPerGame.toFixed(1) + '/G', score: Math.round(walkScore), weight: 10, weighted: Math.round(walkScore * 0.10), formula: '(BB/G) × 25 (capped 100)' },
           ]
         },
         pitching: {
           total: pitchingScoreVal,
           components: [
-            { name: 'ERA', rawValue: era.toFixed(2), score: Math.round(eraScore), weight: 35, weighted: Math.round(eraScore * 0.35), formula: '(6.0 − ERA) × 25' },
-            { name: 'WHIP', rawValue: whip.toFixed(2), score: Math.round(whipScore), weight: 25, weighted: Math.round(whipScore * 0.25), formula: '(2.0 − WHIP) × 80' },
-            { name: 'K/9', rawValue: so9.toFixed(1), score: Math.round(strikeoutScore), weight: 20, weighted: Math.round(strikeoutScore * 0.20), formula: 'K/9 × 10 (capped 100)' },
-            { name: 'Save Rate', rawValue: (saves / pitGames).toFixed(2) + '/G', score: Math.round(saveScore), weight: 10, weighted: Math.round(saveScore * 0.10), formula: '(SV/G) × 200' },
-            { name: 'CG Rate', rawValue: (completeGames / pitGames).toFixed(3) + '/G', score: Math.round(cgScore), weight: 10, weighted: Math.round(cgScore * 0.10), formula: '(CG/G) × 1000' },
+            { name: 'ERA', rawValue: p.era.toFixed(2), score: Math.round(eraScore), weight: 35, weighted: Math.round(eraScore * 0.35), formula: '(6.0 − ERA) × 25' },
+            { name: 'WHIP', rawValue: p.whip.toFixed(2), score: Math.round(whipScore), weight: 25, weighted: Math.round(whipScore * 0.25), formula: '(2.0 − WHIP) × 80' },
+            { name: 'K/9', rawValue: p.k9.toFixed(1), score: Math.round(strikeoutScore), weight: 20, weighted: Math.round(strikeoutScore * 0.20), formula: 'K/9 × 10 (capped 100)' },
+            { name: 'Save Rate', rawValue: p.svPerGame.toFixed(2) + '/G', score: Math.round(saveScore), weight: 10, weighted: Math.round(saveScore * 0.10), formula: '(SV/G) × 200' },
+            { name: 'CG Rate', rawValue: p.cgPerGame.toFixed(3) + '/G', score: Math.round(cgScore), weight: 10, weighted: Math.round(cgScore * 0.10), formula: '(CG/G) × 1000' },
           ]
         }
       });

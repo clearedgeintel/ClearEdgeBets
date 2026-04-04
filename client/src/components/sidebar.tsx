@@ -64,38 +64,6 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
 
   const sportsNavigation = [
     {
-      sport: "Prediction Game",
-      icon: CircleDot,
-      expanded: virtualSportsbookExpanded,
-      setExpanded: setVirtualSportsbookExpanded,
-      active: location === "/virtual-sportsbook" || location === "/weekly-leaderboard" || location === "/groups",
-      freeItems: [
-        { 
-          name: "Virtual Betting", 
-          href: "/virtual-sportsbook", 
-          icon: CircleDot,
-          current: location === "/virtual-sportsbook",
-          description: "Practice predictions with $1,000 virtual balance"
-        },
-        { 
-          name: "Weekly Leaderboard", 
-          href: "/weekly-leaderboard", 
-          icon: Trophy,
-          current: location === "/weekly-leaderboard",
-          description: "Compete with other users weekly"
-        },
-        { 
-          name: "Groups", 
-          href: "/groups", 
-          icon: Users,
-          current: location === "/groups",
-          description: "Create groups and invite friends"
-        }
-      ],
-      proItems: [],
-      eliteItems: []
-    },
-    {
       sport: "Baseball",
       icon: HomePlate,
       expanded: baseballExpanded,
@@ -458,6 +426,38 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           description: "Coming Soon",
           disabled: true,
           comingSoon: true
+        }
+      ],
+      proItems: [],
+      eliteItems: []
+    },
+    {
+      sport: "Prediction Game",
+      icon: CircleDot,
+      expanded: virtualSportsbookExpanded,
+      setExpanded: setVirtualSportsbookExpanded,
+      active: location === "/virtual-sportsbook" || location === "/weekly-leaderboard" || location === "/groups",
+      freeItems: [
+        {
+          name: "Virtual Predictions",
+          href: "/virtual-sportsbook",
+          icon: CircleDot,
+          current: location === "/virtual-sportsbook",
+          description: "Practice predictions with $1,000 virtual balance"
+        },
+        {
+          name: "Weekly Leaderboard",
+          href: "/weekly-leaderboard",
+          icon: Trophy,
+          current: location === "/weekly-leaderboard",
+          description: "Compete with other users weekly"
+        },
+        {
+          name: "Groups",
+          href: "/groups",
+          icon: Users,
+          current: location === "/groups",
+          description: "Create groups and invite friends"
         }
       ],
       proItems: [],
