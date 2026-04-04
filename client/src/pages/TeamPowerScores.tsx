@@ -65,7 +65,7 @@ export default function TeamPowerScores() {
           <CardHeader>
             <CardTitle className="text-red-600">Error Loading Team Power Scores</CardTitle>
             <CardDescription>
-              Unable to fetch team power scores from Baseball Reference. Please try again later.
+              Unable to load team rankings. This may take a moment on first load as data is aggregated from all 30 teams. Please refresh.
             </CardDescription>
           </CardHeader>
         </Card>

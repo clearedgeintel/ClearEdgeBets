@@ -7585,10 +7585,12 @@ Format as JSON:
   app.get("/api/team-power-scores", async (req, res) => {
     try {
       const { aggregateAllTeamStats, getTeamFullName } = await import('./services/tank01-mlb');
+      console.log('Team power scores: starting aggregation...');
       const allStats = await aggregateAllTeamStats();
+      console.log(`Team power scores: got ${allStats.length} teams`);
 
       if (allStats.length === 0) {
-        return res.status(404).json({ success: false, error: 'No team stats available' });
+        return res.json([]); // Return empty array, not 404 — frontend expects array
       }
 
       // Calculate power scores using the aggregated Tank01 data
@@ -7642,7 +7644,7 @@ Format as JSON:
       res.json(rankedScores);
     } catch (error: any) {
       console.error('Error calculating team power scores:', error);
-      res.status(500).json({ success: false, error: error.message });
+      res.json([]); // Return empty array so frontend doesn't crash
     }
   });
 
