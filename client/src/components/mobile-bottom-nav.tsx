@@ -1,12 +1,12 @@
 import { Link, useLocation } from "wouter";
-import { Home, Newspaper, Target, Trophy, Rss } from "lucide-react";
+import { Home, Newspaper, Target, Calendar, Rss } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/", icon: Home, label: "Home" },
   { href: "/feed", icon: Rss, label: "Feed" },
   { href: "/experts", icon: Target, label: "Experts" },
   { href: "/blog", icon: Newspaper, label: "Roast" },
-  { href: "/player-rankings", icon: Trophy, label: "Players" },
+  { href: "/todays-games", icon: Calendar, label: "Games" },
 ];
 
 export default function MobileNav() {
