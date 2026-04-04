@@ -332,120 +332,114 @@ function SettleVirtualBetsButton() {
                 Manage users, subscriptions, and system settings
               </p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4 lg:mt-0">
+            <div className="flex gap-2 mt-4 lg:mt-0">
               <SyncLiveDataButton />
               <SettleVirtualBetsButton />
-              <Link href="/admin/users">
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <Users className="w-4 h-4 mr-2" />
-                  User Management
-                </Button>
-              </Link>
-              <Link href="/admin/referrals">
-                <Button className="bg-green-600 hover:bg-green-700">
-                  <Ticket className="w-4 h-4 mr-2" />
-                  Referral Codes
-                </Button>
-              </Link>
-              <Link href="/admin/operations">
-                <Button className="bg-amber-600 hover:bg-amber-700">
-                  <Activity className="w-4 h-4 mr-2" />
-                  Operations Center
-                </Button>
-              </Link>
-              <Link href="/admin/api-management">
-                <Button className="bg-indigo-600 hover:bg-indigo-700">
-                  <Database className="w-4 h-4 mr-2" />
-                  API Management
-                </Button>
-              </Link>
-              <Link href="/admin/ai-management">
-                <Button className="bg-purple-600 hover:bg-purple-700">
-                  <Brain className="w-4 h-4 mr-2" />
-                  AI Management
-                </Button>
-              </Link>
-              <Link href="/admin/phrase-detection">
-                <Button className="bg-indigo-600 hover:bg-indigo-700">
-                  <Brain className="w-4 h-4 mr-2" />
-                  Phrase Detection
-                </Button>
-              </Link>
-              <Link href="/admin/stripe-setup">
-                <Button className="bg-purple-600 hover:bg-purple-700">
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  Stripe Setup
-                </Button>
-              </Link>
-              <Link href="/admin/newsletter">
-                <Button className="bg-emerald-600 hover:bg-emerald-700">
-                  <Shield className="w-4 h-4 mr-2" />
-                  Newsletter
-                </Button>
-              </Link>
-              <Link href="/admin/api-log">
-                <Button className="bg-cyan-600 hover:bg-cyan-700">
-                  <Activity className="w-4 h-4 mr-2" />
-                  API Log
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Admin Stats */}
+
+        {/* Stats row */}
         {stats && (
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
-            <Card>
-              <CardContent className="p-4 text-center">
-                <Users className="h-8 w-8 text-primary mx-auto mb-2" />
-                <div className="text-2xl font-bold text-foreground">{stats.totalUsers}</div>
-                <div className="text-sm text-muted-foreground">Total Users</div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-gray-600">{stats.freeUsers}</div>
-                <div className="text-sm text-muted-foreground">Free</div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 text-center">
-                <Star className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-blue-600">{stats.proUsers}</div>
-                <div className="text-sm text-muted-foreground">Pro</div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 text-center">
-                <Crown className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-purple-600">{stats.eliteUsers}</div>
-                <div className="text-sm text-muted-foreground">Elite</div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 text-center">
-                <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-green-600">{stats.activeSubscriptions}</div>
-                <div className="text-sm text-muted-foreground">Active</div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 text-center">
-                <CreditCard className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-emerald-600">${stats.totalRevenue}</div>
-                <div className="text-sm text-muted-foreground">Revenue</div>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-8">
+            {[
+              { label: 'Users', value: stats.totalUsers, icon: Users },
+              { label: 'Free', value: stats.freeUsers, icon: Shield },
+              { label: 'Pro', value: stats.proUsers, icon: Star },
+              { label: 'Elite', value: stats.eliteUsers, icon: Crown },
+              { label: 'Active', value: stats.activeSubscriptions, icon: CheckCircle },
+              { label: 'Revenue', value: `$${stats.totalRevenue}`, icon: CreditCard },
+            ].map(s => (
+              <Card key={s.label} className="border-border/30">
+                <CardContent className="p-3 text-center">
+                  <s.icon className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
+                  <div className="text-lg font-bold tabular-nums text-foreground">{s.value}</div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.label}</div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
+
+        {/* Admin navigation — grouped by category */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {/* Operations */}
+          <Card className="border-border/30">
+            <CardContent className="p-4">
+              <h3 className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-3">Operations</h3>
+              <div className="space-y-1">
+                {[
+                  { href: '/admin/operations', icon: Activity, label: 'Operations Center', desc: 'Scheduler, triggers, API health' },
+                  { href: '/admin/api-log', icon: Activity, label: 'API Call Log', desc: 'Request/response payloads' },
+                  { href: '/admin/api-playground', icon: Database, label: 'API Playground', desc: 'Test endpoints live' },
+                  { href: '/admin/api-management', icon: Database, label: 'API Management', desc: 'External service config' },
+                ].map(item => (
+                  <Link key={item.href} href={item.href}>
+                    <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-800/30 transition-colors cursor-pointer group">
+                      <item.icon className="h-4 w-4 text-zinc-500 group-hover:text-emerald-400 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-foreground group-hover:text-emerald-400 transition-colors">{item.label}</div>
+                        <div className="text-[10px] text-muted-foreground">{item.desc}</div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Users & Billing */}
+          <Card className="border-border/30">
+            <CardContent className="p-4">
+              <h3 className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-3">Users & Billing</h3>
+              <div className="space-y-1">
+                {[
+                  { href: '/admin/users', icon: Users, label: 'User Management', desc: 'View and manage accounts' },
+                  { href: '/admin/referrals', icon: Ticket, label: 'Referral Codes', desc: 'Referral tracking' },
+                  { href: '/admin/stripe-setup', icon: CreditCard, label: 'Stripe Setup', desc: 'Payment configuration' },
+                  { href: '/admin/newsletter', icon: Shield, label: 'Newsletter', desc: 'Subscribers and editions' },
+                ].map(item => (
+                  <Link key={item.href} href={item.href}>
+                    <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-800/30 transition-colors cursor-pointer group">
+                      <item.icon className="h-4 w-4 text-zinc-500 group-hover:text-emerald-400 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-foreground group-hover:text-emerald-400 transition-colors">{item.label}</div>
+                        <div className="text-[10px] text-muted-foreground">{item.desc}</div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Content & AI */}
+          <Card className="border-border/30">
+            <CardContent className="p-4">
+              <h3 className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-3">Content & AI</h3>
+              <div className="space-y-1">
+                {[
+                  { href: '/admin/ai-management', icon: Brain, label: 'AI Management', desc: 'Model config and prompts' },
+                  { href: '/admin/phrase-detection', icon: Brain, label: 'Phrase Detection', desc: 'AI output filtering rules' },
+                  { href: '/admin/ticket-dashboard', icon: Ticket, label: 'Ticket Dashboard', desc: 'Support tickets' },
+                ].map(item => (
+                  <Link key={item.href} href={item.href}>
+                    <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-800/30 transition-colors cursor-pointer group">
+                      <item.icon className="h-4 w-4 text-zinc-500 group-hover:text-emerald-400 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-foreground group-hover:text-emerald-400 transition-colors">{item.label}</div>
+                        <div className="text-[10px] text-muted-foreground">{item.desc}</div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Search and Filters */}
         <Card className="mb-6">
