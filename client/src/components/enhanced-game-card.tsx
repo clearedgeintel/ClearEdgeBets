@@ -153,39 +153,38 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
 
   // Consensus detection — do 3+ experts agree on the same side?
   const consensus = (() => {
-    if (expertPicks.length < 3) return null;
-    const sides: Record<string, string[]> = {};
-    expertPicks.forEach((p: any) => {
-      const key = p.selection?.toLowerCase().trim();
-      if (key) { sides[key] = sides[key] || []; sides[key].push(p.expertId); }
-    });
-    const best = Object.entries(sides).sort((a, b) => b[1].length - a[1].length)[0];
-    return best && best[1].length >= 3 ? { selection: expertPicks.find((p: any) => p.selection?.toLowerCase().trim() === best[0])?.selection, count: best[1].length, experts: best[1] } : null;
+    try {
+      if (!Array.isArray(expertPicks) || expertPicks.length < 3) return null;
+      const sides: Record<string, string[]> = {};
+      expertPicks.forEach((p: any) => {
+        const key = p?.selection?.toLowerCase()?.trim();
+        if (key) { sides[key] = sides[key] || []; sides[key].push(p.expertId); }
+      });
+      const entries = Object.entries(sides);
+      if (entries.length === 0) return null;
+      const best = entries.sort((a, b) => b[1].length - a[1].length)[0];
+      return best && best[1].length >= 3 ? { selection: expertPicks.find((p: any) => p?.selection?.toLowerCase()?.trim() === best[0])?.selection, count: best[1].length } : null;
+    } catch { return null; }
   })();
 
   // Expert debate — two experts disagree on same game
   const debate = (() => {
-    if (expertPicks.length < 2) return null;
-    // Find two picks that are opposite sides of same market
-    for (let i = 0; i < expertPicks.length; i++) {
-      for (let j = i + 1; j < expertPicks.length; j++) {
-        const a = expertPicks[i]; const b = expertPicks[j];
-        if (a.pickType === b.pickType && a.selection !== b.selection) {
-          return { a, b };
+    try {
+      if (!Array.isArray(expertPicks) || expertPicks.length < 2) return null;
+      for (let i = 0; i < expertPicks.length; i++) {
+        for (let j = i + 1; j < expertPicks.length; j++) {
+          const a = expertPicks[i]; const b = expertPicks[j];
+          if (a?.pickType === b?.pickType && a?.selection !== b?.selection) return { a, b };
         }
       }
-    }
-    return null;
+      return null;
+    } catch { return null; }
   })();
 
-  // Check if a Morning Roast recap exists for this game
-  const { data: blogReviews = [] } = useQuery<any[]>({
-    queryKey: ['/api/blog/reviews'],
-    queryFn: () => fetch('/api/blog/reviews').then(r => r.json()),
-    staleTime: 300000,
-  });
-  const matchCodes = game.gameId.match(/([A-Z]{2,3})\s*@\s*([A-Z]{2,3})/);
-  const hasRecap = blogReviews.some((r: any) => r.gameId?.includes(matchCodes?.[1] || '___') && r.gameId?.includes(matchCodes?.[2] || '___'));
+  // Beat writer for this game
+  const beatWriter = (() => {
+    try { return getBeatWriterForGame(game.homeTeamCode || '', game.awayTeamCode || ''); } catch { return null; }
+  })();
 
   // Fetch all daily picks, AI suggested bets, and game evaluations
   const { data: allAIPicks = [] } = useQuery<any[]>({
@@ -295,16 +294,13 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
           </div>
         </div>
 
-        {/* Beat writer + Consensus / Debate / Recap indicators */}
-        {(() => {
-          const writer = getBeatWriterForGame(game.homeTeamCode, game.awayTeamCode);
-          return writer ? (
-            <div className="flex items-center gap-1 mt-1.5 text-[10px] text-zinc-500">
-              <span>{writer.avatar}</span>
-              <span>Covered by <span className="text-zinc-400">{writer.name}</span></span>
-            </div>
-          ) : null;
-        })()}
+        {/* Beat writer + Consensus / Debate indicators */}
+        {beatWriter && (
+          <div className="flex items-center gap-1 mt-1.5 text-[10px] text-zinc-500">
+            <span>{beatWriter.avatar}</span>
+            <span>Covered by <span className="text-zinc-400">{beatWriter.name}</span></span>
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-1.5 mt-2">
           {consensus && (
             <Badge className="bg-orange-500/15 text-orange-400 border border-orange-500/20 text-[10px] px-1.5 py-0">
@@ -314,11 +310,6 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
           {debate && !consensus && (
             <Badge className="bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[10px] px-1.5 py-0">
               ⚔️ {debate.a.expertId} vs {debate.b.expertId}
-            </Badge>
-          )}
-          {hasRecap && (
-            <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] px-1.5 py-0 cursor-pointer">
-              ☕ Read Recap
             </Badge>
           )}
         </div>
