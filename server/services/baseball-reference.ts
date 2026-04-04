@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import { trackedFetch } from '../lib/api-tracker';
 
 export interface BaseballReferenceStats {
   team: string;
@@ -36,12 +37,13 @@ export class BaseballReferenceService {
     try {
       console.log('Fetching Baseball Reference team batting stats...');
       
-      const response = await fetch(`${this.baseUrl}/leagues/majors/2025-standard-batting.shtml`, {
+      const response = await trackedFetch(`${this.baseUrl}/leagues/majors/2025-standard-batting.shtml`, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        }
-      });
+        },
+        _service: 'Baseball Reference',
+      } as any);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -114,12 +116,13 @@ export class BaseballReferenceService {
     try {
       console.log('Fetching Baseball Reference team pitching stats...');
       
-      const response = await fetch(`${this.baseUrl}/leagues/majors/2025-standard-pitching.shtml`, {
+      const response = await trackedFetch(`${this.baseUrl}/leagues/majors/2025-standard-pitching.shtml`, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        }
-      });
+        },
+        _service: 'Baseball Reference',
+      } as any);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

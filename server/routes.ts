@@ -3891,9 +3891,30 @@ Format as JSON:
       if (!userId) return res.status(401).json({ error: "Not authenticated" });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
-      res.json(getAPICallLog());
+      const { service, success, limit } = req.query;
+      res.json(getAPICallLog({
+        service: service as string | undefined,
+        success: success === 'true' ? true : success === 'false' ? false : undefined,
+        limit: limit ? parseInt(limit as string) : undefined,
+      }));
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch API call log" });
+    }
+  });
+
+  // Single call detail with full payloads
+  app.get("/api/admin/api-calls/:id", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: "Not authenticated" });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
+      const { getAPICallById } = await import('./lib/api-tracker');
+      const call = getAPICallById(parseInt(req.params.id));
+      if (!call) return res.status(404).json({ error: 'Call not found' });
+      res.json(call);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch call detail" });
     }
   });
 

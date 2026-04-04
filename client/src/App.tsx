@@ -59,6 +59,7 @@ const NewsletterPage = lazy(() => import("@/pages/newsletter"));
 const PlayerRankings = lazy(() => import("@/pages/player-rankings"));
 const Wiki = lazy(() => import("@/pages/wiki"));
 const AdminNewsletter = lazy(() => import("@/pages/admin-newsletter"));
+const AdminAPILog = lazy(() => import("@/pages/admin-api-log"));
 const WeatherSummary = lazy(() => import("@/pages/WeatherSummary"));
 const MLBPicks = lazy(() => import("@/pages/MLBPicks"));
 const TeamPowerScores = lazy(() => import("@/pages/TeamPowerScores"));
@@ -107,6 +108,7 @@ function Router() {
           <Route path="/editors-desk" component={EditorsDesk} />
           <Route path="/newsletter" component={NewsletterPage} />
           <Route path="/admin/newsletter" component={AdminNewsletter} />
+          <Route path="/admin/api-log" component={AdminAPILog} />
           <Route path="/player-rankings" component={PlayerRankings} />
           <Route path="/wiki" component={Wiki} />
           <Route path="/weather-summary" component={WeatherSummary} />

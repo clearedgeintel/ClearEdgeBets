@@ -383,6 +383,12 @@ function SettleVirtualBetsButton() {
                   Newsletter
                 </Button>
               </Link>
+              <Link href="/admin/api-log">
+                <Button className="bg-cyan-600 hover:bg-cyan-700">
+                  <Activity className="w-4 h-4 mr-2" />
+                  API Log
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
