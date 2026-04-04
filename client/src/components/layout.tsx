@@ -11,9 +11,11 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen flex">
-      {/* Sidebar — hidden on mobile, visible on lg+ */}
-      <div className="hidden lg:block">
-        <Sidebar />
+      {/* Sidebar — collapsed by default (w-16 icons), expands on hover (w-72) */}
+      <div className="hidden lg:block group/sidebar flex-shrink-0 w-16 hover:w-72 transition-all duration-300 ease-in-out relative z-40">
+        <div className="fixed top-0 left-0 h-screen w-16 group-hover/sidebar:w-72 transition-all duration-300 ease-in-out overflow-hidden bg-[#0a0a0c] border-r border-border/20">
+          <Sidebar />
+        </div>
       </div>
 
       {/* Main content */}
@@ -27,7 +29,6 @@ export default function Layout({ children }: LayoutProps) {
           <Footer />
         </div>
 
-        {/* Mobile bottom nav — visible on mobile only */}
         <MobileNav />
       </div>
     </div>
