@@ -48,23 +48,27 @@ Each expert:
 ### Technical Debt
 - [ ] Split `routes.ts` (7,600 lines) into feature modules
 - [ ] Remove duplicate routes (`/api/admin/stats` x3, `/api/subscription/create` x2)
-- [ ] Remove dead Baseball Reference service files
+- [x] Remove dead Baseball Reference as data source (replaced by Tank01 roster aggregation)
 - [ ] Fix Stripe secret key (currently `pk_test_...`, needs `sk_test_...`)
 - [ ] Add database indexes on gameId, userId, gameDate
 - [ ] Rate limit public newsletter subscribe endpoint
-- [ ] Remove or gate unused "coming soon" pages
+- [x] Gate pages behind login (ProtectedRoute wrapper — only home, blog, wiki, newsletter public)
+- [ ] Remove unused "coming soon" pages (golf, NHL, NBA stubs)
 
 ### Expert Panel Foundation
-- [ ] Create `shared/expert-panel.ts` — 5 expert personas with profiles, analysis styles, pick preferences
-- [ ] Create `expert_picks` DB table — expertId, gameId, pickType, selection, odds, confidence, rationale, result, gradedAt
-- [ ] Create `user_expert_follows` DB table — userId, expertId, mode (follow/fade)
-- [ ] AI pick generation per expert — each expert analyzes today's slate through their lens
-- [ ] Expert profile page `/experts` — cards with bio, W/L record, ROI, active picks
+- [x] Create `shared/expert-panel.ts` — 5 expert personas (Contrarian, Quant, Sharp, Homie, Closer)
+- [x] Create `expert_picks` DB table — expertId, gameId, pickType, selection, odds, confidence, rationale, result
+- [x] Create `user_expert_follows` DB table — userId, expertId, mode (follow/fade)
+- [x] AI pick generation per expert — each expert analyzes today's slate through their lens
+- [x] Expert profile page `/experts` — cards with bio, W/L record, ROI, active picks
 - [ ] Expert picks on game cards — show which experts have picks on each game
+- [ ] Auto-grading scheduler for expert picks after game completion
 
 ### Newsroom Enhancements
-- [ ] Promote 5 writers to Bureau Chief with sport assignment
-- [ ] Auto-assign Morning Roast by sport to the correct Bureau Chief
+- [x] Regional beat writer assignments — all 25 writers assigned to teams by geography
+- [x] Auto Morning Roast scheduler — hourly check generates reviews with assigned beat writer
+- [x] Multi-sport news context — auto-detects sport from topic, pulls ESPN headlines/scores/standings
+- [ ] Promote 5 writers to Bureau Chief with sport badge
 - [ ] Bureau Chief badge on writer profiles and articles
 
 ### Homepage
@@ -169,6 +173,10 @@ Each expert:
 - [x] Editor's Desk — assign topics to writers, control tone/length/angle/player focus
 - [x] Publish editorial columns to Morning Roast
 - [x] Newsletter with quick picks, recap, weather watch
+- [x] Multi-sport news context injection — ESPN headlines, injuries, standings auto-fed to AI
+- [x] Sport auto-detection from topic (200+ keywords across MLB, NFL, NBA, NHL, MLS, PGA)
+- [x] Expert Panel — 5 AI analyst personas with distinct analysis styles
+- [x] Expert pick generation with odds, confidence, rationale per persona
 
 ### Analytics
 - [x] Team Power Scores (0-200) from Tank01 roster aggregation
@@ -180,6 +188,8 @@ Each expert:
 ### Content Platform
 - [x] The Morning Roast blog — hero images, ESPN thumbnails, author bylines
 - [x] The Newsroom — 25 writer profiles with personality bios
+- [x] Regional beat writer assignments — every team has an assigned writer
+- [x] Auto Morning Roast — scheduler generates reviews with correct beat writer
 - [x] Editor's Desk — multi-writer assignments with editorial controls
 - [x] Newsletter system — subscribe, archive, admin dashboard
 - [x] Wiki — power score methodology and park factor reference
