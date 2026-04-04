@@ -1647,31 +1647,27 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
     } catch (error: any) { res.status(500).json({ error: error.message }); }
   });
 
-  // Get today's expert picks (tier-gated)
+  // Get today's expert picks (tier-gated for free users)
   app.get('/api/expert-picks', async (req, res) => {
     try {
       const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
       let picks = await storage.getExpertPicksByDate(date);
 
-      // Apply tier-based filtering
+      // Admin and paid users get everything
       const userId = (req.session as any)?.userId;
       const user = userId ? await storage.getUser(userId) : null;
-      const { normalizeTier, FREE_TIER_LIMITS } = await import('./stripe-config');
-      const tier = normalizeTier(user?.subscriptionTier || 'free');
 
-      if (tier === 'free') {
-        // Free: hide Sharp & Closer picks, delay others by 30 min
-        const premiumExperts = ['sharp', 'closer'];
-        picks = picks.filter(p => !premiumExperts.includes(p.expertId));
+      if (!user?.isAdmin) {
+        const tier = user?.subscriptionTier || 'free';
+        const isPaid = tier === 'pro' || tier === 'edge' || tier === 'elite' || tier === 'sharp';
 
-        // Delay: only show picks older than 30 min
-        const delayMs = FREE_TIER_LIMITS.pickDelay * 60 * 1000;
-        const cutoff = new Date(Date.now() - delayMs);
-        picks = picks.filter(p => new Date(p.createdAt) < cutoff);
-      } else if (tier === 'edge') {
-        // Edge: all experts, real-time, no restrictions
+        if (!isPaid) {
+          // Free: hide Sharp & Closer picks, delay others by 30 min
+          picks = picks.filter(p => !['sharp', 'closer'].includes(p.expertId));
+          const cutoff = new Date(Date.now() - 30 * 60 * 1000);
+          picks = picks.filter(p => new Date(p.createdAt) < cutoff);
+        }
       }
-      // Sharp: everything
 
       res.json(picks);
     } catch { res.json([]); }
