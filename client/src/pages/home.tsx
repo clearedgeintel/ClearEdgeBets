@@ -92,6 +92,14 @@ export default function Home() {
     staleTime: 1000 * 60 * 60, // 1 hour
   });
 
+  // Expert picks for today
+  const today = new Date().toISOString().split('T')[0];
+  const { data: expertPicks = [] } = useQuery<any[]>({
+    queryKey: ['/api/expert-picks', today],
+    queryFn: () => fetch(`/api/expert-picks?date=${today}`).then(r => r.json()),
+    staleTime: 300000,
+  });
+
   const featured = blogReviews[0];
   const moreReviews = blogReviews.slice(1, 4);
   const yesterdayGamesList = Object.values(yesterdayScores || {});
@@ -151,6 +159,38 @@ export default function Home() {
               </CardContent>
             </Card>
           )}
+        </div>
+      )}
+
+      {/* ── Expert Picks Today ── */}
+      {expertPicks.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <Target className="h-3.5 w-3.5 text-purple-400" />
+              Expert Picks Today
+            </h2>
+            <Link href="/experts">
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-purple-400">
+                All Experts <ArrowRight className="h-3 w-3 ml-1" />
+              </Button>
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {expertPicks.slice(0, 6).map((pick: any) => (
+              <div key={pick.id} className="p-3 bg-card border border-border/30 rounded-lg">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm">{pick.expertId === 'contrarian' ? '🕵️‍♂️' : pick.expertId === 'quant' ? '🧑‍💻' : pick.expertId === 'sharp' ? '🎯' : pick.expertId === 'homie' ? '😄' : '⏰'}</span>
+                    <span className="text-xs font-medium text-foreground capitalize">{pick.expertId}</span>
+                  </div>
+                  <Badge className={`text-[9px] px-1 py-0 border tabular-nums ${pick.confidence >= 75 ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : 'bg-zinc-800 text-zinc-400 border-zinc-700'}`}>{pick.confidence}%</Badge>
+                </div>
+                <div className="text-sm font-medium text-foreground">{pick.selection}</div>
+                <div className="text-[10px] text-zinc-500 mt-1 line-clamp-1">{pick.rationale}</div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

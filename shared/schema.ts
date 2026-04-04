@@ -851,3 +851,27 @@ export const userExpertFollows = pgTable("user_expert_follows", {
 export const insertUserExpertFollowSchema = createInsertSchema(userExpertFollows).omit({ id: true, createdAt: true });
 export type InsertUserExpertFollow = z.infer<typeof insertUserExpertFollowSchema>;
 export type UserExpertFollow = typeof userExpertFollows.$inferSelect;
+
+// Daily trivia
+export const triviaQuestions = pgTable("trivia_questions", {
+  id: serial("id").primaryKey(),
+  gameDate: text("game_date").notNull(),
+  question: text("question").notNull(),
+  options: jsonb("options").notNull(),              // ["A", "B", "C", "D"]
+  correctAnswer: text("correct_answer").notNull(),
+  explanation: text("explanation"),
+  difficulty: text("difficulty").default("medium"),  // easy, medium, hard
+  category: text("category").default("general"),     // general, stats, history, records
+  coinReward: integer("coin_reward").default(100),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const triviaAnswers = pgTable("trivia_answers", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  questionId: integer("question_id").notNull(),
+  answer: text("answer").notNull(),
+  correct: boolean("correct").notNull(),
+  coinsEarned: integer("coins_earned").default(0),
+  answeredAt: timestamp("answered_at").defaultNow().notNull(),
+});

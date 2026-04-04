@@ -41,6 +41,9 @@ class SchedulerService {
     // Auto Morning Roast — check for completed games and generate reviews every hour
     this.addTask('auto-morning-roast', '0 0 * * * *', this.autoGenerateMorningRoast.bind(this));
 
+    // Auto-grade expert picks every 30 minutes
+    this.addTask('expert-pick-grading', '0 */30 * * * *', this.gradeExpertPicks.bind(this));
+
     console.log('✓ Scheduler service initialized with automated daily picks, AI tickets, and bet settlement');
     console.log('  - Daily picks: 8:00 AM Central Time');
     console.log('  - Daily tickets: 9:00 AM Central Time');
@@ -371,6 +374,87 @@ class SchedulerService {
   public async triggerDailyPicks() {
     console.log('Manually triggering daily picks generation...');
     await this.generateDailyPicks();
+  }
+
+  /**
+   * Auto-grade expert picks by checking completed games.
+   */
+  public async gradeExpertPicks() {
+    try {
+      const pending = await storage.getPendingExpertPicks();
+      if (pending.length === 0) return;
+
+      // Group by date to batch score lookups
+      const dates = [...new Set(pending.map(p => p.gameDate))];
+      const { fetchTank01Scores } = await import('./tank01-mlb');
+
+      let graded = 0;
+      for (const date of dates) {
+        const scores = await fetchTank01Scores(date);
+        const datePicks = pending.filter(p => p.gameDate === date);
+
+        for (const pick of datePicks) {
+          // Find the game in scores — gameId is "NYY@BOS" format
+          const gameKey = Object.keys(scores).find(k => {
+            const parts = k.split('_');
+            const teams = parts[1] || '';
+            return teams === pick.gameId || teams.replace('@', ' @ ') === pick.gameId;
+          });
+
+          if (!gameKey) continue;
+          const game = scores[gameKey];
+          if (game.gameStatusCode !== '2' && game.gameStatus !== 'Completed') continue;
+
+          const awayScore = parseInt(game.lineScore?.away?.R || '0');
+          const homeScore = parseInt(game.lineScore?.home?.R || '0');
+          const totalRuns = awayScore + homeScore;
+          const awayCode = game.away;
+          const homeCode = game.home;
+
+          let result: string | null = null;
+          const sel = pick.selection.toLowerCase();
+          const pickType = pick.pickType.toLowerCase();
+
+          if (pickType === 'moneyline') {
+            // "NYY ML" or "New York Yankees ML"
+            if (sel.includes(awayCode.toLowerCase()) || sel.includes('away')) {
+              result = awayScore > homeScore ? 'win' : 'loss';
+            } else if (sel.includes(homeCode.toLowerCase()) || sel.includes('home')) {
+              result = homeScore > awayScore ? 'win' : 'loss';
+            }
+          } else if (pickType === 'total') {
+            // "Over 8.5" or "Under 8.5"
+            const lineMatch = sel.match(/(over|under)\s*([\d.]+)/i);
+            if (lineMatch) {
+              const direction = lineMatch[1].toLowerCase();
+              const line = parseFloat(lineMatch[2]);
+              if (direction === 'over') result = totalRuns > line ? 'win' : totalRuns === line ? 'push' : 'loss';
+              else result = totalRuns < line ? 'win' : totalRuns === line ? 'push' : 'loss';
+            }
+          } else if (pickType === 'runline') {
+            // "NYY -1.5" or "BOS +1.5"
+            const rlMatch = sel.match(/([A-Z]{2,3})\s*([+-][\d.]+)/i);
+            if (rlMatch) {
+              const team = rlMatch[1].toUpperCase();
+              const spread = parseFloat(rlMatch[2]);
+              const teamScore = team === awayCode ? awayScore : homeScore;
+              const oppScore = team === awayCode ? homeScore : awayScore;
+              const adjusted = teamScore + spread;
+              result = adjusted > oppScore ? 'win' : adjusted === oppScore ? 'push' : 'loss';
+            }
+          }
+
+          if (result) {
+            await storage.gradeExpertPick(pick.id, result);
+            graded++;
+          }
+        }
+      }
+
+      if (graded > 0) logger.info(`Expert pick grading: graded ${graded} picks`);
+    } catch (error) {
+      logger.error('Expert pick grading error: ' + error);
+    }
   }
 
   /**

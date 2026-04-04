@@ -78,6 +78,13 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           description: "5 AI analysts with tracked picks"
         },
         {
+          name: "Expert Leaderboard",
+          href: "/expert-leaderboard",
+          icon: Trophy,
+          current: location === "/expert-leaderboard",
+          description: "Experts ranked by W/L, ROI, units"
+        },
+        {
           name: "Games",
           href: "/games",
           icon: Home,
@@ -119,6 +126,13 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           icon: Trophy,
           current: location === "/player-rankings",
           description: "Sort hitters and pitchers by power score"
+        },
+        {
+          name: "Daily Trivia",
+          href: "/trivia",
+          icon: HelpCircle,
+          current: location === "/trivia",
+          description: "Test your knowledge, earn coins"
         },
         {
           name: "Wiki",

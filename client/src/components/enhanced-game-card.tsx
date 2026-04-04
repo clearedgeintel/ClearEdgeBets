@@ -136,6 +136,19 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
   const [showBooks, setShowBooks] = useState(false);
   const { addBet } = useBettingSlip();
 
+  // Fetch expert picks for this game
+  const { data: expertPicks = [] } = useQuery<any[]>({
+    queryKey: ['/api/expert-picks/game', game.gameId],
+    queryFn: () => {
+      // Extract team codes from gameId format "2026-04-03_NYY @ BOS"
+      const match = game.gameId.match(/([A-Z]{2,3})\s*@\s*([A-Z]{2,3})/);
+      if (!match) return Promise.resolve([]);
+      const code = `${match[1]}@${match[2]}`;
+      return fetch(`/api/expert-picks/game/${code}`).then(r => r.json());
+    },
+    staleTime: 300000,
+  });
+
   // Fetch all daily picks, AI suggested bets, and game evaluations
   const { data: allAIPicks = [] } = useQuery<any[]>({
     queryKey: ['/api/daily-picks']
@@ -310,8 +323,13 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
             )}
           </div>
 
-          {/* Expand button + AI confidence */}
-          <div className="flex items-center gap-2">
+          {/* Expert picks + AI confidence + expand */}
+          <div className="flex items-center gap-1.5">
+            {expertPicks.length > 0 && (
+              <Badge className="bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[10px] px-1.5 py-0">
+                <Target className="h-2.5 w-2.5 mr-0.5" />{expertPicks.length} expert{expertPicks.length !== 1 ? 's' : ''}
+              </Badge>
+            )}
             {game.aiSummary && game.aiSummary.confidence > 0 && (
               <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] px-1.5 py-0">
                 <Brain className="h-2.5 w-2.5 mr-0.5" />{game.aiSummary.confidence}%
@@ -490,6 +508,34 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {game.aiSummary.summary}
                 </p>
+              </div>
+            )}
+
+            {/* Expert Panel Picks */}
+            {expertPicks.length > 0 && (
+              <div className="mb-4 p-3 bg-purple-500/5 border border-purple-500/20 rounded-lg">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Target className="h-4 w-4 text-purple-400" />
+                  <h4 className="text-sm font-medium text-foreground">Expert Picks</h4>
+                  <Badge className="bg-purple-500/15 text-purple-400 border border-purple-500/20 text-xs">{expertPicks.length}</Badge>
+                </div>
+                <div className="space-y-1.5">
+                  {expertPicks.map((pick: any) => (
+                    <div key={pick.id} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground">{pick.expertId === 'contrarian' ? '🕵️‍♂️' : pick.expertId === 'quant' ? '🧑‍💻' : pick.expertId === 'sharp' ? '🎯' : pick.expertId === 'homie' ? '😄' : '⏰'}</span>
+                        <span className="text-foreground">{pick.selection}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="tabular-nums text-zinc-500">{pick.odds > 0 ? '+' : ''}{pick.odds}</span>
+                        <Badge className={`text-[9px] px-1 py-0 border ${pick.confidence >= 75 ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : 'bg-zinc-800 text-zinc-400 border-zinc-700'}`}>{pick.confidence}%</Badge>
+                        {pick.result && pick.result !== 'pending' && (
+                          <Badge className={`text-[9px] px-1 py-0 border ${pick.result === 'win' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : 'bg-red-500/15 text-red-400 border-red-500/20'}`}>{pick.result.toUpperCase()}</Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
