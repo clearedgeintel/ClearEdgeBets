@@ -105,16 +105,13 @@ export default function Experts() {
   const getFollowMode = (expertId: string) => follows.find(f => f.expertId === expertId)?.mode;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Expert Panel</h1>
-          <p className="text-sm text-muted-foreground mt-1">5 AI analysts. 5 different lenses. Follow or fade.</p>
-        </div>
+    <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Expert Panel</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">5 AI analysts. 5 different lenses. Follow or fade.</p>
       </div>
 
-      {/* Expert Cards */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {experts.map(expert => {
           const isExpanded = expandedExpert === expert.id;
           const expertPicks = todayPicks.filter(p => p.expertId === expert.id);
@@ -124,105 +121,100 @@ export default function Experts() {
           return (
             <Card key={expert.id} className="border-border/30 overflow-hidden">
               <CardContent className="p-0">
-                {/* Expert header */}
-                <div className="p-4 flex items-center gap-4 cursor-pointer hover:bg-zinc-800/20 transition-colors"
+                {/* Expert header — stacks on mobile */}
+                <div className="p-3 sm:p-4 cursor-pointer hover:bg-zinc-800/20 transition-colors"
                   onClick={() => setExpandedExpert(isExpanded ? null : expert.id)}>
-                  <div className="text-3xl flex-shrink-0">{expert.avatar}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-foreground">{expert.name}</h3>
-                      <span className="text-xs text-muted-foreground">— {expert.title}</span>
-                      <Badge className={`border text-[10px] ${riskColors[expert.riskLevel]}`}>{expert.riskLevel}</Badge>
+                  <div className="flex items-center gap-3">
+                    <div className="text-2xl sm:text-3xl flex-shrink-0">{expert.avatar}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h3 className="font-bold text-sm sm:text-base text-foreground">{expert.name}</h3>
+                        <Badge className={`border text-[9px] ${riskColors[expert.riskLevel]}`}>{expert.riskLevel}</Badge>
+                      </div>
+                      <p className="text-[10px] sm:text-xs text-zinc-500 mt-0.5 line-clamp-1">{expert.style}</p>
                     </div>
-                    <p className="text-xs text-zinc-500 mt-0.5">{expert.style}</p>
+                    <ChevronDown className={`h-4 w-4 text-zinc-500 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                   </div>
-                  {/* Record */}
-                  <div className="flex items-center gap-4 flex-shrink-0 text-xs">
+                  {/* Stats row — always visible, compact */}
+                  <div className="flex items-center gap-2 mt-2 ml-9 sm:ml-12">
                     {total > 0 && (
-                      <div className="text-center">
-                        <div className="font-bold text-foreground tabular-nums">{expert.record.wins}-{expert.record.losses}</div>
-                        <div className="text-muted-foreground">W-L</div>
-                      </div>
-                    )}
-                    {total > 0 && (
-                      <div className="text-center">
-                        <div className={`font-bold tabular-nums ${expert.winRate >= 55 ? 'text-emerald-400' : expert.winRate >= 50 ? 'text-amber-400' : 'text-red-400'}`}>{expert.winRate}%</div>
-                        <div className="text-muted-foreground">Win%</div>
-                      </div>
-                    )}
-                    {expertPicks.length > 0 && (
-                      <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 text-xs">
-                        {expertPicks.length} pick{expertPicks.length !== 1 ? 's' : ''} today
+                      <Badge className="bg-zinc-800 text-zinc-300 border border-zinc-700 text-[10px] tabular-nums">
+                        {expert.record.wins}-{expert.record.losses}
                       </Badge>
                     )}
-                    {isExpanded ? <ChevronUp className="h-4 w-4 text-zinc-500" /> : <ChevronDown className="h-4 w-4 text-zinc-500" />}
+                    {total > 0 && (
+                      <Badge className={`text-[10px] tabular-nums border ${expert.winRate >= 55 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : expert.winRate >= 50 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                        {expert.winRate}%
+                      </Badge>
+                    )}
+                    {expertPicks.length > 0 && (
+                      <Badge className="bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[10px]">
+                        {expertPicks.length} pick{expertPicks.length !== 1 ? 's' : ''}
+                      </Badge>
+                    )}
                   </div>
                 </div>
 
-                {/* Expanded detail */}
+                {/* Expanded */}
                 {isExpanded && (
-                  <div className="border-t border-border/20 p-4 bg-zinc-900/20">
-                    {/* Bio + follow buttons */}
-                    <div className="flex items-start justify-between gap-4 mb-4">
-                      <div>
-                        <p className="text-sm text-zinc-400 leading-relaxed mb-2">{expert.bio}</p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>Specialty: <span className="text-foreground">{expert.specialty}</span></span>
-                          <span>·</span>
-                          <span>Picks: <span className="text-foreground">{expert.pickTypes.join(', ')}</span></span>
-                        </div>
+                  <div className="border-t border-border/20 p-3 sm:p-4 bg-zinc-900/20">
+                    {/* Bio */}
+                    <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed mb-3">{expert.bio}</p>
+
+                    {/* Follow/Fade buttons */}
+                    {user && (
+                      <div className="flex gap-2 mb-4">
+                        <Button size="sm" variant={followMode === 'follow' ? 'default' : 'outline'}
+                          className={`flex-1 h-8 text-xs ${followMode === 'follow' ? 'bg-emerald-600' : ''}`}
+                          onClick={(e) => { e.stopPropagation(); followMutation.mutate({ expertId: expert.id, mode: 'follow' }); }}>
+                          <UserPlus className="h-3 w-3 mr-1" />{followMode === 'follow' ? 'Following' : 'Follow'}
+                        </Button>
+                        <Button size="sm" variant={followMode === 'fade' ? 'default' : 'outline'}
+                          className={`flex-1 h-8 text-xs ${followMode === 'fade' ? 'bg-red-600' : ''}`}
+                          onClick={(e) => { e.stopPropagation(); followMutation.mutate({ expertId: expert.id, mode: 'fade' }); }}>
+                          <UserMinus className="h-3 w-3 mr-1" />{followMode === 'fade' ? 'Fading' : 'Fade'}
+                        </Button>
                       </div>
-                      {user && (
-                        <div className="flex gap-1.5 flex-shrink-0">
-                          <Button size="sm" variant={followMode === 'follow' ? 'default' : 'outline'}
-                            className={followMode === 'follow' ? 'bg-emerald-600 h-7 text-xs' : 'h-7 text-xs'}
-                            onClick={(e) => { e.stopPropagation(); followMutation.mutate({ expertId: expert.id, mode: 'follow' }); }}>
-                            <UserPlus className="h-3 w-3 mr-1" />{followMode === 'follow' ? 'Following' : 'Follow'}
-                          </Button>
-                          <Button size="sm" variant={followMode === 'fade' ? 'default' : 'outline'}
-                            className={followMode === 'fade' ? 'bg-red-600 h-7 text-xs' : 'h-7 text-xs'}
-                            onClick={(e) => { e.stopPropagation(); followMutation.mutate({ expertId: expert.id, mode: 'fade' }); }}>
-                            <UserMinus className="h-3 w-3 mr-1" />{followMode === 'fade' ? 'Fading' : 'Fade'}
-                          </Button>
-                        </div>
-                      )}
+                    )}
+
+                    {/* Specialty */}
+                    <div className="flex flex-wrap items-center gap-1.5 mb-3 text-[10px] text-muted-foreground">
+                      <span className="text-foreground">{expert.specialty}</span>
+                      <span>·</span>
+                      <span>{expert.pickTypes.join(', ')}</span>
                     </div>
 
-                    {/* Today's picks */}
+                    {/* Picks */}
                     {expertPicks.length > 0 ? (
                       <div className="space-y-2">
                         <h4 className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Today's Picks</h4>
                         {expertPicks.map(pick => {
                           const codes = pick.gameId.split('@');
                           return (
-                            <div key={pick.id} className="flex items-center justify-between p-3 bg-zinc-900/50 border border-border/30 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                {codes[0] && <img src={teamLogo(codes[0])} alt="" className="h-5 w-5" />}
-                                <div>
-                                  <div className="text-sm font-medium text-foreground">{pick.selection}</div>
-                                  <div className="text-xs text-muted-foreground">{pick.rationale}</div>
+                            <div key={pick.id} className="p-2.5 bg-zinc-900/50 border border-border/30 rounded-lg">
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  {codes[0] && <img src={teamLogo(codes[0])} alt="" className="h-4 w-4" />}
+                                  <span className="text-sm font-medium text-foreground">{pick.selection}</span>
+                                </div>
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <Badge className="bg-zinc-800 text-zinc-300 border border-zinc-700 text-[9px] tabular-nums">
+                                    {pick.odds > 0 ? '+' : ''}{pick.odds}
+                                  </Badge>
+                                  <Badge className={`text-[9px] border tabular-nums ${pick.confidence >= 75 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-zinc-800 text-zinc-500 border-zinc-700'}`}>{pick.confidence}%</Badge>
+                                  {pick.result && pick.result !== 'pending' && (
+                                    <Badge className={`text-[9px] border ${pick.result === 'win' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>{pick.result.toUpperCase()}</Badge>
+                                  )}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2 flex-shrink-0 text-xs">
-                                <Badge className="bg-zinc-800 text-zinc-300 border border-zinc-700 tabular-nums">
-                                  {pick.odds > 0 ? '+' : ''}{pick.odds}
-                                </Badge>
-                                <Badge className={`border tabular-nums ${pick.confidence >= 75 ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : pick.confidence >= 50 ? 'bg-amber-500/15 text-amber-400 border-amber-500/20' : 'bg-zinc-800 text-zinc-400 border-zinc-700'}`}>
-                                  {pick.confidence}%
-                                </Badge>
-                                {pick.result && pick.result !== 'pending' && (
-                                  <Badge className={pick.result === 'win' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : pick.result === 'loss' ? 'bg-red-500/15 text-red-400 border border-red-500/20' : 'bg-zinc-800 text-zinc-400 border border-zinc-700'}>
-                                    {pick.result.toUpperCase()}
-                                  </Badge>
-                                )}
-                              </div>
+                              <p className="text-[11px] text-zinc-500 line-clamp-2">{pick.rationale}</p>
                             </div>
                           );
                         })}
                       </div>
                     ) : (
-                      <div className="text-center py-4 text-xs text-muted-foreground">
-                        No picks posted today yet. Experts analyze the slate each morning.
+                      <div className="text-center py-3 text-xs text-muted-foreground">
+                        No picks today. Experts analyze the slate each morning.
                       </div>
                     )}
                   </div>
