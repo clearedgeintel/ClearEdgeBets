@@ -1,10 +1,10 @@
 import { Link, useLocation } from "wouter";
-import { Home, Calendar, Newspaper, Trophy, Target } from "lucide-react";
+import { Home, Newspaper, Target, Trophy, Rss } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/", icon: Home, label: "Home" },
+  { href: "/feed", icon: Rss, label: "Feed" },
   { href: "/experts", icon: Target, label: "Experts" },
-  { href: "/todays-games", icon: Calendar, label: "Games" },
   { href: "/blog", icon: Newspaper, label: "Roast" },
   { href: "/player-rankings", icon: Trophy, label: "Players" },
 ];

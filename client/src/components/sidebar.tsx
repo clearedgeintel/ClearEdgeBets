@@ -71,6 +71,13 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
       active: location === "/" || location.startsWith("/baseball") || location === "/games" || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets" || location === "/performance-tracking",
       freeItems: [
         {
+          name: "Feed",
+          href: "/feed",
+          icon: Home,
+          current: location === "/feed",
+          description: "All activity in one timeline"
+        },
+        {
           name: "Morning Roast",
           href: "/blog",
           icon: FileText,

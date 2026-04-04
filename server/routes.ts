@@ -917,6 +917,95 @@ Return JSON:
     }
   });
 
+  // ── Unified Content Feed ─────────────────────────────────────────
+
+  app.get('/api/feed', async (req, res) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string) || 30, 50);
+      const before = req.query.before as string; // ISO timestamp for pagination
+
+      const items: Array<{
+        id: string;
+        type: 'recap' | 'expert_pick' | 'trivia' | 'ranking' | 'newsletter';
+        title: string;
+        subtitle?: string;
+        body?: string;
+        author?: string;
+        authorAvatar?: string;
+        image?: string;
+        awayLogo?: string;
+        homeLogo?: string;
+        meta?: Record<string, any>;
+        timestamp: string;
+      }> = [];
+
+      // 1. Morning Roast recaps
+      const reviews = await storage.getRecentBlogReviews(15);
+      reviews.forEach(r => {
+        items.push({
+          id: `recap-${r.id}`,
+          type: 'recap',
+          title: r.title,
+          subtitle: `${r.awayTeam.split(' ').pop()} ${r.awayScore} - ${r.homeScore} ${r.homeTeam.split(' ').pop()}`,
+          body: r.content.replace(/[#*]/g, '').slice(0, 150) + '...',
+          author: r.author,
+          authorAvatar: '✍️',
+          image: r.heroImage || undefined,
+          awayLogo: r.awayLogo || undefined,
+          homeLogo: r.homeLogo || undefined,
+          meta: { venue: r.venue, mood: r.authorMood, slug: r.slug },
+          timestamp: r.createdAt.toISOString ? r.createdAt.toISOString() : String(r.createdAt),
+        });
+      });
+
+      // 2. Expert picks
+      const today = new Date().toISOString().split('T')[0];
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      const [todayPicks, yesterdayPicks] = await Promise.all([
+        storage.getExpertPicksByDate(today),
+        storage.getExpertPicksByDate(yesterday),
+      ]);
+      const AVATARS: Record<string, string> = { contrarian: '🕵️‍♂️', quant: '🧑‍💻', sharp: '🎯', homie: '😄', closer: '⏰' };
+      [...todayPicks, ...yesterdayPicks].forEach(p => {
+        items.push({
+          id: `pick-${p.id}`,
+          type: 'expert_pick',
+          title: p.selection,
+          subtitle: p.rationale,
+          author: p.expertId,
+          authorAvatar: AVATARS[p.expertId] || '🎯',
+          meta: { confidence: p.confidence, odds: p.odds, result: p.result, pickType: p.pickType, gameId: p.gameId },
+          timestamp: p.createdAt.toISOString ? p.createdAt.toISOString() : String(p.createdAt),
+        });
+      });
+
+      // 3. Newsletters
+      const newsletters = await storage.getNewsletters(5);
+      newsletters.filter(n => n.status === 'sent').forEach(n => {
+        items.push({
+          id: `newsletter-${n.id}`,
+          type: 'newsletter',
+          title: n.subject,
+          subtitle: n.previewText || undefined,
+          meta: { slug: n.slug, edition: n.edition },
+          timestamp: n.sentAt?.toISOString?.() || n.createdAt.toISOString?.() || String(n.createdAt),
+        });
+      });
+
+      // Sort by timestamp descending
+      items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+      // Paginate
+      let filtered = items;
+      if (before) filtered = items.filter(i => new Date(i.timestamp) < new Date(before));
+
+      res.json(filtered.slice(0, limit));
+    } catch (error: any) {
+      console.error('Feed error:', error);
+      res.json([]);
+    }
+  });
+
   // Current news context (public — shows what writers see)
   // ?sport=nhl or ?topic=who wins the Stanley Cup
   app.get('/api/news-context', async (req, res) => {

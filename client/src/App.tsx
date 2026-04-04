@@ -61,6 +61,7 @@ const Wiki = lazy(() => import("@/pages/wiki"));
 const Experts = lazy(() => import("@/pages/experts"));
 const ExpertLeaderboard = lazy(() => import("@/pages/expert-leaderboard"));
 const Trivia = lazy(() => import("@/pages/trivia"));
+const FeedPage = lazy(() => import("@/pages/feed"));
 const AdminNewsletter = lazy(() => import("@/pages/admin-newsletter"));
 const AdminAPILog = lazy(() => import("@/pages/admin-api-log"));
 const WeatherSummary = lazy(() => import("@/pages/WeatherSummary"));
@@ -108,6 +109,7 @@ function Router() {
           <Route path="/experts">{() => <ProtectedRoute component={Experts} />}</Route>
           <Route path="/expert-leaderboard">{() => <ProtectedRoute component={ExpertLeaderboard} />}</Route>
           <Route path="/trivia">{() => <ProtectedRoute component={Trivia} />}</Route>
+          <Route path="/feed" component={FeedPage} />
           <Route path="/my-bets">{() => <ProtectedRoute component={MyBets} />}</Route>
           <Route path="/daily-picks">{() => <ProtectedRoute component={DailyPicks} />}</Route>
           <Route path="/team/:teamAbv">{() => <ProtectedRoute component={TeamDetail} />}</Route>
