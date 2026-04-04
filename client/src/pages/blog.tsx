@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
-import { Newspaper, ChevronLeft, Pen, Sparkles, Calendar, Clock, MapPin, Users, ArrowRight, CloudRain } from "lucide-react";
+import { Newspaper, ChevronLeft, Pen, Sparkles, Calendar, Clock, MapPin, Users, ArrowRight, CloudRain, Share2, Copy, Check, BookOpen } from "lucide-react";
 import { format, subDays } from "date-fns";
 
 interface BlogReview {
@@ -84,6 +84,30 @@ export default function Blog() {
 
   // ── Single Article View ──
   if (selectedReview) {
+    // Reading time estimate
+    const wordCount = selectedReview.content.split(/\s+/).length;
+    const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+
+    // Auto-detect category tags from content + score
+    const scoreDiff = Math.abs(selectedReview.awayScore - selectedReview.homeScore);
+    const tags: string[] = [];
+    if (scoreDiff >= 6) tags.push('Blowout');
+    if (selectedReview.awayScore === 0 || selectedReview.homeScore === 0) tags.push('Shutout');
+    if (selectedReview.content.toLowerCase().includes('walk-off') || selectedReview.content.toLowerCase().includes('walkoff')) tags.push('Walk-Off');
+    if (selectedReview.content.toLowerCase().includes('extra inning')) tags.push('Extras');
+    if (scoreDiff <= 1) tags.push('Nail-Biter');
+
+    // Related stories — same author or same date
+    const relatedByAuthor = reviews.filter(r => r.id !== selectedReview.id && r.author === selectedReview.author).slice(0, 2);
+    const relatedByDate = reviews.filter(r => r.id !== selectedReview.id && r.gameDate === selectedReview.gameDate && !relatedByAuthor.find(ra => ra.id === r.id)).slice(0, 2);
+    const relatedStories = [...relatedByAuthor, ...relatedByDate].slice(0, 3);
+
+    // Share
+    const [copied, setCopied] = useState(false);
+    const shareUrl = `${window.location.origin}/blog#${selectedReview.slug}`;
+    const copyLink = () => { navigator.clipboard.writeText(shareUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+    const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(selectedReview.title)}&url=${encodeURIComponent(shareUrl)}`;
+
     return (
       <div className="max-w-3xl mx-auto px-4 py-8">
         <Button variant="ghost" className="mb-6 text-muted-foreground hover:text-foreground" onClick={() => setSelectedReview(null)}>
@@ -94,55 +118,55 @@ export default function Blog() {
           {/* Hero image */}
           {selectedReview.heroImage && (
             <div className="relative rounded-xl overflow-hidden mb-6 aspect-video bg-zinc-900">
-              <img
-                src={selectedReview.heroImage}
-                alt={`${selectedReview.awayTeam} vs ${selectedReview.homeTeam}`}
-                className="w-full h-full object-cover"
-              />
+              <img src={selectedReview.heroImage} alt="" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-6">
-                <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center gap-3">
                   {selectedReview.awayLogo && <img src={selectedReview.awayLogo} alt="" className="h-8 w-8" />}
-                  <span className="text-white/80 text-sm font-bold tabular-nums">
-                    {selectedReview.awayScore} - {selectedReview.homeScore}
-                  </span>
+                  <span className="text-white/80 text-sm font-bold tabular-nums">{selectedReview.awayScore} - {selectedReview.homeScore}</span>
                   {selectedReview.homeLogo && <img src={selectedReview.homeLogo} alt="" className="h-8 w-8" />}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Score bar (if no hero image) */}
-          {!selectedReview.heroImage && (
-            <div className="flex items-center gap-3 mb-4 p-4 bg-zinc-900/50 border border-border/50 rounded-lg">
-              {selectedReview.awayLogo && <img src={selectedReview.awayLogo} alt="" className="h-10 w-10" />}
-              <span className="text-xl font-bold tabular-nums">{selectedReview.awayScore}</span>
-              <span className="text-muted-foreground text-sm">@</span>
-              <span className="text-xl font-bold tabular-nums">{selectedReview.homeScore}</span>
-              {selectedReview.homeLogo && <img src={selectedReview.homeLogo} alt="" className="h-10 w-10" />}
+          {/* Category tags */}
+          {tags.length > 0 && (
+            <div className="flex items-center gap-1.5 mb-3">
+              {tags.map(tag => (
+                <Badge key={tag} className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px]">{tag}</Badge>
+              ))}
             </div>
           )}
 
           {/* Headline */}
           <h1 className="text-3xl font-bold text-foreground mb-4 leading-tight">{selectedReview.title}</h1>
 
-          {/* Byline */}
+          {/* Byline + reading time + share */}
           <div className="flex items-center gap-3 mb-2 pb-4 border-b border-border/30">
             <div className="w-8 h-8 rounded-full bg-amber-500/15 border border-amber-500/20 flex items-center justify-center">
               <Pen className="h-3.5 w-3.5 text-amber-400" />
             </div>
-            <div>
+            <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-foreground">{selectedReview.author}</span>
-                {selectedReview.authorMood === 'grumpy' && (
-                  <Badge className="bg-red-500/15 text-red-400 border border-red-500/20 text-[10px] px-1.5 py-0">Grumpy</Badge>
-                )}
+                {selectedReview.authorMood === 'grumpy' && <Badge className="bg-red-500/15 text-red-400 border border-red-500/20 text-[10px] px-1.5 py-0">Grumpy</Badge>}
               </div>
-              <span className="text-xs text-muted-foreground">ClearEdge Sports Beat Writer</span>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{selectedReview.gameDate}</span>
+                <span>·</span>
+                <span className="flex items-center gap-1"><BookOpen className="h-3 w-3" />{readingTime} min read</span>
+                {selectedReview.venue && <><span>·</span><span>{selectedReview.venue}</span></>}
+              </div>
             </div>
-            <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{selectedReview.gameDate}</span>
-              {selectedReview.venue && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{selectedReview.venue}</span>}
+            {/* Share buttons */}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <a href={tweetUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded hover:bg-zinc-800 transition-colors text-muted-foreground hover:text-foreground" title="Share on X">
+                <Share2 className="h-3.5 w-3.5" />
+              </a>
+              <button onClick={copyLink} className="p-1.5 rounded hover:bg-zinc-800 transition-colors text-muted-foreground hover:text-foreground" title="Copy link">
+                {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+              </button>
             </div>
           </div>
 
@@ -161,23 +185,40 @@ export default function Blog() {
               if (trimmed.startsWith('### ')) return <h3 key={i} className="text-lg font-semibold text-foreground mt-6 mb-2">{trimmed.replace(/^###\s*/, '')}</h3>;
               if (trimmed.startsWith('## ')) return <h2 key={i} className="text-xl font-bold text-foreground mt-8 mb-3">{trimmed.replace(/^##\s*/, '')}</h2>;
               if (trimmed.toLowerCase().includes('final verdict')) {
-                return (
-                  <div key={i} className="mt-8 p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
-                    <p className="text-emerald-400 font-semibold text-base italic">
-                      {trimmed.replace(/\*\*/g, '').replace(/\*/g, '')}
-                    </p>
-                  </div>
-                );
+                return <div key={i} className="mt-8 p-5 bg-amber-500/5 border border-amber-500/20 rounded-xl"><p className="text-amber-400 font-semibold text-base italic">{trimmed.replace(/\*\*/g, '').replace(/\*/g, '')}</p></div>;
               }
-              // Render bold/italic in paragraphs
-              const html = trimmed
-                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground">$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em>$1</em>');
-              return <p key={i} className="text-[15px] text-zinc-400 leading-relaxed" dangerouslySetInnerHTML={{ __html: html }} />;
+              const html = trimmed.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground">$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>');
+              return <p key={i} className="text-[15px] text-zinc-400 leading-[1.7]" dangerouslySetInnerHTML={{ __html: html }} />;
             })}
           </div>
 
-          <div className="mt-10 pt-4 border-t border-border/30 text-xs text-muted-foreground flex items-center gap-2">
+          {/* Related stories */}
+          {relatedStories.length > 0 && (
+            <div className="mt-10 pt-6 border-t border-border/30">
+              <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-3">
+                {relatedByAuthor.length > 0 ? `More from ${selectedReview.author}` : 'More from this day'}
+              </h3>
+              <div className="space-y-3">
+                {relatedStories.map(r => (
+                  <button key={r.id} onClick={() => setSelectedReview(r)} className="flex items-center gap-3 w-full text-left group">
+                    {r.heroImage ? (
+                      <img src={r.heroImage} alt="" className="w-16 h-10 rounded object-cover flex-shrink-0 bg-zinc-900" />
+                    ) : (
+                      <div className="w-16 h-10 rounded bg-zinc-900 flex-shrink-0 flex items-center justify-center">
+                        {r.awayLogo && <img src={r.awayLogo} alt="" className="h-4 w-4 opacity-40" />}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-foreground group-hover:text-amber-200 transition-colors line-clamp-1">{r.title}</div>
+                      <div className="text-[10px] text-muted-foreground">{r.author} · {r.awayTeam.split(' ').pop()} {r.awayScore}-{r.homeScore} {r.homeTeam.split(' ').pop()}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-8 pt-4 border-t border-border/30 text-xs text-muted-foreground flex items-center gap-2">
             <Sparkles className="h-3 w-3 text-amber-400" />
             Written by {selectedReview.author} | AI-assisted sarcastic recap | For entertainment purposes only
           </div>

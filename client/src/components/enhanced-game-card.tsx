@@ -132,8 +132,9 @@ function teamLogoUrl(code: string): string {
 }
 
 export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
-  const [expanded, setExpanded] = useState(false); // Collapsed by default
+  const [expanded, setExpanded] = useState(false);
   const [showBooks, setShowBooks] = useState(false);
+  const [showOdds, setShowOdds] = useState(false);
   const { addBet } = useBettingSlip();
 
   // Fetch expert picks for this game
@@ -148,6 +149,42 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
     },
     staleTime: 300000,
   });
+
+  // Consensus detection — do 3+ experts agree on the same side?
+  const consensus = (() => {
+    if (expertPicks.length < 3) return null;
+    const sides: Record<string, string[]> = {};
+    expertPicks.forEach((p: any) => {
+      const key = p.selection?.toLowerCase().trim();
+      if (key) { sides[key] = sides[key] || []; sides[key].push(p.expertId); }
+    });
+    const best = Object.entries(sides).sort((a, b) => b[1].length - a[1].length)[0];
+    return best && best[1].length >= 3 ? { selection: expertPicks.find((p: any) => p.selection?.toLowerCase().trim() === best[0])?.selection, count: best[1].length, experts: best[1] } : null;
+  })();
+
+  // Expert debate — two experts disagree on same game
+  const debate = (() => {
+    if (expertPicks.length < 2) return null;
+    // Find two picks that are opposite sides of same market
+    for (let i = 0; i < expertPicks.length; i++) {
+      for (let j = i + 1; j < expertPicks.length; j++) {
+        const a = expertPicks[i]; const b = expertPicks[j];
+        if (a.pickType === b.pickType && a.selection !== b.selection) {
+          return { a, b };
+        }
+      }
+    }
+    return null;
+  })();
+
+  // Check if a Morning Roast recap exists for this game
+  const { data: blogReviews = [] } = useQuery<any[]>({
+    queryKey: ['/api/blog/reviews'],
+    queryFn: () => fetch('/api/blog/reviews').then(r => r.json()),
+    staleTime: 300000,
+  });
+  const matchCodes = game.gameId.match(/([A-Z]{2,3})\s*@\s*([A-Z]{2,3})/);
+  const hasRecap = blogReviews.some((r: any) => r.gameId?.includes(matchCodes?.[1] || '___') && r.gameId?.includes(matchCodes?.[2] || '___'));
 
   // Fetch all daily picks, AI suggested bets, and game evaluations
   const { data: allAIPicks = [] } = useQuery<any[]>({
@@ -257,34 +294,60 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
           </div>
         </div>
 
-        {/* Inline odds row */}
+        {/* Consensus / Debate / Recap indicators */}
+        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+          {consensus && (
+            <Badge className="bg-orange-500/15 text-orange-400 border border-orange-500/20 text-[10px] px-1.5 py-0">
+              🔥 {consensus.count} experts agree: {consensus.selection}
+            </Badge>
+          )}
+          {debate && !consensus && (
+            <Badge className="bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[10px] px-1.5 py-0">
+              ⚔️ {debate.a.expertId} vs {debate.b.expertId}
+            </Badge>
+          )}
+          {hasRecap && (
+            <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] px-1.5 py-0 cursor-pointer">
+              ☕ Read Recap
+            </Badge>
+          )}
+        </div>
+
+        {/* Odds toggle */}
         {(moneylineOdds || totalOdds || spreadOdds) && (
-          <div className="flex items-center justify-center gap-4 mt-2.5 text-[11px] tabular-nums">
-            {moneylineOdds && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-muted-foreground">ML</span>
-                <span className="text-blue-400 cursor-pointer hover:text-blue-300" onClick={() => addBet({ gameId: game.gameId, betType: 'moneyline', selection: game.awayTeamCode, odds: moneylineOdds.awayOdds || 0, stake: 10, potentialWin: 0 })}>
-                  {formatOdds(moneylineOdds.awayOdds || 0)}
-                </span>
-                <span className="text-zinc-600">/</span>
-                <span className="text-blue-400 cursor-pointer hover:text-blue-300" onClick={() => addBet({ gameId: game.gameId, betType: 'moneyline', selection: game.homeTeamCode, odds: moneylineOdds.homeOdds || 0, stake: 10, potentialWin: 0 })}>
-                  {formatOdds(moneylineOdds.homeOdds || 0)}
-                </span>
+          <div className="mt-2">
+            {showOdds ? (
+              <div className="flex items-center justify-center gap-4 text-[11px] tabular-nums">
+                {moneylineOdds && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground">ML</span>
+                    <span className="text-blue-400 cursor-pointer hover:text-blue-300" onClick={() => addBet({ gameId: game.gameId, betType: 'moneyline', selection: game.awayTeamCode, odds: moneylineOdds.awayOdds || 0, stake: 10, potentialWin: 0 })}>
+                      {formatOdds(moneylineOdds.awayOdds || 0)}
+                    </span>
+                    <span className="text-zinc-600">/</span>
+                    <span className="text-blue-400 cursor-pointer hover:text-blue-300" onClick={() => addBet({ gameId: game.gameId, betType: 'moneyline', selection: game.homeTeamCode, odds: moneylineOdds.homeOdds || 0, stake: 10, potentialWin: 0 })}>
+                      {formatOdds(moneylineOdds.homeOdds || 0)}
+                    </span>
+                  </div>
+                )}
+                {spreadOdds && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground">RL</span>
+                    <span className="text-emerald-400">{spreadOdds.awaySpread}/{spreadOdds.homeSpread}</span>
+                  </div>
+                )}
+                {totalOdds && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground">O/U</span>
+                    <span className="text-amber-400">{totalOdds.total}</span>
+                  </div>
+                )}
+                <button onClick={() => setShowOdds(false)} className="text-zinc-600 hover:text-zinc-400 text-[10px]">Hide</button>
               </div>
-            )}
-            {spreadOdds && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-muted-foreground">RL</span>
-                <span className="text-emerald-400">{spreadOdds.awaySpread}</span>
-                <span className="text-zinc-600">/</span>
-                <span className="text-emerald-400">{spreadOdds.homeSpread}</span>
-              </div>
-            )}
-            {totalOdds && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-muted-foreground">O/U</span>
-                <span className="text-amber-400">{totalOdds.total}</span>
-              </div>
+            ) : (
+              <button onClick={() => setShowOdds(true)} className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors">
+                Show Odds →
+              </button>
             )}
           </div>
         )}
