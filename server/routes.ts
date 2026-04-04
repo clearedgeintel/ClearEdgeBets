@@ -4536,6 +4536,15 @@ Format as JSON:
         case 'odds-snapshot':
           await schedulerService.snapshotOdds();
           break;
+        case 'expert-picks':
+          await (schedulerService as any).generateExpertPicks();
+          break;
+        case 'expert-grading':
+          await schedulerService.gradeExpertPicks();
+          break;
+        case 'morning-roast':
+          await schedulerService.autoGenerateMorningRoast();
+          break;
         default:
           return res.status(400).json({ error: `Unknown task: ${task}` });
       }
