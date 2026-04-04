@@ -135,7 +135,7 @@ function teamLogoUrl(code: string): string {
 export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showBooks, setShowBooks] = useState(false);
-  const [showOdds, setShowOdds] = useState(false);
+  const [showOdds, setShowOdds] = useState(true); // Show odds by default
   const { addBet } = useBettingSlip();
 
   // Fetch expert picks for this game
@@ -184,6 +184,60 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
   // Beat writer for this game
   const beatWriter = (() => {
     try { return getBeatWriterForGame(game.homeTeamCode || '', game.awayTeamCode || ''); } catch { return null; }
+  })();
+
+  // Compute play lean: combines odds gap + expert consensus + AI confidence
+  const playLean = (() => {
+    try {
+      // Check if experts lean one way
+      const expertSides: Record<string, number> = {};
+      if (Array.isArray(expertPicks)) {
+        expertPicks.forEach((p: any) => {
+          if (p?.selection) {
+            // Try to determine which team they picked
+            const sel = p.selection.toLowerCase();
+            if (sel.includes(game.awayTeamCode?.toLowerCase())) expertSides['away'] = (expertSides['away'] || 0) + 1;
+            else if (sel.includes(game.homeTeamCode?.toLowerCase())) expertSides['home'] = (expertSides['home'] || 0) + 1;
+          }
+        });
+      }
+
+      const awayExperts = expertSides['away'] || 0;
+      const homeExperts = expertSides['home'] || 0;
+      const totalExperts = awayExperts + homeExperts;
+
+      // Check moneyline gap
+      const awayML = moneylineOdds?.awayOdds || 0;
+      const homeML = moneylineOdds?.homeOdds || 0;
+      const mlGap = Math.abs(awayML - homeML);
+
+      // AI confidence
+      const aiConf = game.aiSummary?.confidence || 0;
+
+      // Determine lean
+      if (totalExperts === 0 && mlGap < 40) return null; // No clear lean
+
+      let team = '';
+      let strength: 'strong' | 'lean' = 'lean';
+
+      if (totalExperts >= 2 && (awayExperts >= homeExperts * 2 || homeExperts >= awayExperts * 2)) {
+        team = awayExperts > homeExperts ? game.awayTeamCode : game.homeTeamCode;
+        strength = totalExperts >= 3 ? 'strong' : 'lean';
+      } else if (mlGap >= 80) {
+        // Big favorite
+        team = awayML < homeML ? game.awayTeamCode : game.homeTeamCode;
+        strength = mlGap >= 150 ? 'strong' : 'lean';
+      } else if (aiConf >= 75 && game.aiSummary?.summary) {
+        // AI has high confidence — try to extract direction from summary
+        const summary = game.aiSummary.summary.toLowerCase();
+        if (summary.includes(game.awayTeamCode?.toLowerCase())) team = game.awayTeamCode;
+        else if (summary.includes(game.homeTeamCode?.toLowerCase())) team = game.homeTeamCode;
+        strength = aiConf >= 85 ? 'strong' : 'lean';
+      }
+
+      if (!team) return null;
+      return { team, strength };
+    } catch { return null; }
   })();
 
   // Fetch all daily picks, AI suggested bets, and game evaluations
@@ -327,7 +381,11 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
                     <span className="text-amber-400">{totalOdds.total}</span>
                   </div>
                 )}
-                <button onClick={() => setShowOdds(false)} className="text-zinc-600 hover:text-zinc-400 text-[10px]">Hide</button>
+                {playLean && (
+                  <Badge className={`text-[10px] px-1.5 py-0 border ${playLean.strength === 'strong' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
+                    {playLean.strength === 'strong' ? '🔥' : '👉'} {playLean.team} {playLean.strength === 'strong' ? 'Strong Play' : 'Lean'}
+                  </Badge>
+                )}
               </div>
             ) : (
               <button onClick={() => setShowOdds(true)} className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors">
