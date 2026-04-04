@@ -60,17 +60,30 @@ export default function EditorsDesk() {
 
   const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
   const today = new Date().toISOString().split('T')[0];
+  const tomorrow = format(new Date(Date.now() + 86400000), 'yyyy-MM-dd');
+  const dayAfter = format(new Date(Date.now() + 86400000 * 2), 'yyyy-MM-dd');
 
-  // Today's editorial slate
-  const { data: slateData } = useQuery<{ date: string; games: number; slate: Array<{
+  type SlateGame = {
     gameID: string; away: string; home: string; awayName: string; homeName: string;
     gameTime: string; venue: string; awayPitcher: string; homePitcher: string;
     moneyline?: { away: number; home: number } | null; total?: string;
     beatWriter: string | null; beatWriterAvatar: string | null;
     hasReview: boolean; hasAssignment: boolean; status: string;
-  }> }>({
+  };
+  type SlateResponse = { date: string; games: number; slate: SlateGame[] };
+
+  // Multi-day editorial slate
+  const { data: slateData } = useQuery<SlateResponse>({
     queryKey: ['/api/editorial/slate', today],
     queryFn: () => fetch(`/api/editorial/slate?date=${today}`, { credentials: 'include' }).then(r => r.json()),
+  });
+  const { data: tomorrowSlate } = useQuery<SlateResponse>({
+    queryKey: ['/api/editorial/slate', tomorrow],
+    queryFn: () => fetch(`/api/editorial/slate?date=${tomorrow}`, { credentials: 'include' }).then(r => r.json()),
+  });
+  const { data: dayAfterSlate } = useQuery<SlateResponse>({
+    queryKey: ['/api/editorial/slate', dayAfter],
+    queryFn: () => fetch(`/api/editorial/slate?date=${dayAfter}`, { credentials: 'include' }).then(r => r.json()),
   });
 
   // Yesterday's games for game picker
@@ -231,6 +244,45 @@ export default function EditorsDesk() {
           </CardContent>
         </Card>
       )}
+
+      {/* ── Upcoming Schedule (Tomorrow + Day After) ── */}
+      {(tomorrowSlate?.slate?.length || dayAfterSlate?.slate?.length) ? (
+        <Card className="mb-8 border-border/30">
+          <CardContent className="p-4">
+            {[
+              { label: `Tomorrow — ${format(new Date(tomorrow), 'EEE, MMM d')}`, data: tomorrowSlate },
+              { label: format(new Date(dayAfter), 'EEE, MMM d'), data: dayAfterSlate },
+            ].map(({ label, data }) => data?.slate && data.slate.length > 0 ? (
+              <div key={label} className="mb-4 last:mb-0">
+                <h4 className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium mb-2">{label} · {data.games} games</h4>
+                <div className="space-y-1">
+                  {data.slate.map(game => (
+                    <div key={game.gameID} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-zinc-900/30">
+                      <div className="flex items-center gap-2 flex-1 min-w-0 text-xs">
+                        <img src={teamLogo(game.away)} alt="" className="h-4 w-4" />
+                        <span className="font-medium text-foreground">{game.away}</span>
+                        <span className="text-zinc-600">@</span>
+                        <span className="font-medium text-foreground">{game.home}</span>
+                        <img src={teamLogo(game.home)} alt="" className="h-4 w-4" />
+                        <span className="text-zinc-600 text-[10px]">{game.gameTime}</span>
+                        <span className="text-zinc-700 text-[10px] hidden sm:inline">{game.awayPitcher} vs {game.homePitcher}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {game.beatWriter && (
+                          <span className="text-[10px] text-zinc-500 flex items-center gap-0.5">
+                            <span>{game.beatWriterAvatar}</span>
+                            <span className="hidden sm:inline">{game.beatWriter}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null)}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* Assignment Form */}
       <Card className="mb-8 border-amber-500/20">
