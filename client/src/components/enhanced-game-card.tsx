@@ -7,6 +7,7 @@ import { ChevronDown, ChevronUp, Brain, User, Target, TrendingUp, DollarSign, Wi
 import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { LiveScore } from "@/components/live-score";
 import { Link } from "wouter";
+import { getBeatWriterForGame } from "@shared/beat-writers";
 
 interface Game {
   id: number;
@@ -294,7 +295,16 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
           </div>
         </div>
 
-        {/* Consensus / Debate / Recap indicators */}
+        {/* Beat writer + Consensus / Debate / Recap indicators */}
+        {(() => {
+          const writer = getBeatWriterForGame(game.homeTeamCode, game.awayTeamCode);
+          return writer ? (
+            <div className="flex items-center gap-1 mt-1.5 text-[10px] text-zinc-500">
+              <span>{writer.avatar}</span>
+              <span>Covered by <span className="text-zinc-400">{writer.name}</span></span>
+            </div>
+          ) : null;
+        })()}
         <div className="flex flex-wrap items-center gap-1.5 mt-2">
           {consensus && (
             <Badge className="bg-orange-500/15 text-orange-400 border border-orange-500/20 text-[10px] px-1.5 py-0">

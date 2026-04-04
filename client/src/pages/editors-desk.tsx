@@ -203,12 +203,12 @@ export default function EditorsDesk() {
                   </div>
 
                   <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                    {/* Beat writer */}
+                    {/* Beat writer — always visible */}
                     {game.beatWriter && (
-                      <span className="text-[10px] text-zinc-500 hidden sm:flex items-center gap-1">
+                      <Badge className="bg-zinc-800 text-zinc-300 border border-zinc-700 text-[10px] flex items-center gap-1">
                         <span>{game.beatWriterAvatar}</span>
                         {game.beatWriter}
-                      </span>
+                      </Badge>
                     )}
 
                     {/* Status badge */}
@@ -216,10 +216,10 @@ export default function EditorsDesk() {
                       <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 text-[9px]">Published</Badge>
                     )}
                     {game.status === 'assigned' && (
-                      <Badge className="bg-amber-500/15 text-amber-400 border border-amber-500/20 text-[9px]">Assigned</Badge>
+                      <Badge className="bg-amber-500/15 text-amber-400 border border-amber-500/20 text-[9px]">In Progress</Badge>
                     )}
                     {game.status === 'unassigned' && (
-                      <Button size="sm" variant="outline" className="h-6 text-[10px] border-border/30"
+                      <Button size="sm" variant="outline" className="h-6 text-[10px] border-amber-500/30 text-amber-400"
                         onClick={() => { setSelectedGame(game.gameID); setTopic(`Recap of ${game.awayName} @ ${game.homeName}`); if (game.beatWriter) setSelectedWriters(new Set([game.beatWriter])); }}>
                         Assign
                       </Button>
@@ -249,20 +249,47 @@ export default function EditorsDesk() {
             />
           </div>
 
-          {/* Optional: Link a game */}
+          {/* Optional: Link a game — today's upcoming + yesterday's completed */}
           <div>
             <label className="text-xs text-muted-foreground uppercase tracking-wider font-medium block mb-2">
-              2. Link a game (optional) — writers get the box score as context
+              2. Link a game (optional)
             </label>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              <Button
-                size="sm"
-                variant={selectedGame === null ? "default" : "outline"}
-                onClick={() => setSelectedGame(null)}
-                className="flex-shrink-0 text-xs"
-              >
-                No game (topic only)
-              </Button>
+
+            {/* Today's games from slate */}
+            {slateData?.slate && slateData.slate.length > 0 && (
+              <div className="mb-2">
+                <span className="text-[9px] text-zinc-600 uppercase tracking-wider">Today's Games</span>
+                <div className="flex gap-1.5 overflow-x-auto pb-1 mt-1">
+                  {slateData.slate.map(g => (
+                    <Button
+                      key={g.gameID}
+                      size="sm"
+                      variant={selectedGame === g.gameID ? "default" : "outline"}
+                      onClick={() => { setSelectedGame(g.gameID); if (!topic) setTopic(`Preview: ${g.awayName} @ ${g.homeName}`); if (g.beatWriter) setSelectedWriters(new Set([g.beatWriter])); }}
+                      className="flex-shrink-0 text-xs"
+                    >
+                      <img src={teamLogo(g.away)} alt="" className="h-3.5 w-3.5 mr-1" />
+                      {g.away}@{g.home}
+                      <img src={teamLogo(g.home)} alt="" className="h-3.5 w-3.5 ml-1" />
+                      <span className="text-zinc-500 ml-1">{g.gameTime}</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Yesterday's completed games */}
+            <div>
+              <span className="text-[9px] text-zinc-600 uppercase tracking-wider">Yesterday's Results</span>
+              <div className="flex gap-1.5 overflow-x-auto pb-1 mt-1">
+                <Button
+                  size="sm"
+                  variant={selectedGame === null ? "default" : "outline"}
+                  onClick={() => setSelectedGame(null)}
+                  className="flex-shrink-0 text-xs"
+                >
+                  No game
+                </Button>
               {(availableData?.games || []).map(g => (
                 <Button
                   key={g.gameID}
@@ -276,6 +303,7 @@ export default function EditorsDesk() {
                   <img src={teamLogo(g.home)} alt="" className="h-3.5 w-3.5 ml-1" />
                 </Button>
               ))}
+              </div>
             </div>
           </div>
 
