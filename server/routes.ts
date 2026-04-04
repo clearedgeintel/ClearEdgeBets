@@ -28,6 +28,7 @@ import { getCached, setCache } from "./lib/cache";
 import { getParkFactor } from "./lib/park-factors";
 import { getAPICallLog, getAPICallStats } from "./lib/api-tracker";
 import { fetchTank01Games, fetchTank01Odds, fetchTank01Player, resolvePitchers, parseMultiBookOdds, getConsensusOdds, getTeamFullName, getTeamVenue } from "./services/tank01-mlb";
+import { getBeatWriterForGame as getBeatWriterForGameFn } from "@shared/beat-writers";
 // Note: Auth will be handled by existing system
 import Stripe from "stripe";
 import OpenAI from "openai";
@@ -657,6 +658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           aiSummary,
           weather,
           parkFactor: parkFactor ? { factor: parkFactor.factor, label: parkFactor.label } : null,
+          beatWriter: (() => { const w = getBeatWriterForGameFn(homeCode, awayCode); return { name: w.name, avatar: w.avatar, region: w.region }; })(),
         };
       }));
 

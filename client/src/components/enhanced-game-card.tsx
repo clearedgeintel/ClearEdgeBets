@@ -73,6 +73,11 @@ interface Game {
   }> | null;
   awayPitcherHeadshot?: string;
   homePitcherHeadshot?: string;
+  beatWriter?: {
+    name: string;
+    avatar: string;
+    region?: string;
+  };
 }
 
 // Sub-component: fetches last-5-starts ERA for a single pitcher lazily
@@ -297,6 +302,12 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
               }`}>PF {game.parkFactor.factor.toFixed(2)}</Badge>
             )}
             {game.venue && <span className="text-zinc-600 hidden sm:inline">{game.venue}</span>}
+            {game.beatWriter && (
+              <span className="flex items-center gap-1 text-amber-400/70 hidden sm:flex">
+                <span>{game.beatWriter.avatar}</span>
+                <span>{game.beatWriter.name}</span>
+              </span>
+            )}
           </div>
 
           {/* Expand button + AI confidence */}

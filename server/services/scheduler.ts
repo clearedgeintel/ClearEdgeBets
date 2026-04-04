@@ -38,6 +38,9 @@ class SchedulerService {
     // Odds history snapshot every 30 minutes (builds line movement data)
     this.addTask('odds-snapshot', '0 */30 * * * *', this.snapshotOdds.bind(this));
 
+    // Auto Morning Roast — check for completed games and generate reviews every hour
+    this.addTask('auto-morning-roast', '0 0 * * * *', this.autoGenerateMorningRoast.bind(this));
+
     console.log('✓ Scheduler service initialized with automated daily picks, AI tickets, and bet settlement');
     console.log('  - Daily picks: 8:00 AM Central Time');
     console.log('  - Daily tickets: 9:00 AM Central Time');
@@ -368,6 +371,160 @@ class SchedulerService {
   public async triggerDailyPicks() {
     console.log('Manually triggering daily picks generation...');
     await this.generateDailyPicks();
+  }
+
+  /**
+   * Auto Morning Roast — checks yesterday's completed games,
+   * finds ones without reviews, assigns the beat writer, generates the recap.
+   */
+  public async autoGenerateMorningRoast() {
+    try {
+      const { fetchTank01Scores, getTeamFullName } = await import('./tank01-mlb');
+      const { getBeatWriterForGame } = await import('@shared/beat-writers');
+      const { generateSarcasticGameReview } = await import('./openai');
+      const { trackedFetch } = await import('../lib/api-tracker');
+
+      // Yesterday's date
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      const yesterday = d.toISOString().split('T')[0];
+
+      const scores = await fetchTank01Scores(yesterday);
+      const completed = Object.entries(scores)
+        .filter(([, g]) => g.gameStatusCode === '2' || g.gameStatus === 'Completed');
+
+      if (completed.length === 0) {
+        logger.info('Auto Morning Roast: no completed games found for ' + yesterday);
+        return;
+      }
+
+      // Check which games already have reviews
+      const existingReviews = await storage.getBlogReviewsByDate(yesterday);
+      const reviewedGameIds = new Set(existingReviews.map(r => r.gameId));
+
+      let generated = 0;
+      for (const [gameID, game] of completed) {
+        // Skip if already reviewed (check various ID formats)
+        if (reviewedGameIds.has(gameID)) continue;
+
+        try {
+          // Fetch box score
+          const boxResp = await trackedFetch(
+            `https://tank01-mlb-live-in-game-real-time-statistics.p.rapidapi.com/getMLBBoxScore?gameID=${gameID}`,
+            { headers: { 'x-rapidapi-host': 'tank01-mlb-live-in-game-real-time-statistics.p.rapidapi.com', 'x-rapidapi-key': process.env.TANK01_API_KEY || '' } }
+          );
+          if (!boxResp.ok) continue;
+          const boxData = (await boxResp.json() as any).body;
+
+          const awayCode = boxData.away || gameID.split('_')[1]?.split('@')[0] || '';
+          const homeCode = boxData.home || gameID.split('@')[1] || '';
+          const awayScore = parseInt(boxData.lineScore?.away?.R || '0');
+          const homeScore = parseInt(boxData.lineScore?.home?.R || '0');
+
+          // Get the assigned beat writer for this game
+          const writer = getBeatWriterForGame(homeCode, awayCode);
+
+          // Build player highlights from box score
+          const playerStats = boxData.playerStats || {};
+          const highlights: string[] = [];
+          const { fetchTank01Player } = await import('./tank01-mlb');
+
+          const hitters = Object.values(playerStats)
+            .filter((p: any) => p.Hitting && parseInt(p.Hitting.H || '0') > 0)
+            .sort((a: any, b: any) => {
+              const aS = parseInt(a.Hitting.HR || '0') * 5 + parseInt(a.Hitting.H || '0') + parseInt(a.Hitting.RBI || '0') * 2;
+              const bS = parseInt(b.Hitting.HR || '0') * 5 + parseInt(b.Hitting.H || '0') + parseInt(b.Hitting.RBI || '0') * 2;
+              return bS - aS;
+            })
+            .slice(0, 4) as any[];
+
+          for (const h of hitters) {
+            const info = await fetchTank01Player(h.playerID, false);
+            const name = info?.longName || `#${h.playerID}`;
+            const hit = h.Hitting;
+            highlights.push(`${name} (${h.team}): ${hit.H}-${hit.AB}${parseInt(hit.HR||'0') > 0 ? `, ${hit.HR} HR` : ''}${parseInt(hit.RBI||'0') > 0 ? `, ${hit.RBI} RBI` : ''}`);
+          }
+
+          const decisions = boxData.decisions || [];
+          for (const dec of decisions) {
+            const info = await fetchTank01Player(dec.playerID, false);
+            const name = info?.longName || `#${dec.playerID}`;
+            const pitcher = Object.values(playerStats).find((p: any) => p.playerID === dec.playerID) as any;
+            if (pitcher?.Pitching) {
+              const p = pitcher.Pitching;
+              highlights.push(`${name} (${dec.team}, ${dec.decision}): ${p.InningsPitched} IP, ${p.ER} ER, ${p.SO} K`);
+            }
+          }
+
+          // Generate review with the assigned beat writer
+          const review = await generateSarcasticGameReview({
+            gameId: gameID,
+            awayTeam: getTeamFullName(awayCode),
+            homeTeam: getTeamFullName(homeCode),
+            awayScore,
+            homeScore,
+            venue: boxData.Venue || '',
+            weather: boxData.Weather || '',
+            attendance: boxData.Attendance || '',
+            wind: boxData.Wind || '',
+            lineScore: boxData.lineScore,
+            decisions,
+            playerHighlights: highlights.join('\n'),
+          });
+
+          // Override the randomly picked writer with the beat writer
+          const awayLogo = `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${awayCode.toLowerCase()}.png`;
+          const homeLogo = `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${homeCode.toLowerCase()}.png`;
+
+          // Try to get ESPN hero image
+          let heroImage: string | undefined;
+          try {
+            const espnDate = yesterday.replace(/-/g, '');
+            const espnResp = await fetch(`https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${espnDate}`);
+            if (espnResp.ok) {
+              const espnData = await espnResp.json() as any;
+              const match = espnData.events?.find((ev: any) => {
+                const comp = ev.competitions?.[0];
+                const a = comp?.competitors?.find((c: any) => c.homeAway === 'away');
+                return a?.team?.abbreviation === awayCode;
+              });
+              heroImage = match?.competitions?.[0]?.headlines?.[0]?.video?.[0]?.thumbnail;
+            }
+          } catch {}
+
+          await storage.createBlogReview({
+            gameId: gameID,
+            gameDate: yesterday,
+            awayTeam: getTeamFullName(awayCode),
+            homeTeam: getTeamFullName(homeCode),
+            awayScore,
+            homeScore,
+            title: review.title,
+            content: review.content,
+            slug: `${yesterday.replace(/-/g, '')}-${awayCode.toLowerCase()}-vs-${homeCode.toLowerCase()}`,
+            author: writer.name,  // Beat writer, not random
+            authorMood: writer.mood,
+            venue: boxData.Venue,
+            weather: boxData.Weather,
+            attendance: boxData.Attendance,
+            heroImage,
+            awayLogo,
+            homeLogo,
+            espnRecap: undefined,
+            boxScoreData: boxData,
+          });
+
+          generated++;
+          logger.info(`Auto Morning Roast: ${writer.name} covered ${awayCode}@${homeCode} (${awayScore}-${homeScore})`);
+        } catch (err) {
+          logger.error(`Auto Morning Roast: failed to generate review for ${gameID}: ${err}`);
+        }
+      }
+
+      logger.info(`Auto Morning Roast: generated ${generated} reviews for ${yesterday}`);
+    } catch (error) {
+      logger.error('Auto Morning Roast scheduler error: ' + error);
+    }
   }
 }
 

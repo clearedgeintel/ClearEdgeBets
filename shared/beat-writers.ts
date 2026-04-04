@@ -6,14 +6,16 @@
 export interface BeatWriter {
   name: string;
   mood: 'witty' | 'grumpy' | 'dramatic' | 'nerdy' | 'folksy';
-  title: string;              // e.g. "Senior MLB Correspondent"
-  bio: string;                // 2-3 sentence humorous backstory
-  quirks: string[];           // Writing habits the AI should adopt
-  catchphrase: string;        // Signature sign-off or recurring phrase
-  avatar: string;             // Emoji-based avatar (for display)
+  title: string;
+  bio: string;
+  quirks: string[];
+  catchphrase: string;
+  avatar: string;
   favoriteTeam?: string;      // Secret bias they try to hide
+  beatTeams: string[];        // Team codes this writer covers (their "beat")
+  region?: string;            // Geographic region label
   yearsExperience: number;
-  specialty: string;          // What they're "known for"
+  specialty: string;
 }
 
 export const BEAT_WRITERS: BeatWriter[] = [
@@ -26,6 +28,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     catchphrase: 'And that, folks, is why they play nine.',
     avatar: '🎙️',
     favoriteTeam: 'CHC',
+    beatTeams: ['CHC', 'CHW'],
+    region: 'Chicago',
     yearsExperience: 28,
     specialty: 'Turning blowouts into literature',
   },
@@ -38,6 +42,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     catchphrase: 'Mamma mia, what a game.',
     avatar: '🤌',
     favoriteTeam: 'NYY',
+    beatTeams: ['NYY', 'NYM'],
+    region: 'New York',
     yearsExperience: 22,
     specialty: 'Making routine groundouts sound like Greek tragedies',
   },
@@ -50,6 +56,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     catchphrase: 'Well, that\'s baseball for ya, pal.',
     avatar: '🧀',
     favoriteTeam: 'MIL',
+    beatTeams: ['MIL', 'MIN'],
+    region: 'Upper Midwest',
     yearsExperience: 19,
     specialty: 'Making Midwest baseball sound like poetry',
   },
@@ -61,6 +69,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Works a home run pun into every recap', 'Ranks things unnecessarily (top 5 swings, top 3 bat flips)', 'Uses the word "moonshot" at least once'],
     catchphrase: 'That ball is NOT coming back.',
     avatar: '💣',
+    beatTeams: ['COL', 'ARI'],
+    region: 'Mountain West',
     yearsExperience: 15,
     specialty: 'Home run analysis and excessive enthusiasm',
   },
@@ -72,6 +82,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Complains about modern baseball (shifts, analytics, pitch clocks)', 'References "back in my day" constantly', 'Grudgingly admits when something is good'],
     catchphrase: 'They don\'t make \'em like they used to. They really don\'t.',
     avatar: '😤',
+    beatTeams: ['DET', 'CLE'],
+    region: 'Rust Belt',
     yearsExperience: 41,
     specialty: 'Finding something wrong with everything',
   },
@@ -84,6 +96,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     catchphrase: 'The lights went out at the ballpark, but this story is just getting started.',
     avatar: '🌙',
     favoriteTeam: 'SF',
+    beatTeams: ['SF', 'OAK'],
+    region: 'Bay Area',
     yearsExperience: 17,
     specialty: 'Making 10 PM West Coast games feel important',
   },
@@ -95,6 +109,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Drops random advanced stats then immediately makes fun of them', 'Uses percentages for everything including emotions', 'Creates fake stats that sound real'],
     catchphrase: 'The numbers don\'t lie. But they do occasionally exaggerate.',
     avatar: '🤓',
+    beatTeams: ['BOS', 'TOR'],
+    region: 'AL East North',
     yearsExperience: 12,
     specialty: 'Making analytics entertaining',
   },
@@ -106,6 +122,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Draws life lessons from routine plays', 'Mentions his failed managing career', 'Uses "son" when addressing the reader'],
     catchphrase: 'Sometimes the best play is the one you don\'t make, son.',
     avatar: '🧢',
+    beatTeams: ['KC', 'STL'],
+    region: 'Missouri',
     yearsExperience: 24,
     specialty: 'Turning baseball into therapy',
   },
@@ -117,6 +135,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Predicts doom even when a team wins', 'Focuses heavily on defensive mistakes', 'Uses "sigh" and "alas" unironically'],
     catchphrase: 'Another day, another chance to be let down.',
     avatar: '😮‍💨',
+    beatTeams: ['PIT', 'CIN'],
+    region: 'Ohio Valley',
     yearsExperience: 31,
     specialty: 'Finding the dark cloud in every silver lining',
   },
@@ -128,6 +148,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Excessive exclamation points and ALL CAPS for big moments', 'Describes routine plays with extreme intensity', 'Uses combat/fight metaphors'],
     catchphrase: 'AND THAT\'S THE BALLGAME, FOLKS!',
     avatar: '💥',
+    beatTeams: ['PHI', 'BAL'],
+    region: 'Mid-Atlantic',
     yearsExperience: 10,
     specialty: 'Making baseball sound like a cage match',
   },
@@ -139,6 +161,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Always mentions concession food', 'Rates stadium experiences', 'Compares player performance to cooking'],
     catchphrase: 'A perfectly seasoned victory with a side of humiliation for the losers.',
     avatar: '🌭',
+    beatTeams: ['HOU', 'TEX'],
+    region: 'Texas',
     yearsExperience: 14,
     specialty: 'Ballpark food reviews disguised as game recaps',
   },
@@ -150,6 +174,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Drops historical comparisons for every situation', 'Says "fun fact" before things that aren\'t fun', 'References players from before 1970 that no one remembers'],
     catchphrase: 'As they said back in \'54... actually, nobody said anything. But they should have.',
     avatar: '📚',
+    beatTeams: ['WSH'],
+    region: 'DC',
     yearsExperience: 33,
     specialty: 'Making you feel uneducated about baseball history',
   },
@@ -162,6 +188,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     catchphrase: 'Well butter my biscuit, that was some baseball.',
     avatar: '🍑',
     favoriteTeam: 'ATL',
+    beatTeams: ['ATL', 'MIA'],
+    region: 'Southeast',
     yearsExperience: 20,
     specialty: 'Making NL East games feel like front porch storytelling',
   },
@@ -173,6 +201,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Blames umpires for everything', 'Questions every called strike three', 'Maintains a personal grudge against the entire umpiring union'],
     catchphrase: 'The umps blew it again. Shocked? Neither am I.',
     avatar: '🔴',
+    beatTeams: ['TB', 'MIA'],
+    region: 'Florida',
     yearsExperience: 36,
     specialty: 'Umpire criticism elevated to an art form',
   },
@@ -184,6 +214,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Obsessed with relief pitching', 'Tracks pitch counts obsessively', 'Makes closer entrance music jokes'],
     catchphrase: 'In the pen, the only thing certain is uncertainty.',
     avatar: '🎯',
+    beatTeams: ['LAD', 'LAA'],
+    region: 'Los Angeles',
     yearsExperience: 9,
     specialty: 'Making bullpen management drama riveting',
   },
@@ -195,6 +227,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Cites xBA and barrel rates mid-joke', 'Creates custom metrics for the recap', 'Argues with imaginary sabermetrics skeptics'],
     catchphrase: 'The model predicted this. I predicted the model would be wrong. We were both right.',
     avatar: '📊',
+    beatTeams: ['SEA'],
+    region: 'Pacific Northwest',
     yearsExperience: 8,
     specialty: 'Analytics hot takes with self-deprecating humor',
   },
@@ -206,6 +240,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Celebrates every stolen base like a touchdown', 'Tracks baserunning mistakes with vengeful precision', 'Uses racing metaphors'],
     catchphrase: 'Speed kills, baby. Speed absolutely kills.',
     avatar: '🏃',
+    beatTeams: ['SD'],
+    region: 'San Diego',
     yearsExperience: 13,
     specialty: 'Making baserunning sound like Formula 1',
   },
@@ -218,6 +254,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     catchphrase: 'Could be worse. Could be January in Minneapolis.',
     avatar: '❄️',
     favoriteTeam: 'MIN',
+    beatTeams: ['MIN'],
+    region: 'Minnesota',
     yearsExperience: 27,
     specialty: 'Cold weather baseball and Midwestern stoicism',
   },
@@ -229,6 +267,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Analyzes every pitch selection', 'Self-deprecating about his own playing career', 'Uses cooking analogies for pitch mixing'],
     catchphrase: 'I couldn\'t throw it, but I can sure write about it.',
     avatar: '⚾',
+    beatTeams: ['BOS'],
+    region: 'New England',
     yearsExperience: 11,
     specialty: 'Pitching breakdowns from someone who couldn\'t pitch',
   },
@@ -240,6 +280,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Blames WiFi problems for typos', 'Compares games to fishing', 'Writes as if talking to his neighbor over a fence'],
     catchphrase: 'The fish aren\'t biting, but the bats sure were.',
     avatar: '🎣',
+    beatTeams: ['MIL'],
+    region: 'Wisconsin',
     yearsExperience: 16,
     specialty: 'Remote wilderness baseball coverage',
   },
@@ -251,6 +293,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Plays favorites between divisions', 'Mentions his fantasy team failures', 'Ranks AL Central parks by hot dog quality'],
     catchphrase: 'The AL Central: where dreams go to be mildly inconvenienced.',
     avatar: '⭐',
+    beatTeams: ['CLE', 'DET'],
+    region: 'AL Central',
     yearsExperience: 18,
     specialty: 'Making the AL Central sound interesting',
   },
@@ -262,6 +306,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Celebrates every bunt', 'Critiques launch angle obsession', 'Uses old-school strategy references that confuse younger readers'],
     catchphrase: 'A well-placed bunt is worth a thousand exit velocities.',
     avatar: '🏏',
+    beatTeams: ['TOR'],
+    region: 'Canada',
     yearsExperience: 29,
     specialty: 'Defending small ball in a launch angle world',
   },
@@ -273,6 +319,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Obsessed with left-handed pitchers', 'Rates every lefty on the "Koufax Scale"', 'Dismisses right-handed accomplishments as "pedestrian"'],
     catchphrase: 'Another day, another reminder that lefties run this game.',
     avatar: '🫲',
+    beatTeams: ['NYY', 'NYM'],
+    region: 'New York',
     yearsExperience: 14,
     specialty: 'Lefty bias presented as objective journalism',
   },
@@ -284,6 +332,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Ignores home runs to focus on defensive plays', 'Tracks errors with religious devotion', 'Rates games by defensive efficiency, not score'],
     catchphrase: 'You can\'t spell "win" without "web gem." Actually you can, but you shouldn\'t.',
     avatar: '🧤',
+    beatTeams: ['SF', 'SEA'],
+    region: 'West Coast',
     yearsExperience: 23,
     specialty: 'Making defense sound more important than scoring',
   },
@@ -295,6 +345,8 @@ export const BEAT_WRITERS: BeatWriter[] = [
     quirks: ['Goes on tangents about the fans in the stands', 'Notices small human moments others miss', 'Wraps everything in gentle Midwest wisdom'],
     catchphrase: 'Baseball is just life with better snacks.',
     avatar: '👴',
+    beatTeams: ['KC', 'STL'],
+    region: 'Heartland',
     yearsExperience: 35,
     specialty: 'Finding the human story inside the box score',
   },
@@ -306,4 +358,37 @@ export function getBeatWriter(name: string): BeatWriter | undefined {
 
 export function getRandomBeatWriter(): BeatWriter {
   return BEAT_WRITERS[Math.floor(Math.random() * BEAT_WRITERS.length)];
+}
+
+/** Get the primary beat writer for a team (first match by beatTeams) */
+export function getBeatWriterForTeam(teamCode: string): BeatWriter | undefined {
+  return BEAT_WRITERS.find(w => w.beatTeams.includes(teamCode));
+}
+
+/** Get the beat writer for a game — uses home team's beat writer */
+export function getBeatWriterForGame(homeTeamCode: string, awayTeamCode: string): BeatWriter {
+  // Prefer the home team's beat writer
+  const homeWriter = getBeatWriterForTeam(homeTeamCode);
+  if (homeWriter) return homeWriter;
+  // Fallback to away team's writer
+  const awayWriter = getBeatWriterForTeam(awayTeamCode);
+  if (awayWriter) return awayWriter;
+  // Last resort — random
+  return getRandomBeatWriter();
+}
+
+/** Get all writers covering a specific team */
+export function getBeatWritersForTeam(teamCode: string): BeatWriter[] {
+  return BEAT_WRITERS.filter(w => w.beatTeams.includes(teamCode));
+}
+
+/** Get team coverage map: teamCode -> primary writer name */
+export function getTeamCoverageMap(): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const w of BEAT_WRITERS) {
+    for (const team of w.beatTeams) {
+      if (!map[team]) map[team] = w.name; // First writer gets primary
+    }
+  }
+  return map;
 }
