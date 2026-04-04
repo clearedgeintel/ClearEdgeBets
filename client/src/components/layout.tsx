@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import Sidebar from "./sidebar";
+import SidebarRail from "./sidebar-rail";
 import TopNav from "./top-nav";
 import Footer from "./footer";
 import MobileNav from "./mobile-bottom-nav";
@@ -11,9 +12,15 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen flex">
-      {/* Sidebar — collapsed by default (w-16 icons), expands on hover (w-72) */}
-      <div className="hidden lg:block group/sidebar flex-shrink-0 w-16 hover:w-72 transition-all duration-300 ease-in-out relative z-40">
-        <div className="fixed top-0 left-0 h-screen w-16 group-hover/sidebar:w-72 transition-all duration-300 ease-in-out overflow-hidden bg-[#0a0a0c] border-r border-border/20">
+      {/* Sidebar area — desktop only */}
+      <div className="hidden lg:block flex-shrink-0 w-16 relative z-40 group/sidebar">
+        {/* Rail: always visible at w-16 */}
+        <div className="fixed top-0 left-0 h-screen w-16 bg-[#0a0a0c] border-r border-border/20 group-hover/sidebar:opacity-0 transition-opacity duration-200">
+          <SidebarRail />
+        </div>
+
+        {/* Full sidebar: appears on hover */}
+        <div className="fixed top-0 left-0 h-screen w-72 bg-[#0a0a0c] border-r border-border/20 opacity-0 group-hover/sidebar:opacity-100 pointer-events-none group-hover/sidebar:pointer-events-auto transition-opacity duration-200 overflow-y-auto overflow-x-hidden">
           <Sidebar />
         </div>
       </div>
