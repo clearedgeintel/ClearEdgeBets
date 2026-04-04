@@ -1404,6 +1404,109 @@ Return JSON: { "questions": [{ "question": "...", "options": ["A answer", "B ans
     }
   });
 
+  // ── AI Sports Assistant (real LLM with live data context) ────────
+
+  app.post('/api/ai-assistant/chat', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+
+      const { message, history } = req.body;
+      if (!message) return res.status(400).json({ error: 'message required' });
+
+      // Build live context from all data sources
+      const { buildNewsContextForTopic, formatContextForPrompt } = await import('./services/news-context');
+      const { fetchTank01Games, fetchTank01Odds, getConsensusOdds, parseMultiBookOdds, getTeamFullName, fetchTank01Teams } = await import('./services/tank01-mlb');
+
+      const today = new Date().toISOString().split('T')[0];
+      const [newsCtx, games, oddsMap, teams] = await Promise.all([
+        buildNewsContextForTopic(message),
+        fetchTank01Games(today),
+        fetchTank01Odds(today),
+        fetchTank01Teams(),
+      ]);
+
+      // Build game context
+      const gameLines = games.slice(0, 12).map(g => {
+        const odds = oddsMap[g.gameID];
+        const books = odds ? parseMultiBookOdds(odds) : [];
+        const consensus = books.length > 0 ? getConsensusOdds(books) : { moneyline: null, total: null };
+        return `${getTeamFullName(g.away)} @ ${getTeamFullName(g.home)} (${g.gameTime})${consensus.moneyline ? ` ML: ${consensus.moneyline.away}/${consensus.moneyline.home}` : ''}${consensus.total ? ` O/U: ${consensus.total.line}` : ''}`;
+      }).join('\n');
+
+      // Standings context
+      const standingsLines = (() => {
+        const divs: Record<string, Array<{ name: string; w: number; l: number }>> = {};
+        teams.forEach(t => {
+          const div = `${t.conferenceAbv} ${t.division}`;
+          if (!divs[div]) divs[div] = [];
+          divs[div].push({ name: t.teamAbv, w: parseInt(t.wins || '0'), l: parseInt(t.loss || '0') });
+        });
+        return Object.entries(divs).sort().map(([div, ts]) => {
+          ts.sort((a, b) => b.w - a.w);
+          return `${div}: ${ts.map(t => `${t.name} (${t.w}-${t.l})`).join(', ')}`;
+        }).join('\n');
+      })();
+
+      // Expert picks context
+      const expertPicks = await storage.getExpertPicksByDate(today);
+      const picksContext = expertPicks.length > 0
+        ? `\n**Today's Expert Picks:**\n${expertPicks.map(p => `${p.expertId}: ${p.selection} (${p.confidence}%) — ${p.rationale}`).join('\n')}`
+        : '';
+
+      const newsBlock = formatContextForPrompt(newsCtx);
+
+      const systemPrompt = `You are the ClearEdge Sports AI Assistant — a knowledgeable, data-driven sports analyst. You have access to real-time data:
+
+${newsBlock}
+
+**Today's Games (${games.length}):**
+${gameLines || 'No games today'}
+
+**Current Standings:**
+${standingsLines}
+${picksContext}
+
+RULES:
+- Use the REAL data above to answer questions. Reference specific teams, odds, pitchers, and standings.
+- Be conversational but analytical. Back opinions with data.
+- If asked about a specific game, cite the actual odds and pitchers.
+- If asked for picks, give specific selections with reasoning.
+- If asked about other sports (NFL, NBA, NHL), use the news context which auto-detects sport.
+- Never make up stats. If you don't have data, say so.
+- Keep responses concise — 2-4 paragraphs max unless asked for detail.`;
+
+      const { default: OpenAI } = await import('openai');
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
+
+      // Build conversation history
+      const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+        { role: 'system', content: systemPrompt },
+      ];
+
+      // Add conversation history (last 6 turns)
+      if (history && Array.isArray(history)) {
+        history.slice(-6).forEach((h: any) => {
+          messages.push({ role: h.type === 'user' ? 'user' : 'assistant', content: h.content });
+        });
+      }
+
+      messages.push({ role: 'user', content: message });
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages,
+        temperature: 0.8,
+        max_tokens: 800,
+      });
+
+      res.json({ response: response.choices[0].message.content });
+    } catch (error: any) {
+      console.error('AI Assistant error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ── Coin Store (Stripe one-time payments) ────────────────────────
 
   const COIN_PACKS = [

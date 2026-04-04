@@ -201,20 +201,35 @@ export default function AIAssistant() {
     setInputValue('');
     setIsLoading(true);
 
-    // Generate AI response based on question
-    const response = await generateAIResponse(content.trim(), Array.isArray(games) ? games : [], Array.isArray(dailyPicks) ? dailyPicks : []);
-    
-    const assistantMessage: ChatMessage = {
-      id: (Date.now() + 1).toString(),
-      type: 'assistant',
-      content: response,
-      timestamp: new Date()
-    };
+    try {
+      // Call real AI endpoint with conversation history
+      const resp = await fetch('/api/ai-assistant/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          message: content.trim(),
+          history: messages.slice(-6).map(m => ({ type: m.type, content: m.content })),
+        }),
+      });
 
-    setTimeout(() => {
+      const data = await resp.json();
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: data.response || data.error || 'Sorry, I couldn\'t process that. Try again.',
+        timestamp: new Date()
+      };
       setMessages(prev => [...prev, assistantMessage]);
-      setIsLoading(false);
-    }, 1500);
+    } catch {
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant' as const,
+        content: 'Connection error. Please try again.',
+        timestamp: new Date()
+      }]);
+    }
+    setIsLoading(false);
   };
 
   const getPitcherAnalysis = (game: any) => {
