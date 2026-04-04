@@ -114,6 +114,86 @@ export default function Home() {
         <p className="text-sm text-muted-foreground mt-1">AI-powered sports intelligence</p>
       </div>
 
+      {/* ── The Morning Roast (featured first) ── */}
+      {featured && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <Newspaper className="h-5 w-5 text-amber-400" />
+              The Morning Roast
+            </h2>
+            <Link href="/blog">
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-amber-400">
+                All Stories <ArrowRight className="h-3 w-3 ml-1" />
+              </Button>
+            </Link>
+          </div>
+          <Link href="/blog">
+            <div className="relative rounded-xl overflow-hidden aspect-video sm:aspect-[21/9] bg-zinc-900 cursor-pointer group mb-3">
+              {featured.heroImage ? (
+                <img src={featured.heroImage} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
+                  <div className="flex items-center gap-6">
+                    {featured.awayLogo && <img src={featured.awayLogo} alt="" className="h-16 w-16 opacity-50" />}
+                    <span className="text-3xl font-bold text-zinc-600 tabular-nums">{featured.awayScore} - {featured.homeScore}</span>
+                    {featured.homeLogo && <img src={featured.homeLogo} alt="" className="h-16 w-16 opacity-50" />}
+                  </div>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-5">
+                <Badge className="bg-amber-500/90 text-black text-[10px] font-bold mb-2 uppercase tracking-wider">Featured</Badge>
+                <h3 className="text-xl md:text-2xl font-bold text-white leading-tight mb-1.5 group-hover:text-amber-200 transition-colors">
+                  {featured.title}
+                </h3>
+                <div className="flex items-center gap-3 text-white/70 text-xs">
+                  <span className="flex items-center gap-1"><Pen className="h-3 w-3 text-amber-400" />{featured.author}</span>
+                  <span>{featured.awayTeam.split(' ').pop()} {featured.awayScore} - {featured.homeScore} {featured.homeTeam.split(' ').pop()}</span>
+                </div>
+              </div>
+            </div>
+          </Link>
+          {moreReviews.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {moreReviews.map((review) => (
+                <Link key={review.id} href="/blog">
+                  <Card className="card-glow cursor-pointer border-border/30 overflow-hidden group h-full">
+                    <div className="relative aspect-video bg-zinc-900 overflow-hidden">
+                      {review.heroImage ? (
+                        <img src={review.heroImage} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
+                          <div className="flex items-center gap-2">
+                            {review.awayLogo && <img src={review.awayLogo} alt="" className="h-8 w-8 opacity-40" />}
+                            <span className="text-sm font-bold text-zinc-600 tabular-nums">{review.awayScore}-{review.homeScore}</span>
+                            {review.homeLogo && <img src={review.homeLogo} alt="" className="h-8 w-8 opacity-40" />}
+                          </div>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                      <div className="absolute bottom-1.5 left-2 text-white/60 text-[10px]">
+                        {review.awayTeam.split(' ').pop()} {review.awayScore}-{review.homeScore} {review.homeTeam.split(' ').pop()}
+                      </div>
+                    </div>
+                    <CardContent className="p-3">
+                      <h4 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 group-hover:text-amber-200 transition-colors mb-1">
+                        {review.title}
+                      </h4>
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <Pen className="h-2.5 w-2.5 text-amber-400/70" />
+                        {review.author}
+                        {review.authorMood === 'grumpy' && <span className="text-red-400">(grumpy)</span>}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── This Day in Baseball + Picks of the Day ── */}
       {dailyContent && (dailyContent.history || dailyContent.picks.length > 0) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -292,99 +372,6 @@ export default function Home() {
               </Button>
             </div>
           </Link>
-        )}
-      </div>
-
-      {/* ── The Morning Roast ── */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-            <Newspaper className="h-5 w-5 text-amber-400" />
-            The Morning Roast
-          </h2>
-          <Link href="/blog">
-            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-amber-400">
-              All Stories <ArrowRight className="h-3 w-3 ml-1" />
-            </Button>
-          </Link>
-        </div>
-
-        {featured ? (
-          <div className="space-y-4">
-            {/* Featured story — hero */}
-            <Link href="/blog">
-              <div className="relative rounded-xl overflow-hidden aspect-video sm:aspect-[21/9] bg-zinc-900 cursor-pointer group">
-                {featured.heroImage ? (
-                  <img src={featured.heroImage} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
-                    <div className="flex items-center gap-6">
-                      {featured.awayLogo && <img src={featured.awayLogo} alt="" className="h-16 w-16 opacity-50" />}
-                      <span className="text-3xl font-bold text-zinc-600 tabular-nums">{featured.awayScore} - {featured.homeScore}</span>
-                      {featured.homeLogo && <img src={featured.homeLogo} alt="" className="h-16 w-16 opacity-50" />}
-                    </div>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-5">
-                  <Badge className="bg-amber-500/90 text-black text-[10px] font-bold mb-2 uppercase tracking-wider">Featured</Badge>
-                  <h3 className="text-xl md:text-2xl font-bold text-white leading-tight mb-1.5 group-hover:text-amber-200 transition-colors">
-                    {featured.title}
-                  </h3>
-                  <div className="flex items-center gap-3 text-white/70 text-xs">
-                    <span className="flex items-center gap-1"><Pen className="h-3 w-3 text-amber-400" />{featured.author}</span>
-                    <span>{featured.awayTeam.split(' ').pop()} {featured.awayScore} - {featured.homeScore} {featured.homeTeam.split(' ').pop()}</span>
-                  </div>
-                </div>
-              </div>
-            </Link>
-
-            {/* More stories grid */}
-            {moreReviews.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {moreReviews.map((review) => (
-                  <Link key={review.id} href="/blog">
-                    <Card className="card-glow cursor-pointer border-border/30 overflow-hidden group h-full">
-                      <div className="relative aspect-video bg-zinc-900 overflow-hidden">
-                        {review.heroImage ? (
-                          <img src={review.heroImage} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
-                            <div className="flex items-center gap-2">
-                              {review.awayLogo && <img src={review.awayLogo} alt="" className="h-8 w-8 opacity-40" />}
-                              <span className="text-sm font-bold text-zinc-600 tabular-nums">{review.awayScore}-{review.homeScore}</span>
-                              {review.homeLogo && <img src={review.homeLogo} alt="" className="h-8 w-8 opacity-40" />}
-                            </div>
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                        <div className="absolute bottom-1.5 left-2 text-white/60 text-[10px]">
-                          {review.awayTeam.split(' ').pop()} {review.awayScore}-{review.homeScore} {review.homeTeam.split(' ').pop()}
-                        </div>
-                      </div>
-                      <CardContent className="p-3">
-                        <h4 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 group-hover:text-amber-200 transition-colors mb-1">
-                          {review.title}
-                        </h4>
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                          <Pen className="h-2.5 w-2.5 text-amber-400/70" />
-                          {review.author}
-                          {review.authorMood === 'grumpy' && <span className="text-red-400">(grumpy)</span>}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <Card className="border-border/30 border-dashed">
-            <CardContent className="p-8 text-center">
-              <Sparkles className="h-8 w-8 text-zinc-700 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">No stories yet. Check back tomorrow for sarcastic game recaps.</p>
-            </CardContent>
-          </Card>
         )}
       </div>
 
