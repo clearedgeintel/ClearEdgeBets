@@ -26,6 +26,9 @@ class SchedulerService {
     // timezone: 'America/Chicago' is set in addTask, so hours are Central Time
     this.addTask('daily-picks-generation', '0 0 8 * * *', this.generateDailyPicks.bind(this));
 
+    // Expert panel picks at 8:30 AM Central Time (after daily picks, before AI ticket)
+    this.addTask('expert-picks-generation', '0 30 8 * * *', this.generateExpertPicks.bind(this));
+
     // Daily AI ticket submission at 9 AM Central Time
     this.addTask('daily-ai-ticket', '0 0 9 * * *', this.generateDailyAITicket.bind(this));
 
@@ -375,6 +378,82 @@ class SchedulerService {
   public async triggerDailyPicks() {
     console.log('Manually triggering daily picks generation...');
     await this.generateDailyPicks();
+  }
+
+  /**
+   * Auto-generate expert panel picks for today's games.
+   */
+  private async generateExpertPicks() {
+    try {
+      const { getAllExperts } = await import('@shared/expert-panel');
+      const { generateExpertPicks: genPicks } = await import('./openai');
+      const { fetchTank01Games, fetchTank01Odds, parseMultiBookOdds, getConsensusOdds, getTeamFullName, resolvePitchers } = await import('./tank01-mlb');
+      const { getParkFactor } = await import('../lib/park-factors');
+
+      const today = new Date().toISOString().split('T')[0];
+
+      // Check if already generated today
+      const existing = await storage.getExpertPicksByDate(today);
+      if (existing.length > 0) {
+        logger.info(`Expert picks: already have ${existing.length} picks for ${today}, skipping`);
+        return;
+      }
+
+      const [games, oddsMap] = await Promise.all([
+        fetchTank01Games(today),
+        fetchTank01Odds(today),
+      ]);
+
+      if (games.length === 0) {
+        logger.info('Expert picks: no games today');
+        return;
+      }
+
+      const gameData = await Promise.all(games.map(async g => {
+        const odds = oddsMap[g.gameID];
+        const books = odds ? parseMultiBookOdds(odds) : [];
+        const consensus = books.length > 0 ? getConsensusOdds(books) : { moneyline: null, total: null, spread: null };
+        const pitchers = await resolvePitchers(g.probableStartingPitchers?.away || '', g.probableStartingPitchers?.home || '');
+        const pf = getParkFactor(g.home);
+        return {
+          gameId: `${g.away}@${g.home}`,
+          away: getTeamFullName(g.away),
+          home: getTeamFullName(g.home),
+          gameTime: g.gameTime,
+          awayPitcher: pitchers.awayPitcher,
+          homePitcher: pitchers.homePitcher,
+          moneyline: consensus.moneyline || undefined,
+          total: consensus.total ? { line: consensus.total.line } : undefined,
+          runline: consensus.spread ? { away: consensus.spread.away, home: consensus.spread.home } : undefined,
+          parkFactor: pf?.factor,
+        };
+      }));
+
+      let totalPicks = 0;
+      for (const expert of getAllExperts()) {
+        const picks = await genPicks({ expert, games: gameData });
+        for (const pick of picks) {
+          await storage.createExpertPick({
+            expertId: expert.id,
+            gameId: pick.gameId,
+            gameDate: today,
+            pickType: pick.pickType,
+            selection: pick.selection,
+            odds: pick.odds,
+            confidence: pick.confidence,
+            rationale: pick.rationale,
+            units: String(pick.units || 1),
+            result: 'pending',
+            gradedAt: null,
+          });
+          totalPicks++;
+        }
+      }
+
+      logger.info(`Expert picks: generated ${totalPicks} picks from 5 experts for ${today}`);
+    } catch (error) {
+      logger.error('Expert picks generation error: ' + error);
+    }
   }
 
   /**

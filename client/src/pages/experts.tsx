@@ -111,12 +111,6 @@ export default function Experts() {
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Expert Panel</h1>
           <p className="text-sm text-muted-foreground mt-1">5 AI analysts. 5 different lenses. Follow or fade.</p>
         </div>
-        {isAdmin && (
-          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={generateMutation.isPending}
-            onClick={() => generateMutation.mutate()}>
-            {generateMutation.isPending ? <><Clock className="h-4 w-4 mr-2 animate-spin" />Generating...</> : <><Sparkles className="h-4 w-4 mr-2" />Generate Today's Picks</>}
-          </Button>
-        )}
       </div>
 
       {/* Expert Cards */}
@@ -228,7 +222,7 @@ export default function Experts() {
                       </div>
                     ) : (
                       <div className="text-center py-4 text-xs text-muted-foreground">
-                        No picks posted today yet. {isAdmin && 'Click "Generate Today\'s Picks" above.'}
+                        No picks posted today yet. Experts analyze the slate each morning.
                       </div>
                     )}
                   </div>
