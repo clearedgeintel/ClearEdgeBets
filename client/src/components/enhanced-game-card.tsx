@@ -191,13 +191,6 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
     queryKey: ['/api/daily-picks']
   });
 
-  const { data: aiSuggestedBets = [] } = useQuery<any[]>({
-    queryKey: ['/api/ai-suggested-bets']
-  });
-
-  const { data: gameEvaluations = [] } = useQuery<any[]>({
-    queryKey: ['/api/game-evaluations']
-  });
 
   // No expert picks API - removed to maintain authentic data only
 
@@ -209,10 +202,6 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
     return pick.gameId === game.gameId;
   }) || null;
 
-  // Get evaluation data for this game
-  const gameEvaluation = gameEvaluations.find(evaluation => evaluation.gameId === game.gameId);
-  
-  // No expert picks available - removed to maintain authentic data integrity
 
   const getOddsByMarket = (market: string) => {
     return game.odds.find(o => o.market === market);
@@ -242,11 +231,6 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
     }
   };
 
-  const getConfidenceBadge = (confidence: number) => {
-    if (confidence >= 80) return { variant: "default" as const, label: "High", color: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20" };
-    if (confidence >= 65) return { variant: "secondary" as const, label: "Med", color: "bg-amber-500/15 text-amber-400 border border-amber-500/20" };
-    return { variant: "outline" as const, label: "Low", color: "bg-zinc-500/15 text-zinc-400 border border-zinc-500/20" };
-  };
 
   return (
     <Card className="w-full card-glow border-border/50 bg-card">
@@ -628,86 +612,6 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
                 </div>
               )}
 
-              {/* Expert picks removed - no authentic expert picks API available */}
-
-              {/* AI Suggested Picks - Show for all games */}
-              {!aiPick && (() => {
-                const gameSuggestions = aiSuggestedBets.find(bet => bet.gameId === game.gameId);
-                
-                if (gameSuggestions?.suggestions?.length > 0) {
-                  return (
-                    <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg">
-                      <div className="flex items-center space-x-2 mb-3">
-                        <Brain className="h-5 w-5 text-blue-400" />
-                        <h5 className="text-sm font-semibold text-foreground">AI Suggested Picks</h5>
-                        <Badge className="bg-blue-500/15 text-blue-400 border border-blue-500/20 text-xs">
-                          {gameSuggestions.suggestions.length} Options
-                        </Badge>
-                      </div>
-                      <div className="space-y-2">
-                        {gameSuggestions.suggestions.map((suggestion: any, index: number) => (
-                          <div key={index} className="flex items-center justify-between p-2.5 bg-zinc-900/50 rounded border border-border/50">
-                            <div className="flex items-center space-x-2">
-                              <div className="text-blue-400">{getPickIcon(suggestion.betType)}</div>
-                              <div>
-                                <span className="text-sm font-medium text-foreground">
-                                  {suggestion.betType === 'moneyline' ? `${suggestion.team} ML` :
-                                   suggestion.betType === 'total' ? `${suggestion.selection.toUpperCase()} ${suggestion.line}` :
-                                   suggestion.betType === 'spread' ? `${suggestion.team} ${suggestion.line}` :
-                                   suggestion.selection}
-                                </span>
-                                <p className="text-xs text-muted-foreground">{suggestion.reasoning}</p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <Badge className={getConfidenceBadge(suggestion.confidence).color + " text-xs mb-1"}>
-                                {suggestion.confidence}%
-                              </Badge>
-                              <p className="text-xs text-zinc-400 tabular-nums">{formatOdds(suggestion.odds)}</p>
-                              <p className="text-xs text-emerald-400">EV: {suggestion.expectedValue}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                }
-
-                // Fallback for games without suggestions
-                return (
-                  <div className="text-center py-6 bg-zinc-900/30 border border-border/30 rounded-lg">
-                    <Brain className="h-8 w-8 mx-auto mb-3 text-zinc-600" />
-                    {gameEvaluation ? (
-                      <>
-                        <p className="text-sm text-foreground font-medium mb-2">
-                          {gameEvaluation.evaluationStatus === 'evaluated' ? 'Game Evaluated - No Pick Warranted' :
-                           gameEvaluation.evaluationStatus === 'no_value' ? 'No Betting Value Found' :
-                           'Insufficient Data for Analysis'}
-                        </p>
-                        <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto mb-3">
-                          {gameEvaluation.reasoning ||
-                           'Our AI analyzed this matchup but didn\'t find sufficient edge for a recommended bet.'}
-                        </p>
-                        <Badge variant="outline" className="mt-1 text-xs text-zinc-400 border-zinc-700">
-                          {gameEvaluation.evaluationStatus === 'evaluated' ? 'Analysis Complete' :
-                           gameEvaluation.evaluationStatus === 'no_value' ? 'No Value Found' :
-                           'Data Incomplete'}
-                        </Badge>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-sm text-foreground font-medium mb-2">Analysis Pending</p>
-                        <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
-                          This game hasn't been evaluated yet. Check back later for AI analysis and potential picks.
-                        </p>
-                        <Badge variant="secondary" className="mt-3 text-xs">
-                          Awaiting Analysis
-                        </Badge>
-                      </>
-                    )}
-                  </div>
-                );
-              })()}
             </div>
       </CardContent>
       )}
