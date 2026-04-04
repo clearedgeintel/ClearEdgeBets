@@ -825,11 +825,11 @@ export async function generateWriterColumn(
   topic: string,
   context?: string,  // Optional box score data, stats, etc.
 ): Promise<{ title: string; content: string }> {
-  // Auto-fetch real-time news context
+  // Auto-detect sport from topic and fetch relevant news context
   let newsBlock = '';
   try {
-    const { buildNewsContext, formatContextForPrompt } = await import('./news-context');
-    const newsCtx = await buildNewsContext();
+    const { buildNewsContextForTopic, formatContextForPrompt } = await import('./news-context');
+    const newsCtx = await buildNewsContextForTopic(topic);
     newsBlock = formatContextForPrompt(newsCtx);
   } catch {}
 

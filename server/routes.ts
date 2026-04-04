@@ -918,12 +918,19 @@ Return JSON:
   });
 
   // Current news context (public — shows what writers see)
+  // ?sport=nhl or ?topic=who wins the Stanley Cup
   app.get('/api/news-context', async (req, res) => {
     try {
-      const { buildNewsContext } = await import('./services/news-context');
-      res.json(await buildNewsContext());
-    } catch (error: any) {
-      res.json({ headlines: [], injuries: [], standings: [], recentScores: [], timestamp: new Date().toISOString() });
+      const { buildNewsContext, buildNewsContextForTopic } = await import('./services/news-context');
+      const sport = req.query.sport as string;
+      const topic = req.query.topic as string;
+      if (topic) {
+        res.json(await buildNewsContextForTopic(topic));
+      } else {
+        res.json(await buildNewsContext(sport || 'mlb'));
+      }
+    } catch {
+      res.json({ sport: 'MLB', headlines: [], injuries: [], standings: [], recentScores: [], timestamp: new Date().toISOString() });
     }
   });
 
