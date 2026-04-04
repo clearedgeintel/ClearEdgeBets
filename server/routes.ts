@@ -845,6 +845,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // "This Day in Baseball" + "Picks of the Day" — AI-generated, cached 24h
+  app.get('/api/homepage/daily-content', async (req, res) => {
+    try {
+      const today = new Date();
+      const dateKey = today.toISOString().split('T')[0];
+      const cacheKey = `daily-content-${dateKey}`;
+      const cached = getCached<any>(cacheKey);
+      if (cached) return res.json(cached);
+
+      const monthDay = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+
+      // Fetch today's games for picks context
+      const { fetchTank01Games, fetchTank01Odds, getConsensusOdds, parseMultiBookOdds, getTeamFullName } = await import('./services/tank01-mlb');
+      const [games, oddsMap] = await Promise.all([
+        fetchTank01Games(dateKey),
+        fetchTank01Odds(dateKey),
+      ]);
+
+      const gameLines = games.slice(0, 8).map(g => {
+        const odds = oddsMap[g.gameID];
+        const books = odds ? parseMultiBookOdds(odds) : [];
+        const consensus = books.length > 0 ? getConsensusOdds(books) : { moneyline: null, total: null };
+        return `${getTeamFullName(g.away)} @ ${getTeamFullName(g.home)} (${g.gameTime})${consensus.moneyline ? ` ML: ${consensus.moneyline.away}/${consensus.moneyline.home}` : ''}${consensus.total ? ` O/U: ${consensus.total.line}` : ''}`;
+      }).join('\n');
+
+      const { default: OpenAI } = await import('openai');
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: `Generate two things for a sports site homepage. Today is ${monthDay}.
+
+1. **This Day in Baseball History**: One fascinating, surprising, or funny historical event that happened on ${monthDay} in MLB history. 2-3 sentences. Include the year. Make it interesting — not just "player X was born."
+
+2. **3 Picks of the Day**: From today's games, give 3 quick picks with 1-sentence rationale each. Be specific with the pick (team moneyline, over/under, or run line). Be confident but analytical.
+
+Today's games:
+${gameLines || 'No games available — make 3 general baseball predictions or trends instead.'}
+
+Return JSON:
+{
+  "historyYear": 1998,
+  "historyEvent": "...",
+  "picks": [
+    { "pick": "Yankees ML (-130)", "rationale": "..." },
+    { "pick": "Over 8.5 CIN@TEX", "rationale": "..." },
+    { "pick": "Dodgers -1.5 (+125)", "rationale": "..." }
+  ]
+}` }],
+        response_format: { type: 'json_object' },
+        temperature: 0.8,
+        max_tokens: 600,
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{}');
+      const content = {
+        date: dateKey,
+        monthDay,
+        history: { year: result.historyYear, event: result.historyEvent },
+        picks: result.picks || [],
+      };
+
+      setCache(cacheKey, content, 86400); // 24h cache
+      res.json(content);
+    } catch (error: any) {
+      console.error('Error generating daily content:', error);
+      res.json({ date: new Date().toISOString().split('T')[0], monthDay: '', history: null, picks: [] });
+    }
+  });
+
   // Yesterday's scores (public)
   app.get('/api/scores/yesterday', async (req, res) => {
     try {
