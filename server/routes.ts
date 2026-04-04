@@ -1420,20 +1420,34 @@ Return JSON: { "questions": [{ "question": "...", "options": ["A answer", "B ans
       const { fetchTank01Games, fetchTank01Odds, getConsensusOdds, parseMultiBookOdds, getTeamFullName, fetchTank01Teams } = await import('./services/tank01-mlb');
 
       const today = new Date().toISOString().split('T')[0];
-      const [newsCtx, games, oddsMap, teams] = await Promise.all([
+      const yesterdayD = new Date(Date.now() - 86400000);
+      const yesterday = yesterdayD.toISOString().split('T')[0];
+
+      const { fetchTank01Scores } = await import('./services/tank01-mlb');
+      const [newsCtx, games, oddsMap, teams, yesterdayScores] = await Promise.all([
         buildNewsContextForTopic(message),
         fetchTank01Games(today),
         fetchTank01Odds(today),
         fetchTank01Teams(),
+        fetchTank01Scores(yesterday),
       ]);
 
-      // Build game context
-      const gameLines = games.slice(0, 12).map(g => {
+      // Build today's game context
+      const gameLines = games.slice(0, 15).map(g => {
         const odds = oddsMap[g.gameID];
         const books = odds ? parseMultiBookOdds(odds) : [];
         const consensus = books.length > 0 ? getConsensusOdds(books) : { moneyline: null, total: null };
         return `${getTeamFullName(g.away)} @ ${getTeamFullName(g.home)} (${g.gameTime})${consensus.moneyline ? ` ML: ${consensus.moneyline.away}/${consensus.moneyline.home}` : ''}${consensus.total ? ` O/U: ${consensus.total.line}` : ''}`;
       }).join('\n');
+
+      // Build yesterday's COMPLETE results
+      const yesterdayResults = Object.entries(yesterdayScores)
+        .filter(([, g]) => (g as any).gameStatusCode === '2' || (g as any).gameStatus === 'Completed')
+        .map(([id, g]: [string, any]) => {
+          const awayR = g.lineScore?.away?.R || '0';
+          const homeR = g.lineScore?.home?.R || '0';
+          return `${getTeamFullName(g.away)} ${awayR} @ ${getTeamFullName(g.home)} ${homeR}`;
+        }).join('\n');
 
       // Standings context
       const standingsLines = (() => {
@@ -1457,9 +1471,12 @@ Return JSON: { "questions": [{ "question": "...", "options": ["A answer", "B ans
 
       const newsBlock = formatContextForPrompt(newsCtx);
 
-      const systemPrompt = `You are the ClearEdge Sports AI Assistant — a knowledgeable, data-driven sports analyst. You have access to real-time data:
+      const systemPrompt = `You are the ClearEdge Sports AI Assistant — a knowledgeable, data-driven sports analyst. You have access to COMPLETE real-time data from multiple sources. Use ALL of it when answering.
 
 ${newsBlock}
+
+**Yesterday's Complete Results (${yesterday}) — ALL GAMES:**
+${yesterdayResults || 'No completed games found'}
 
 **Today's Games (${games.length}):**
 ${gameLines || 'No games today'}
@@ -1469,13 +1486,14 @@ ${standingsLines}
 ${picksContext}
 
 RULES:
-- Use the REAL data above to answer questions. Reference specific teams, odds, pitchers, and standings.
+- You have COMPLETE data for all games. Use ALL of it — never say you only have partial data.
+- When asked about yesterday's games, list ALL results from the "Yesterday's Complete Results" section above.
+- When asked about a specific game, cite the actual score, odds, and pitchers.
 - Be conversational but analytical. Back opinions with data.
-- If asked about a specific game, cite the actual odds and pitchers.
 - If asked for picks, give specific selections with reasoning.
 - If asked about other sports (NFL, NBA, NHL), use the news context which auto-detects sport.
-- Never make up stats. If you don't have data, say so.
-- Keep responses concise — 2-4 paragraphs max unless asked for detail.`;
+- Never make up stats. If data isn't in the context above, say so.
+- Keep responses concise but complete — list all games when asked.`;
 
       const { default: OpenAI } = await import('openai');
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
