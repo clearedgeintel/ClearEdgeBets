@@ -646,8 +646,16 @@ export async function generateExpertPicks(input: ExpertPickInput): Promise<Array
     return line;
   }).join('\n');
 
-  const prompt = `${expert.voiceDirective}
+  // Auto-fetch real-time news context for expert picks
+  let newsBlock = '';
+  try {
+    const { buildNewsContext, formatContextForPrompt } = await import('./news-context');
+    const newsCtx = await buildNewsContext();
+    newsBlock = formatContextForPrompt(newsCtx);
+  } catch {}
 
+  const prompt = `${expert.voiceDirective}
+${newsBlock}
 You are analyzing today's MLB slate. Pick ${expert.maxPicksPerDay} games maximum. Only pick games where you have a genuine edge based on your specialty.
 
 **Your preferred bet types:** ${expert.pickTypes.join(', ')}
@@ -720,6 +728,14 @@ export async function generateSarcasticGameReview(input: GameReviewInput): Promi
   const loser = input.awayScore > input.homeScore ? input.homeTeam : input.awayTeam;
   const writer = getRandomBeatWriter();
 
+  // Auto-fetch real-time news context
+  let newsBlock = '';
+  try {
+    const { buildNewsContext, formatContextForPrompt } = await import('./news-context');
+    const newsCtx = await buildNewsContext();
+    newsBlock = formatContextForPrompt(newsCtx);
+  } catch {}
+
   const personalityPrompt = `You are **${writer.name}**, ${writer.title} at ClearEdge Sports.
 
 **Your backstory:** ${writer.bio}
@@ -734,7 +750,8 @@ ${writer.quirks.map(q => `• ${q}`).join('\n')}
 **Your specialty:** ${writer.specialty}
 ${writer.favoriteTeam ? `**Secret bias:** You have a soft spot for the ${writer.favoriteTeam}, but try to hide it.` : ''}
 
-Stay in character as ${writer.name} throughout. This is YOUR column, YOUR voice. The reader should feel like they know you personally.`;
+Stay in character as ${writer.name} throughout. This is YOUR column, YOUR voice. The reader should feel like they know you personally.
+${newsBlock}`;
 
   const prompt = `${personalityPrompt}
 
@@ -808,6 +825,14 @@ export async function generateWriterColumn(
   topic: string,
   context?: string,  // Optional box score data, stats, etc.
 ): Promise<{ title: string; content: string }> {
+  // Auto-fetch real-time news context
+  let newsBlock = '';
+  try {
+    const { buildNewsContext, formatContextForPrompt } = await import('./news-context');
+    const newsCtx = await buildNewsContext();
+    newsBlock = formatContextForPrompt(newsCtx);
+  } catch {}
+
   const prompt = `You are **${writer.name}**, ${writer.title} at ClearEdge Sports.
 
 **Your backstory:** ${writer.bio}
@@ -817,6 +842,7 @@ ${writer.quirks.map(q => `• ${q}`).join('\n')}
 **Your catchphrase (work this in naturally):** "${writer.catchphrase}"
 **Your specialty:** ${writer.specialty}
 ${writer.favoriteTeam ? `**Secret bias:** You have a soft spot for the ${writer.favoriteTeam}.` : ''}
+${newsBlock}
 
 Your editor has assigned you the following topic:
 

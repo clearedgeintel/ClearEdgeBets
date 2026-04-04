@@ -917,6 +917,16 @@ Return JSON:
     }
   });
 
+  // Current news context (public — shows what writers see)
+  app.get('/api/news-context', async (req, res) => {
+    try {
+      const { buildNewsContext } = await import('./services/news-context');
+      res.json(await buildNewsContext());
+    } catch (error: any) {
+      res.json({ headlines: [], injuries: [], standings: [], recentScores: [], timestamp: new Date().toISOString() });
+    }
+  });
+
   // Yesterday's scores (public)
   app.get('/api/scores/yesterday', async (req, res) => {
     try {

@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test*)",
+      "Bash(npm run*)",
+      "Bash(npx kill-port*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(curl -s*)",
+      "Bash(node -e*)",
+      "Bash(grep*)",
+      "Bash(sed*)",
+      "Bash(wc*)",
+      "Bash(head*)",
+      "Bash(tail*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(npm publish*)"
+    ]
+  }
+}
