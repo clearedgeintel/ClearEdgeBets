@@ -71,61 +71,39 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
       active: location === "/" || location.startsWith("/baseball") || location === "/games" || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets" || location === "/performance-tracking",
       freeItems: [
         {
+          name: "Morning Roast",
+          href: "/blog",
+          icon: FileText,
+          current: location === "/blog",
+          description: "AI game recaps from our beat writers"
+        },
+        {
           name: "Expert Panel",
           href: "/experts",
           icon: Target,
-          current: location === "/experts",
+          current: location === "/experts" || location === "/expert-leaderboard",
           description: "5 AI analysts with tracked picks"
         },
         {
-          name: "Expert Leaderboard",
-          href: "/expert-leaderboard",
-          icon: Trophy,
-          current: location === "/expert-leaderboard",
-          description: "Experts ranked by W/L, ROI, units"
-        },
-        {
-          name: "Games",
-          href: "/games",
+          name: "Games & Odds",
+          href: "/todays-games",
           icon: Home,
           current: location === "/games" || location === "/todays-games",
-          description: "MLB games and odds for any date"
+          description: "Today's schedule with 8-book odds"
         },
-        { 
-          name: "My Picks", 
-          href: "/my-bets", 
-          icon: History,
-          current: location === "/my-bets",
-          description: "Your MLB prediction history"
-        },
-        { 
-          name: "Kelly Calculator", 
-          href: "/kelly-calculator", 
-          icon: Calculator,
-          current: location === "/kelly-calculator",
-          description: "Optimize bet sizing with mathematical precision"
-        },
-        { 
-          name: "Weather Central", 
-          href: "/weather-summary", 
-          icon: Cloud,
-          current: location === "/weather-summary",
-          description: "Fun weather map for today's MLB games"
-        },
-
         {
-          name: "Team Power Scores",
+          name: "Rankings",
           href: "/team-power-scores",
           icon: BarChart3,
-          current: location === "/team-power-scores",
-          description: "Live MLB team rankings and power scores"
+          current: location === "/team-power-scores" || location === "/player-rankings",
+          description: "Team power scores + player rankings"
         },
         {
-          name: "Player Rankings",
-          href: "/player-rankings",
-          icon: Trophy,
-          current: location === "/player-rankings",
-          description: "Sort hitters and pitchers by power score"
+          name: "My Picks",
+          href: "/my-bets",
+          icon: History,
+          current: location === "/my-bets",
+          description: "Your prediction history"
         },
         {
           name: "Daily Trivia",
@@ -135,322 +113,57 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           description: "Test your knowledge, earn coins"
         },
         {
-          name: "Wiki",
-          href: "/wiki",
-          icon: HelpCircle,
-          current: location === "/wiki",
-          description: "Scoring methodology and park factors"
-        },
-        {
-          name: "The Morning Roast",
-          href: "/blog",
-          icon: FileText,
-          current: location === "/blog",
-          description: "Sarcastic AI game recaps"
-        },
-        {
-          name: "The Newsroom",
-          href: "/writers",
-          icon: Users,
-          current: location === "/writers",
-          description: "Meet our 25 AI beat writers"
-        },
-        {
-          name: "Editor's Desk",
-          href: "/editors-desk",
-          icon: FileText,
-          current: location === "/editors-desk",
-          description: "Assign stories to your newsroom"
-        },
-        {
-          name: "Daily Brief",
+          name: "Newsletter",
           href: "/newsletter",
           icon: FileText,
           current: location === "/newsletter",
-          description: "Subscribe to our daily newsletter"
+          description: "Daily brief delivered to your inbox"
         }
       ],
       proItems: [
-        { 
-          name: "Daily Picks", 
-          href: "/daily-picks", 
-          icon: Target,
-          current: location === "/daily-picks",
-          description: "AI-powered game predictions",
-          requiresPro: true
-        },
-        { 
-          name: "Daily Dose Newsletter", 
-          href: "/daily-dose", 
-          icon: FileText,
-          current: location === "/daily-dose",
-          description: "Professional sports newsletter with Kelly analysis",
-          requiresPro: true
-        },
-        { 
-          name: "Odds Comparison", 
-          href: "/odds-comparison", 
+        {
+          name: "Odds & Market Data",
+          href: "/odds-comparison",
           icon: BarChart3,
-          current: location === "/odds-comparison",
-          description: "Compare odds across multiple sportsbooks",
+          current: location === "/odds-comparison" || location === "/hot-trends" || location === "/enhanced-odds",
+          description: "Multi-book comparison + trends",
           requiresPro: true
         },
-        { 
-          name: "Hot Trends", 
-          href: "/hot-trends", 
-          icon: TrendingUp,
-          current: location === "/hot-trends",
-          description: "Discover trending sports patterns",
-          requiresPro: true
-        },
-        { 
-          name: "Enhanced Odds", 
-          href: "/enhanced-odds", 
+        {
+          name: "Tools & Calculators",
+          href: "/kelly-calculator",
           icon: Calculator,
-          current: location === "/enhanced-odds",
-          description: "Detailed odds analysis and implied probability breakdown",
+          current: location === "/kelly-calculator" || location === "/expected-value",
+          description: "Kelly calculator + expected value",
           requiresPro: true
         },
-        { 
-          name: "Expected Value", 
-          href: "/expected-value", 
-          icon: Calculator,
-          current: location === "/expected-value",
-          description: "Optimal bet sizing with Kelly Criterion and EV calculations",
+        {
+          name: "AI Assistant",
+          href: "/ai-assistant",
+          icon: Brain,
+          current: location === "/ai-assistant",
+          description: "Chat with AI for sports insights",
           requiresPro: true
         }
       ],
       eliteItems: [
-        { 
-          name: "Performance Analytics", 
-          href: "/analytics", 
-          icon: BarChart3,
-          current: location === "/analytics",
-          description: "Advanced prediction performance insights",
-          requiresElite: true
-        },
-        { 
-          name: "AI Assistant", 
-          href: "/ai-assistant", 
-          icon: Brain,
-          current: location === "/ai-assistant",
-          description: "Chat with AI for sports insights",
-          requiresElite: true
-        },
-        { 
-          name: "Prop Finder", 
-          href: "/prop-finder", 
+        {
+          name: "Props & Parlays",
+          href: "/parlay-builder",
           icon: Target,
-          current: location === "/prop-finder",
-          description: "Find positive EV player props",
+          current: location === "/parlay-builder" || location === "/prop-finder" || location === "/player-prop-builder",
+          description: "Build parlays and find prop edges",
           requiresElite: true
         },
-        { 
-          name: "Parlay Builder", 
-          href: "/parlay-builder", 
-          icon: Calculator,
-          current: location === "/parlay-builder",
-          description: "Build optimal parlays with EV guidance",
+        {
+          name: "Performance",
+          href: "/analytics",
+          icon: TrendingUp,
+          current: location === "/analytics" || location === "/performance-tracking",
+          description: "Advanced analytics dashboard",
           requiresElite: true
-        },
-        { 
-          name: "DFS Prop Builder", 
-          href: "/player-prop-builder", 
-          icon: Target,
-          current: location === "/player-prop-builder",
-          description: "Build player prop parlays up to 6 picks",
-          requiresElite: true
-        },
-        { 
-          name: "Custom Strategies", 
-          href: "/strategies", 
-          icon: Target,
-          current: location === "/strategies",
-          description: "Create and manage prediction strategies",
-          requiresElite: true
-        },
-        { 
-          name: "Expert Consultation", 
-          href: "#", 
-          icon: Users,
-          current: false,
-          description: "1-on-1 sessions with sports experts",
-          disabled: true,
-          comingSoon: true
-        },
-        { 
-          name: "Early Access", 
-          href: "/early-access", 
-          icon: Zap,
-          current: location === "/early-access",
-          description: "Beta features and new releases",
-          requiresElite: true
-        },
-        { 
-          name: "White Label", 
-          href: "#", 
-          icon: Building,
-          current: false,
-          description: "Brand customization options",
-          disabled: true,
-          comingSoon: true
         }
       ]
-    },
-    {
-      sport: "Football",
-      icon: Zap,
-      expanded: footballExpanded,
-      setExpanded: setFootballExpanded,
-      active: location.startsWith("/football") || location.startsWith("/cfl"),
-      freeItems: [
-        { 
-          name: "CFL Hub", 
-          href: "/cfl", 
-          icon: Trophy,
-          current: location === "/cfl",
-          description: "Canadian Football League central",
-          featured: true
-        },
-        { 
-          name: "Today's Games", 
-          href: "/cfl/games", 
-          icon: Calendar,
-          current: location === "/cfl/games",
-          description: "Live CFL games and odds"
-        },
-        { 
-          name: "Daily Picks", 
-          href: "/cfl/picks", 
-          icon: Target,
-          current: location === "/cfl/picks",
-          description: "AI-powered CFL predictions"
-        },
-        { 
-          name: "NFL", 
-          href: "/nfl", 
-          icon: Star,
-          current: location === "/nfl",
-          description: "Coming Soon",
-          disabled: true
-        }
-      ],
-      proItems: [],
-      eliteItems: []
-    },
-    {
-      sport: "Golf",
-      icon: Flag,
-      expanded: golfExpanded,
-      setExpanded: setGolfExpanded,
-      active: location.startsWith("/golf"),
-      freeItems: [
-        { 
-          name: "Tournaments", 
-          href: "#", 
-          icon: Trophy,
-          current: false,
-          description: "Coming Soon",
-          disabled: true,
-          comingSoon: true
-        },
-        { 
-          name: "Leaderboards", 
-          href: "#", 
-          icon: TrendingUp,
-          current: false,
-          description: "Coming Soon",
-          disabled: true,
-          comingSoon: true
-        },
-        { 
-          name: "Futures", 
-          href: "#", 
-          icon: Target,
-          current: false,
-          description: "Coming Soon",
-          disabled: true,
-          comingSoon: true
-        }
-      ],
-      proItems: [],
-      eliteItems: []
-    },
-    {
-      sport: "Hockey",
-      icon: CircleDot,
-      expanded: hockeyExpanded,
-      setExpanded: setHockeyExpanded,
-      active: location.startsWith("/hockey"),
-      freeItems: [
-        { 
-          name: "NHL Games", 
-          href: "#", 
-          icon: Calendar,
-          current: false,
-          description: "Coming Soon",
-          disabled: true,
-          comingSoon: true
-        },
-        { 
-          name: "Daily Picks", 
-          href: "#", 
-          icon: Target,
-          current: false,
-          description: "Coming Soon",
-          disabled: true,
-          comingSoon: true
-        },
-        { 
-          name: "Player Props", 
-          href: "#", 
-          icon: Star,
-          current: false,
-          description: "Coming Soon",
-          disabled: true,
-          comingSoon: true
-        }
-      ],
-      proItems: [],
-      eliteItems: []
-    },
-    {
-      sport: "Basketball",
-      icon: Shield,
-      expanded: basketballExpanded,
-      setExpanded: setBasketballExpanded,
-      active: location.startsWith("/basketball"),
-      freeItems: [
-        { 
-          name: "NBA Games", 
-          href: "#", 
-          icon: Calendar,
-          current: false,
-          description: "Coming Soon",
-          disabled: true,
-          comingSoon: true
-        },
-        { 
-          name: "Daily Picks", 
-          href: "#", 
-          icon: Target,
-          current: false,
-          description: "Coming Soon",
-          disabled: true,
-          comingSoon: true
-        },
-        { 
-          name: "Player Props", 
-          href: "#", 
-          icon: Star,
-          current: false,
-          description: "Coming Soon",
-          disabled: true,
-          comingSoon: true
-        }
-      ],
-      proItems: [],
-      eliteItems: []
     },
     {
       sport: "Prediction Game",
