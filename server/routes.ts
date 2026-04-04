@@ -2365,93 +2365,7 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
 
   // Expert picks API removed - no authentic expert picks source available
 
-  // Team Power Scores API for comprehensive rankings display
-  app.get('/api/team-power-scores', async (req, res) => {
-    try {
-      // Fetch live data from Baseball Reference
-      const [liveBattingStats, livePitchingStats] = await Promise.all([
-        baseballReferenceService.fetchTeamBattingStats(),
-        baseballReferenceService.fetchTeamPitchingStats()
-      ]);
-      
-      if (liveBattingStats.length === 0 || livePitchingStats.length === 0) {
-        return res.status(503).json({ 
-          message: 'Unable to fetch team statistics from Baseball Reference' 
-        });
-      }
-      
-      // Calculate power scores using live data
-      const teamPowerScores = teamPowerScoringService.calculateAllTeamPowerScores(
-        liveBattingStats,
-        livePitchingStats
-      );
-      
-      // Get rankings with percentiles
-      const powerScores = teamPowerScoringService.getTeamPowerRankings(teamPowerScores);
-      console.log(`Team Power Scores API: Serving ${powerScores.length} teams with live data`);
-      
-      res.json(powerScores);
-    } catch (error) {
-      console.error('Error fetching team power scores:', error);
-      res.status(500).json({ message: 'Failed to fetch team power scores' });
-    }
-  });
-
-  // Enhanced Team Matchup Analysis - combines power scores with odds data
-  app.get('/api/enhanced-matchup/:awayTeam/:homeTeam', async (req, res) => {
-    try {
-      const { awayTeam, homeTeam } = req.params;
-      
-      // Fetch live team power data
-      const [liveBattingStats, livePitchingStats] = await Promise.all([
-        baseballReferenceService.fetchTeamBattingStats(),
-        baseballReferenceService.fetchTeamPitchingStats()
-      ]);
-      
-      if (liveBattingStats.length === 0 || livePitchingStats.length === 0) {
-        return res.status(503).json({ 
-          message: 'Unable to fetch team statistics for matchup analysis' 
-        });
-      }
-      
-      // Calculate power scores
-      const teamPowerScores = teamPowerScoringService.calculateAllTeamPowerScores(
-        liveBattingStats, 
-        livePitchingStats
-      );
-      const powerScores = teamPowerScoringService.getTeamPowerRankings(teamPowerScores);
-      
-      // Get team advantage analysis
-      const matchupAnalysis = teamPowerScoringService.calculateTeamAdvantage(
-        powerScores,
-        homeTeam,
-        awayTeam
-      );
-      
-      if (!matchupAnalysis) {
-        return res.status(404).json({ 
-          message: `Team power data not found for ${awayTeam} vs ${homeTeam}` 
-        });
-      }
-      
-      res.json({
-        matchup: `${awayTeam} @ ${homeTeam}`,
-        awayTeam: matchupAnalysis.awayTeamData,
-        homeTeam: matchupAnalysis.homeTeamData,
-        analysis: {
-          powerDifference: matchupAnalysis.powerDifference,
-          favoredTeam: matchupAnalysis.favoredTeam,
-          confidenceLevel: matchupAnalysis.confidenceLevel,
-          insight: matchupAnalysis.matchupAnalysis
-        },
-        lastUpdated: new Date().toISOString()
-      });
-      
-    } catch (error) {
-      console.error('Error in enhanced matchup analysis:', error);
-      res.status(500).json({ message: 'Failed to analyze team matchup' });
-    }
-  });
+  // Old Baseball Reference team power scores removed — replaced by Tank01 version below
 
   // Enhanced Game Analysis combining authentic data sources
   app.get('/api/games/:gameId/enhanced-analysis', async (req, res) => {
@@ -7533,19 +7447,8 @@ Format as JSON:
         pitchingRank: pitchingRanked.findIndex(x => x.teamCode === t.teamCode) + 1,
       }));
 
-      res.json({
-        success: true,
-        date: new Date().toISOString().split('T')[0],
-        data: rankedScores,
-        count: rankedScores.length,
-        source: 'Tank01 (aggregated roster stats)',
-        summary: {
-          topTeam: rankedScores[0],
-          averagePowerScore: Math.round(rankedScores.reduce((s, t) => s + t.teamPowerScore, 0) / rankedScores.length),
-          highestBattingScore: Math.max(...rankedScores.map(t => t.advBattingScore)),
-          highestPitchingScore: Math.max(...rankedScores.map(t => t.pitchingScore)),
-        },
-      });
+      // Return flat array to match frontend expectation (TeamPowerScore[])
+      res.json(rankedScores);
     } catch (error: any) {
       console.error('Error calculating team power scores:', error);
       res.status(500).json({ success: false, error: error.message });
