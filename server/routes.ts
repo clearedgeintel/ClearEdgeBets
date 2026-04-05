@@ -4524,10 +4524,11 @@ Format as JSON:
           await schedulerService.triggerWeeklyTicket();
           break;
         case 'settle-bets':
-          const { settlePendingBets: settle, settleVirtualBets: settleVirtual, syncLiveGameData: sync } = await import('./services/bet-settlement');
+          const { syncLiveGameData: sync } = await import('./services/bet-settlement');
           await sync();
-          await settle();
-          await settleVirtual();
+          const { runSettlement } = await import('./services/settlement-engine');
+          const settleReport = await runSettlement({ betType: 'both' });
+          console.log(`Manual settlement: ${settleReport.gamesProcessed} games, ${settleReport.betsSettled} real, ${settleReport.virtualBetsSettled} virtual`);
           break;
         case 'odds-snapshot':
           await schedulerService.snapshotOdds();

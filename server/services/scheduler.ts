@@ -272,21 +272,15 @@ class SchedulerService {
   // Automatic bet settlement task
   private async runAutomaticBetSettlement() {
     try {
-      console.log('🎯 Running scheduled bet settlement...');
-      
       // Sync live game data first to get latest scores
-      const syncedGames = await syncLiveGameData();
-      
-      // Settle regular bets
-      const regularBetsSettled = await settlePendingBets();
-      
-      // Settle virtual bets
-      const virtualBetsSettled = await settleVirtualBets();
-      
-      const totalSettled = regularBetsSettled + virtualBetsSettled;
-      
-      if (totalSettled > 0) {
-        console.log(`✅ Scheduled settlement complete: ${totalSettled} bets reconciled (${regularBetsSettled} regular, ${virtualBetsSettled} virtual)`);
+      await syncLiveGameData();
+
+      // Use the new unified settlement engine
+      const { runSettlement } = await import('./settlement-engine');
+      const report = await runSettlement({ betType: 'both' });
+
+      if (report.betsSettled + report.virtualBetsSettled > 0) {
+        logger.info(`Settlement: ${report.gamesProcessed} games, ${report.betsSettled} real, ${report.virtualBetsSettled} virtual${report.errors.length > 0 ? `, ${report.errors.length} errors` : ''}`);
       }
       
     } catch (error) {
