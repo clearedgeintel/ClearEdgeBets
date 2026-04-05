@@ -10,8 +10,9 @@ import { getSportModule, hasSportModule } from '../sports/registry';
 import type { SportKey, GameScore, BetSelection } from '../sports/types';
 import { bankrollManager } from './bankroll-manager';
 
-// Ensure MLB module is registered
+// Register sport modules
 import '../sports/mlb/index';
+import '../sports/nhl/index';
 
 export interface SettlementReport {
   gamesProcessed: number;
