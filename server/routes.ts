@@ -6988,24 +6988,7 @@ Format as JSON:
     }
   });
 
-  // Virtual Bet Settlement Route
-  app.post('/api/admin/settle-virtual-bets', async (req: Request, res: Response) => {
-    try {
-      console.log('Manual virtual bet settlement triggered');
-      
-      // Settle pending virtual bets
-      const settledCount = await settleVirtualBets();
-      
-      res.json({ 
-        success: true, 
-        message: `Settled ${settledCount} virtual bets`,
-        settledCount 
-      });
-    } catch (error) {
-      console.error('Virtual bet settlement error:', error);
-      res.status(500).json({ error: 'Failed to settle virtual bets' });
-    }
-  });
+  // Duplicate virtual bet settlement route removed — use the authenticated one at /api/admin/settle-virtual-bets (line ~4153)
 
   // Update game status (for testing completed games)
   app.post('/api/admin/update-game-status', async (req: Request, res: Response) => {

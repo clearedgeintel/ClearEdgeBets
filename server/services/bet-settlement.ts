@@ -122,8 +122,12 @@ export async function settlePendingBets(): Promise<number> {
 
       console.log(`Settling ${pendingBets.length} bets for game ${game.gameId}`);
 
-      // Settle each bet with bankroll management
+      // Settle each bet with bankroll management (idempotent — skip if already settled)
       for (const bet of pendingBets) {
+        if (bet.status !== 'pending' || bet.result !== null) {
+          console.log(`Skipping bet ${bet.id} — already settled (status: ${bet.status}, result: ${bet.result})`);
+          continue;
+        }
         const { result, actualWin } = calculateBetResult(bet, game);
         
         // Update bet record
@@ -141,7 +145,7 @@ export async function settlePendingBets(): Promise<number> {
           try {
             const betDescription = `${bet.betType} on ${game.awayTeam} @ ${game.homeTeam}`;
             
-            if (result === 'won') {
+            if (result === 'win') {
               await bankrollManager.processBetSettlement(
                 bet.userId,
                 bet.id,
@@ -150,7 +154,7 @@ export async function settlePendingBets(): Promise<number> {
                 game.gameId,
                 betDescription
               );
-            } else if (result === 'lost') {
+            } else if (result === 'lose') {
               await bankrollManager.processBetSettlement(
                 bet.userId,
                 bet.id,
@@ -227,6 +231,8 @@ export async function settleVirtualBets(): Promise<number> {
         );
 
       for (const bet of pendingVirtualBets) {
+        // Idempotency guard
+        if (bet.status !== 'pending' || bet.result !== null) continue;
         // Calculate bet result
         const betResult = calculateBetResult(bet, game);
         
@@ -322,13 +328,8 @@ export async function updateGameStatus(gameId: string, update: {
       })
       .where(eq(games.gameId, gameId));
 
-    // If game is complete, trigger bet settlement
-    if (update.status === 'final') {
-      setTimeout(async () => {
-        await settlePendingBets();
-        await settleVirtualBets();
-      }, 1000); // Small delay to ensure update is committed
-    }
+    // Settlement is handled by the 15-minute cron scheduler
+    // No need for fire-and-forget setTimeout here
 
   } catch (error) {
     console.error('Error updating game status:', error);
