@@ -47,6 +47,7 @@ export default function Blog() {
   const queryClient = useQueryClient();
   const [selectedReview, setSelectedReview] = useState<BlogReview | null>(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [copied, setCopied] = useState(false);
   const isAdmin = user?.isAdmin;
 
   const { data: reviews = [], isLoading } = useQuery<BlogReview[]>({
@@ -102,8 +103,6 @@ export default function Blog() {
     const relatedByDate = reviews.filter(r => r.id !== selectedReview.id && r.gameDate === selectedReview.gameDate && !relatedByAuthor.find(ra => ra.id === r.id)).slice(0, 2);
     const relatedStories = [...relatedByAuthor, ...relatedByDate].slice(0, 3);
 
-    // Share
-    const [copied, setCopied] = useState(false);
     const shareUrl = `${window.location.origin}/blog#${selectedReview.slug}`;
     const copyLink = () => { navigator.clipboard.writeText(shareUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); };
     const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(selectedReview.title)}&url=${encodeURIComponent(shareUrl)}`;
