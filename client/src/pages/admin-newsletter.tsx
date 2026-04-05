@@ -59,7 +59,7 @@ export default function AdminNewsletter() {
 
   const markSentMutation = useMutation({
     mutationFn: async (id: number) => {
-      const resp = await fetch(`/api/admin/newsletter/mark-sent/${id}`, { method: 'POST', credentials: 'include' });
+      const resp = await fetch(`/api/admin/newsletter/send/${id}`, { method: 'POST', credentials: 'include' });
       if (!resp.ok) throw new Error('Failed');
       return resp.json();
     },
@@ -162,7 +162,7 @@ export default function AdminNewsletter() {
                     {nl.status === 'draft' && (
                       <Button size="sm" variant="outline" className="h-7 text-xs border-emerald-500/30 text-emerald-400" disabled={markSentMutation.isPending}
                         onClick={() => markSentMutation.mutate(nl.id)}>
-                        <CheckCircle className="h-3 w-3 mr-1" />Mark Sent
+                        <CheckCircle className="h-3 w-3 mr-1" />Send
                       </Button>
                     )}
                   </div>

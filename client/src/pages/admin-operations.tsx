@@ -29,6 +29,7 @@ const ALL_TASKS = [
   { name: 'daily-picks-generation', triggerKey: 'daily-picks', label: 'Daily Picks', description: 'AI generates game predictions', schedule: '8:00 AM CT', icon: Brain, group: 'morning' },
   { name: 'expert-picks-generation', triggerKey: 'expert-picks', label: 'Expert Panel Picks', description: '5 experts analyze the slate', schedule: '8:30 AM CT', icon: Target, group: 'morning' },
   { name: 'daily-ai-ticket', triggerKey: 'daily-ticket', label: 'AI Daily Ticket', description: 'Market insights analysis', schedule: '9:00 AM CT', icon: Zap, group: 'morning' },
+  { name: 'daily-newsletter', triggerKey: 'newsletter', label: 'Daily Newsletter', description: 'Generate + send to subscribers', schedule: '9:15 AM CT', icon: Newspaper, group: 'morning' },
   { name: 'weekly-summary', triggerKey: 'weekly-summary', label: 'Weekly Summary', description: 'Performance report', schedule: 'Mon 9:00 AM CT', icon: BarChart3, group: 'morning' },
   { name: 'auto-bet-settlement', triggerKey: 'settle-bets', label: 'Settle Predictions', description: 'Sync scores, settle bets', schedule: 'Every 15 min', icon: CalendarCheck, group: 'recurring' },
   { name: 'expert-pick-grading', triggerKey: 'expert-grading', label: 'Grade Expert Picks', description: 'Auto-grade completed picks', schedule: 'Every 30 min', icon: Trophy, group: 'recurring' },

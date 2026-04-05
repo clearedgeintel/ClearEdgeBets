@@ -83,12 +83,22 @@ function generateCFLPickReasoning(game: CFLGame, pickType: number): string {
   return reasonings[typeIndex][reasoningIndex];
 }
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
+if (stripeSecretKey.startsWith('pk_')) {
+  console.warn('⚠️  STRIPE_SECRET_KEY starts with pk_ — that\'s the publishable key, not the secret key. Subscriptions will fail. Get sk_test_... from Stripe Dashboard → Developers → API Keys');
 }
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-05-28.basil",
-});
+const stripeEnabled = stripeSecretKey && !stripeSecretKey.startsWith('pk_') && !stripeSecretKey.includes('REPLACE');
+const stripe = stripeEnabled
+  ? new Stripe(stripeSecretKey, { apiVersion: "2025-05-28.basil" })
+  : null;
+
+function requireStripe(res: any): boolean {
+  if (!stripe) {
+    res.status(503).json({ error: 'Stripe not configured. Add a valid sk_test_... key to STRIPE_SECRET_KEY in .env' });
+    return false;
+  }
+  return true;
+}
 
 // Function to generate different game data based on date
 function generateGamesForDate(dateString: string) {
@@ -1987,6 +1997,51 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
   });
 
   // Admin: mark newsletter as "sent" (actual email sending is external)
+  // Send newsletter to all active subscribers (admin)
+  app.post('/api/admin/newsletter/send/:id', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
+
+      const nlId = parseInt(req.params.id);
+      const newsletters = await storage.getNewsletters(100);
+      const nl = newsletters.find(n => n.id === nlId);
+      if (!nl) return res.status(404).json({ error: 'Newsletter not found' });
+
+      const subs = await storage.getActiveSubscribers();
+      if (subs.length === 0) return res.json({ success: true, sent: 0, message: 'No active subscribers' });
+
+      const { sendNewsletter, isEmailConfigured } = await import('./services/email');
+
+      if (!isEmailConfigured()) {
+        // Fallback: just mark as sent without emailing
+        await storage.updateNewsletter(nlId, { status: 'sent', sentAt: new Date(), recipientCount: subs.length });
+        return res.json({ success: true, sent: 0, message: 'Email not configured (RESEND_API_KEY missing). Marked as sent.', recipientCount: subs.length });
+      }
+
+      const result = await sendNewsletter(
+        nl.subject,
+        nl.htmlContent,
+        nl.textContent || '',
+        subs.map(s => ({ email: s.email, unsubscribeToken: s.unsubscribeToken })),
+      );
+
+      await storage.updateNewsletter(nlId, {
+        status: 'sent',
+        sentAt: new Date(),
+        recipientCount: result.sent,
+      });
+
+      res.json({ success: result.success, sent: result.sent, failed: result.failed, errors: result.errors });
+    } catch (error: any) {
+      console.error('Newsletter send error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Legacy mark-sent (backward compat)
   app.post('/api/admin/newsletter/mark-sent/:id', async (req, res) => {
     try {
       const userId = (req.session as any)?.userId;
@@ -4590,6 +4645,9 @@ Format as JSON:
           break;
         case 'morning-roast':
           await schedulerService.autoGenerateMorningRoast();
+          break;
+        case 'newsletter':
+          await (schedulerService as any).generateAndSendNewsletter();
           break;
         default:
           return res.status(400).json({ error: `Unknown task: ${task}` });

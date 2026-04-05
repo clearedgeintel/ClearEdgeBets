@@ -34,6 +34,9 @@ class SchedulerService {
 
     // Weekly summary ticket every Monday at 9 AM Central
     this.addTask('weekly-summary', '0 0 9 * * 1', this.generateWeeklySummaryTicket.bind(this));
+
+    // Daily newsletter — generate + send at 9:15 AM Central
+    this.addTask('daily-newsletter', '0 15 9 * * *', this.generateAndSendNewsletter.bind(this));
     
     // Automatic bet settlement every 15 minutes
     this.addTask('auto-bet-settlement', '0 */15 * * * *', this.runAutomaticBetSettlement.bind(this));
@@ -372,6 +375,99 @@ class SchedulerService {
   public async triggerDailyPicks() {
     console.log('Manually triggering daily picks generation...');
     await this.generateDailyPicks();
+  }
+
+  /**
+   * Auto-generate and send the daily newsletter.
+   */
+  private async generateAndSendNewsletter() {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+
+      // Check if already sent today
+      const existing = await storage.getNewsletters(5);
+      if (existing.some(n => n.edition === today && n.status === 'sent')) {
+        logger.info('Newsletter: already sent for ' + today);
+        return;
+      }
+
+      // Generate the newsletter
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      const { fetchTank01Games, fetchTank01Odds, getConsensusOdds, parseMultiBookOdds, getTeamFullName } = await import('./tank01-mlb');
+      const { fetchTank01Scores } = await import('./tank01-mlb');
+
+      const [todayGames, yesterdayScores, todayOdds] = await Promise.all([
+        fetchTank01Games(today),
+        fetchTank01Scores(yesterday),
+        fetchTank01Odds(today),
+      ]);
+
+      const yScores = Object.values(yesterdayScores)
+        .filter((g: any) => g.gameStatusCode === '2')
+        .map((g: any) => ({
+          away: getTeamFullName(g.away),
+          home: getTeamFullName(g.home),
+          awayScore: parseInt(g.lineScore?.away?.R || '0'),
+          homeScore: parseInt(g.lineScore?.home?.R || '0'),
+        }));
+
+      const tGames = todayGames.map(g => {
+        const odds = todayOdds[g.gameID];
+        const books = odds ? parseMultiBookOdds(odds) : [];
+        const consensus = books.length > 0 ? getConsensusOdds(books) : { moneyline: null, total: null };
+        return {
+          away: getTeamFullName(g.away),
+          home: getTeamFullName(g.home),
+          gameTime: g.gameTime,
+          moneyline: consensus.moneyline || undefined,
+          total: consensus.total?.line || undefined,
+        };
+      });
+
+      const { generateDailyNewsletter } = await import('./openai');
+      const result = await generateDailyNewsletter({ date: today, yesterdayScores: yScores, todayGames: tGames });
+
+      const slug = `newsletter-${today}`;
+      const nl = await storage.createNewsletter({
+        subject: result.subject,
+        previewText: result.previewText,
+        htmlContent: result.html,
+        textContent: result.text,
+        slug,
+        edition: today,
+        quickPicks: result.quickPicks,
+        yesterdayRecap: yScores,
+        status: 'draft',
+        sentAt: null,
+        recipientCount: 0,
+        openCount: 0,
+        clickCount: 0,
+      });
+
+      // Send to all active subscribers
+      const subs = await storage.getActiveSubscribers();
+      if (subs.length > 0) {
+        const { sendNewsletter, isEmailConfigured } = await import('./email');
+        if (isEmailConfigured()) {
+          const sendResult = await sendNewsletter(
+            nl.subject,
+            nl.htmlContent,
+            nl.textContent || '',
+            subs.map(s => ({ email: s.email, unsubscribeToken: s.unsubscribeToken })),
+          );
+          await storage.updateNewsletter(nl.id, { status: 'sent', sentAt: new Date(), recipientCount: sendResult.sent });
+          logger.info(`Newsletter: generated + sent to ${sendResult.sent} subscribers`);
+        } else {
+          await storage.updateNewsletter(nl.id, { status: 'sent', sentAt: new Date(), recipientCount: 0 });
+          logger.info('Newsletter: generated but email not configured (RESEND_API_KEY missing)');
+        }
+      } else {
+        await storage.updateNewsletter(nl.id, { status: 'sent', sentAt: new Date(), recipientCount: 0 });
+        logger.info('Newsletter: generated, no active subscribers');
+      }
+    } catch (error) {
+      logger.error('Newsletter auto-send error: ' + error);
+    }
   }
 
   /**
