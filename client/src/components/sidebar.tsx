@@ -173,6 +173,24 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
       ]
     },
     {
+      sport: "Hockey",
+      icon: CircleDot,
+      expanded: false,
+      setExpanded: () => {},
+      active: location.startsWith("/nhl"),
+      freeItems: [
+        {
+          name: "NHL Games",
+          href: "/nhl/games",
+          icon: Calendar,
+          current: location === "/nhl/games",
+          description: "Today's NHL schedule with odds"
+        },
+      ],
+      proItems: [],
+      eliteItems: [],
+    },
+    {
       sport: "Prediction Game",
       icon: CircleDot,
       expanded: virtualSportsbookExpanded,

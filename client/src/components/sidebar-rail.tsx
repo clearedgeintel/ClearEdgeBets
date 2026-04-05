@@ -17,6 +17,7 @@ const RAIL_ITEMS = [
   { href: "/player-rankings", icon: Trophy, label: "Players" },
   { href: "/trivia", icon: HelpCircle, label: "Trivia" },
   { href: "/newsletter", icon: FileText, label: "Newsletter" },
+  { href: "/nhl/games", icon: CircleDot, label: "NHL" },
   { href: "/editors-desk", icon: Pen, label: "Editor's Desk" },
   { href: "/virtual-sportsbook", icon: CircleDot, label: "Play" },
 ];

@@ -23,6 +23,7 @@ export default function Home() {
 
   const { data: todayGames = [] } = useQuery<TodayGame[]>({ queryKey: ["/api/games"], refetchInterval: 60000 });
   const { data: yesterdayScores } = useQuery<Record<string, ScoreGame>>({ queryKey: ["/api/scores/yesterday", yesterday], queryFn: () => fetch(`/api/scores/yesterday?date=${yesterday}`).then(r => r.ok ? r.json() : {}), staleTime: 300000 });
+  const { data: nhlScores = [] } = useQuery<any[]>({ queryKey: ["/api/nhl/scores", yesterday], queryFn: () => fetch(`/api/nhl/scores?date=${yesterday}`).then(r => r.json()), staleTime: 300000 });
   const { data: blogReviews = [] } = useQuery<BlogReview[]>({ queryKey: ['/api/blog/reviews'], queryFn: () => fetch('/api/blog/reviews').then(r => r.json()) });
   const { data: dailyContent } = useQuery<{ history: { year: number; event: string } | null; picks: Array<{ pick: string; rationale: string }> }>({ queryKey: ['/api/homepage/daily-content'], queryFn: () => fetch('/api/homepage/daily-content').then(r => r.json()), staleTime: 3600000 });
   const { data: expertPicks = [] } = useQuery<any[]>({ queryKey: ['/api/expert-picks', today], queryFn: () => fetch(`/api/expert-picks?date=${today}`).then(r => r.json()), staleTime: 300000 });
@@ -39,24 +40,43 @@ export default function Home() {
 
   return (
     <div>
-      {/* ── Yesterday's Scores Ticker ── */}
-      {yesterdayGamesList.length > 0 && (
+      {/* ── Yesterday's Scores Ticker (MLB + NHL) ── */}
+      {(yesterdayGamesList.length > 0 || nhlScores.filter((g: any) => g.status === 'final').length > 0) && (
         <div className="border-b border-border/30 bg-zinc-950/50 overflow-hidden">
           <div className="flex items-center gap-4 px-4 py-1.5 overflow-x-auto scrollbar-none text-[11px]">
-            <span className="text-zinc-600 flex-shrink-0 font-medium uppercase tracking-wider text-[9px]">Final</span>
-            {yesterdayGamesList.map((game) => {
-              const away = game.away || game.gameID?.split('_')[1]?.split('@')[0] || '';
-              const home = game.home || game.gameID?.split('@')[1] || '';
-              return (
-                <div key={game.gameID} className="flex items-center gap-1.5 flex-shrink-0 text-zinc-400">
-                  <img src={teamLogo(away)} alt="" className="h-3.5 w-3.5" />
-                  <span className="tabular-nums font-medium text-zinc-300">{game.lineScore?.away?.R || '0'}</span>
-                  <span className="text-zinc-600">-</span>
-                  <span className="tabular-nums font-medium text-zinc-300">{game.lineScore?.home?.R || '0'}</span>
-                  <img src={teamLogo(home)} alt="" className="h-3.5 w-3.5" />
-                </div>
-              );
-            })}
+            {yesterdayGamesList.length > 0 && (
+              <>
+                <span className="text-zinc-600 flex-shrink-0 font-medium uppercase tracking-wider text-[9px]">⚾ MLB</span>
+                {yesterdayGamesList.map((game) => {
+                  const away = game.away || game.gameID?.split('_')[1]?.split('@')[0] || '';
+                  const home = game.home || game.gameID?.split('@')[1] || '';
+                  return (
+                    <div key={game.gameID} className="flex items-center gap-1.5 flex-shrink-0 text-zinc-400">
+                      <img src={teamLogo(away)} alt="" className="h-3.5 w-3.5" />
+                      <span className="tabular-nums font-medium text-zinc-300">{game.lineScore?.away?.R || '0'}</span>
+                      <span className="text-zinc-600">-</span>
+                      <span className="tabular-nums font-medium text-zinc-300">{game.lineScore?.home?.R || '0'}</span>
+                      <img src={teamLogo(home)} alt="" className="h-3.5 w-3.5" />
+                    </div>
+                  );
+                })}
+              </>
+            )}
+            {nhlScores.filter((g: any) => g.status === 'final').length > 0 && (
+              <>
+                <span className="text-zinc-700 flex-shrink-0">|</span>
+                <span className="text-zinc-600 flex-shrink-0 font-medium uppercase tracking-wider text-[9px]">🏒 NHL</span>
+                {nhlScores.filter((g: any) => g.status === 'final').map((game: any) => (
+                  <div key={game.gameId} className="flex items-center gap-1.5 flex-shrink-0 text-zinc-400">
+                    <img src={`https://a.espncdn.com/i/teamlogos/nhl/500/${game.awayTeamCode?.toLowerCase()}.png`} alt="" className="h-3.5 w-3.5" />
+                    <span className="tabular-nums font-medium text-zinc-300">{game.awayScore ?? '0'}</span>
+                    <span className="text-zinc-600">-</span>
+                    <span className="tabular-nums font-medium text-zinc-300">{game.homeScore ?? '0'}</span>
+                    <img src={`https://a.espncdn.com/i/teamlogos/nhl/500/${game.homeTeamCode?.toLowerCase()}.png`} alt="" className="h-3.5 w-3.5" />
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         </div>
       )}
