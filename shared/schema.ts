@@ -78,6 +78,7 @@ export const phraseDetectionRules = pgTable("phrase_detection_rules", {
 export const games = pgTable("games", {
   id: serial("id").primaryKey(),
   gameId: text("game_id").notNull().unique(),
+  sport: text("sport").notNull().default("mlb"),
   awayTeam: text("away_team").notNull(),
   homeTeam: text("home_team").notNull(),
   awayTeamCode: text("away_team_code").notNull(),
@@ -97,8 +98,9 @@ export const games = pgTable("games", {
   outs: integer("outs"),
   balls: integer("balls"),
   strikes: integer("strikes"),
-  runnersOn: jsonb("runners_on"), // bases occupied
+  runnersOn: jsonb("runners_on"), // bases occupied (MLB-specific)
   lastPlay: text("last_play"),
+  sportMetadata: jsonb("sport_metadata"),  // sport-specific data (period, quarter, etc.)
   // Game completion info
   completedAt: timestamp("completed_at"),
   betsSettled: boolean("bets_settled").default(false),
@@ -135,6 +137,7 @@ export const aiSummaries = pgTable("ai_summaries", {
 export const bets = pgTable("bets", {
   id: serial("id").primaryKey(),
   userId: integer("user_id"),
+  sport: text("sport").notNull().default("mlb"),
   gameId: text("game_id").notNull(),
   betType: text("bet_type").notNull(),
   selection: text("selection").notNull(),
@@ -151,6 +154,7 @@ export const bets = pgTable("bets", {
 
 export const dailyPicks = pgTable("daily_picks", {
   id: serial("id").primaryKey(),
+  sport: text("sport").notNull().default("mlb"),
   date: text("date").notNull(),
   gameId: text("game_id").notNull(),
   pickType: text("pick_type").notNull(),
@@ -587,6 +591,7 @@ export type Ticket = typeof tickets.$inferSelect;
 export const virtualBets = pgTable("virtual_bets", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
+  sport: text("sport").notNull().default("mlb"),
   gameId: text("game_id").notNull(),
   betType: text("bet_type").notNull(),
   selection: text("selection").notNull(),
@@ -821,6 +826,7 @@ export type Newsletter = typeof newsletters.$inferSelect;
 // Expert picks — AI analyst predictions
 export const expertPicks = pgTable("expert_picks", {
   id: serial("id").primaryKey(),
+  sport: text("sport").notNull().default("mlb"),
   expertId: text("expert_id").notNull(),              // "contrarian", "quant", "sharp", "homie", "closer"
   gameId: text("game_id").notNull(),
   gameDate: text("game_date").notNull(),
