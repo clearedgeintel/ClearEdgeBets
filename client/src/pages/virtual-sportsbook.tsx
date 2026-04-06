@@ -30,7 +30,9 @@ interface Game {
   awayTeam: string;
   homeTeam: string;
   gameTime: string;
+  gameTimeEpoch?: number | null;
   venue: string;
+  status?: string;
   odds?: {
     moneyline?: { away: number; home: number };
     total?: { line: number; over: number; under: number };
@@ -466,10 +468,10 @@ export default function VirtualSportsbook() {
 
   // Generate AI bet recommendations
   const generateAIBetSlip = async () => {
-    if (!balanceData || !games || games.length === 0) {
+    if (!balanceData || upcomingGames.length === 0) {
       toast({
         title: "Unable to generate bets",
-        description: "No games available or balance information missing.",
+        description: "No upcoming games available or balance information missing.",
         variant: "destructive",
       });
       return;
@@ -482,7 +484,7 @@ export default function VirtualSportsbook() {
       const totalBudget = bankroll * 0.10; // 10% of bankroll
       
       // Simulate AI analysis with confidence scores
-      const availableGames = games.slice(0, 5); // Top 5 games
+      const availableGames = upcomingGames.slice(0, 5); // Top 5 upcoming games
       const recommendations: AIBetRecommendation[] = [];
       
       let totalConfidence = 0;
@@ -645,6 +647,13 @@ export default function VirtualSportsbook() {
       </div>
     );
   }
+
+  // Filter out games that have already started or completed
+  const upcomingGames = (games || []).filter((game: any) => {
+    if (game.status === 'live' || game.status === 'final') return false;
+    if (game.gameTimeEpoch) return Date.now() < game.gameTimeEpoch * 1000;
+    return true;
+  });
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -1354,9 +1363,9 @@ export default function VirtualSportsbook() {
                 <div key={i} className="h-24 bg-muted rounded animate-pulse"></div>
               ))}
             </div>
-          ) : games && games.length > 0 ? (
+          ) : upcomingGames.length > 0 ? (
             <div className="space-y-6">
-              {games.slice(0, 6).map((game: any) => (
+              {upcomingGames.slice(0, 6).map((game: any) => (
                 <div key={game.gameId} className="border rounded-lg p-4">
                   {/* Game Header */}
                   <div className="flex items-center justify-between mb-4">

@@ -687,6 +687,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const weather = await getWeather(homeCode, gameId);
         const parkFactor = getParkFactor(homeCode);
 
+        // Determine game status from Tank01 data
+        const statusCode = game.gameStatusCode || '0';
+        const gameStatus = statusCode === '2' ? 'final' : statusCode === '1' ? 'live' : 'scheduled';
+
         return {
           id: Math.floor(Math.random()*1e6),
           gameId,
@@ -695,6 +699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           awayTeamCode: awayCode,
           homeTeamCode: homeCode,
           gameTime,
+          gameTimeEpoch: game.gameTime_epoch ? parseFloat(game.gameTime_epoch) : null,
           venue,
           awayPitcher: pitcher.awayPitcher,
           homePitcher: pitcher.homePitcher,
@@ -702,7 +707,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           homePitcherStats: pitcher.homePitcherStats,
           awayPitcherHeadshot: pitcher.awayPitcherHeadshot,
           homePitcherHeadshot: pitcher.homePitcherHeadshot,
-          status: 'scheduled',
+          status: gameStatus,
           odds: oddsArray,
           multiBookOdds: multiBooks.length > 0 ? multiBooks : null,
           aiSummary,

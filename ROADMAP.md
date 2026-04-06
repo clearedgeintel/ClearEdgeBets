@@ -108,6 +108,7 @@
 - [x] Pick slip, weekly leaderboard, groups
 - [x] Performance tracking
 - [x] Kelly Calculator, odds comparison
+- [x] Virtual sportsbook hides started/in-progress games (epoch-based filtering)
 
 ### Monetization
 - [x] Tiers: Free / Edge Pass ($25/mo) / Sharp Pass ($40/mo)
@@ -166,6 +167,17 @@
 - [x] Newsletter auto-send via Resend (daily 9:15 AM scheduler)
 - [ ] Image optimization (proxy ESPN images)
 - [ ] WCAG 2.1 AA compliance
+
+### Virtual Sportsbook — Parlays & Enhancements
+- [x] Client-side parlay odds calculation (decimal multiplication)
+- [x] Parlay toggle when 2+ bets selected
+- [x] Hide started/completed games from betting
+- [ ] Server-side parlay tracking (single bet record with legs, not individual bets)
+- [ ] Parlay settlement engine (all legs must win)
+- [ ] Parlay history on performance page (separate from singles)
+- [ ] Same-game parlays (SGP) — multiple bets from one game
+- [ ] Parlay boost promotions (virtual coin bonus for 3+ legs)
+- [ ] NHL games in virtual sportsbook (currently MLB-only)
 
 ### Engagement (Future)
 - [ ] Onboarding flow (first-visit team selection)
