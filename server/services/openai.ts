@@ -608,6 +608,7 @@ import type { ExpertAnalyst } from '@shared/expert-panel';
 
 export interface ExpertPickInput {
   expert: ExpertAnalyst;
+  sport?: 'mlb' | 'nhl';
   games: Array<{
     gameId: string;
     away: string;
@@ -618,6 +619,7 @@ export interface ExpertPickInput {
     moneyline?: { away: number; home: number };
     total?: { line: string };
     runline?: { away: string; home: string };
+    puckLine?: { away: string; home: string };
     parkFactor?: number;
     weather?: string;
   }>;
@@ -632,15 +634,18 @@ export async function generateExpertPicks(input: ExpertPickInput): Promise<Array
   rationale: string;
   units: number;
 }>> {
-  const { expert, games } = input;
+  const { expert, games, sport: inputSport } = input;
+  const sport = inputSport || 'mlb';
+  const isNHL = sport === 'nhl';
   if (games.length === 0) return [];
 
   const gameLines = games.map(g => {
     let line = `${g.away} @ ${g.home} (${g.gameTime})`;
-    if (g.awayPitcher || g.homePitcher) line += ` | ${g.awayPitcher || 'TBD'} vs ${g.homePitcher || 'TBD'}`;
+    if (!isNHL && (g.awayPitcher || g.homePitcher)) line += ` | ${g.awayPitcher || 'TBD'} vs ${g.homePitcher || 'TBD'}`;
     if (g.moneyline) line += ` | ML: ${g.moneyline.away > 0 ? '+' : ''}${g.moneyline.away} / ${g.moneyline.home > 0 ? '+' : ''}${g.moneyline.home}`;
     if (g.total) line += ` | O/U: ${g.total.line}`;
-    if (g.runline) line += ` | RL: ${g.away} ${g.runline.away} / ${g.home} ${g.runline.home}`;
+    if (isNHL && g.puckLine) line += ` | PL: ${g.away} ${g.puckLine.away} / ${g.home} ${g.puckLine.home}`;
+    if (!isNHL && g.runline) line += ` | RL: ${g.away} ${g.runline.away} / ${g.home} ${g.runline.home}`;
     if (g.parkFactor) line += ` | PF: ${g.parkFactor}`;
     if (g.weather) line += ` | ${g.weather}`;
     return line;
@@ -654,20 +659,29 @@ export async function generateExpertPicks(input: ExpertPickInput): Promise<Array
     newsBlock = formatContextForPrompt(newsCtx);
   } catch {}
 
+  const sportLabel = isNHL ? 'NHL' : 'MLB';
+  const betTypes = isNHL
+    ? expert.pickTypes.map(t => t === 'runline' ? 'puck line' : t).join(', ')
+    : expert.pickTypes.join(', ');
+  const pickTypeOptions = isNHL ? 'moneyline, total, or puckline' : 'moneyline, total, or runline';
+  const selectionExamples = isNHL
+    ? '(e.g. "BOS ML", "Over 5.5", "TOR -1.5")'
+    : '(e.g. "NYY ML", "Over 8.5", "LAD -1.5")';
+
   const prompt = `${expert.voiceDirective}
 ${newsBlock}
-You are analyzing today's MLB slate. Pick ${expert.maxPicksPerDay} games maximum. Only pick games where you have a genuine edge based on your specialty.
+You are analyzing today's ${sportLabel} slate. Pick ${expert.maxPicksPerDay} games maximum. Only pick games where you have a genuine edge based on your specialty.
 
-**Your preferred bet types:** ${expert.pickTypes.join(', ')}
+**Your preferred bet types:** ${betTypes}
 **Your risk level:** ${expert.riskLevel}
 
 **Today's games:**
 ${gameLines}
 
 For each pick, provide:
-- gameId: the away@home code (e.g. "NYY@BOS")
-- pickType: moneyline, total, or runline
-- selection: the specific pick (e.g. "NYY ML", "Over 8.5", "LAD -1.5")
+- gameId: the away@home code (e.g. "${isNHL ? 'BOS@TOR' : 'NYY@BOS'}")
+- pickType: ${pickTypeOptions}
+- selection: the specific pick ${selectionExamples}
 - odds: the odds number (e.g. -130, +150)
 - confidence: 1-100 how confident you are
 - rationale: 1-2 sentences in YOUR voice explaining why
@@ -710,6 +724,7 @@ export interface GameReviewInput {
   lineScore: any;
   decisions: any[];
   playerHighlights: string;
+  sport?: 'mlb' | 'nhl';
 }
 
 export interface GameReviewResult {
@@ -721,9 +736,14 @@ export interface GameReviewResult {
 }
 
 export async function generateSarcasticGameReview(input: GameReviewInput): Promise<GameReviewResult> {
-  const blowout = Math.abs(input.awayScore - input.homeScore) >= 6;
+  const sport = input.sport || 'mlb';
+  const isNHL = sport === 'nhl';
+  const blowoutThreshold = isNHL ? 4 : 6;
+  const blowout = Math.abs(input.awayScore - input.homeScore) >= blowoutThreshold;
   const shutout = input.awayScore === 0 || input.homeScore === 0;
-  const extras = input.lineScore?.away?.scoresByInning && Object.keys(input.lineScore.away.scoresByInning).length > 9;
+  const extras = isNHL
+    ? !!(input.lineScore?.overtime || input.lineScore?.shootout)
+    : input.lineScore?.away?.scoresByInning && Object.keys(input.lineScore.away.scoresByInning).length > 9;
   const winner = input.awayScore > input.homeScore ? input.awayTeam : input.homeTeam;
   const loser = input.awayScore > input.homeScore ? input.homeTeam : input.awayTeam;
   const writer = getRandomBeatWriter();
@@ -753,18 +773,25 @@ ${writer.favoriteTeam ? `**Secret bias:** You have a soft spot for the ${writer.
 Stay in character as ${writer.name} throughout. This is YOUR column, YOUR voice. The reader should feel like they know you personally.
 ${newsBlock}`;
 
+  const sportLabel = isNHL ? 'NHL' : 'MLB';
+  const extrasLabel = isNHL ? (input.lineScore?.shootout ? 'SHOOTOUT' : 'OVERTIME') : 'EXTRA INNINGS';
+  const periodLabel = isNHL ? 'periods' : 'innings';
+  const sportSpecificReqs = isNHL
+    ? `3. Reference specific stats, periods, goals, assists, saves, and player performances from the data above`
+    : `3. Reference specific stats, innings, and player performances from the data above`;
+
   const prompt = `${personalityPrompt}
 
-Write your game review for this MLB game:
+Write your game review for this ${sportLabel} game:
 
 **${input.awayTeam} ${input.awayScore} @ ${input.homeTeam} ${input.homeScore}**
-Venue: ${input.venue} | Weather: ${input.weather} | Wind: ${input.wind} | Attendance: ${input.attendance}
-${blowout ? 'BLOWOUT ALERT' : ''}${shutout ? 'SHUTOUT' : ''}${extras ? 'EXTRA INNINGS' : ''}
+Venue: ${input.venue} | Weather: ${input.weather}${!isNHL ? ` | Wind: ${input.wind}` : ''} | Attendance: ${input.attendance}
+${blowout ? 'BLOWOUT ALERT' : ''}${shutout ? 'SHUTOUT' : ''}${extras ? extrasLabel : ''}
 
-**Line Score:**
+**${isNHL ? 'Period' : 'Line'} Score:**
 ${JSON.stringify(input.lineScore, null, 2)}
 
-**Decisions:** ${JSON.stringify(input.decisions)}
+${!isNHL ? `**Decisions:** ${JSON.stringify(input.decisions)}` : ''}
 
 **Key Performances:**
 ${input.playerHighlights}
@@ -772,10 +799,10 @@ ${input.playerHighlights}
 REQUIREMENTS:
 1. Write a clickbait-worthy headline in YOUR voice (sarcastic, funny, max 15 words)
 2. Write a 3-5 paragraph review in markdown format — in character as ${writer.name}
-3. Reference specific stats, innings, and player performances from the data above
+${sportSpecificReqs}
 4. Roast the losing team mercilessly but with love
 5. Give backhanded compliments to the winning team
-6. Make at least one reference to the weather, venue, or attendance
+6. Make at least one reference to the ${isNHL ? 'arena' : 'weather, venue,'} or attendance
 7. Include one ridiculous metaphor or analogy that fits YOUR personality
 8. End with a "**Final Verdict:**" one-liner in YOUR signature style
 9. Tone: match your personality (${writer.mood}) — readers should learn what happened while laughing

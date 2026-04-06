@@ -759,6 +759,7 @@ export const blogReviews = pgTable("blog_reviews", {
   homeLogo: text("home_logo"),                      // Team logo URL
   espnRecap: text("espn_recap"),                    // ESPN headline for reference
   boxScoreData: jsonb("box_score_data"),           // Raw box score for reference
+  sport: text("sport").notNull().default("mlb"),   // mlb | nhl | nfl | nba
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

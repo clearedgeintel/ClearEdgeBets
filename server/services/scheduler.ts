@@ -475,11 +475,6 @@ class SchedulerService {
    */
   private async generateExpertPicks() {
     try {
-      const { getAllExperts } = await import('@shared/expert-panel');
-      const { generateExpertPicks: genPicks } = await import('./openai');
-      const { fetchTank01Games, fetchTank01Odds, parseMultiBookOdds, getConsensusOdds, getTeamFullName, resolvePitchers } = await import('./tank01-mlb');
-      const { getParkFactor } = await import('../lib/park-factors');
-
       const today = new Date().toISOString().split('T')[0];
 
       // Check if already generated today
@@ -489,137 +484,157 @@ class SchedulerService {
         return;
       }
 
-      const [games, oddsMap] = await Promise.all([
-        fetchTank01Games(today),
-        fetchTank01Odds(today),
-      ]);
-
-      if (games.length === 0) {
-        logger.info('Expert picks: no games today');
-        return;
-      }
-
-      const gameData = await Promise.all(games.map(async g => {
-        const odds = oddsMap[g.gameID];
-        const books = odds ? parseMultiBookOdds(odds) : [];
-        const consensus = books.length > 0 ? getConsensusOdds(books) : { moneyline: null, total: null, spread: null };
-        const pitchers = await resolvePitchers(g.probableStartingPitchers?.away || '', g.probableStartingPitchers?.home || '');
-        const pf = getParkFactor(g.home);
-        return {
-          gameId: `${g.away}@${g.home}`,
-          away: getTeamFullName(g.away),
-          home: getTeamFullName(g.home),
-          gameTime: g.gameTime,
-          awayPitcher: pitchers.awayPitcher,
-          homePitcher: pitchers.homePitcher,
-          moneyline: consensus.moneyline || undefined,
-          total: consensus.total ? { line: consensus.total.line } : undefined,
-          runline: consensus.spread ? { away: consensus.spread.away, home: consensus.spread.home } : undefined,
-          parkFactor: pf?.factor,
-        };
-      }));
-
       let totalPicks = 0;
-      for (const expert of getAllExperts()) {
-        const picks = await genPicks({ expert, games: gameData });
-        for (const pick of picks) {
-          await storage.createExpertPick({
-            expertId: expert.id,
-            gameId: pick.gameId,
-            gameDate: today,
-            pickType: pick.pickType,
-            selection: pick.selection,
-            odds: pick.odds,
-            confidence: pick.confidence,
-            rationale: pick.rationale,
-            units: String(pick.units || 1),
-            result: 'pending',
-            gradedAt: null,
-          });
-          totalPicks++;
-        }
-      }
 
-      logger.info(`Expert picks: generated ${totalPicks} picks from 5 experts for ${today}`);
+      // Generate MLB expert picks
+      totalPicks += await this.generateMLBExpertPicks(today);
+
+      // Generate NHL expert picks
+      totalPicks += await this.generateNHLExpertPicks(today);
+
+      logger.info(`Expert picks: generated ${totalPicks} total picks from 5 experts for ${today}`);
     } catch (error) {
       logger.error('Expert picks generation error: ' + error);
     }
   }
 
+  /** Generate expert picks for MLB games */
+  private async generateMLBExpertPicks(today: string): Promise<number> {
+    const { getAllExperts } = await import('@shared/expert-panel');
+    const { generateExpertPicks: genPicks } = await import('./openai');
+    const { fetchTank01Games, fetchTank01Odds, parseMultiBookOdds, getConsensusOdds, getTeamFullName, resolvePitchers } = await import('./tank01-mlb');
+    const { getParkFactor } = await import('../lib/park-factors');
+
+    const [games, oddsMap] = await Promise.all([
+      fetchTank01Games(today),
+      fetchTank01Odds(today),
+    ]);
+
+    if (games.length === 0) {
+      logger.info('Expert picks (MLB): no games today');
+      return 0;
+    }
+
+    const gameData = await Promise.all(games.map(async g => {
+      const odds = oddsMap[g.gameID];
+      const books = odds ? parseMultiBookOdds(odds) : [];
+      const consensus = books.length > 0 ? getConsensusOdds(books) : { moneyline: null, total: null, spread: null };
+      const pitchers = await resolvePitchers(g.probableStartingPitchers?.away || '', g.probableStartingPitchers?.home || '');
+      const pf = getParkFactor(g.home);
+      return {
+        gameId: `${g.away}@${g.home}`,
+        away: getTeamFullName(g.away),
+        home: getTeamFullName(g.home),
+        gameTime: g.gameTime,
+        awayPitcher: pitchers.awayPitcher,
+        homePitcher: pitchers.homePitcher,
+        moneyline: consensus.moneyline || undefined,
+        total: consensus.total ? { line: consensus.total.line } : undefined,
+        runline: consensus.spread ? { away: consensus.spread.away, home: consensus.spread.home } : undefined,
+        parkFactor: pf?.factor,
+      };
+    }));
+
+    let picks = 0;
+    for (const expert of getAllExperts()) {
+      const expertPicks = await genPicks({ expert, games: gameData, sport: 'mlb' });
+      for (const pick of expertPicks) {
+        await storage.createExpertPick({
+          expertId: expert.id,
+          gameId: pick.gameId,
+          gameDate: today,
+          pickType: pick.pickType,
+          selection: pick.selection,
+          odds: pick.odds,
+          confidence: pick.confidence,
+          rationale: pick.rationale,
+          units: String(pick.units || 1),
+          result: 'pending',
+          gradedAt: null,
+          sport: 'mlb',
+        });
+        picks++;
+      }
+    }
+
+    if (picks > 0) logger.info(`Expert picks (MLB): ${picks} picks generated`);
+    return picks;
+  }
+
+  /** Generate expert picks for NHL games */
+  private async generateNHLExpertPicks(today: string): Promise<number> {
+    const { getAllExperts } = await import('@shared/expert-panel');
+    const { generateExpertPicks: genPicks } = await import('./openai');
+    const { fetchNHLGames, fetchNHLOdds } = await import('../sports/nhl/api-client');
+    const { getNHLTeamName } = await import('../sports/nhl/teams');
+
+    const [games, oddsMap] = await Promise.all([
+      fetchNHLGames(today),
+      fetchNHLOdds(today),
+    ]);
+
+    if (games.length === 0) {
+      logger.info('Expert picks (NHL): no games today');
+      return 0;
+    }
+
+    const gameData = games.map((g: any) => {
+      const odds = oddsMap[g.gameID];
+      const dk = odds?.draftkings;
+      return {
+        gameId: `${g.away}@${g.home}`,
+        away: getNHLTeamName(g.away),
+        home: getNHLTeamName(g.home),
+        gameTime: g.gameTime || '',
+        moneyline: dk ? { away: parseInt(dk.awayTeamML || '0'), home: parseInt(dk.homeTeamML || '0') } : undefined,
+        total: dk?.totalOver ? { line: dk.totalOver } : undefined,
+        puckLine: dk?.awayTeamPuckLine ? { away: dk.awayTeamPuckLine, home: dk.homeTeamPuckLine } : undefined,
+      };
+    });
+
+    let picks = 0;
+    for (const expert of getAllExperts()) {
+      const expertPicks = await genPicks({ expert, games: gameData, sport: 'nhl' });
+      for (const pick of expertPicks) {
+        await storage.createExpertPick({
+          expertId: expert.id,
+          gameId: pick.gameId,
+          gameDate: today,
+          pickType: pick.pickType === 'puckline' ? 'puckline' : pick.pickType,
+          selection: pick.selection,
+          odds: pick.odds,
+          confidence: pick.confidence,
+          rationale: pick.rationale,
+          units: String(pick.units || 1),
+          result: 'pending',
+          gradedAt: null,
+          sport: 'nhl',
+        });
+        picks++;
+      }
+    }
+
+    if (picks > 0) logger.info(`Expert picks (NHL): ${picks} picks generated`);
+    return picks;
+  }
+
   /**
-   * Auto-grade expert picks by checking completed games.
+   * Auto-grade expert picks by checking completed games (MLB + NHL).
    */
   public async gradeExpertPicks() {
     try {
       const pending = await storage.getPendingExpertPicks();
       if (pending.length === 0) return;
 
-      // Group by date to batch score lookups
-      const dates = [...new Set(pending.map(p => p.gameDate))];
-      const { fetchTank01Scores } = await import('./tank01-mlb');
-
       let graded = 0;
-      for (const date of dates) {
-        const scores = await fetchTank01Scores(date);
-        const datePicks = pending.filter(p => p.gameDate === date);
 
-        for (const pick of datePicks) {
-          // Find the game in scores — gameId is "NYY@BOS" format
-          const gameKey = Object.keys(scores).find(k => {
-            const parts = k.split('_');
-            const teams = parts[1] || '';
-            return teams === pick.gameId || teams.replace('@', ' @ ') === pick.gameId;
-          });
+      // Grade MLB picks
+      const mlbPicks = pending.filter(p => (p as any).sport !== 'nhl');
+      if (mlbPicks.length > 0) graded += await this.gradeMLBExpertPicks(mlbPicks);
 
-          if (!gameKey) continue;
-          const game = scores[gameKey];
-          if (game.gameStatusCode !== '2' && game.gameStatus !== 'Completed') continue;
-
-          const awayScore = parseInt(game.lineScore?.away?.R || '0');
-          const homeScore = parseInt(game.lineScore?.home?.R || '0');
-          const totalRuns = awayScore + homeScore;
-          const awayCode = game.away;
-          const homeCode = game.home;
-
-          let result: string | null = null;
-          const sel = pick.selection.toLowerCase();
-          const pickType = pick.pickType.toLowerCase();
-
-          if (pickType === 'moneyline') {
-            // "NYY ML" or "New York Yankees ML"
-            if (sel.includes(awayCode.toLowerCase()) || sel.includes('away')) {
-              result = awayScore > homeScore ? 'win' : 'loss';
-            } else if (sel.includes(homeCode.toLowerCase()) || sel.includes('home')) {
-              result = homeScore > awayScore ? 'win' : 'loss';
-            }
-          } else if (pickType === 'total') {
-            // "Over 8.5" or "Under 8.5"
-            const lineMatch = sel.match(/(over|under)\s*([\d.]+)/i);
-            if (lineMatch) {
-              const direction = lineMatch[1].toLowerCase();
-              const line = parseFloat(lineMatch[2]);
-              if (direction === 'over') result = totalRuns > line ? 'win' : totalRuns === line ? 'push' : 'loss';
-              else result = totalRuns < line ? 'win' : totalRuns === line ? 'push' : 'loss';
-            }
-          } else if (pickType === 'runline') {
-            // "NYY -1.5" or "BOS +1.5"
-            const rlMatch = sel.match(/([A-Z]{2,3})\s*([+-][\d.]+)/i);
-            if (rlMatch) {
-              const team = rlMatch[1].toUpperCase();
-              const spread = parseFloat(rlMatch[2]);
-              const teamScore = team === awayCode ? awayScore : homeScore;
-              const oppScore = team === awayCode ? homeScore : awayScore;
-              const adjusted = teamScore + spread;
-              result = adjusted > oppScore ? 'win' : adjusted === oppScore ? 'push' : 'loss';
-            }
-          }
-
-          if (result) {
-            await storage.gradeExpertPick(pick.id, result);
-            graded++;
-          }
-        }
-      }
+      // Grade NHL picks
+      const nhlPicks = pending.filter(p => (p as any).sport === 'nhl');
+      if (nhlPicks.length > 0) graded += await this.gradeNHLExpertPicks(nhlPicks);
 
       if (graded > 0) logger.info(`Expert pick grading: graded ${graded} picks`);
     } catch (error) {
@@ -627,136 +642,405 @@ class SchedulerService {
     }
   }
 
+  /** Grade MLB expert picks against final scores */
+  private async gradeMLBExpertPicks(picks: any[]): Promise<number> {
+    const { fetchTank01Scores } = await import('./tank01-mlb');
+    const dates = [...new Set(picks.map(p => p.gameDate))];
+    let graded = 0;
+
+    for (const date of dates) {
+      const scores = await fetchTank01Scores(date);
+      const datePicks = picks.filter(p => p.gameDate === date);
+
+      for (const pick of datePicks) {
+        const gameKey = Object.keys(scores).find(k => {
+          const parts = k.split('_');
+          const teams = parts[1] || '';
+          return teams === pick.gameId || teams.replace('@', ' @ ') === pick.gameId;
+        });
+
+        if (!gameKey) continue;
+        const game = scores[gameKey];
+        if (game.gameStatusCode !== '2' && game.gameStatus !== 'Completed') continue;
+
+        const awayScore = parseInt(game.lineScore?.away?.R || '0');
+        const homeScore = parseInt(game.lineScore?.home?.R || '0');
+        const totalRuns = awayScore + homeScore;
+        const awayCode = game.away;
+        const homeCode = game.home;
+
+        let result: string | null = null;
+        const sel = pick.selection.toLowerCase();
+        const pickType = pick.pickType.toLowerCase();
+
+        if (pickType === 'moneyline') {
+          if (sel.includes(awayCode.toLowerCase()) || sel.includes('away')) {
+            result = awayScore > homeScore ? 'win' : 'loss';
+          } else if (sel.includes(homeCode.toLowerCase()) || sel.includes('home')) {
+            result = homeScore > awayScore ? 'win' : 'loss';
+          }
+        } else if (pickType === 'total') {
+          const lineMatch = sel.match(/(over|under)\s*([\d.]+)/i);
+          if (lineMatch) {
+            const direction = lineMatch[1].toLowerCase();
+            const line = parseFloat(lineMatch[2]);
+            if (direction === 'over') result = totalRuns > line ? 'win' : totalRuns === line ? 'push' : 'loss';
+            else result = totalRuns < line ? 'win' : totalRuns === line ? 'push' : 'loss';
+          }
+        } else if (pickType === 'runline') {
+          const rlMatch = sel.match(/([A-Z]{2,3})\s*([+-][\d.]+)/i);
+          if (rlMatch) {
+            const team = rlMatch[1].toUpperCase();
+            const spread = parseFloat(rlMatch[2]);
+            const teamScore = team === awayCode ? awayScore : homeScore;
+            const oppScore = team === awayCode ? homeScore : awayScore;
+            const adjusted = teamScore + spread;
+            result = adjusted > oppScore ? 'win' : adjusted === oppScore ? 'push' : 'loss';
+          }
+        }
+
+        if (result) {
+          await storage.gradeExpertPick(pick.id, result);
+          graded++;
+        }
+      }
+    }
+
+    return graded;
+  }
+
+  /** Grade NHL expert picks against final scores */
+  private async gradeNHLExpertPicks(picks: any[]): Promise<number> {
+    const { fetchNHLScoreboard } = await import('../sports/nhl/api-client');
+    const dates = [...new Set(picks.map(p => p.gameDate))];
+    let graded = 0;
+
+    for (const date of dates) {
+      const scores = await fetchNHLScoreboard(date);
+      const datePicks = picks.filter(p => p.gameDate === date);
+
+      for (const pick of datePicks) {
+        // Match game: pick.gameId is "BOS@TOR", scores have awayTeamCode/homeTeamCode
+        const game = scores.find(g => {
+          const pickTeams = pick.gameId.split('@');
+          return g.awayTeamCode === pickTeams[0] && g.homeTeamCode === pickTeams[1];
+        });
+
+        if (!game || game.status !== 'final') continue;
+
+        const awayScore = game.awayScore || 0;
+        const homeScore = game.homeScore || 0;
+        const totalGoals = awayScore + homeScore;
+        const awayCode = game.awayTeamCode || '';
+        const homeCode = game.homeTeamCode || '';
+
+        let result: string | null = null;
+        const sel = pick.selection.toLowerCase();
+        const pickType = pick.pickType.toLowerCase();
+
+        if (pickType === 'moneyline') {
+          if (sel.includes(awayCode.toLowerCase()) || sel.includes('away')) {
+            result = awayScore > homeScore ? 'win' : 'loss';
+          } else if (sel.includes(homeCode.toLowerCase()) || sel.includes('home')) {
+            result = homeScore > awayScore ? 'win' : 'loss';
+          }
+        } else if (pickType === 'total') {
+          const lineMatch = sel.match(/(over|under)\s*([\d.]+)/i);
+          if (lineMatch) {
+            const direction = lineMatch[1].toLowerCase();
+            const line = parseFloat(lineMatch[2]);
+            if (direction === 'over') result = totalGoals > line ? 'win' : totalGoals === line ? 'push' : 'loss';
+            else result = totalGoals < line ? 'win' : totalGoals === line ? 'push' : 'loss';
+          }
+        } else if (pickType === 'puckline') {
+          const plMatch = sel.match(/([A-Z]{2,3})\s*([+-][\d.]+)/i);
+          if (plMatch) {
+            const team = plMatch[1].toUpperCase();
+            const spread = parseFloat(plMatch[2]);
+            const teamScore = team === awayCode ? awayScore : homeScore;
+            const oppScore = team === awayCode ? homeScore : awayScore;
+            const adjusted = teamScore + spread;
+            result = adjusted > oppScore ? 'win' : adjusted === oppScore ? 'push' : 'loss';
+          }
+        }
+
+        if (result) {
+          await storage.gradeExpertPick(pick.id, result);
+          graded++;
+        }
+      }
+    }
+
+    return graded;
+  }
+
   /**
-   * Auto Morning Roast — checks yesterday's completed games,
+   * Auto Morning Roast — checks yesterday's completed games (MLB + NHL),
    * finds ones without reviews, assigns the beat writer, generates the recap.
    */
   public async autoGenerateMorningRoast() {
     try {
-      const { fetchTank01Scores, getTeamFullName, fetchTank01Player } = await import('./tank01-mlb');
-      const { getBeatWriterForGame } = await import('@shared/beat-writers');
-      const { generateSarcasticGameReview } = await import('./openai');
-      const { trackedFetch } = await import('../lib/api-tracker');
+      let totalGenerated = 0;
 
-      // Check BOTH today and yesterday for completed games
-      const today = new Date().toISOString().split('T')[0];
-      const d = new Date(); d.setDate(d.getDate() - 1);
-      const yesterday = d.toISOString().split('T')[0];
+      // Generate MLB recaps
+      totalGenerated += await this.generateMLBMorningRoast();
 
-      // Fetch all existing reviews to avoid duplicates
-      const [todayReviews, yesterdayReviews] = await Promise.all([
-        storage.getBlogReviewsByDate(today),
-        storage.getBlogReviewsByDate(yesterday),
-      ]);
-      const reviewedGameIds = new Set([...todayReviews, ...yesterdayReviews].map(r => r.gameId));
+      // Generate NHL recaps
+      totalGenerated += await this.generateNHLMorningRoast();
 
-      // Check both dates for completed games
-      const [todayScores, yesterdayScores] = await Promise.all([
-        fetchTank01Scores(today),
-        fetchTank01Scores(yesterday),
-      ]);
-
-      const allCompleted: Array<[string, any, string]> = []; // [gameID, game, gameDate]
-      Object.entries(todayScores)
-        .filter(([, g]) => g.gameStatusCode === '2' || g.gameStatus === 'Completed')
-        .forEach(([id, g]) => allCompleted.push([id, g, today]));
-      Object.entries(yesterdayScores)
-        .filter(([, g]) => g.gameStatusCode === '2' || g.gameStatus === 'Completed')
-        .forEach(([id, g]) => allCompleted.push([id, g, yesterday]));
-
-      // Filter out already reviewed
-      const toGenerate = allCompleted.filter(([id]) => !reviewedGameIds.has(id));
-
-      if (toGenerate.length === 0) return;
-
-      logger.info(`Auto Morning Roast: ${toGenerate.length} completed games need reviews`);
-
-      let generated = 0;
-      for (const [gameID, , gameDate] of toGenerate) {
-        try {
-          const boxResp = await trackedFetch(
-            `https://tank01-mlb-live-in-game-real-time-statistics.p.rapidapi.com/getMLBBoxScore?gameID=${gameID}`,
-            { headers: { 'x-rapidapi-host': 'tank01-mlb-live-in-game-real-time-statistics.p.rapidapi.com', 'x-rapidapi-key': process.env.TANK01_API_KEY || '' } }
-          );
-          if (!boxResp.ok) continue;
-          const boxData = (await boxResp.json() as any).body;
-
-          const awayCode = boxData.away || gameID.split('_')[1]?.split('@')[0] || '';
-          const homeCode = boxData.home || gameID.split('@')[1] || '';
-          const awayScore = parseInt(boxData.lineScore?.away?.R || '0');
-          const homeScore = parseInt(boxData.lineScore?.home?.R || '0');
-          const writer = getBeatWriterForGame(homeCode, awayCode);
-
-          // Build player highlights
-          const playerStats = boxData.playerStats || {};
-          const highlights: string[] = [];
-
-          const hitters = Object.values(playerStats)
-            .filter((p: any) => p.Hitting && parseInt(p.Hitting.H || '0') > 0)
-            .sort((a: any, b: any) => {
-              const aS = parseInt(a.Hitting.HR || '0') * 5 + parseInt(a.Hitting.H || '0') + parseInt(a.Hitting.RBI || '0') * 2;
-              const bS = parseInt(b.Hitting.HR || '0') * 5 + parseInt(b.Hitting.H || '0') + parseInt(b.Hitting.RBI || '0') * 2;
-              return bS - aS;
-            }).slice(0, 4) as any[];
-
-          for (const h of hitters) {
-            const info = await fetchTank01Player(h.playerID, false);
-            const name = info?.longName || `#${h.playerID}`;
-            const hit = h.Hitting;
-            highlights.push(`${name} (${h.team}): ${hit.H}-${hit.AB}${parseInt(hit.HR||'0') > 0 ? `, ${hit.HR} HR` : ''}${parseInt(hit.RBI||'0') > 0 ? `, ${hit.RBI} RBI` : ''}`);
-          }
-
-          for (const dec of (boxData.decisions || [])) {
-            const info = await fetchTank01Player(dec.playerID, false);
-            const name = info?.longName || `#${dec.playerID}`;
-            const pitcher = Object.values(playerStats).find((p: any) => p.playerID === dec.playerID) as any;
-            if (pitcher?.Pitching) highlights.push(`${name} (${dec.team}, ${dec.decision}): ${pitcher.Pitching.InningsPitched} IP, ${pitcher.Pitching.ER} ER, ${pitcher.Pitching.SO} K`);
-          }
-
-          const review = await generateSarcasticGameReview({
-            gameId: gameID, awayTeam: getTeamFullName(awayCode), homeTeam: getTeamFullName(homeCode),
-            awayScore, homeScore, venue: boxData.Venue || '', weather: boxData.Weather || '',
-            attendance: boxData.Attendance || '', wind: boxData.Wind || '',
-            lineScore: boxData.lineScore, decisions: boxData.decisions || [],
-            playerHighlights: highlights.join('\n'),
-          });
-
-          // ESPN hero image
-          let heroImage: string | undefined;
-          try {
-            const espnResp = await fetch(`https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${gameDate.replace(/-/g, '')}`);
-            if (espnResp.ok) {
-              const espnData = await espnResp.json() as any;
-              const match = espnData.events?.find((ev: any) => ev.competitions?.[0]?.competitors?.find((c: any) => c.homeAway === 'away' && c.team?.abbreviation === awayCode));
-              heroImage = match?.competitions?.[0]?.headlines?.[0]?.video?.[0]?.thumbnail;
-            }
-          } catch {}
-
-          const slug = `${gameDate.replace(/-/g, '')}-${awayCode.toLowerCase()}-vs-${homeCode.toLowerCase()}-${Date.now()}`;
-
-          await storage.createBlogReview({
-            gameId: gameID, gameDate,
-            awayTeam: getTeamFullName(awayCode), homeTeam: getTeamFullName(homeCode),
-            awayScore, homeScore,
-            title: review.title, content: review.content, slug,
-            author: writer.name, authorMood: writer.mood,
-            venue: boxData.Venue, weather: boxData.Weather, attendance: boxData.Attendance,
-            heroImage, awayLogo: `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${awayCode.toLowerCase()}.png`,
-            homeLogo: `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${homeCode.toLowerCase()}.png`,
-            espnRecap: undefined, boxScoreData: boxData,
-          });
-
-          generated++;
-          logger.info(`Auto Morning Roast: ${writer.name} filed recap for ${awayCode}@${homeCode} (${awayScore}-${homeScore})`);
-        } catch (err) {
-          logger.error(`Auto Morning Roast: failed for ${gameID}: ${err}`);
-        }
-      }
-
-      if (generated > 0) logger.info(`Auto Morning Roast: ${generated} new recaps published`);
+      if (totalGenerated > 0) logger.info(`Auto Morning Roast: ${totalGenerated} total new recaps published`);
     } catch (error) {
       logger.error('Auto Morning Roast scheduler error: ' + error);
     }
+  }
+
+  /** Generate Morning Roast recaps for completed MLB games */
+  private async generateMLBMorningRoast(): Promise<number> {
+    const { fetchTank01Scores, getTeamFullName, fetchTank01Player } = await import('./tank01-mlb');
+    const { getBeatWriterForGame } = await import('@shared/beat-writers');
+    const { generateSarcasticGameReview } = await import('./openai');
+    const { trackedFetch } = await import('../lib/api-tracker');
+
+    const today = new Date().toISOString().split('T')[0];
+    const d = new Date(); d.setDate(d.getDate() - 1);
+    const yesterday = d.toISOString().split('T')[0];
+
+    const [todayReviews, yesterdayReviews] = await Promise.all([
+      storage.getBlogReviewsByDate(today),
+      storage.getBlogReviewsByDate(yesterday),
+    ]);
+    const reviewedGameIds = new Set([...todayReviews, ...yesterdayReviews].map(r => r.gameId));
+
+    const [todayScores, yesterdayScores] = await Promise.all([
+      fetchTank01Scores(today),
+      fetchTank01Scores(yesterday),
+    ]);
+
+    const allCompleted: Array<[string, any, string]> = [];
+    Object.entries(todayScores)
+      .filter(([, g]) => g.gameStatusCode === '2' || g.gameStatus === 'Completed')
+      .forEach(([id, g]) => allCompleted.push([id, g, today]));
+    Object.entries(yesterdayScores)
+      .filter(([, g]) => g.gameStatusCode === '2' || g.gameStatus === 'Completed')
+      .forEach(([id, g]) => allCompleted.push([id, g, yesterday]));
+
+    const toGenerate = allCompleted.filter(([id]) => !reviewedGameIds.has(id));
+    if (toGenerate.length === 0) return 0;
+
+    logger.info(`Auto Morning Roast (MLB): ${toGenerate.length} completed games need reviews`);
+
+    let generated = 0;
+    for (const [gameID, , gameDate] of toGenerate) {
+      try {
+        const boxResp = await trackedFetch(
+          `https://tank01-mlb-live-in-game-real-time-statistics.p.rapidapi.com/getMLBBoxScore?gameID=${gameID}`,
+          { headers: { 'x-rapidapi-host': 'tank01-mlb-live-in-game-real-time-statistics.p.rapidapi.com', 'x-rapidapi-key': process.env.TANK01_API_KEY || '' } }
+        );
+        if (!boxResp.ok) continue;
+        const boxData = (await boxResp.json() as any).body;
+
+        const awayCode = boxData.away || gameID.split('_')[1]?.split('@')[0] || '';
+        const homeCode = boxData.home || gameID.split('@')[1] || '';
+        const awayScore = parseInt(boxData.lineScore?.away?.R || '0');
+        const homeScore = parseInt(boxData.lineScore?.home?.R || '0');
+        const writer = getBeatWriterForGame(homeCode, awayCode);
+
+        const playerStats = boxData.playerStats || {};
+        const highlights: string[] = [];
+
+        const hitters = Object.values(playerStats)
+          .filter((p: any) => p.Hitting && parseInt(p.Hitting.H || '0') > 0)
+          .sort((a: any, b: any) => {
+            const aS = parseInt(a.Hitting.HR || '0') * 5 + parseInt(a.Hitting.H || '0') + parseInt(a.Hitting.RBI || '0') * 2;
+            const bS = parseInt(b.Hitting.HR || '0') * 5 + parseInt(b.Hitting.H || '0') + parseInt(b.Hitting.RBI || '0') * 2;
+            return bS - aS;
+          }).slice(0, 4) as any[];
+
+        for (const h of hitters) {
+          const info = await fetchTank01Player(h.playerID, false);
+          const name = info?.longName || `#${h.playerID}`;
+          const hit = h.Hitting;
+          highlights.push(`${name} (${h.team}): ${hit.H}-${hit.AB}${parseInt(hit.HR||'0') > 0 ? `, ${hit.HR} HR` : ''}${parseInt(hit.RBI||'0') > 0 ? `, ${hit.RBI} RBI` : ''}`);
+        }
+
+        for (const dec of (boxData.decisions || [])) {
+          const info = await fetchTank01Player(dec.playerID, false);
+          const name = info?.longName || `#${dec.playerID}`;
+          const pitcher = Object.values(playerStats).find((p: any) => p.playerID === dec.playerID) as any;
+          if (pitcher?.Pitching) highlights.push(`${name} (${dec.team}, ${dec.decision}): ${pitcher.Pitching.InningsPitched} IP, ${pitcher.Pitching.ER} ER, ${pitcher.Pitching.SO} K`);
+        }
+
+        const review = await generateSarcasticGameReview({
+          gameId: gameID, awayTeam: getTeamFullName(awayCode), homeTeam: getTeamFullName(homeCode),
+          awayScore, homeScore, venue: boxData.Venue || '', weather: boxData.Weather || '',
+          attendance: boxData.Attendance || '', wind: boxData.Wind || '',
+          lineScore: boxData.lineScore, decisions: boxData.decisions || [],
+          playerHighlights: highlights.join('\n'), sport: 'mlb',
+        });
+
+        let heroImage: string | undefined;
+        try {
+          const espnResp = await fetch(`https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${gameDate.replace(/-/g, '')}`);
+          if (espnResp.ok) {
+            const espnData = await espnResp.json() as any;
+            const match = espnData.events?.find((ev: any) => ev.competitions?.[0]?.competitors?.find((c: any) => c.homeAway === 'away' && c.team?.abbreviation === awayCode));
+            heroImage = match?.competitions?.[0]?.headlines?.[0]?.video?.[0]?.thumbnail;
+          }
+        } catch {}
+
+        const slug = `${gameDate.replace(/-/g, '')}-${awayCode.toLowerCase()}-vs-${homeCode.toLowerCase()}-${Date.now()}`;
+
+        await storage.createBlogReview({
+          gameId: gameID, gameDate,
+          awayTeam: getTeamFullName(awayCode), homeTeam: getTeamFullName(homeCode),
+          awayScore, homeScore,
+          title: review.title, content: review.content, slug,
+          author: writer.name, authorMood: writer.mood,
+          venue: boxData.Venue, weather: boxData.Weather, attendance: boxData.Attendance,
+          heroImage, awayLogo: `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${awayCode.toLowerCase()}.png`,
+          homeLogo: `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${homeCode.toLowerCase()}.png`,
+          espnRecap: undefined, boxScoreData: boxData, sport: 'mlb',
+        });
+
+        generated++;
+        logger.info(`Auto Morning Roast (MLB): ${writer.name} filed recap for ${awayCode}@${homeCode} (${awayScore}-${homeScore})`);
+      } catch (err) {
+        logger.error(`Auto Morning Roast (MLB): failed for ${gameID}: ${err}`);
+      }
+    }
+
+    return generated;
+  }
+
+  /** Generate Morning Roast recaps for completed NHL games */
+  private async generateNHLMorningRoast(): Promise<number> {
+    const { fetchNHLScoreboard, fetchNHLBoxScore } = await import('../sports/nhl/api-client');
+    const { getNHLTeamName, getNHLTeamLogo } = await import('../sports/nhl/teams');
+    const { getRandomBeatWriter } = await import('@shared/beat-writers');
+    const { generateSarcasticGameReview } = await import('./openai');
+
+    const today = new Date().toISOString().split('T')[0];
+    const d = new Date(); d.setDate(d.getDate() - 1);
+    const yesterday = d.toISOString().split('T')[0];
+
+    const [todayReviews, yesterdayReviews] = await Promise.all([
+      storage.getBlogReviewsByDate(today),
+      storage.getBlogReviewsByDate(yesterday),
+    ]);
+    const reviewedGameIds = new Set([...todayReviews, ...yesterdayReviews].map(r => r.gameId));
+
+    const [todayScores, yesterdayScores] = await Promise.all([
+      fetchNHLScoreboard(today),
+      fetchNHLScoreboard(yesterday),
+    ]);
+
+    const allCompleted = [...todayScores, ...yesterdayScores]
+      .filter(g => g.status === 'final' && !reviewedGameIds.has(g.gameId));
+
+    if (allCompleted.length === 0) return 0;
+
+    logger.info(`Auto Morning Roast (NHL): ${allCompleted.length} completed games need reviews`);
+
+    let generated = 0;
+    for (const game of allCompleted) {
+      try {
+        // Fetch box score for player stats
+        const boxData = await fetchNHLBoxScore(game.gameId);
+        const awayCode = game.awayTeamCode || '';
+        const homeCode = game.homeTeamCode || '';
+        const gameDate = game.gameId.split('_')[0] || today;
+
+        // Build NHL player highlights from box score
+        const highlights: string[] = [];
+        if (boxData) {
+          const playerStats = boxData.playerStats || boxData.body?.playerStats || {};
+          const skaters = Object.values(playerStats) as any[];
+
+          // Top goal scorers
+          const scorers = skaters
+            .filter((p: any) => parseInt(p.goals || p.Goals || '0') > 0)
+            .sort((a: any, b: any) => {
+              const aS = parseInt(b.goals || b.Goals || '0') * 3 + parseInt(b.assists || b.Assists || '0');
+              const bS = parseInt(a.goals || a.Goals || '0') * 3 + parseInt(a.assists || a.Assists || '0');
+              return aS - bS;
+            }).slice(0, 5);
+
+          for (const p of scorers) {
+            const name = p.longName || p.playerName || `#${p.playerID || ''}`;
+            const goals = p.goals || p.Goals || '0';
+            const assists = p.assists || p.Assists || '0';
+            const plusMinus = p.plusMinus || p.PlusMinus || '';
+            highlights.push(`${name} (${p.team || ''}): ${goals}G, ${assists}A${plusMinus ? `, ${plusMinus}` : ''}`);
+          }
+
+          // Goalies
+          const goalies = skaters
+            .filter((p: any) => parseInt(p.saves || p.Saves || '0') > 0)
+            .sort((a: any, b: any) => parseInt(b.saves || b.Saves || '0') - parseInt(a.saves || a.Saves || '0'));
+
+          for (const g of goalies.slice(0, 2)) {
+            const name = g.longName || g.playerName || `#${g.playerID || ''}`;
+            const saves = g.saves || g.Saves || '0';
+            const ga = g.goalsAgainst || g.GoalsAgainst || '';
+            highlights.push(`${name} (${g.team || ''}, G): ${saves} saves${ga ? `, ${ga} GA` : ''}`);
+          }
+        }
+
+        const writer = getRandomBeatWriter();
+
+        const review = await generateSarcasticGameReview({
+          gameId: game.gameId,
+          awayTeam: game.awayTeam,
+          homeTeam: game.homeTeam,
+          awayScore: game.awayScore || 0,
+          homeScore: game.homeScore || 0,
+          venue: boxData?.Venue || boxData?.body?.Venue || '',
+          weather: '',
+          attendance: boxData?.Attendance || boxData?.body?.Attendance || '',
+          wind: '',
+          lineScore: game.metadata?.lineScore || {},
+          decisions: [],
+          playerHighlights: highlights.length > 0 ? highlights.join('\n') : 'No detailed stats available',
+          sport: 'nhl',
+        });
+
+        // ESPN NHL hero image
+        let heroImage: string | undefined;
+        try {
+          const espnResp = await fetch(`https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=${gameDate.replace(/-/g, '')}`);
+          if (espnResp.ok) {
+            const espnData = await espnResp.json() as any;
+            const match = espnData.events?.find((ev: any) =>
+              ev.competitions?.[0]?.competitors?.find((c: any) => c.homeAway === 'away' && c.team?.abbreviation === awayCode)
+            );
+            heroImage = match?.competitions?.[0]?.headlines?.[0]?.video?.[0]?.thumbnail;
+          }
+        } catch {}
+
+        const slug = `nhl-${gameDate.replace(/-/g, '')}-${awayCode.toLowerCase()}-vs-${homeCode.toLowerCase()}-${Date.now()}`;
+
+        await storage.createBlogReview({
+          gameId: game.gameId, gameDate,
+          awayTeam: game.awayTeam, homeTeam: game.homeTeam,
+          awayScore: game.awayScore || 0, homeScore: game.homeScore || 0,
+          title: review.title, content: review.content, slug,
+          author: writer.name, authorMood: writer.mood,
+          venue: boxData?.Venue || boxData?.body?.Venue || '',
+          weather: '', attendance: boxData?.Attendance || boxData?.body?.Attendance || '',
+          heroImage,
+          awayLogo: getNHLTeamLogo(awayCode),
+          homeLogo: getNHLTeamLogo(homeCode),
+          espnRecap: undefined, boxScoreData: boxData, sport: 'nhl',
+        });
+
+        generated++;
+        logger.info(`Auto Morning Roast (NHL): ${writer.name} filed recap for ${awayCode}@${homeCode} (${game.awayScore}-${game.homeScore})`);
+      } catch (err) {
+        logger.error(`Auto Morning Roast (NHL): failed for ${game.gameId}: ${err}`);
+      }
+    }
+
+    return generated;
   }
 }
 

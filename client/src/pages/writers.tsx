@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Pen, BookOpen, Clock, Star, Quote } from "lucide-react";
+import { Pen, BookOpen, Clock, Star, Quote, Shield } from "lucide-react";
 import { BEAT_WRITERS, type BeatWriter } from "@shared/beat-writers";
 import { useState } from "react";
 
@@ -65,7 +65,12 @@ export default function Writers() {
           <div className="text-6xl mb-4">{selectedWriter.avatar}</div>
           <h1 className="text-3xl font-bold text-foreground">{selectedWriter.name}</h1>
           <p className="text-muted-foreground text-sm mt-1">{selectedWriter.title}</p>
-          <div className="flex items-center justify-center gap-2 mt-3">
+          <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
+            {selectedWriter.title.includes('Bureau Chief') && (
+              <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs flex items-center gap-1">
+                <Shield className="h-3 w-3" /> Bureau Chief
+              </Badge>
+            )}
             <Badge className={`border text-xs ${moodColors[selectedWriter.mood]}`}>
               {moodLabels[selectedWriter.mood]}
             </Badge>
@@ -191,9 +196,14 @@ export default function Writers() {
                 <div className="flex items-start gap-3 mb-3">
                   <div className="text-3xl">{writer.avatar}</div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-foreground group-hover:text-amber-200 transition-colors">
-                      {writer.name}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-foreground group-hover:text-amber-200 transition-colors">
+                        {writer.name}
+                      </h3>
+                      {writer.title.includes('Bureau Chief') && (
+                        <Shield className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" />
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">{writer.title}</p>
                   </div>
                   <Badge className={`border text-[10px] flex-shrink-0 ${moodColors[writer.mood]}`}>

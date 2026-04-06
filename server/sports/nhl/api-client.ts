@@ -84,6 +84,17 @@ export async function fetchNHLTeams(): Promise<any[]> {
   return teams || [];
 }
 
+/** Fetch NHL box score for a specific game */
+export async function fetchNHLBoxScore(gameID: string): Promise<any | null> {
+  const cacheKey = `nhl-boxscore-${gameID}`;
+  const cached = getCached<any>(cacheKey);
+  if (cached) return cached;
+
+  const data = await nhlFetch<any>('/getNHLBoxScore', { gameID });
+  if (data) setCache(cacheKey, data, 300);
+  return data;
+}
+
 /** Fetch NHL schedule for a date */
 export async function fetchNHLGames(date: string): Promise<any[]> {
   const cacheKey = `nhl-games-${date}`;

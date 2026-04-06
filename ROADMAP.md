@@ -55,6 +55,8 @@
 ### Sports Coverage
 - [x] **MLB** — full coverage: games, 8-book odds, rosters, player stats, weather, park factors, power scores, expert picks, Morning Roast
 - [x] **NHL** — games page, scores ticker, Tank01 odds (ML, puck line, totals), settlement grader
+- [x] **CFL** — games page, daily picks, hub, digest (partial coverage)
+- [x] **Golf** — tournament schedule pages (partial coverage)
 - [ ] **NFL** — planned (Phase 2)
 - [ ] **NBA** — planned (Phase 2)
 
@@ -141,22 +143,27 @@
 
 ## Remaining Work
 
+### Phase 1.5 — Expand NHL ✅ COMPLETE
+- [x] Morning Roast auto-generation for NHL games
+- [x] Expert Panel picks for NHL games (8:30 AM daily, all 5 experts)
+- [x] NHL expert pick grading via settlement engine (every 30 min)
+- [x] Bureau Chief badges on writer profiles (grid + detail view)
+
 ### Phase 2 — More Sports (Q3 2026)
 - [ ] NFL integration via Tank01 (spreads, totals, player props)
 - [ ] NBA integration (points, quarters, player props)
 - [ ] Sport selector on games page (tabbed: MLB | NHL | NFL | NBA)
 - [ ] Expert Panel expanded to cover all sports
-- [ ] Morning Roast auto-generation for NHL games
 
 ### Phase 3 — College Sports (Q4 2026)
 - [ ] College Football (CFB)
 - [ ] College Basketball (CBB)
 
 ### Technical Debt
-- [ ] Split `routes.ts` (~7,800 lines) into feature modules
+- [ ] Split `routes.ts` (~8,350 lines) into feature modules
 - [ ] Remove remaining duplicate routes
-- [ ] Fix Stripe secret key (`pk_test_` → `sk_test_`)
-- [ ] Newsletter auto-send via SendGrid/Resend
+- [x] Fix Stripe secret key detection (warns on `pk_` prefix, uses env var)
+- [x] Newsletter auto-send via Resend (daily 9:15 AM scheduler)
 - [ ] Image optimization (proxy ESPN images)
 - [ ] WCAG 2.1 AA compliance
 
