@@ -175,8 +175,8 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
     {
       sport: "Hockey",
       icon: CircleDot,
-      expanded: false,
-      setExpanded: () => {},
+      expanded: hockeyExpanded,
+      setExpanded: setHockeyExpanded,
       active: location.startsWith("/nhl"),
       freeItems: [
         {
