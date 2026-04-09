@@ -174,7 +174,7 @@ export default function Experts() {
         )}
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {experts.map(expert => {
           const isExpanded = !collapsedExperts.has(expert.id);
           const expertPicks = todayPicks.filter(p => p.expertId === expert.id);
@@ -184,7 +184,7 @@ export default function Experts() {
           const streak = getStreak(history);
 
           return (
-            <Card key={expert.id} className="border-border/30 overflow-hidden">
+            <Card key={expert.id} className="border border-zinc-700/60 overflow-hidden rounded-xl shadow-md shadow-black/20">
               <CardContent className="p-0">
                 {/* Expert header */}
                 <div className="p-3 sm:p-4 cursor-pointer hover:bg-zinc-800/20 transition-colors"
