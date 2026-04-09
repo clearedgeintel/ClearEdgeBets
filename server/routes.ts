@@ -1878,6 +1878,183 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
     } catch { res.json([]); }
   });
 
+  // ── Admin: Expert & Writer Management ─────────────────────────────
+
+  // Get all experts (with DB active status)
+  app.get('/api/admin/expert-analysts', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
+
+      const { expertAnalysts } = await import('@shared/schema');
+      const rows = await db.select().from(expertAnalysts).orderBy(expertAnalysts.name);
+
+      // If DB is empty, seed from hardcoded defaults
+      if (rows.length === 0) {
+        const { getAllExperts } = await import('@shared/expert-panel');
+        const defaults = getAllExperts();
+        for (const e of defaults) {
+          await db.insert(expertAnalysts).values({
+            id: e.id, name: e.name, title: e.title, avatar: e.avatar, bio: e.bio,
+            style: e.style, approach: e.approach, specialty: e.specialty,
+            pickTypes: e.pickTypes, voiceDirective: e.voiceDirective,
+            riskLevel: e.riskLevel, maxPicksPerDay: e.maxPicksPerDay, isActive: true,
+          }).onConflictDoNothing();
+        }
+        const seeded = await db.select().from(expertAnalysts).orderBy(expertAnalysts.name);
+        return res.json(seeded);
+      }
+
+      res.json(rows);
+    } catch (error: any) { res.status(500).json({ error: error.message }); }
+  });
+
+  // Toggle expert active status
+  app.patch('/api/admin/expert-analysts/:id/toggle', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
+
+      const { expertAnalysts } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+      const existing = await db.select().from(expertAnalysts).where(eq(expertAnalysts.id, req.params.id));
+      if (existing.length === 0) return res.status(404).json({ error: 'Expert not found' });
+
+      const [updated] = await db.update(expertAnalysts)
+        .set({ isActive: !existing[0].isActive })
+        .where(eq(expertAnalysts.id, req.params.id)).returning();
+      res.json(updated);
+    } catch (error: any) { res.status(500).json({ error: error.message }); }
+  });
+
+  // Create or update expert
+  app.post('/api/admin/expert-analysts', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
+
+      const { expertAnalysts } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+      const data = req.body;
+      if (!data.id || !data.name) return res.status(400).json({ error: 'id and name required' });
+
+      const existing = await db.select().from(expertAnalysts).where(eq(expertAnalysts.id, data.id));
+      if (existing.length > 0) {
+        const [updated] = await db.update(expertAnalysts).set({
+          name: data.name, title: data.title, avatar: data.avatar, bio: data.bio,
+          style: data.style, approach: data.approach, specialty: data.specialty,
+          pickTypes: data.pickTypes || [], voiceDirective: data.voiceDirective,
+          riskLevel: data.riskLevel || 'moderate', maxPicksPerDay: data.maxPicksPerDay || 4,
+          isActive: data.isActive ?? true,
+        }).where(eq(expertAnalysts.id, data.id)).returning();
+        return res.json(updated);
+      }
+
+      const [created] = await db.insert(expertAnalysts).values({
+        id: data.id, name: data.name, title: data.title || '', avatar: data.avatar || '🎯',
+        bio: data.bio || '', style: data.style || '', approach: data.approach || '',
+        specialty: data.specialty || '', pickTypes: data.pickTypes || ['moneyline'],
+        voiceDirective: data.voiceDirective || '', riskLevel: data.riskLevel || 'moderate',
+        maxPicksPerDay: data.maxPicksPerDay || 4, isActive: data.isActive ?? true,
+      }).returning();
+      res.json(created);
+    } catch (error: any) { res.status(500).json({ error: error.message }); }
+  });
+
+  // Get all writers (with DB active status)
+  app.get('/api/admin/beat-writers', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
+
+      const { beatWriters } = await import('@shared/schema');
+      const rows = await db.select().from(beatWriters).orderBy(beatWriters.name);
+
+      // Seed from hardcoded if empty
+      if (rows.length === 0) {
+        const { BEAT_WRITERS } = await import('@shared/beat-writers');
+        for (const w of BEAT_WRITERS) {
+          await db.insert(beatWriters).values({
+            name: w.name, mood: w.mood, title: w.title, bio: w.bio,
+            quirks: w.quirks, catchphrase: w.catchphrase, avatar: w.avatar,
+            favoriteTeam: w.favoriteTeam || null, beatTeams: w.beatTeams,
+            region: w.region || null, yearsExperience: w.yearsExperience,
+            specialty: w.specialty, isActive: true,
+          }).onConflictDoNothing();
+        }
+        const seeded = await db.select().from(beatWriters).orderBy(beatWriters.name);
+        return res.json(seeded);
+      }
+
+      res.json(rows);
+    } catch (error: any) { res.status(500).json({ error: error.message }); }
+  });
+
+  // Toggle writer active status
+  app.patch('/api/admin/beat-writers/:id/toggle', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
+
+      const { beatWriters } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+      const existing = await db.select().from(beatWriters).where(eq(beatWriters.id, parseInt(req.params.id)));
+      if (existing.length === 0) return res.status(404).json({ error: 'Writer not found' });
+
+      const [updated] = await db.update(beatWriters)
+        .set({ isActive: !existing[0].isActive })
+        .where(eq(beatWriters.id, parseInt(req.params.id))).returning();
+      res.json(updated);
+    } catch (error: any) { res.status(500).json({ error: error.message }); }
+  });
+
+  // Create or update writer
+  app.post('/api/admin/beat-writers', async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
+
+      const { beatWriters } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+      const data = req.body;
+      if (!data.name) return res.status(400).json({ error: 'name required' });
+
+      if (data.id) {
+        const [updated] = await db.update(beatWriters).set({
+          name: data.name, mood: data.mood || 'witty', title: data.title || '',
+          bio: data.bio || '', quirks: data.quirks || [], catchphrase: data.catchphrase || '',
+          avatar: data.avatar || '✍️', favoriteTeam: data.favoriteTeam || null,
+          beatTeams: data.beatTeams || [], region: data.region || null,
+          yearsExperience: data.yearsExperience || 10, specialty: data.specialty || '',
+          isActive: data.isActive ?? true,
+        }).where(eq(beatWriters.id, data.id)).returning();
+        return res.json(updated);
+      }
+
+      const [created] = await db.insert(beatWriters).values({
+        name: data.name, mood: data.mood || 'witty', title: data.title || '',
+        bio: data.bio || '', quirks: data.quirks || [], catchphrase: data.catchphrase || '',
+        avatar: data.avatar || '✍️', favoriteTeam: data.favoriteTeam || null,
+        beatTeams: data.beatTeams || [], region: data.region || null,
+        yearsExperience: data.yearsExperience || 10, specialty: data.specialty || '',
+        isActive: data.isActive ?? true,
+      }).returning();
+      res.json(created);
+    } catch (error: any) { res.status(500).json({ error: error.message }); }
+  });
+
   // Admin: generate expert picks for today
   app.post('/api/admin/generate-expert-picks', async (req, res) => {
     try {

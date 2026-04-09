@@ -824,6 +824,47 @@ export const insertNewsletterSchema = createInsertSchema(newsletters).omit({ id:
 export type InsertNewsletter = z.infer<typeof insertNewsletterSchema>;
 export type Newsletter = typeof newsletters.$inferSelect;
 
+// Expert analysts — managed via admin
+export const expertAnalysts = pgTable("expert_analysts", {
+  id: text("id").primaryKey(),                        // "contrarian", "quant", etc.
+  name: text("name").notNull(),
+  title: text("title").notNull(),
+  avatar: text("avatar").notNull(),
+  bio: text("bio").notNull(),
+  style: text("style").notNull(),
+  approach: text("approach").notNull(),
+  specialty: text("specialty").notNull(),
+  pickTypes: jsonb("pick_types").notNull().$type<string[]>(),
+  voiceDirective: text("voice_directive").notNull(),
+  riskLevel: text("risk_level").notNull().default("moderate"),
+  maxPicksPerDay: integer("max_picks_per_day").notNull().default(4),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type ExpertAnalystRow = typeof expertAnalysts.$inferSelect;
+
+// Beat writers — managed via admin
+export const beatWriters = pgTable("beat_writers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  mood: text("mood").notNull().default("witty"),
+  title: text("title").notNull(),
+  bio: text("bio").notNull(),
+  quirks: jsonb("quirks").notNull().$type<string[]>(),
+  catchphrase: text("catchphrase").notNull(),
+  avatar: text("avatar").notNull(),
+  favoriteTeam: text("favorite_team"),
+  beatTeams: jsonb("beat_teams").notNull().$type<string[]>(),
+  region: text("region"),
+  yearsExperience: integer("years_experience").notNull().default(10),
+  specialty: text("specialty").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type BeatWriterRow = typeof beatWriters.$inferSelect;
+
 // Expert picks — AI analyst predictions
 export const expertPicks = pgTable("expert_picks", {
   id: serial("id").primaryKey(),

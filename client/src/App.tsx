@@ -52,6 +52,7 @@ const APIManagement = lazy(() => import("@/pages/APIManagement"));
 const AIManagement = lazy(() => import("@/pages/ai-management"));
 const AdminAPIPlayground = lazy(() => import("@/pages/admin-api-playground"));
 const AdminOperations = lazy(() => import("@/pages/admin-operations"));
+const AdminRoster = lazy(() => import("@/pages/admin-roster"));
 const Blog = lazy(() => import("@/pages/blog"));
 const TeamDetail = lazy(() => import("@/pages/team-detail"));
 const Writers = lazy(() => import("@/pages/writers"));
@@ -162,6 +163,7 @@ function Router() {
           <Route path="/admin/operations">{() => <ProtectedRoute component={AdminOperations} />}</Route>
           <Route path="/admin/newsletter">{() => <ProtectedRoute component={AdminNewsletter} />}</Route>
           <Route path="/admin/api-log">{() => <ProtectedRoute component={AdminAPILog} />}</Route>
+          <Route path="/admin/roster">{() => <ProtectedRoute component={AdminRoster} />}</Route>
 
           <Route component={NotFound} />
         </Switch>

@@ -262,6 +262,13 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
       icon: TicketIcon,
       current: location === "/admin/ticket-dashboard",
       description: "Manage support tickets and pick slips"
+    },
+    {
+      name: "Roster Management",
+      href: "/admin/roster",
+      icon: Users,
+      current: location === "/admin/roster",
+      description: "Manage AI experts and beat writers"
     }
   ] : [];
 
