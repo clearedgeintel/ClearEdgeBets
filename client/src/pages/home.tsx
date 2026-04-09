@@ -40,43 +40,56 @@ export default function Home() {
 
   return (
     <div>
-      {/* ── Yesterday's Scores Ticker (MLB + NHL) ── */}
+      {/* ── Yesterday's Scores — Card Strip ── */}
       {(yesterdayGamesList.length > 0 || nhlScores.filter((g: any) => g.status === 'final').length > 0) && (
-        <div className="border-b border-border/30 bg-zinc-950/50 overflow-hidden">
-          <div className="flex items-center gap-4 px-4 py-1.5 overflow-x-auto scrollbar-none text-[11px]">
-            {yesterdayGamesList.length > 0 && (
-              <>
-                <span className="text-zinc-600 flex-shrink-0 font-medium uppercase tracking-wider text-[9px]">⚾ MLB</span>
-                {yesterdayGamesList.map((game) => {
-                  const away = game.away || game.gameID?.split('_')[1]?.split('@')[0] || '';
-                  const home = game.home || game.gameID?.split('@')[1] || '';
-                  return (
-                    <div key={game.gameID} className="flex items-center gap-1.5 flex-shrink-0 text-zinc-400">
-                      <img src={teamLogo(away)} alt="" className="h-3.5 w-3.5" />
-                      <span className="tabular-nums font-medium text-zinc-300">{game.lineScore?.away?.R || '0'}</span>
-                      <span className="text-zinc-600">-</span>
-                      <span className="tabular-nums font-medium text-zinc-300">{game.lineScore?.home?.R || '0'}</span>
-                      <img src={teamLogo(home)} alt="" className="h-3.5 w-3.5" />
+        <div className="border-b border-border/30 bg-zinc-950/60 py-3 px-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">Final Scores</span>
+            <span className="text-[10px] text-zinc-600">{format(subDays(new Date(), 1), 'MMM d')}</span>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {yesterdayGamesList.map((game) => {
+              const away = game.away || game.gameID?.split('_')[1]?.split('@')[0] || '';
+              const home = game.home || game.gameID?.split('@')[1] || '';
+              const awayR = parseInt(game.lineScore?.away?.R || '0');
+              const homeR = parseInt(game.lineScore?.home?.R || '0');
+              return (
+                <div key={game.gameID} className="flex-shrink-0 w-[130px] bg-card border border-border/20 rounded-lg p-2.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <img src={teamLogo(away)} alt="" className="h-4 w-4" />
+                      <span className={`text-xs font-medium ${awayR > homeR ? 'text-foreground' : 'text-zinc-500'}`}>{away}</span>
                     </div>
-                  );
-                })}
-              </>
-            )}
-            {nhlScores.filter((g: any) => g.status === 'final').length > 0 && (
-              <>
-                <span className="text-zinc-700 flex-shrink-0">|</span>
-                <span className="text-zinc-600 flex-shrink-0 font-medium uppercase tracking-wider text-[9px]">🏒 NHL</span>
-                {nhlScores.filter((g: any) => g.status === 'final').map((game: any) => (
-                  <div key={game.gameId} className="flex items-center gap-1.5 flex-shrink-0 text-zinc-400">
-                    <img src={`https://a.espncdn.com/i/teamlogos/nhl/500/${game.awayTeamCode?.toLowerCase()}.png`} alt="" className="h-3.5 w-3.5" />
-                    <span className="tabular-nums font-medium text-zinc-300">{game.awayScore ?? '0'}</span>
-                    <span className="text-zinc-600">-</span>
-                    <span className="tabular-nums font-medium text-zinc-300">{game.homeScore ?? '0'}</span>
-                    <img src={`https://a.espncdn.com/i/teamlogos/nhl/500/${game.homeTeamCode?.toLowerCase()}.png`} alt="" className="h-3.5 w-3.5" />
+                    <span className={`text-sm font-bold tabular-nums ${awayR > homeR ? 'text-foreground' : 'text-zinc-500'}`}>{awayR}</span>
                   </div>
-                ))}
-              </>
-            )}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <img src={teamLogo(home)} alt="" className="h-4 w-4" />
+                      <span className={`text-xs font-medium ${homeR > awayR ? 'text-foreground' : 'text-zinc-500'}`}>{home}</span>
+                    </div>
+                    <span className={`text-sm font-bold tabular-nums ${homeR > awayR ? 'text-foreground' : 'text-zinc-500'}`}>{homeR}</span>
+                  </div>
+                </div>
+              );
+            })}
+            {nhlScores.filter((g: any) => g.status === 'final').map((game: any) => (
+              <div key={game.gameId} className="flex-shrink-0 w-[130px] bg-card border border-border/20 rounded-lg p-2.5">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <img src={`https://a.espncdn.com/i/teamlogos/nhl/500/${game.awayTeamCode?.toLowerCase()}.png`} alt="" className="h-4 w-4" />
+                    <span className={`text-xs font-medium ${(game.awayScore ?? 0) > (game.homeScore ?? 0) ? 'text-foreground' : 'text-zinc-500'}`}>{game.awayTeamCode}</span>
+                  </div>
+                  <span className={`text-sm font-bold tabular-nums ${(game.awayScore ?? 0) > (game.homeScore ?? 0) ? 'text-foreground' : 'text-zinc-500'}`}>{game.awayScore ?? 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <img src={`https://a.espncdn.com/i/teamlogos/nhl/500/${game.homeTeamCode?.toLowerCase()}.png`} alt="" className="h-4 w-4" />
+                    <span className={`text-xs font-medium ${(game.homeScore ?? 0) > (game.awayScore ?? 0) ? 'text-foreground' : 'text-zinc-500'}`}>{game.homeTeamCode}</span>
+                  </div>
+                  <span className={`text-sm font-bold tabular-nums ${(game.homeScore ?? 0) > (game.awayScore ?? 0) ? 'text-foreground' : 'text-zinc-500'}`}>{game.homeScore ?? 0}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
