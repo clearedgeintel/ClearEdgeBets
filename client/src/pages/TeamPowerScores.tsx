@@ -115,8 +115,11 @@ export default function TeamPowerScores() {
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{topTeam?.team}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              {topTeam && <img src={teamLogo(topTeam.team)} alt="" className="h-8 w-8" />}
+              <div className="text-2xl font-bold text-green-600">{topTeam ? getTeamName(topTeam.team) : ''}</div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
               Power Score: {topTeam?.teamPowerScore} (Rank #{topTeam?.rank})
             </p>
             <div className="mt-2 flex gap-2">
@@ -156,8 +159,11 @@ export default function TeamPowerScores() {
             <TrendingDown className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{bottomTeam?.team}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              {bottomTeam && <img src={teamLogo(bottomTeam.team)} alt="" className="h-8 w-8" />}
+              <div className="text-2xl font-bold text-red-600">{bottomTeam ? getTeamName(bottomTeam.team) : ''}</div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
               Power Score: {bottomTeam?.teamPowerScore} (Rank #{bottomTeam?.rank})
             </p>
             <div className="mt-2 flex gap-2">
