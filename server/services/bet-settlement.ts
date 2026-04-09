@@ -337,63 +337,97 @@ export async function updateGameStatus(gameId: string, update: {
 }
 
 /**
- * Sync live game data from MLB API
+ * Sync live game data from MLB API.
+ * Syncs today + any past dates that still have unsettled games.
  */
 export async function syncLiveGameData(): Promise<number> {
   try {
-    console.log('Syncing live game data from MLB API...');
-    
-    // Get today's games from MLB API
+    // Find all dates that have unsettled games (scheduled or live)
+    const unsettledGames = await db.select({ gameId: games.gameId })
+      .from(games)
+      .where(and(
+        eq(games.betsSettled, false),
+        eq(games.status, 'scheduled')
+      ));
+
+    // Extract unique dates from game IDs (format: "2026-04-06_CIN @ MIA")
+    const datesToSync = new Set<string>();
     const today = new Date();
-    const mlbGames = await fetchMLBScoreboard(today.getFullYear(), today.getMonth() + 1, today.getDate());
-    
-    let updatedGames = 0;
-    
-    for (const mlbGame of mlbGames) {
-      // Create the expected game ID format with date prefix
-      const dateStr = mlbGame.gameDate || today.toISOString().split('T')[0];
-      const expectedGameId = `${dateStr}_${mlbGame.awayTeamCode} @ ${mlbGame.homeTeamCode}`;
-      
-      // Find matching game in our database using the expected format
-      const existingGames = await db
-        .select()
-        .from(games)
-        .where(eq(games.gameId, expectedGameId));
-      
-      if (existingGames.length === 0) {
-        console.log(`Game ${expectedGameId} not found in database, skipping sync`);
-        continue;
-      }
-      
-      const existingGame = existingGames[0];
-      
-      // Check if status or scores have changed
-      const statusChanged = existingGame.status !== mlbGame.status;
-      const scoresChanged = existingGame.awayScore !== mlbGame.awayScore || 
-                           existingGame.homeScore !== mlbGame.homeScore;
-      
-      if (statusChanged || scoresChanged) {
-        console.log(`Updating game ${expectedGameId}: ${mlbGame.status}, Score: ${mlbGame.awayScore}-${mlbGame.homeScore}`);
-        
-        // Extract live details if available
-        const liveDetails = (mlbGame as any).liveDetails;
-        
-        await updateGameStatus(expectedGameId, {
-          status: mlbGame.status,
-          awayScore: mlbGame.awayScore ?? undefined,
-          homeScore: mlbGame.homeScore ?? undefined,
-          inning: liveDetails?.inning ?? undefined,
-          inningHalf: liveDetails?.inningHalf ?? undefined,
-          lastPlay: liveDetails?.detail ?? undefined
-        });
-        
-        updatedGames++;
+    datesToSync.add(today.toISOString().split('T')[0]);
+
+    for (const g of unsettledGames) {
+      const dateMatch = g.gameId.match(/^(\d{4}-\d{2}-\d{2})_/);
+      if (dateMatch) {
+        const gameDate = dateMatch[1];
+        // Only sync past dates (today is already included)
+        if (gameDate < today.toISOString().split('T')[0]) {
+          datesToSync.add(gameDate);
+        }
       }
     }
-    
-    console.log(`Synced ${updatedGames} games from MLB API`);
+
+    let updatedGames = 0;
+
+    for (const dateStr of datesToSync) {
+      try {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const mlbGames = await fetchMLBScoreboard(year, month, day);
+
+        for (const mlbGame of mlbGames) {
+          // Normalize team codes (ESPN uses WSH, Tank01/DB may use WAS)
+          const normalizeCode = (c: string) => c === 'WSH' ? 'WAS' : c;
+          const awayCode = normalizeCode(mlbGame.awayTeamCode);
+          const homeCode = normalizeCode(mlbGame.homeTeamCode);
+
+          // Try both normalized and original codes
+          const expectedGameId = `${dateStr}_${awayCode} @ ${homeCode}`;
+          const altGameId = `${dateStr}_${mlbGame.awayTeamCode} @ ${mlbGame.homeTeamCode}`;
+
+          let existingGames = await db
+            .select()
+            .from(games)
+            .where(eq(games.gameId, expectedGameId));
+
+          if (existingGames.length === 0 && altGameId !== expectedGameId) {
+            existingGames = await db
+              .select()
+              .from(games)
+              .where(eq(games.gameId, altGameId));
+          }
+
+          if (existingGames.length === 0) continue;
+
+          const existingGame = existingGames[0];
+          const statusChanged = existingGame.status !== mlbGame.status;
+          const scoresChanged = existingGame.awayScore !== mlbGame.awayScore ||
+                               existingGame.homeScore !== mlbGame.homeScore;
+
+          if (statusChanged || scoresChanged) {
+            const dbGameId = existingGame.gameId;
+            console.log(`Syncing game ${dbGameId}: ${mlbGame.status}, Score: ${mlbGame.awayScore}-${mlbGame.homeScore}`);
+
+            const liveDetails = (mlbGame as any).liveDetails;
+
+            await updateGameStatus(dbGameId, {
+              status: mlbGame.status,
+              awayScore: mlbGame.awayScore ?? undefined,
+              homeScore: mlbGame.homeScore ?? undefined,
+              inning: liveDetails?.inning ?? undefined,
+              inningHalf: liveDetails?.inningHalf ?? undefined,
+              lastPlay: liveDetails?.detail ?? undefined
+            });
+
+            updatedGames++;
+          }
+        }
+      } catch (err) {
+        console.error(`Error syncing games for ${dateStr}:`, err);
+      }
+    }
+
+    if (updatedGames > 0) console.log(`Synced ${updatedGames} games across ${datesToSync.size} dates`);
     return updatedGames;
-    
+
   } catch (error) {
     console.error('Error syncing live game data:', error);
     return 0;

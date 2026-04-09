@@ -90,6 +90,8 @@ export async function runSettlement(options?: {
 
             try {
               const selection = module.grader.parseSelection(bet.selection || '', bet.betType || 'moneyline', gameScore);
+              // Use the bet's stored odds if parseSelection couldn't extract them
+              if (!selection.odds && bet.odds) selection.odds = typeof bet.odds === 'string' ? parseInt(bet.odds) : bet.odds;
               const stake = parseFloat(bet.stake?.toString() || '0');
               const result = module.grader.gradeBet(selection, gameScore, stake);
 
@@ -131,6 +133,8 @@ export async function runSettlement(options?: {
 
             try {
               const selection = module.grader.parseSelection(bet.selection || '', bet.betType || 'moneyline', gameScore);
+              // Use the bet's stored odds if parseSelection couldn't extract them
+              if (!selection.odds && bet.odds) selection.odds = bet.odds;
               const stake = bet.stake || 0;
               const result = module.grader.gradeBet(selection, gameScore, stake);
 
