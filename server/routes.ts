@@ -27,7 +27,7 @@ import { schedulerService } from "./services/scheduler";
 import { getCached, setCache } from "./lib/cache";
 import { getParkFactor } from "./lib/park-factors";
 import { getAPICallLog, getAPICallStats } from "./lib/api-tracker";
-import { fetchTank01Games, fetchTank01Odds, fetchTank01Player, resolvePitchers, parseMultiBookOdds, getConsensusOdds, getTeamFullName, getTeamVenue } from "./services/tank01-mlb";
+import { fetchTank01Games, fetchTank01Odds, fetchTank01Player, fetchTank01Teams, resolvePitchers, parseMultiBookOdds, getConsensusOdds, getTeamFullName, getTeamVenue, fetchTank01RosterWithStats } from "./services/tank01-mlb";
 import { getBeatWriterForGame as getBeatWriterForGameFn } from "@shared/beat-writers";
 // Note: Auth will be handled by existing system
 import Stripe from "stripe";
@@ -1791,23 +1791,115 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
       const { getAllExperts } = await import('@shared/expert-panel');
       const { generateExpertPicks } = await import('./services/openai');
 
-      // Fetch today's games with odds
-      const games = await fetchTank01Games(today);
-      const oddsMap = await fetchTank01Odds(today);
+      // Fetch today's games, odds, and team standings
+      const [games, oddsMap, allTeams] = await Promise.all([
+        fetchTank01Games(today),
+        fetchTank01Odds(today),
+        fetchTank01Teams(),
+      ]);
+      const teamLookup: Record<string, { wins: string; loss: string; diff: string }> = {};
+      allTeams.forEach(t => { teamLookup[t.teamAbv] = { wins: t.wins, loss: t.loss, diff: t.DIFF }; });
+
+      // Collect unique team abbreviations for roster fetches
+      const teamAbvs: string[] = [];
+      games.forEach(g => {
+        if (!teamAbvs.includes(g.away)) teamAbvs.push(g.away);
+        if (!teamAbvs.includes(g.home)) teamAbvs.push(g.home);
+      });
+
+      // Fetch all rosters with stats in parallel (cached per team)
+      const rosterMap: Record<string, any[]> = {};
+      await Promise.all(teamAbvs.map(async abv => {
+        try {
+          rosterMap[abv] = await fetchTank01RosterWithStats(abv);
+        } catch { rosterMap[abv] = []; }
+      }));
+
+      // Helper: extract top hitters from roster by OPS
+      const getTopHitters = (roster: any[], count = 3) => {
+        return roster
+          .filter((p: any) => p.stats?.Hitting && parseInt(p.stats.Hitting.AB || '0') >= 30)
+          .map((p: any) => {
+            const s = p.stats.Hitting;
+            const ab = parseInt(s.AB || '0');
+            const h = parseInt(s.H || '0');
+            const bb = parseInt(s.BB || '0');
+            const tb = parseInt(s.TB || '0');
+            const avg = ab > 0 ? (h / ab).toFixed(3) : '.000';
+            const obp = (ab + bb) > 0 ? ((h + bb) / (ab + bb)) : 0;
+            const slg = ab > 0 ? tb / ab : 0;
+            const ops = (obp + slg).toFixed(3);
+            return {
+              name: p.longName,
+              avg: avg.startsWith('0') ? avg.slice(1) : avg,
+              hr: parseInt(s.HR || '0'),
+              ops: ops.startsWith('0') ? ops.slice(1) : ops,
+              pos: p.pos,
+            };
+          })
+          .sort((a: any, b: any) => parseFloat(b.ops) - parseFloat(a.ops))
+          .slice(0, count);
+      };
+
+      // Helper: extract notable injuries from roster
+      const getInjuries = (roster: any[]) => {
+        return roster
+          .filter((p: any) => p.injury?.designation)
+          .map((p: any) => `${p.longName} (${p.injury.designation}, ${p.injury.description || 'undisclosed'})`)
+          .slice(0, 5);
+      };
+
+      // Helper: build pitcher profile from player data
+      const buildPitcherProfile = (player: any) => {
+        if (!player) return undefined;
+        const s = player.stats?.Pitching;
+        if (!s) return { name: player.longName };
+        const ip = parseFloat(s.InningsPitched || '0');
+        const so = parseInt(s.SO || '0');
+        const gs = parseInt(s.GamesStarted || s.GS || '0');
+        return {
+          name: player.longName,
+          record: `${s.Win || 0}-${s.Loss || 0}`,
+          era: s.ERA || undefined,
+          whip: s.WHIP || undefined,
+          k9: ip > 0 ? ((so / ip) * 9).toFixed(1) : undefined,
+          ip: s.InningsPitched || undefined,
+          gamesStarted: gs || undefined,
+        };
+      };
 
       const gameData = await Promise.all(games.map(async g => {
         const odds = oddsMap[g.gameID];
         const books = odds ? parseMultiBookOdds(odds) : [];
         const consensus = books.length > 0 ? getConsensusOdds(books) : { moneyline: null, total: null, spread: null };
-        const pitchers = await resolvePitchers(g.probableStartingPitchers?.away || '', g.probableStartingPitchers?.home || '');
         const parkFactor = getParkFactor(g.home);
+
+        // Resolve pitcher names + stats
+        const [awayPitcherData, homePitcherData] = await Promise.all([
+          g.probableStartingPitchers?.away ? fetchTank01Player(g.probableStartingPitchers.away, true) : null,
+          g.probableStartingPitchers?.home ? fetchTank01Player(g.probableStartingPitchers.home, true) : null,
+        ]);
+
+        const awayRoster = rosterMap[g.away] || [];
+        const homeRoster = rosterMap[g.home] || [];
+
         return {
           gameId: `${g.away}@${g.home}`,
           away: getTeamFullName(g.away),
           home: getTeamFullName(g.home),
           gameTime: g.gameTime,
-          awayPitcher: pitchers.awayPitcher,
-          homePitcher: pitchers.homePitcher,
+          awayPitcher: awayPitcherData?.longName,
+          homePitcher: homePitcherData?.longName,
+          awayPitcherProfile: buildPitcherProfile(awayPitcherData),
+          homePitcherProfile: buildPitcherProfile(homePitcherData),
+          awayTopHitters: getTopHitters(awayRoster),
+          homeTopHitters: getTopHitters(homeRoster),
+          awayInjuries: getInjuries(awayRoster),
+          homeInjuries: getInjuries(homeRoster),
+          awayRecord: teamLookup[g.away] ? `${teamLookup[g.away].wins}-${teamLookup[g.away].loss}` : undefined,
+          homeRecord: teamLookup[g.home] ? `${teamLookup[g.home].wins}-${teamLookup[g.home].loss}` : undefined,
+          awayRunDiff: teamLookup[g.away]?.diff ? parseInt(teamLookup[g.away].diff) : undefined,
+          homeRunDiff: teamLookup[g.home]?.diff ? parseInt(teamLookup[g.home].diff) : undefined,
           moneyline: consensus.moneyline || undefined,
           total: consensus.total ? { line: consensus.total.line } : undefined,
           runline: consensus.spread ? { away: consensus.spread.away, home: consensus.spread.home } : undefined,

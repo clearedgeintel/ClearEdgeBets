@@ -606,6 +606,24 @@ Focus on value betting opportunities where your analysis suggests the true proba
 
 import type { ExpertAnalyst } from '@shared/expert-panel';
 
+export interface PitcherProfile {
+  name: string;
+  record?: string;      // "8-3"
+  era?: string;
+  whip?: string;
+  k9?: string;          // strikeouts per 9
+  ip?: string;          // innings pitched
+  gamesStarted?: number;
+}
+
+export interface HitterProfile {
+  name: string;
+  avg: string;
+  hr: number;
+  ops: string;
+  pos?: string;
+}
+
 export interface ExpertPickInput {
   expert: ExpertAnalyst;
   sport?: 'mlb' | 'nhl';
@@ -616,6 +634,16 @@ export interface ExpertPickInput {
     gameTime: string;
     awayPitcher?: string;
     homePitcher?: string;
+    awayPitcherProfile?: PitcherProfile;
+    homePitcherProfile?: PitcherProfile;
+    awayTopHitters?: HitterProfile[];
+    homeTopHitters?: HitterProfile[];
+    awayInjuries?: string[];
+    homeInjuries?: string[];
+    awayRecord?: string;   // "45-30"
+    homeRecord?: string;
+    awayRunDiff?: number;  // +55 or -12
+    homeRunDiff?: number;
     moneyline?: { away: number; home: number };
     total?: { line: string };
     runline?: { away: string; home: string };
@@ -640,24 +668,71 @@ export async function generateExpertPicks(input: ExpertPickInput): Promise<Array
   if (games.length === 0) return [];
 
   const gameLines = games.map(g => {
-    let line = `${g.away} @ ${g.home} (${g.gameTime})`;
-    if (!isNHL && (g.awayPitcher || g.homePitcher)) line += ` | ${g.awayPitcher || 'TBD'} vs ${g.homePitcher || 'TBD'}`;
-    if (g.moneyline) line += ` | ML: ${g.moneyline.away > 0 ? '+' : ''}${g.moneyline.away} / ${g.moneyline.home > 0 ? '+' : ''}${g.moneyline.home}`;
-    if (g.total) line += ` | O/U: ${g.total.line}`;
-    if (isNHL && g.puckLine) line += ` | PL: ${g.away} ${g.puckLine.away} / ${g.home} ${g.puckLine.home}`;
-    if (!isNHL && g.runline) line += ` | RL: ${g.away} ${g.runline.away} / ${g.home} ${g.runline.home}`;
-    if (g.parkFactor) line += ` | PF: ${g.parkFactor}`;
-    if (g.weather) line += ` | ${g.weather}`;
-    return line;
-  }).join('\n');
+    const lines: string[] = [];
 
-  // Auto-fetch real-time news context for expert picks
+    // Main game line with records and pitcher stats inline
+    const awayRec = g.awayRecord ? ` (${g.awayRecord})` : '';
+    const homeRec = g.homeRecord ? ` (${g.homeRecord})` : '';
+    let header = `${g.away}${awayRec} @ ${g.home}${homeRec} — ${g.gameTime}`;
+    if (!isNHL) {
+      const awayP = g.awayPitcherProfile;
+      const homeP = g.homePitcherProfile;
+      const fmtPitcher = (p?: PitcherProfile) => {
+        if (!p) return 'TBD';
+        const parts = [p.name];
+        if (p.record) parts.push(p.record);
+        if (p.era) parts.push(`${p.era} ERA`);
+        if (p.whip) parts.push(`${p.whip} WHIP`);
+        if (p.k9) parts.push(`${p.k9} K/9`);
+        if (p.gamesStarted) parts.push(`${p.gamesStarted} GS`);
+        return parts.length > 1 ? `${parts[0]} (${parts.slice(1).join(', ')})` : parts[0];
+      };
+      header += ` | SP: ${fmtPitcher(awayP)} vs ${fmtPitcher(homeP)}`;
+    }
+    lines.push(header);
+
+    // Odds line
+    const oddsParts: string[] = [];
+    if (g.moneyline) oddsParts.push(`ML: ${g.moneyline.away > 0 ? '+' : ''}${g.moneyline.away} / ${g.moneyline.home > 0 ? '+' : ''}${g.moneyline.home}`);
+    if (g.total) oddsParts.push(`O/U: ${g.total.line}`);
+    if (isNHL && g.puckLine) oddsParts.push(`PL: ${g.away} ${g.puckLine.away} / ${g.home} ${g.puckLine.home}`);
+    if (!isNHL && g.runline) oddsParts.push(`RL: ${g.away} ${g.runline.away} / ${g.home} ${g.runline.home}`);
+    if (g.parkFactor) oddsParts.push(`PF: ${g.parkFactor}`);
+    if (g.awayRunDiff != null || g.homeRunDiff != null) {
+      const fmtDiff = (d?: number) => d != null ? (d > 0 ? `+${d}` : `${d}`) : '?';
+      oddsParts.push(`RunDiff: ${g.away} ${fmtDiff(g.awayRunDiff)} / ${g.home} ${fmtDiff(g.homeRunDiff)}`);
+    }
+    if (g.weather) oddsParts.push(g.weather);
+    if (oddsParts.length > 0) lines.push(`  ${oddsParts.join(' | ')}`);
+
+    // Top hitters (MLB only)
+    if (!isNHL) {
+      const fmtHitters = (hitters?: HitterProfile[]) =>
+        hitters?.map(h => `${h.name} ${h.avg}/${h.hr}HR/${h.ops} OPS`).join(', ') || '';
+      const awayH = fmtHitters(g.awayTopHitters);
+      const homeH = fmtHitters(g.homeTopHitters);
+      if (awayH) lines.push(`  ${g.away} top bats: ${awayH}`);
+      if (homeH) lines.push(`  ${g.home} top bats: ${homeH}`);
+    }
+
+    // Injuries
+    const injuries: string[] = [];
+    if (g.awayInjuries?.length) injuries.push(`${g.away}: ${g.awayInjuries.join(', ')}`);
+    if (g.homeInjuries?.length) injuries.push(`${g.home}: ${g.homeInjuries.join(', ')}`);
+    if (injuries.length > 0) lines.push(`  Injuries: ${injuries.join(' | ')}`);
+
+    return lines.join('\n');
+  }).join('\n\n');
+
+  // Auto-fetch real-time news context for expert picks (sport-aware)
   let newsBlock = '';
   try {
     const { buildNewsContext, formatContextForPrompt } = await import('./news-context');
-    const newsCtx = await buildNewsContext();
+    const newsCtx = await buildNewsContext(sport);
     newsBlock = formatContextForPrompt(newsCtx);
-  } catch {}
+  } catch (err) {
+    console.warn('Failed to fetch news context for expert picks:', err);
+  }
 
   const sportLabel = isNHL ? 'NHL' : 'MLB';
   const betTypes = isNHL
@@ -670,7 +745,9 @@ export async function generateExpertPicks(input: ExpertPickInput): Promise<Array
 
   const prompt = `${expert.voiceDirective}
 ${newsBlock}
-You are analyzing today's ${sportLabel} slate. Pick ${expert.maxPicksPerDay} games maximum. Only pick games where you have a genuine edge based on your specialty.
+You are analyzing today's ${sportLabel} slate. You MUST pick at least 3 games, up to ${expert.maxPicksPerDay} maximum. Do NOT pass on the slate — find at least 3 edges.
+
+IMPORTANT: Reference specific player names and their stats in your rationale. Mention starting pitchers by name, call out key hitters, and cite injury impacts. Generic team-level analysis is not acceptable — your readers expect named players.
 
 **Your preferred bet types:** ${betTypes}
 **Your risk level:** ${expert.riskLevel}
@@ -684,11 +761,11 @@ For each pick, provide:
 - selection: the specific pick ${selectionExamples}
 - odds: the odds number (e.g. -130, +150)
 - confidence: 1-100 how confident you are
-- rationale: 1-2 sentences in YOUR voice explaining why
+- rationale: 2-3 sentences in YOUR voice explaining why — MUST name specific players
 - units: how many units to risk (0.5 to 3.0 based on confidence)
 
 Return JSON: { "picks": [...] }
-If no games have enough edge for your style, return { "picks": [] } — it's fine to pass.`;
+You MUST return at least 3 picks. Do NOT return an empty array.`;
 
   try {
     const response = await openai.chat.completions.create({
@@ -696,7 +773,7 @@ If no games have enough edge for your style, return { "picks": [] } — it's fin
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
       temperature: 0.85,
-      max_tokens: 1200,
+      max_tokens: 1800,
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');

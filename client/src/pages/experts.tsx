@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
-import { Target, TrendingUp, Users, ChevronDown, ChevronUp, UserPlus, UserMinus, Sparkles, Clock } from "lucide-react";
+import { Target, TrendingUp, Users, ChevronDown, ChevronUp, UserPlus, UserMinus, Sparkles, Clock, History } from "lucide-react";
 import { format } from "date-fns";
 
 interface ExpertWithRecord {
@@ -52,13 +52,30 @@ const riskColors: Record<string, string> = {
   aggressive: 'bg-red-500/15 text-red-400 border-red-500/20',
 };
 
+const resultColors: Record<string, string> = {
+  win: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  loss: 'bg-red-500/10 text-red-400 border-red-500/20',
+  push: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
+  pending: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+};
+
 export default function Experts() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [expandedExpert, setExpandedExpert] = useState<string | null>(null);
+  const [collapsedExperts, setCollapsedExperts] = useState<Set<string>>(new Set());
+  const [showBio, setShowBio] = useState<Set<string>>(new Set());
   const [showAdmin, setShowAdmin] = useState(false);
   const isAdmin = user?.isAdmin;
+
+  const toggleExpert = (id: string) => {
+    setCollapsedExperts(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const { data: experts = [] } = useQuery<ExpertWithRecord[]>({
     queryKey: ['/api/experts'],
@@ -75,6 +92,28 @@ export default function Experts() {
     queryKey: ['/api/expert-follows'],
     queryFn: () => fetch('/api/expert-follows', { credentials: 'include' }).then(r => r.json()),
     enabled: !!user,
+  });
+
+  // Fetch recent pick history for all experts
+  const { data: recentHistory = {} } = useQuery<Record<string, ExpertPick[]>>({
+    queryKey: ['/api/expert-picks/recent-history'],
+    queryFn: async () => {
+      const expertIds = experts.map(e => e.id);
+      const results: Record<string, ExpertPick[]> = {};
+      await Promise.all(expertIds.map(async (id) => {
+        try {
+          const resp = await fetch(`/api/expert-picks/expert/${id}`);
+          const picks: ExpertPick[] = await resp.json();
+          // Get last 20 graded picks (not pending, not today)
+          results[id] = picks
+            .filter(p => p.result !== 'pending' && p.gameDate !== today)
+            .sort((a, b) => new Date(b.gameDate).getTime() - new Date(a.gameDate).getTime())
+            .slice(0, 20);
+        } catch { results[id] = []; }
+      }));
+      return results;
+    },
+    enabled: experts.length > 0,
   });
 
   const followMutation = useMutation({
@@ -98,32 +137,57 @@ export default function Experts() {
       toast({ title: 'Picks generated!', description: `${data.totalPicks} picks from 5 experts` });
       queryClient.invalidateQueries({ queryKey: ['/api/expert-picks'] });
       queryClient.invalidateQueries({ queryKey: ['/api/experts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/expert-picks/recent-history'] });
     },
     onError: (err: any) => toast({ title: 'Failed', description: err.message, variant: 'destructive' }),
   });
 
   const getFollowMode = (expertId: string) => follows.find(f => f.expertId === expertId)?.mode;
 
+  // Calculate recent streak from history
+  const getStreak = (picks: ExpertPick[]) => {
+    if (!picks.length) return null;
+    const first = picks[0].result;
+    if (first !== 'win' && first !== 'loss') return null;
+    let count = 0;
+    for (const p of picks) {
+      if (p.result === first) count++;
+      else break;
+    }
+    return { type: first, count };
+  };
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Expert Panel</h1>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-1">5 AI analysts. 5 different lenses. Follow or fade.</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Expert Panel</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">5 AI analysts. 5 different lenses. Follow or fade.</p>
+        </div>
+        {isAdmin && (
+          <Button size="sm" variant="outline" className="text-xs h-8"
+            onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending}>
+            <Sparkles className="h-3 w-3 mr-1" />
+            {generateMutation.isPending ? 'Generating...' : 'Generate Picks'}
+          </Button>
+        )}
       </div>
 
       <div className="space-y-3">
         {experts.map(expert => {
-          const isExpanded = expandedExpert === expert.id;
+          const isExpanded = !collapsedExperts.has(expert.id);
           const expertPicks = todayPicks.filter(p => p.expertId === expert.id);
+          const history = recentHistory[expert.id] || [];
           const followMode = getFollowMode(expert.id);
           const total = expert.record.wins + expert.record.losses;
+          const streak = getStreak(history);
 
           return (
             <Card key={expert.id} className="border-border/30 overflow-hidden">
               <CardContent className="p-0">
-                {/* Expert header — stacks on mobile */}
+                {/* Expert header */}
                 <div className="p-3 sm:p-4 cursor-pointer hover:bg-zinc-800/20 transition-colors"
-                  onClick={() => setExpandedExpert(isExpanded ? null : expert.id)}>
+                  onClick={() => toggleExpert(expert.id)}>
                   <div className="flex items-center gap-3">
                     <div className="text-2xl sm:text-3xl flex-shrink-0">{expert.avatar}</div>
                     <div className="flex-1 min-w-0">
@@ -135,8 +199,8 @@ export default function Experts() {
                     </div>
                     <ChevronDown className={`h-4 w-4 text-zinc-500 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                   </div>
-                  {/* Stats row — always visible, compact */}
-                  <div className="flex items-center gap-2 mt-2 ml-9 sm:ml-12">
+                  {/* Stats row */}
+                  <div className="flex items-center gap-2 mt-2 ml-9 sm:ml-12 flex-wrap">
                     {total > 0 && (
                       <Badge className="bg-zinc-800 text-zinc-300 border border-zinc-700 text-[10px] tabular-nums">
                         {expert.record.wins}-{expert.record.losses}
@@ -149,17 +213,31 @@ export default function Experts() {
                     )}
                     {expertPicks.length > 0 && (
                       <Badge className="bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[10px]">
-                        {expertPicks.length} pick{expertPicks.length !== 1 ? 's' : ''}
+                        {expertPicks.length} pick{expertPicks.length !== 1 ? 's' : ''} today
+                      </Badge>
+                    )}
+                    {streak && (
+                      <Badge className={`text-[10px] border ${streak.type === 'win' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                        {streak.count}{streak.type === 'win' ? 'W' : 'L'} streak
                       </Badge>
                     )}
                   </div>
                 </div>
 
-                {/* Expanded */}
+                {/* Expanded content */}
                 {isExpanded && (
                   <div className="border-t border-border/20 p-3 sm:p-4 bg-zinc-900/20">
-                    {/* Bio */}
-                    <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed mb-3">{expert.bio}</p>
+                    {/* Bio toggle */}
+                    <div className="mb-3">
+                      <button
+                        className="text-[11px] text-blue-400 hover:text-blue-300 transition-colors"
+                        onClick={(e) => { e.stopPropagation(); setShowBio(prev => { const next = new Set(prev); if (next.has(expert.id)) next.delete(expert.id); else next.add(expert.id); return next; }); }}>
+                        {showBio.has(expert.id) ? 'Hide bio' : 'Bio'}
+                      </button>
+                      {showBio.has(expert.id) && (
+                        <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed mt-1.5">{expert.bio}</p>
+                      )}
+                    </div>
 
                     {/* Follow/Fade buttons */}
                     {user && (
@@ -184,10 +262,12 @@ export default function Experts() {
                       <span>{expert.pickTypes.join(', ')}</span>
                     </div>
 
-                    {/* Picks */}
+                    {/* Today's Picks */}
                     {expertPicks.length > 0 ? (
-                      <div className="space-y-2">
-                        <h4 className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Today's Picks</h4>
+                      <div className="space-y-2 mb-4">
+                        <h4 className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium flex items-center gap-1">
+                          <Target className="h-3 w-3" /> Today's Picks
+                        </h4>
                         {expertPicks.map(pick => {
                           const codes = pick.gameId.split('@');
                           return (
@@ -202,19 +282,70 @@ export default function Experts() {
                                     {pick.odds > 0 ? '+' : ''}{pick.odds}
                                   </Badge>
                                   <Badge className={`text-[9px] border tabular-nums ${pick.confidence >= 75 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-zinc-800 text-zinc-500 border-zinc-700'}`}>{pick.confidence}%</Badge>
+                                  {pick.units && (
+                                    <Badge className="bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[9px] tabular-nums">
+                                      {pick.units}u
+                                    </Badge>
+                                  )}
                                   {pick.result && pick.result !== 'pending' && (
-                                    <Badge className={`text-[9px] border ${pick.result === 'win' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>{pick.result.toUpperCase()}</Badge>
+                                    <Badge className={`text-[9px] border ${resultColors[pick.result]}`}>{pick.result.toUpperCase()}</Badge>
                                   )}
                                 </div>
                               </div>
-                              <p className="text-[11px] text-zinc-500 line-clamp-2">{pick.rationale}</p>
+                              <p className="text-[11px] text-zinc-500 leading-relaxed">{pick.rationale}</p>
                             </div>
                           );
                         })}
                       </div>
                     ) : (
-                      <div className="text-center py-3 text-xs text-muted-foreground">
-                        No picks today. Experts analyze the slate each morning.
+                      <div className="text-center py-3 text-xs text-muted-foreground mb-4">
+                        No picks today yet. Experts analyze the slate each morning.
+                      </div>
+                    )}
+
+                    {/* Recent History */}
+                    {history.length > 0 && (
+                      <div className="space-y-1.5">
+                        <h4 className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium flex items-center gap-1">
+                          <History className="h-3 w-3" /> Recent Results
+                        </h4>
+                        {/* Visual streak bar */}
+                        <div className="flex gap-0.5 mb-2">
+                          {history.slice(0, 15).map((pick, i) => (
+                            <div
+                              key={pick.id}
+                              title={`${pick.selection} — ${pick.result.toUpperCase()} (${pick.gameDate})`}
+                              className={`h-5 flex-1 rounded-sm ${
+                                pick.result === 'win' ? 'bg-emerald-500/60' :
+                                pick.result === 'loss' ? 'bg-red-500/60' :
+                                'bg-zinc-600/60'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        {/* Last 5 picks detail */}
+                        <div className="space-y-1">
+                          {history.slice(0, 5).map(pick => {
+                            const codes = pick.gameId.split('@');
+                            return (
+                              <div key={pick.id} className="flex items-center justify-between py-1 px-2 rounded bg-zinc-900/30 border border-border/20">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {codes[0] && <img src={teamLogo(codes[0])} alt="" className="h-3.5 w-3.5 flex-shrink-0" />}
+                                  <span className="text-[11px] text-zinc-300 truncate">{pick.selection}</span>
+                                  <span className="text-[10px] text-zinc-600">{pick.gameDate}</span>
+                                </div>
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <span className="text-[10px] text-zinc-500 tabular-nums">
+                                    {pick.odds > 0 ? '+' : ''}{pick.odds}
+                                  </span>
+                                  <Badge className={`text-[9px] border ${resultColors[pick.result]}`}>
+                                    {pick.result.toUpperCase()}
+                                  </Badge>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                   </div>

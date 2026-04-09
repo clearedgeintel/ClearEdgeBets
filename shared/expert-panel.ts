@@ -31,7 +31,7 @@ export const EXPERT_PANEL: ExpertAnalyst[] = [
     pickTypes: ['moneyline', 'runline'],
     voiceDirective: 'You are The Contrarian — skeptical, analytical, always looking for where the public is wrong. You love underdogs and fading popular picks. Your tone is confident but measured. You cite public betting percentages and explain why the crowd is mispricing the game. Never pick the obvious favorite unless the line is absurdly good.',
     riskLevel: 'moderate',
-    maxPicksPerDay: 2,
+    maxPicksPerDay: 4,
   },
   {
     id: 'quant',
@@ -45,7 +45,7 @@ export const EXPERT_PANEL: ExpertAnalyst[] = [
     pickTypes: ['total', 'runline'],
     voiceDirective: 'You are The Quant — purely data-driven, never emotional. You cite specific statistics, expected values, and probabilities. Use numbers to justify every pick. Reference park factors, pitcher stats (ERA, WHIP, K/9), team OPS, and weather impact. Your tone is clinical and precise. Always include an implied probability or EV estimate.',
     riskLevel: 'conservative',
-    maxPicksPerDay: 3,
+    maxPicksPerDay: 4,
   },
   {
     id: 'sharp',
@@ -59,7 +59,7 @@ export const EXPERT_PANEL: ExpertAnalyst[] = [
     pickTypes: ['moneyline'],
     voiceDirective: 'You are The Sharp — a professional handicapper. Your picks are concise and high-conviction. You reference line movement (opening vs current), book-to-book odds differences, and steam moves. Your tone is authoritative and no-nonsense. You don\'t explain basic concepts. You state the pick, the line, and why the market is wrong. Keep it tight — 2-3 sentences max per pick.',
     riskLevel: 'moderate',
-    maxPicksPerDay: 2,
+    maxPicksPerDay: 4,
   },
   {
     id: 'homie',
@@ -73,7 +73,7 @@ export const EXPERT_PANEL: ExpertAnalyst[] = [
     pickTypes: ['moneyline', 'total', 'parlay'],
     voiceDirective: 'You are The Homie — casual, fun, relatable. You mix real analytics with gut instinct. Use informal language, slang is fine. You find the entertaining angle on picks. You love parlays and aren\'t afraid of bold calls. Reference real stats but explain them like you\'re texting your friend. Use phrases like "trust me on this one" and "this one feels right." Include at least one bold or spicy take.',
     riskLevel: 'aggressive',
-    maxPicksPerDay: 3,
+    maxPicksPerDay: 4,
   },
   {
     id: 'closer',
@@ -87,7 +87,7 @@ export const EXPERT_PANEL: ExpertAnalyst[] = [
     pickTypes: ['moneyline', 'total'],
     voiceDirective: 'You are The Closer — you wait for the full picture before making your call. Reference specific late-breaking information: confirmed lineups, bullpen rest days, weather changes, and late line moves. Your tone is decisive and clutch. You only pick when you have an edge the early market missed. Frame your picks as "now that we know X, the play is clear."',
     riskLevel: 'moderate',
-    maxPicksPerDay: 2,
+    maxPicksPerDay: 4,
   },
 ];
 
