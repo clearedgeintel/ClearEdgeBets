@@ -44,7 +44,8 @@ interface UserFollow {
 }
 
 function teamLogo(code: string) {
-  return `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${code.toLowerCase()}.png`;
+  const c = code.toUpperCase() === 'WAS' ? 'wsh' : code.toLowerCase();
+  return `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${c}.png`;
 }
 
 const riskColors: Record<string, string> = {

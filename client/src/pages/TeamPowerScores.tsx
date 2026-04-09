@@ -8,6 +8,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getTeamName, getTeamDivision } from "@shared/team-lookup";
 import { Link } from "wouter";
 
+function teamLogo(code: string) {
+  const espnCode = code.toUpperCase() === 'WAS' ? 'wsh' : code.toLowerCase();
+  return `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${espnCode}.png`;
+}
+
 interface TeamPowerScore {
   team: string;
   advBattingScore: number;
@@ -207,7 +212,7 @@ export default function TeamPowerScores() {
                   <TableCell>
                     <Link href={`/team/${team.team}`} className="flex items-center gap-3 group">
                       <img
-                        src={`https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${team.team.toLowerCase()}.png`}
+                        src={teamLogo(team.team)}
                         alt={team.team}
                         className="h-8 w-8 group-hover:scale-110 transition-transform"
                       />
