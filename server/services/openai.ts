@@ -645,8 +645,8 @@ export interface ExpertPickInput {
     awayRunDiff?: number;  // +55 or -12
     homeRunDiff?: number;
     moneyline?: { away: number; home: number };
-    total?: { line: string };
-    runline?: { away: string; home: string };
+    total?: { line: string; overOdds?: number; underOdds?: number };
+    runline?: { away: string; home: string; awayOdds?: number; homeOdds?: number };
     puckLine?: { away: string; home: string };
     parkFactor?: number;
     weather?: string;
@@ -691,12 +691,33 @@ export async function generateExpertPicks(input: ExpertPickInput): Promise<Array
     }
     lines.push(header);
 
-    // Odds line
+    // Odds line with implied probabilities
+    const mlToImplied = (ml: number) => {
+      const pct = ml < 0 ? Math.abs(ml) / (Math.abs(ml) + 100) * 100 : 100 / (ml + 100) * 100;
+      return pct.toFixed(1) + '%';
+    };
     const oddsParts: string[] = [];
-    if (g.moneyline) oddsParts.push(`ML: ${g.moneyline.away > 0 ? '+' : ''}${g.moneyline.away} / ${g.moneyline.home > 0 ? '+' : ''}${g.moneyline.home}`);
-    if (g.total) oddsParts.push(`O/U: ${g.total.line}`);
+    if (g.moneyline) {
+      const fmtML = (ml: number) => (ml > 0 ? '+' : '') + ml;
+      oddsParts.push(`ML: ${g.away} ${fmtML(g.moneyline.away)} (${mlToImplied(g.moneyline.away)}) / ${g.home} ${fmtML(g.moneyline.home)} (${mlToImplied(g.moneyline.home)})`);
+    }
+    if (g.total) {
+      let totalStr = `O/U: ${g.total.line}`;
+      if (g.total.overOdds != null && g.total.underOdds != null) {
+        const fmtO = (o: number) => (o > 0 ? '+' : '') + o;
+        totalStr += ` (Over ${fmtO(g.total.overOdds)} / Under ${fmtO(g.total.underOdds)})`;
+      }
+      oddsParts.push(totalStr);
+    }
     if (isNHL && g.puckLine) oddsParts.push(`PL: ${g.away} ${g.puckLine.away} / ${g.home} ${g.puckLine.home}`);
-    if (!isNHL && g.runline) oddsParts.push(`RL: ${g.away} ${g.runline.away} / ${g.home} ${g.runline.home}`);
+    if (!isNHL && g.runline) {
+      let rlStr = `RL: ${g.away} ${g.runline.away} / ${g.home} ${g.runline.home}`;
+      if (g.runline.awayOdds != null && g.runline.homeOdds != null) {
+        const fmtO = (o: number) => (o > 0 ? '+' : '') + o;
+        rlStr += ` (${fmtO(g.runline.awayOdds)} / ${fmtO(g.runline.homeOdds)})`;
+      }
+      oddsParts.push(rlStr);
+    }
     if (g.parkFactor) oddsParts.push(`PF: ${g.parkFactor}`);
     if (g.awayRunDiff != null || g.homeRunDiff != null) {
       const fmtDiff = (d?: number) => d != null ? (d > 0 ? `+${d}` : `${d}`) : '?';
@@ -738,10 +759,12 @@ export async function generateExpertPicks(input: ExpertPickInput): Promise<Array
   const betTypes = isNHL
     ? expert.pickTypes.map(t => t === 'runline' ? 'puck line' : t).join(', ')
     : expert.pickTypes.join(', ');
-  const pickTypeOptions = isNHL ? 'moneyline, total, or puckline' : 'moneyline, total, or runline';
+  const hasParlay = expert.pickTypes.includes('parlay');
+  const pickTypeOptions = isNHL ? 'moneyline, total, puckline' : 'moneyline, total, runline';
+  const parlayNote = hasParlay ? ', or parlay (combine 2-3 legs into one pick)' : '';
   const selectionExamples = isNHL
-    ? '(e.g. "BOS ML", "Over 5.5", "TOR -1.5")'
-    : '(e.g. "NYY ML", "Over 8.5", "LAD -1.5")';
+    ? '(e.g. "BOS ML", "Over 5.5", "TOR -1.5"' + (hasParlay ? ', "BOS ML + Under 5.5"' : '') + ')'
+    : '(e.g. "NYY ML", "Over 8.5", "LAD -1.5"' + (hasParlay ? ', "NYY ML + Under 8.5"' : '') + ')';
 
   const prompt = `${expert.voiceDirective}
 ${newsBlock}
@@ -756,12 +779,12 @@ IMPORTANT: Reference specific player names and their stats in your rationale. Me
 ${gameLines}
 
 For each pick, provide:
-- gameId: the away@home code (e.g. "${isNHL ? 'BOS@TOR' : 'NYY@BOS'}")
-- pickType: ${pickTypeOptions}
+- gameId: the away@home code (e.g. "${isNHL ? 'BOS@TOR' : 'NYY@BOS'}")${hasParlay ? ' — for parlays use the first game\'s code' : ''}
+- pickType: ${pickTypeOptions}${parlayNote}
 - selection: the specific pick ${selectionExamples}
-- odds: the odds number (e.g. -130, +150)
+- odds: the odds number (e.g. -130, +150)${hasParlay ? ' — for parlays, calculate the combined odds' : ''}
 - confidence: 1-100 how confident you are
-- rationale: 2-3 sentences in YOUR voice explaining why — MUST name specific players
+- rationale: 2-3 sentences in YOUR voice explaining why — MUST name specific players${hasParlay ? '. For parlays, explain why the legs are correlated.' : ''}
 - units: how many units to risk (0.5 to 3.0 based on confidence)
 
 Return JSON: { "picks": [...] }

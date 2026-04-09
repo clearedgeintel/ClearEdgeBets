@@ -838,6 +838,7 @@ export const expertPicks = pgTable("expert_picks", {
   rationale: text("rationale").notNull(),
   result: text("result"),                             // win, loss, push, pending
   units: decimal("units", { precision: 4, scale: 1 }).default("1.0"),
+  postGameNote: text("post_game_note"),               // AI-generated 1-line explanation of why pick won/lost
   gradedAt: timestamp("graded_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

@@ -1904,8 +1904,8 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(expertPicks).where(eq(expertPicks.result, 'pending')).orderBy(expertPicks.createdAt);
   }
 
-  async gradeExpertPick(id: number, result: string): Promise<ExpertPick> {
-    const [updated] = await db.update(expertPicks).set({ result, gradedAt: new Date() }).where(eq(expertPicks.id, id)).returning();
+  async gradeExpertPick(id: number, result: string, postGameNote?: string): Promise<ExpertPick> {
+    const [updated] = await db.update(expertPicks).set({ result, postGameNote: postGameNote || null, gradedAt: new Date() }).where(eq(expertPicks.id, id)).returning();
     return updated;
   }
 

@@ -54,22 +54,24 @@ export default function Home() {
               const awayR = parseInt(game.lineScore?.away?.R || '0');
               const homeR = parseInt(game.lineScore?.home?.R || '0');
               return (
-                <div key={game.gameID} className="flex-shrink-0 w-[130px] bg-card border border-border/20 rounded-lg p-2.5">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <img src={teamLogo(away)} alt="" className="h-4 w-4" />
-                      <span className={`text-xs font-medium ${awayR > homeR ? 'text-foreground' : 'text-zinc-500'}`}>{away}</span>
+                <Link key={game.gameID} href={`/game-summary/${game.gameID}`}>
+                  <div className="flex-shrink-0 w-[130px] bg-card border border-border/20 rounded-lg p-2.5 cursor-pointer hover:border-emerald-500/30 transition-colors">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <img src={teamLogo(away)} alt="" className="h-4 w-4" />
+                        <span className={`text-xs font-medium ${awayR > homeR ? 'text-foreground' : 'text-zinc-500'}`}>{away}</span>
+                      </div>
+                      <span className={`text-sm font-bold tabular-nums ${awayR > homeR ? 'text-foreground' : 'text-zinc-500'}`}>{awayR}</span>
                     </div>
-                    <span className={`text-sm font-bold tabular-nums ${awayR > homeR ? 'text-foreground' : 'text-zinc-500'}`}>{awayR}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <img src={teamLogo(home)} alt="" className="h-4 w-4" />
-                      <span className={`text-xs font-medium ${homeR > awayR ? 'text-foreground' : 'text-zinc-500'}`}>{home}</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <img src={teamLogo(home)} alt="" className="h-4 w-4" />
+                        <span className={`text-xs font-medium ${homeR > awayR ? 'text-foreground' : 'text-zinc-500'}`}>{home}</span>
+                      </div>
+                      <span className={`text-sm font-bold tabular-nums ${homeR > awayR ? 'text-foreground' : 'text-zinc-500'}`}>{homeR}</span>
                     </div>
-                    <span className={`text-sm font-bold tabular-nums ${homeR > awayR ? 'text-foreground' : 'text-zinc-500'}`}>{homeR}</span>
                   </div>
-                </div>
+                </Link>
               );
             })}
             {nhlScores.filter((g: any) => g.status === 'final').map((game: any) => (

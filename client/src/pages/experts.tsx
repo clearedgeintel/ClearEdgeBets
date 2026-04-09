@@ -34,6 +34,7 @@ interface ExpertPick {
   rationale: string;
   result: string;
   units: string;
+  postGameNote?: string;
   createdAt: string;
 }
 
@@ -324,24 +325,31 @@ export default function Experts() {
                           ))}
                         </div>
                         {/* Last 5 picks detail */}
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           {history.slice(0, 5).map(pick => {
                             const codes = pick.gameId.split('@');
                             return (
-                              <div key={pick.id} className="flex items-center justify-between py-1 px-2 rounded bg-zinc-900/30 border border-border/20">
-                                <div className="flex items-center gap-2 min-w-0">
-                                  {codes[0] && <img src={teamLogo(codes[0])} alt="" className="h-3.5 w-3.5 flex-shrink-0" />}
-                                  <span className="text-[11px] text-zinc-300 truncate">{pick.selection}</span>
-                                  <span className="text-[10px] text-zinc-600">{pick.gameDate}</span>
+                              <div key={pick.id} className="py-1.5 px-2.5 rounded bg-zinc-900/30 border border-border/20">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    {codes[0] && <img src={teamLogo(codes[0])} alt="" className="h-3.5 w-3.5 flex-shrink-0" />}
+                                    <span className="text-[11px] text-zinc-300 truncate">{pick.selection}</span>
+                                    <span className="text-[10px] text-zinc-600">{pick.gameDate}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 flex-shrink-0">
+                                    <span className="text-[10px] text-zinc-500 tabular-nums">
+                                      {pick.odds > 0 ? '+' : ''}{pick.odds}
+                                    </span>
+                                    <Badge className={`text-[9px] border ${resultColors[pick.result]}`}>
+                                      {pick.result.toUpperCase()}
+                                    </Badge>
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-1 flex-shrink-0">
-                                  <span className="text-[10px] text-zinc-500 tabular-nums">
-                                    {pick.odds > 0 ? '+' : ''}{pick.odds}
-                                  </span>
-                                  <Badge className={`text-[9px] border ${resultColors[pick.result]}`}>
-                                    {pick.result.toUpperCase()}
-                                  </Badge>
-                                </div>
+                                {pick.postGameNote && (
+                                  <p className={`text-[10px] mt-1 leading-snug ${pick.result === 'win' ? 'text-emerald-500/70' : pick.result === 'loss' ? 'text-red-400/70' : 'text-zinc-500'}`}>
+                                    {pick.postGameNote}
+                                  </p>
+                                )}
                               </div>
                             );
                           })}

@@ -1094,6 +1094,105 @@ Return JSON:
     }
   });
 
+  // Public box score for completed games
+  app.get('/api/boxscore/:gameID', async (req, res) => {
+    try {
+      const { gameID } = req.params;
+      const cacheKey = `boxscore-${gameID}`;
+      const { getCached, setCache } = await import('./lib/cache');
+      const cached = getCached<any>(cacheKey);
+      if (cached) return res.json(cached);
+
+      const { trackedFetch } = await import('./lib/api-tracker');
+      const { fetchTank01Player, getTeamFullName } = await import('./services/tank01-mlb');
+
+      const boxResp = await trackedFetch(
+        `https://tank01-mlb-live-in-game-real-time-statistics.p.rapidapi.com/getMLBBoxScore?gameID=${gameID}`,
+        { headers: { 'x-rapidapi-host': 'tank01-mlb-live-in-game-real-time-statistics.p.rapidapi.com', 'x-rapidapi-key': process.env.TANK01_API_KEY || process.env.RAPIDAPI_KEY || '' } }
+      );
+      if (!boxResp.ok) return res.status(502).json({ error: `Box score fetch failed: ${boxResp.status}` });
+      const boxData = (await boxResp.json() as any).body;
+
+      const awayCode = boxData.away || gameID.split('_')[1]?.split('@')[0] || '';
+      const homeCode = boxData.home || gameID.split('@')[1] || '';
+
+      // Resolve player names for stats
+      const playerStats = boxData.playerStats || {};
+      const playerIds = Object.keys(playerStats);
+      const playerNames: Record<string, string> = {};
+      await Promise.all(playerIds.map(async (id) => {
+        try {
+          const info = await fetchTank01Player(id, false);
+          if (info?.longName) playerNames[id] = info.longName;
+        } catch {}
+      }));
+
+      // Build hitters by team
+      const buildHitters = (teamCode: string) =>
+        Object.values(playerStats)
+          .filter((p: any) => p.team === teamCode && p.Hitting && parseInt(p.Hitting.AB || '0') > 0)
+          .map((p: any) => ({
+            name: playerNames[p.playerID] || `#${p.playerID}`,
+            pos: p.pos || '',
+            ab: p.Hitting.AB || '0',
+            r: p.Hitting.R || '0',
+            h: p.Hitting.H || '0',
+            rbi: p.Hitting.RBI || '0',
+            hr: p.Hitting.HR || '0',
+            bb: p.Hitting.BB || '0',
+            so: p.Hitting.SO || '0',
+            avg: p.Hitting.AVG || '',
+          }))
+          .sort((a: any, b: any) => parseInt(b.h) - parseInt(a.h) || parseInt(b.hr) - parseInt(a.hr));
+
+      // Build pitchers by team
+      const buildPitchers = (teamCode: string) =>
+        Object.values(playerStats)
+          .filter((p: any) => p.team === teamCode && p.Pitching && parseFloat(p.Pitching.InningsPitched || '0') > 0)
+          .map((p: any) => ({
+            name: playerNames[p.playerID] || `#${p.playerID}`,
+            ip: p.Pitching.InningsPitched || '0',
+            h: p.Pitching.H || '0',
+            r: p.Pitching.R || '0',
+            er: p.Pitching.ER || '0',
+            bb: p.Pitching.BB || '0',
+            so: p.Pitching.SO || '0',
+            hr: p.Pitching.HR || '0',
+            pitchCount: p.Pitching.Pitches || '',
+          }))
+          .sort((a: any, b: any) => parseFloat(b.ip) - parseFloat(a.ip));
+
+      // Resolve decisions (W/L/S pitcher names)
+      const decisions = (boxData.decisions || []).map((d: any) => ({
+        ...d,
+        name: playerNames[d.playerID] || `#${d.playerID}`,
+      }));
+
+      const result = {
+        gameID,
+        away: awayCode,
+        home: homeCode,
+        awayFull: getTeamFullName(awayCode),
+        homeFull: getTeamFullName(homeCode),
+        lineScore: boxData.lineScore || {},
+        venue: boxData.Venue || '',
+        weather: boxData.Weather || '',
+        attendance: boxData.Attendance || '',
+        decisions,
+        awayHitters: buildHitters(awayCode),
+        homeHitters: buildHitters(homeCode),
+        awayPitchers: buildPitchers(awayCode),
+        homePitchers: buildPitchers(homeCode),
+      };
+
+      setCache(cacheKey, result, 3600); // cache 1 hour
+      res.json(result);
+    } catch (error: any) {
+      console.error('Box score error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ── Today's editorial slate — games with beat writer assignments ──
 
   app.get('/api/editorial/slate', async (req, res) => {
@@ -1901,8 +2000,8 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
           awayRunDiff: teamLookup[g.away]?.diff ? parseInt(teamLookup[g.away].diff) : undefined,
           homeRunDiff: teamLookup[g.home]?.diff ? parseInt(teamLookup[g.home].diff) : undefined,
           moneyline: consensus.moneyline || undefined,
-          total: consensus.total ? { line: consensus.total.line } : undefined,
-          runline: consensus.spread ? { away: consensus.spread.away, home: consensus.spread.home } : undefined,
+          total: consensus.total ? { line: consensus.total.line, overOdds: consensus.total.over, underOdds: consensus.total.under } : undefined,
+          runline: consensus.spread ? { away: consensus.spread.away, home: consensus.spread.home, awayOdds: consensus.spread.awayOdds, homeOdds: consensus.spread.homeOdds } : undefined,
           parkFactor: parkFactor?.factor,
         };
       }));

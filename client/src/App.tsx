@@ -40,6 +40,7 @@ const HotTrends = lazy(() => import("@/pages/hot-trends"));
 const AIAssistant = lazy(() => import("@/pages/ai-assistant"));
 const KellyCalculator = lazy(() => import("@/pages/kelly-calculator"));
 const GameDetail = lazy(() => import("@/pages/game-detail"));
+const GameSummary = lazy(() => import("@/pages/game-summary"));
 const VirtualSportsbook = lazy(() => import("@/pages/virtual-sportsbook"));
 const WeeklyLeaderboard = lazy(() => import("@/pages/weekly-leaderboard"));
 const Groups = lazy(() => import("@/pages/groups"));
@@ -107,6 +108,7 @@ function Router() {
           <Route path="/games">{() => <ProtectedRoute component={TodaysGames} />}</Route>
           <Route path="/todays-games">{() => <ProtectedRoute component={TodaysGames} />}</Route>
           <Route path="/game/:gameId">{() => <ProtectedRoute component={GameDetail} />}</Route>
+          <Route path="/game-summary/:gameID" component={GameSummary} />
           <Route path="/experts">{() => <ProtectedRoute component={Experts} />}</Route>
           <Route path="/expert-leaderboard">{() => <ProtectedRoute component={ExpertLeaderboard} />}</Route>
           <Route path="/trivia">{() => <ProtectedRoute component={Trivia} />}</Route>

@@ -594,8 +594,8 @@ class SchedulerService {
         awayRunDiff: teamLookup[g.away]?.diff ? parseInt(teamLookup[g.away].diff) : undefined,
         homeRunDiff: teamLookup[g.home]?.diff ? parseInt(teamLookup[g.home].diff) : undefined,
         moneyline: consensus.moneyline || undefined,
-        total: consensus.total ? { line: consensus.total.line } : undefined,
-        runline: consensus.spread ? { away: consensus.spread.away, home: consensus.spread.home } : undefined,
+        total: consensus.total ? { line: consensus.total.line, overOdds: consensus.total.over, underOdds: consensus.total.under } : undefined,
+        runline: consensus.spread ? { away: consensus.spread.away, home: consensus.spread.home, awayOdds: consensus.spread.awayOdds, homeOdds: consensus.spread.homeOdds } : undefined,
         parkFactor: pf?.factor,
       };
     }));
@@ -707,6 +707,39 @@ class SchedulerService {
     }
   }
 
+  /** Generate a concise post-game note explaining why a pick won or lost */
+  private async generatePostGameNote(pick: any, result: string, scoreContext: string): Promise<string> {
+    try {
+      const { getExpert } = await import('@shared/expert-panel');
+      const expert = getExpert(pick.expertId);
+      const expertName = expert?.name || pick.expertId;
+
+      const openai = (await import('openai')).default;
+      const client = new openai({ apiKey: process.env.OPENAI_API_KEY });
+
+      const resp = await client.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{
+          role: 'user',
+          content: `An expert sports analyst "${expertName}" made this pick:
+Pick: ${pick.selection} (${pick.pickType}) at ${pick.odds > 0 ? '+' : ''}${pick.odds}
+Rationale: ${pick.rationale}
+Result: ${result.toUpperCase()}
+Final score: ${scoreContext}
+
+Write ONE sentence (max 20 words) explaining why this pick ${result === 'win' ? 'hit' : result === 'loss' ? 'missed' : 'pushed'}. Be specific — reference the score or what happened. No fluff.`
+        }],
+        max_tokens: 60,
+        temperature: 0.7,
+      });
+
+      return resp.choices[0].message.content?.trim() || '';
+    } catch (err) {
+      logger.warn('Failed to generate post-game note: ' + err);
+      return '';
+    }
+  }
+
   /** Grade MLB expert picks against final scores */
   private async gradeMLBExpertPicks(picks: any[]): Promise<number> {
     const { fetchTank01Scores } = await import('./tank01-mlb');
@@ -765,7 +798,9 @@ class SchedulerService {
         }
 
         if (result) {
-          await storage.gradeExpertPick(pick.id, result);
+          const scoreCtx = `${awayCode} ${awayScore} - ${homeCode} ${homeScore} (Total: ${totalRuns})`;
+          const note = await this.generatePostGameNote(pick, result, scoreCtx);
+          await storage.gradeExpertPick(pick.id, result, note || undefined);
           graded++;
         }
       }
@@ -830,7 +865,9 @@ class SchedulerService {
         }
 
         if (result) {
-          await storage.gradeExpertPick(pick.id, result);
+          const scoreCtx = `${awayCode} ${awayScore} - ${homeCode} ${homeScore} (Total: ${totalGoals})`;
+          const note = await this.generatePostGameNote(pick, result, scoreCtx);
+          await storage.gradeExpertPick(pick.id, result, note || undefined);
           graded++;
         }
       }
