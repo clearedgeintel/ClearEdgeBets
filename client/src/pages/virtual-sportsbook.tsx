@@ -252,9 +252,25 @@ export default function VirtualSportsbook() {
               {upcoming.map((game: any) => {
                 const awayCode = game.awayTeamCode || game.gameId.match(/([A-Z]{2,3})\s*@/)?.[1] || '';
                 const homeCode = game.homeTeamCode || game.gameId.match(/@\s*([A-Z]{2,3})/)?.[1] || '';
-                const ml = game.odds?.moneyline;
-                const total = game.odds?.total;
-                const spread = game.odds?.spread;
+
+                // Parse odds array format from /api/games
+                const oddsArr = Array.isArray(game.odds) ? game.odds : [];
+                const mlOdds = oddsArr.find((o: any) => o.market === 'moneyline');
+                const totalOdds = oddsArr.find((o: any) => o.market === 'totals');
+                const spreadOdds = oddsArr.find((o: any) => o.market === 'spreads');
+
+                const ml = mlOdds ? { away: mlOdds.awayOdds, home: mlOdds.homeOdds } : null;
+                const total = totalOdds ? {
+                  line: totalOdds.total,
+                  over: totalOdds.overOdds,
+                  under: totalOdds.underOdds,
+                } : null;
+                const spread = spreadOdds ? {
+                  awayLine: spreadOdds.awaySpread,
+                  homeLine: spreadOdds.homeSpread,
+                  awayOdds: spreadOdds.awaySpreadOdds,
+                  homeOdds: spreadOdds.homeSpreadOdds,
+                } : null;
 
                 const OddsBtn = ({ type, sel, odds, label }: { type: string; sel: string; odds: number; label: string }) => {
                   const active = isInSlip(game.gameId, type, sel);
@@ -286,16 +302,19 @@ export default function VirtualSportsbook() {
                         <img src={teamLogo(awayCode)} alt="" className="h-5 w-5 flex-shrink-0" />
                         <span className="text-sm font-medium truncate">{awayCode}</span>
                       </div>
-                      <OddsBtn
-                        type="spread" sel={`${game.awayTeam} +1.5`}
-                        odds={spread?.away || -110}
-                        label={`+1.5 ${fmtOdds(spread?.away || -110)}`}
-                      />
+                      {spread ? (
+                        <OddsBtn
+                          type="spread"
+                          sel={`${game.awayTeam} ${spread.awayLine}`}
+                          odds={spread.awayOdds}
+                          label={`${spread.awayLine} ${fmtOdds(spread.awayOdds)}`}
+                        />
+                      ) : <div className="h-7 bg-zinc-800/40 rounded flex items-center justify-center text-[10px] text-zinc-600">—</div>}
                       {ml ? (
                         <OddsBtn type="moneyline" sel={`${game.awayTeam} ML`} odds={ml.away} label={fmtOdds(ml.away)} />
                       ) : <div className="h-7 bg-zinc-800/40 rounded flex items-center justify-center text-[10px] text-zinc-600">—</div>}
                       {total ? (
-                        <OddsBtn type="total" sel={`Over ${total.line}`} odds={total.over} label={`O ${total.line}`} />
+                        <OddsBtn type="total" sel={`Over ${total.line}`} odds={total.over} label={`O${total.line} ${fmtOdds(total.over)}`} />
                       ) : <div className="h-7 bg-zinc-800/40 rounded flex items-center justify-center text-[10px] text-zinc-600">—</div>}
                     </div>
 
@@ -305,16 +324,19 @@ export default function VirtualSportsbook() {
                         <img src={teamLogo(homeCode)} alt="" className="h-5 w-5 flex-shrink-0" />
                         <span className="text-sm font-medium truncate">{homeCode}</span>
                       </div>
-                      <OddsBtn
-                        type="spread" sel={`${game.homeTeam} -1.5`}
-                        odds={spread?.home || -110}
-                        label={`-1.5 ${fmtOdds(spread?.home || -110)}`}
-                      />
+                      {spread ? (
+                        <OddsBtn
+                          type="spread"
+                          sel={`${game.homeTeam} ${spread.homeLine}`}
+                          odds={spread.homeOdds}
+                          label={`${spread.homeLine} ${fmtOdds(spread.homeOdds)}`}
+                        />
+                      ) : <div className="h-7 bg-zinc-800/40 rounded" />}
                       {ml ? (
                         <OddsBtn type="moneyline" sel={`${game.homeTeam} ML`} odds={ml.home} label={fmtOdds(ml.home)} />
                       ) : <div className="h-7 bg-zinc-800/40 rounded" />}
                       {total ? (
-                        <OddsBtn type="total" sel={`Under ${total.line}`} odds={total.under} label={`U ${total.line}`} />
+                        <OddsBtn type="total" sel={`Under ${total.line}`} odds={total.under} label={`U${total.line} ${fmtOdds(total.under)}`} />
                       ) : <div className="h-7 bg-zinc-800/40 rounded" />}
                     </div>
                   </div>
