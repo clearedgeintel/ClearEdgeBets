@@ -1,34 +1,30 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/auth-context";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { DollarSign, TrendingUp, TrendingDown, RotateCcw, Target, Trophy, BarChart3, LogIn, Brain, Calculator, Trash2, Plus, Minus, Receipt, X, CalendarIcon } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DollarSign, TrendingUp, TrendingDown, RotateCcw, Trophy, BarChart3, LogIn, X, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
+import { Link } from "wouter";
 
-interface BalanceData {
-  balance: number;
-  totalWinnings: number;
-  totalLosses: number;
-  winRate: string;
-  winCount: number;
-  betCount: number;
+function teamLogo(code: string) {
+  const c = code.toUpperCase() === 'WAS' ? 'wsh' : code.toLowerCase();
+  return `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${c}.png`;
+}
+
+function fmtOdds(odds: number) {
+  return odds > 0 ? `+${odds}` : `${odds}`;
 }
 
 interface Game {
   gameId: string;
   awayTeam: string;
   homeTeam: string;
+  awayTeamCode?: string;
+  homeTeamCode?: string;
   gameTime: string;
   gameTimeEpoch?: number | null;
   venue: string;
@@ -36,1778 +32,435 @@ interface Game {
   odds?: {
     moneyline?: { away: number; home: number };
     total?: { line: number; over: number; under: number };
+    spread?: { away: number; home: number };
   };
 }
 
-interface AIBetRecommendation {
-  gameId: string;
-  team: string;
-  matchup: string;
-  betType: string;
-  selection: string;
-  odds: number;
-  aiProbability: number;
-  confidence: number;
-  stake: number;
-  expectedReturn: number;
-  impliedValue: number;
-  reasoning: string;
-}
-
-interface BettingSlipItem {
+interface SlipItem {
   id: string;
   gameId: string;
   matchup: string;
+  awayCode: string;
+  homeCode: string;
   betType: string;
   selection: string;
   odds: number;
-  originalOdds: number;
   stake: number;
-  potentialWin: number;
-  addedAt: Date;
-  saveToMyBets?: boolean;
-}
-
-interface BettingSlip {
-  id: string;
-  items: BettingSlipItem[];
-  totalStake: number;
-  totalPotentialWin: number;
-  createdAt: Date;
-  status: 'draft' | 'placed' | 'settled';
-  betType: 'individual' | 'parlay';
-  parlayOdds?: number;
-  parlayStake?: number;
-  parlayPayout?: number;
 }
 
 export default function VirtualSportsbook() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { user, isLoading: authLoading } = useAuth();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [aiBetSlip, setAiBetSlip] = useState<AIBetRecommendation[] | null>(null);
-  const [isGeneratingAIBets, setIsGeneratingAIBets] = useState(false);
-
-  // Mutation to save virtual bets to database
-  const saveBetsMutation = useMutation({
-    mutationFn: async (betsToSave: { gameId: string; betType: string; selection: string; odds: number; stake: number; potentialWin: number; }[]) => {
-      // Use test user ID (999) for virtual betting when not authenticated
-      const virtualUserId = user?.id || 999;
-      
-      const promises = betsToSave.map(bet => 
-        apiRequest("POST", "/api/virtual/bets", {
-          userId: virtualUserId,
-          gameId: bet.gameId,
-          betType: bet.betType,
-          selection: bet.selection,
-          odds: bet.odds,
-          stake: bet.stake,
-          potentialWin: bet.potentialWin,
-          status: "pending"
-        })
-      );
-      return Promise.all(promises);
-    },
-    onSuccess: () => {
-      // Invalidate both the specific user's virtual bets and the balance
-      const virtualUserId = user?.id || 999;
-      queryClient.invalidateQueries({ queryKey: ["/api/virtual/bets", virtualUserId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
-    },
-    onError: (error) => {
-      console.error("Error saving virtual bets:", error);
-      toast({
-        title: "Error",
-        description: "Failed to place virtual bets. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-  
-  // Betting slip state management
-  const [bettingSlips, setBettingSlips] = useState<BettingSlip[]>([]);
-  const [currentSlip, setCurrentSlip] = useState<BettingSlip | null>(null);
-  const [showBettingSlip, setShowBettingSlip] = useState(false);
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  const [slip, setSlip] = useState<SlipItem[]>([]);
   const [isParlayMode, setIsParlayMode] = useState(false);
-  const [parlayStake, setParlayStake] = useState<number>(10);
-  
-  // Track selected bets
-  const [selectedBets, setSelectedBets] = useState<Set<string>>(new Set());
-  
-  // Reset balance dialog state
-  const [clearHistory, setClearHistory] = useState(false);
+  const [parlayStake, setParlayStake] = useState(10);
+  const [showHistory, setShowHistory] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
 
-  // Helper function to check if bet is selected
-  const getBetState = (gameId: string, betType: string, selection: string, originalOdds: number) => {
-    const betKey = `${gameId}_${betType}_${selection}`;
-    const isSelected = selectedBets.has(betKey);
-    return { isSelected, displayOdds: originalOdds, betKey };
-  };
-
-  // Helper functions for pick slip management
-  const createNewBettingSlip = (): BettingSlip => {
-    const newSlip: BettingSlip = {
-      id: `slip-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      items: [],
-      totalStake: 0,
-      totalPotentialWin: 0,
-      createdAt: new Date(),
-      status: 'draft',
-      betType: isParlayMode ? 'parlay' : 'individual',
-      parlayOdds: 0,
-      parlayStake: 0,
-      parlayPayout: 0
-    };
-    return newSlip;
-  };
-
-  // Calculate parlay odds by multiplying all individual odds
-  const calculateParlayOdds = (items: BettingSlipItem[]): number => {
-    if (items.length === 0) return 0;
-    
-    // Filter out any items with invalid odds
-    const validItems = items.filter(item => item.odds !== 0 && !isNaN(item.odds));
-    if (validItems.length === 0) return 0;
-    
-    // Convert American odds to decimal odds, multiply them, then convert back
-    let combinedDecimalOdds = 1;
-    validItems.forEach(item => {
-      const decimalOdds = item.odds > 0 
-        ? (item.odds / 100) + 1 
-        : (100 / Math.abs(item.odds)) + 1;
-      combinedDecimalOdds *= decimalOdds;
-    });
-    
-    // Convert back to American odds
-    if (combinedDecimalOdds === 1) return 0;
-    
-    const americanOdds = combinedDecimalOdds >= 2 
-      ? Math.round((combinedDecimalOdds - 1) * 100)
-      : Math.round(-100 / (combinedDecimalOdds - 1));
-    
-    return isNaN(americanOdds) || !isFinite(americanOdds) ? 0 : americanOdds;
-  };
-
-  // Calculate parlay payout
-  const calculateParlayPayout = (stake: number, odds: number): number => {
-    if (isNaN(stake) || !isFinite(stake) || stake <= 0) return 0;
-    if (isNaN(odds) || !isFinite(odds) || odds === 0) return stake; // Return stake if odds are invalid
-    
-    if (odds > 0) {
-      return stake + (stake * odds / 100);
-    } else {
-      return stake + (stake * 100 / Math.abs(odds));
-    }
-  };
-
-  const addToBettingSlip = (gameId: string, matchup: string, betType: string, selection: string, odds: number) => {
-    const betKey = `${gameId}_${betType}_${selection}`;
-    
-    // Check if bet is already selected
-    if (selectedBets.has(betKey)) {
-      toast({
-        title: "Bet Already Selected",
-        description: "This bet is already in your pick slip.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    let slip = currentSlip;
-    
-    // Create new slip if none exists
-    if (!slip) {
-      slip = createNewBettingSlip();
-      setCurrentSlip(slip);
-      setBettingSlips(prev => [...prev, slip!]);
-    }
-
-    const newBet: BettingSlipItem = {
-      id: `bet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      gameId,
-      matchup,
-      betType,
-      selection,
-      odds,
-      originalOdds: odds,
-      stake: 0,
-      potentialWin: 0,
-      addedAt: new Date(),
-      saveToMyBets: false
-    };
-
-    const updatedSlip = {
-      ...slip,
-      items: [...slip.items, newBet]
-    };
-
-    // Add to selected bets set
-    setSelectedBets(prev => {
-      const newSet = new Set(prev);
-      newSet.add(betKey);
-      return newSet;
-    });
-
-    setCurrentSlip(updatedSlip);
-    setBettingSlips(prev => prev.map(s => s.id === slip!.id ? updatedSlip : s));
-    // Remove auto-show pick slip
-    // setShowBettingSlip(true);
-
-    toast({
-      title: "Added to Pick Slip",
-      description: `${selection} added to your pick slip.`,
-    });
-  };
-
-  const updateBetStake = (betId: string, stake: number) => {
-    if (!currentSlip) return;
-
-    const updatedItems = currentSlip.items.map(item => {
-      if (item.id === betId) {
-        const potentialWin = item.odds === 0 ? 0 : stake * (item.odds > 0 ? item.odds / 100 : 100 / Math.abs(item.odds));
-        return { ...item, stake, potentialWin };
-      }
-      return item;
-    });
-
-    const totalStake = updatedItems.reduce((sum, item) => sum + item.stake, 0);
-    const totalPotentialWin = updatedItems.reduce((sum, item) => sum + item.potentialWin, 0);
-
-    const updatedSlip = {
-      ...currentSlip,
-      items: updatedItems,
-      totalStake,
-      totalPotentialWin
-    };
-
-    setCurrentSlip(updatedSlip);
-    setBettingSlips(prev => prev.map(s => s.id === currentSlip.id ? updatedSlip : s));
-  };
-
-  const updateBetOdds = (betId: string, odds: number) => {
-    if (!currentSlip) return;
-
-    const updatedItems = currentSlip.items.map(item => {
-      if (item.id === betId) {
-        const potentialWin = odds === 0 ? 0 : item.stake * (odds > 0 ? odds / 100 : 100 / Math.abs(odds));
-        return { ...item, odds, potentialWin };
-      }
-      return item;
-    });
-
-    const totalPotentialWin = updatedItems.reduce((sum, item) => sum + item.potentialWin, 0);
-
-    const updatedSlip = {
-      ...currentSlip,
-      items: updatedItems,
-      totalPotentialWin
-    };
-
-    setCurrentSlip(updatedSlip);
-    setBettingSlips(prev => prev.map(s => s.id === currentSlip.id ? updatedSlip : s));
-  };
-
-  const updateSaveToMyBets = (betId: string, saveToMyBets: boolean) => {
-    if (!currentSlip) return;
-
-    const updatedItems = currentSlip.items.map(item => {
-      if (item.id === betId) {
-        return { ...item, saveToMyBets };
-      }
-      return item;
-    });
-
-    const updatedSlip = {
-      ...currentSlip,
-      items: updatedItems
-    };
-
-    setCurrentSlip(updatedSlip);
-    setBettingSlips(prev => prev.map(s => s.id === currentSlip.id ? updatedSlip : s));
-  };
-
-  const removeBetFromSlip = (betId: string) => {
-    if (!currentSlip) return;
-
-    // Find the bet being removed to clear its selected state
-    const removedBet = currentSlip.items.find(item => item.id === betId);
-    if (removedBet) {
-      const betKey = `${removedBet.gameId}_${removedBet.betType}_${removedBet.selection}`;
-      setSelectedBets(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(betKey);
-        return newSet;
-      });
-
-    }
-
-    const updatedItems = currentSlip.items.filter(item => item.id !== betId);
-    
-    if (updatedItems.length === 0) {
-      // Remove empty slip
-      setBettingSlips(prev => prev.filter(s => s.id !== currentSlip.id));
-      setCurrentSlip(null);
-      setShowBettingSlip(false);
-      return;
-    }
-
-    const totalStake = updatedItems.reduce((sum, item) => sum + item.stake, 0);
-    const totalPotentialWin = updatedItems.reduce((sum, item) => sum + item.potentialWin, 0);
-
-    const updatedSlip = {
-      ...currentSlip,
-      items: updatedItems,
-      totalStake,
-      totalPotentialWin
-    };
-
-    setCurrentSlip(updatedSlip);
-    setBettingSlips(prev => prev.map(s => s.id === currentSlip.id ? updatedSlip : s));
-  };
-
-  // Virtual balance mutation (reuse existing endpoint)
-  const initializeVirtualBalanceMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest("POST", "/api/user/virtual-balance/reset");
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
-      toast({
-        title: "Prediction Game Initialized",
-        description: "Your virtual balance is ready! Start with $1,000.",
-      });
-    },
-  });
-
-  // Fetch user's virtual balance and stats
-  const { data: balanceData, isLoading: balanceLoading } = useQuery<BalanceData>({
-    queryKey: ["/api/user/balance", user?.id || 999],
-    queryFn: async () => {
-      const virtualUserId = user?.id || 999;
-      const response = await fetch(`/api/user/balance?userId=${virtualUserId}`, {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        throw new Error(`${response.status}: ${response.statusText}`);
-      }
-      return response.json();
-    },
-    retry: false,
-  });
-
-  // Fetch games for selected date
-  const { data: games, isLoading: gamesLoading } = useQuery<Game[]>({
-    queryKey: ["/api/games", format(selectedDate, "yyyy-MM-dd")],
-    queryFn: async () => {
-      const dateParam = format(selectedDate, "yyyy-MM-dd");
-      const response = await fetch(`/api/games?date=${dateParam}`, {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        throw new Error(`${response.status}: ${response.statusText}`);
-      }
-      return response.json();
-    },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-
-  // Fetch user's virtual bets
-  const { data: virtualBets = [], isLoading: virtualBetsLoading } = useQuery({
-    queryKey: ["/api/virtual/bets", user?.id || 999],
-    queryFn: async () => {
-      const virtualUserId = user?.id || 999;
-
-      const response = await fetch(`/api/virtual/bets?userId=${virtualUserId}`, {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        throw new Error(`${response.status}: ${response.statusText}`);
-      }
-      const data = await response.json();
-
-      return data;
-    },
-  });
-
-  // Reset balance mutation
-  const resetBalanceMutation = useMutation({
-    mutationFn: async ({ clearHistory }: { clearHistory: boolean }) => {
-      return await apiRequest("POST", "/api/user/balance/reset", { clearHistory });
-    },
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user/balance"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/virtual/bets"] });
-      toast({
-        title: "Balance Reset",
-        description: data.message || "Balance reset to $1,000",
-      });
-      setShowResetDialog(false);
-      setClearHistory(false);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Reset Failed",
-        description: error.message || "Failed to reset balance",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Initialize virtual balance if needed
-  const initializeBalance = () => {
-    if (user && !balanceData) {
-      initializeVirtualBalanceMutation.mutate();
-    }
-  };
-
-  const handleResetBalance = () => {
-    resetBalanceMutation.mutate({ clearHistory });
-  };
-
-  // Generate AI bet recommendations
-  const generateAIBetSlip = async () => {
-    if (!balanceData || upcomingGames.length === 0) {
-      toast({
-        title: "Unable to generate bets",
-        description: "No upcoming games available or balance information missing.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsGeneratingAIBets(true);
-    
-    try {
-      const bankroll = balanceData.balance;
-      const totalBudget = bankroll * 0.10; // 10% of bankroll
-      
-      // Simulate AI analysis with confidence scores
-      const availableGames = upcomingGames.slice(0, 5); // Top 5 upcoming games
-      const recommendations: AIBetRecommendation[] = [];
-      
-      let totalConfidence = 0;
-      const gameAnalysis = availableGames.map((game: any) => {
-        const confidence = Math.random() * 40 + 60; // 60-100% confidence
-        totalConfidence += confidence;
-        
-        // Determine bet type and selection
-        const betTypes = ['moneyline', 'total'];
-        const betType = betTypes[Math.floor(Math.random() * betTypes.length)];
-        
-        let selection = '';
-        let odds = 0;
-        let reasoning = '';
-        
-        if (betType === 'moneyline' && game.odds?.moneyline) {
-          const favorHome = Math.random() > 0.5;
-          selection = favorHome ? game.homeTeam : game.awayTeam;
-          odds = favorHome ? game.odds.moneyline.home : game.odds.moneyline.away;
-          reasoning = favorHome 
-            ? `Home field advantage and strong recent performance favor ${game.homeTeam}`
-            : `${game.awayTeam} has superior pitching matchup and momentum`;
-        } else if (game.odds?.total) {
-          const favorOver = Math.random() > 0.5;
-          selection = favorOver ? `Over ${game.odds.total.line}` : `Under ${game.odds.total.line}`;
-          odds = favorOver ? game.odds.total.over : game.odds.total.under;
-          reasoning = favorOver
-            ? 'Weather conditions and offensive trends suggest high-scoring game'
-            : 'Strong pitching matchup and defensive statistics favor under';
-        }
-        
-        return {
-          game,
-          confidence,
-          betType,
-          selection,
-          odds,
-          reasoning
-        };
-      });
-      
-      // Calculate weighted stakes based on confidence
-      gameAnalysis.forEach(({ game, confidence, betType, selection, odds, reasoning }) => {
-        const weight = confidence / totalConfidence;
-        const stake = Math.round((totalBudget * weight) * 100) / 100;
-        
-        // Calculate implied probability and value with safety checks
-        const impliedProbability = odds > 0 ? 100 / (odds + 100) : Math.abs(odds) / (Math.abs(odds) + 100);
-        const aiProbability = confidence / 100;
-        
-        // Prevent division by zero and ensure finite values
-        let impliedValue = 0;
-        if (impliedProbability > 0 && isFinite(impliedProbability)) {
-          impliedValue = ((aiProbability - impliedProbability) / impliedProbability) * 100;
-          // Cap implied value to reasonable range
-          impliedValue = Math.max(-100, Math.min(1000, impliedValue));
-        }
-        
-        // Calculate expected return with safety checks
-        let expectedReturn = stake;
-        if (odds > 0) {
-          expectedReturn = stake * (odds / 100) + stake;
-        } else if (odds < 0) {
-          expectedReturn = stake * (100 / Math.abs(odds)) + stake;
-        }
-        
-        // Ensure finite values
-        if (!isFinite(expectedReturn)) {
-          expectedReturn = stake;
-        }
-        
-        recommendations.push({
-          gameId: game.gameId,
-          team: selection.includes('Over') || selection.includes('Under') ? 'Total' : selection,
-          matchup: `${game.awayTeam} @ ${game.homeTeam}`,
-          betType: betType === 'moneyline' ? 'Moneyline' : 'Total',
-          selection,
-          odds,
-          aiProbability: aiProbability * 100,
-          confidence,
-          stake,
-          expectedReturn: Math.round(expectedReturn * 100) / 100,
-          impliedValue,
-          reasoning
-        });
-      });
-      
-      setAiBetSlip(recommendations);
-      
-      toast({
-        title: "AI Bet Slip Generated!",
-        description: `Created 5 optimized bets using 10% of your $${bankroll.toFixed(2)} bankroll.`,
-      });
-      
-    } catch (error) {
-      toast({
-        title: "Generation failed",
-        description: "Unable to generate AI bet recommendations. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGeneratingAIBets(false);
-    }
-  };
-
-  // Show login form if not authenticated
+  // Auth guard
   if (!user) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-md">
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="flex items-center justify-center gap-2">
-              <Target className="h-6 w-6 text-primary" />
-              Prediction Game
-            </CardTitle>
-            <CardDescription>
-              Sign in to start with $1,000 virtual money for practice betting
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center space-y-4">
-              <p className="text-sm text-muted-foreground">
-                You need to be signed in to access the prediction game.
-              </p>
-              <Button 
-                onClick={() => window.location.href = '/auth'} 
-                className="w-full"
-              >
-                <LogIn className="h-4 w-4 mr-2" />
-                Sign In to Start
-              </Button>
-            </div>
-            
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-              <p className="mb-2">🎯 Practice Mode Features:</p>
-              <ul className="text-left space-y-1">
-                <li>• Start with $1,000 virtual money</li>
-                <li>• Real MLB odds and games</li>
-                <li>• Track your prediction performance</li>
-                <li>• Reset balance anytime</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="max-w-md mx-auto px-4 py-16 text-center">
+        <Trophy className="h-12 w-12 mx-auto mb-4 text-amber-500" />
+        <h1 className="text-xl font-bold mb-2">Prediction Game</h1>
+        <p className="text-sm text-zinc-500 mb-6">Sign in to start with $1,000 virtual money</p>
+        <Button onClick={() => window.location.href = '/auth'} className="w-full">
+          <LogIn className="h-4 w-4 mr-2" /> Sign In to Play
+        </Button>
       </div>
     );
   }
 
-  if (balanceLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-64 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-32 bg-muted rounded"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Filter out games that have already started or completed
-  const upcomingGames = (games || []).filter((game: any) => {
-    if (game.status === 'live' || game.status === 'final') return false;
-    if (game.gameTimeEpoch) return Date.now() < game.gameTimeEpoch * 1000;
-    return true;
+  // Data
+  const { data: balance } = useQuery<any>({
+    queryKey: ['/api/user/balance'],
+    queryFn: () => fetch('/api/user/balance', { credentials: 'include' }).then(r => r.json()),
   });
 
+  const { data: games = [], isLoading } = useQuery<Game[]>({
+    queryKey: ['/api/games'],
+    queryFn: () => fetch('/api/games', { credentials: 'include' }).then(r => r.json()),
+    staleTime: 300000,
+  });
+
+  const { data: virtualBets = [] } = useQuery<any[]>({
+    queryKey: ['/api/virtual/bets'],
+    queryFn: () => fetch('/api/virtual/bets', { credentials: 'include' }).then(r => r.json()),
+  });
+
+  const placeBetsMutation = useMutation({
+    mutationFn: (bets: any[]) => Promise.all(bets.map(b =>
+      apiRequest("POST", "/api/virtual/bets", b)
+    )),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/virtual/bets'] });
+      qc.invalidateQueries({ queryKey: ['/api/user/balance'] });
+      setSlip([]);
+      toast({ title: 'Bets placed!' });
+    },
+    onError: () => toast({ title: 'Failed to place bets', variant: 'destructive' }),
+  });
+
+  const resetMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/user/balance/reset", { clearHistory: true }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/user/balance'] });
+      qc.invalidateQueries({ queryKey: ['/api/virtual/bets'] });
+      setShowResetDialog(false);
+      toast({ title: 'Balance reset to $1,000' });
+    },
+  });
+
+  // Filter upcoming games
+  const upcoming = useMemo(() => (games || []).filter((g: any) => {
+    if (g.status === 'live' || g.status === 'final') return false;
+    if (g.gameTimeEpoch) return Date.now() < g.gameTimeEpoch * 1000;
+    return true;
+  }), [games]);
+
+  // Slip helpers
+  const isInSlip = (gameId: string, betType: string, selection: string) =>
+    slip.some(s => s.gameId === gameId && s.betType === betType && s.selection === selection);
+
+  const addToSlip = (game: Game, betType: string, selection: string, odds: number) => {
+    if (isInSlip(game.gameId, betType, selection)) return;
+    const awayCode = game.awayTeamCode || game.gameId.match(/([A-Z]{2,3})\s*@/)?.[1] || '';
+    const homeCode = game.homeTeamCode || game.gameId.match(/@\s*([A-Z]{2,3})/)?.[1] || '';
+    setSlip(prev => [...prev, {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      gameId: game.gameId, matchup: `${game.awayTeam} @ ${game.homeTeam}`,
+      awayCode, homeCode, betType, selection, odds, stake: 10,
+    }]);
+  };
+
+  const removeFromSlip = (id: string) => setSlip(prev => prev.filter(s => s.id !== id));
+
+  const updateStake = (id: string, stake: number) =>
+    setSlip(prev => prev.map(s => s.id === id ? { ...s, stake } : s));
+
+  const calcPayout = (stake: number, odds: number) =>
+    odds > 0 ? stake + stake * odds / 100 : stake + stake * 100 / Math.abs(odds);
+
+  const calcParlayOdds = () => {
+    let dec = 1;
+    slip.forEach(s => { dec *= s.odds > 0 ? s.odds / 100 + 1 : 100 / Math.abs(s.odds) + 1; });
+    return dec >= 2 ? Math.round((dec - 1) * 100) : Math.round(-100 / (dec - 1));
+  };
+
+  const placeBets = () => {
+    if (isParlayMode) {
+      // Place as single virtual bet with parlay note
+      const pOdds = calcParlayOdds();
+      placeBetsMutation.mutate([{
+        gameId: slip[0].gameId, betType: 'parlay',
+        selection: slip.map(s => s.selection).join(' + '),
+        odds: pOdds, stake: parlayStake,
+        potentialWin: Math.round(calcPayout(parlayStake, pOdds)),
+      }]);
+    } else {
+      placeBetsMutation.mutate(slip.filter(s => s.stake > 0).map(s => ({
+        gameId: s.gameId, betType: s.betType, selection: s.selection,
+        odds: s.odds, stake: s.stake, potentialWin: Math.round(calcPayout(s.stake, s.odds)),
+      })));
+    }
+  };
+
+  const totalSlipStake = isParlayMode ? parlayStake : slip.reduce((s, b) => s + b.stake, 0);
+  const bal = balance?.balance ?? 1000;
+  const pendingBets = virtualBets.filter((b: any) => b.status === 'pending');
+  const settledBets = virtualBets.filter((b: any) => b.status === 'settled');
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header with Date Picker */}
-      <div className="mb-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              Prediction Game
-            </h1>
-            <p className="text-muted-foreground">
-              Practice your betting skills with simulated money. Start with $1,000 and track your performance!
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <div className="text-sm text-muted-foreground">Games for</div>
-              <div className="text-lg font-semibold">
-                {format(selectedDate, "EEEE, MMMM d")}
-              </div>
-            </div>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-48 justify-start text-left font-normal">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {format(selectedDate, "PPP")}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => date && setSelectedDate(date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+    <div className="max-w-5xl mx-auto px-4 py-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h1 className="text-xl font-bold">Prediction Game</h1>
+          <p className="text-xs text-zinc-500">Paper trade with $1,000. Picks settle automatically.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link href="/virtual-performance">
+            <Button variant="outline" size="sm" className="text-xs h-7"><BarChart3 className="h-3 w-3 mr-1" />Stats</Button>
+          </Link>
+          <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="text-xs h-7"><RotateCcw className="h-3 w-3 mr-1" />Reset</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Reset to $1,000?</DialogTitle></DialogHeader>
+              <p className="text-sm text-zinc-500">This clears your balance and bet history.</p>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowResetDialog(false)}>Cancel</Button>
+                <Button variant="destructive" onClick={() => resetMutation.mutate()} disabled={resetMutation.isPending}>Reset</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
-      {/* Balance Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card className="border-green-200 dark:border-green-800">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Virtual Balance</CardTitle>
-            <DollarSign className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              ${balanceData?.balance?.toFixed(2) || "1000.00"}
+      {/* Balance strip */}
+      <div className="grid grid-cols-4 gap-3 mb-5">
+        {[
+          { label: 'Balance', value: `$${bal.toFixed(0)}`, color: 'text-foreground', icon: DollarSign },
+          { label: 'Winnings', value: `$${(balance?.totalWinnings ?? 0).toFixed(0)}`, color: 'text-emerald-400', icon: TrendingUp },
+          { label: 'Losses', value: `$${(balance?.totalLosses ?? 0).toFixed(0)}`, color: 'text-red-400', icon: TrendingDown },
+          { label: 'Win Rate', value: `${balance?.winRate ?? '0.0'}%`, color: 'text-amber-400', icon: Trophy },
+        ].map(s => (
+          <div key={s.label} className="bg-card border border-border/30 rounded-lg p-3">
+            <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 mb-1">
+              <s.icon className="h-3 w-3" />{s.label}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Available for betting
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Winnings</CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              ${balanceData?.totalWinnings?.toFixed(2) || "0.00"}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              All-time winnings
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Losses</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              ${balanceData?.totalLosses?.toFixed(2) || "0.00"}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              All-time losses
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
-            <Trophy className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {balanceData?.winRate || "0.0"}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {balanceData?.winCount || 0} / {balanceData?.betCount || 0} bets won
-            </p>
-          </CardContent>
-        </Card>
+            <div className={`text-lg font-bold tabular-nums ${s.color}`}>{s.value}</div>
+          </div>
+        ))}
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex flex-wrap gap-4 mb-8">
-        <Button
-          onClick={generateAIBetSlip}
-          disabled={isGeneratingAIBets || !games || games.length === 0}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-        >
-          <Brain className="h-4 w-4" />
-          {isGeneratingAIBets ? "Generating AI Bets..." : "Generate AI Bet Slip"}
-        </Button>
-        
-        <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
-          <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Reset Balance to $1,000
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Reset Virtual Balance</DialogTitle>
-              <DialogDescription>
-                This will reset your virtual balance to $1,000 and clear all your statistics.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex items-center space-x-2 py-4">
-              <Checkbox 
-                id="clearHistory" 
-                checked={clearHistory}
-                onCheckedChange={(checked) => setClearHistory(checked as boolean)}
-              />
-              <Label htmlFor="clearHistory" className="text-sm">
-                Also clear all virtual bet history
-              </Label>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowResetDialog(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleResetBalance}
-                disabled={resetBalanceMutation.isPending}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                {resetBalanceMutation.isPending ? "Resetting..." : "Reset Balance"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        
-        <Button 
-          variant="outline" 
-          className="flex items-center gap-2"
-          onClick={() => window.location.href = '/virtual-performance'}
-        >
-          <BarChart3 className="h-4 w-4" />
-          View Performance Stats
-        </Button>
-      </div>
+      <div className="flex gap-5">
+        {/* Games column */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Today's Lines</h2>
+            <span className="text-[10px] text-zinc-600">{upcoming.length} games</span>
+          </div>
 
-      {/* My Virtual Bets */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Receipt className="h-5 w-5" />
-            My Virtual Bets
-            <Badge variant="secondary" className="ml-auto">
-              {virtualBets?.length || 0} {virtualBets?.length === 1 ? 'bet' : 'bets'}
-            </Badge>
-          </CardTitle>
-          <CardDescription>
-            Track all your virtual bets and their profit/loss results. This is your complete prediction history for paper trading.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {virtualBets && virtualBets.length > 0 ? (
-            <div className="space-y-4">
-              {virtualBets.map((bet: any) => {
-                const stakeAmount = parseFloat(bet.stake);
-                const potentialWinAmount = parseFloat(bet.potentialWin);
-                const actualWinAmount = bet.actualWin ? parseFloat(bet.actualWin) : 0;
-                
-                // Calculate profit/loss
-                let profitLoss = 0;
-                if (bet.status === 'settled') {
-                  if (bet.result === 'win') {
-                    profitLoss = actualWinAmount; // Pure profit (not including stake back)
-                  } else if (bet.result === 'loss') {
-                    profitLoss = -stakeAmount; // Loss is negative stake
-                  } else if (bet.result === 'push') {
-                    profitLoss = 0; // Push means no profit/loss
-                  }
-                }
-                
+          {isLoading ? (
+            <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-16 bg-zinc-800/50 rounded-lg animate-pulse" />)}</div>
+          ) : upcoming.length === 0 ? (
+            <div className="text-center py-12 text-zinc-600 text-sm">No upcoming games</div>
+          ) : (
+            <div className="space-y-1.5">
+              {/* Table header */}
+              <div className="grid grid-cols-[1fr_80px_80px_80px] gap-1 px-3 text-[10px] text-zinc-600 uppercase tracking-wider">
+                <span></span>
+                <span className="text-center">Spread</span>
+                <span className="text-center">ML</span>
+                <span className="text-center">Total</span>
+              </div>
+
+              {upcoming.map((game: any) => {
+                const awayCode = game.awayTeamCode || game.gameId.match(/([A-Z]{2,3})\s*@/)?.[1] || '';
+                const homeCode = game.homeTeamCode || game.gameId.match(/@\s*([A-Z]{2,3})/)?.[1] || '';
+                const ml = game.odds?.moneyline;
+                const total = game.odds?.total;
+                const spread = game.odds?.spread;
+
+                const OddsBtn = ({ type, sel, odds, label }: { type: string; sel: string; odds: number; label: string }) => {
+                  const active = isInSlip(game.gameId, type, sel);
+                  return (
+                    <button
+                      onClick={() => addToSlip(game, type, sel, odds)}
+                      disabled={active}
+                      className={`h-7 rounded text-[11px] font-medium tabular-nums transition-colors ${
+                        active
+                          ? 'bg-amber-600 text-white'
+                          : 'bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700 border border-zinc-700/50'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                };
+
                 return (
-                  <div key={bet.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex-1">
-                        <div className="font-semibold">{bet.selection}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {bet.gameId.replace(/_/g, ' vs ')} • {bet.betType}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {bet.placedAt ? new Date(bet.placedAt).toLocaleDateString() : 'Unknown'} • Odds: {bet.odds > 0 ? '+' : ''}{bet.odds}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge 
-                          variant={
-                            bet.status === 'settled' 
-                              ? bet.result === 'win' 
-                                ? 'default' 
-                                : bet.result === 'loss' 
-                                  ? 'destructive' 
-                                  : 'secondary'
-                              : 'outline'
-                          }
-                        >
-                          {bet.status === 'settled' 
-                            ? bet.result?.toUpperCase() || 'SETTLED'
-                            : bet.status.toUpperCase()
-                          }
-                        </Badge>
-                      </div>
+                  <div key={game.gameId} className="bg-card border border-border/20 rounded-lg overflow-hidden">
+                    {/* Game time bar */}
+                    <div className="px-3 py-1 bg-zinc-900/50 flex items-center justify-between">
+                      <span className="text-[10px] text-zinc-500">{game.gameTime} — {game.venue?.split(',')[0]}</span>
                     </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <div className="text-muted-foreground">Stake</div>
-                        <div className="font-medium">${stakeAmount.toFixed(2)}</div>
+
+                    {/* Away row */}
+                    <div className="grid grid-cols-[1fr_80px_80px_80px] gap-1 px-3 py-1.5 items-center">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <img src={teamLogo(awayCode)} alt="" className="h-5 w-5 flex-shrink-0" />
+                        <span className="text-sm font-medium truncate">{awayCode}</span>
                       </div>
-                      <div>
-                        <div className="text-muted-foreground">Potential Win</div>
-                        <div className="font-medium text-blue-600">${potentialWinAmount.toFixed(2)}</div>
-                      </div>
-                      {bet.status === 'settled' && (
-                        <>
-                          <div>
-                            <div className="text-muted-foreground">Actual Win</div>
-                            <div className="font-medium">${actualWinAmount.toFixed(2)}</div>
-                          </div>
-                          <div>
-                            <div className="text-muted-foreground">Profit/Loss</div>
-                            <div className={`font-medium ${
-                              profitLoss > 0 
-                                ? 'text-green-600' 
-                                : profitLoss < 0 
-                                  ? 'text-red-600' 
-                                  : 'text-muted-foreground'
-                            }`}>
-                              {profitLoss > 0 ? '+' : ''}${profitLoss.toFixed(2)}
-                            </div>
-                          </div>
-                        </>
-                      )}
+                      <OddsBtn
+                        type="spread" sel={`${game.awayTeam} +1.5`}
+                        odds={spread?.away || -110}
+                        label={`+1.5 ${fmtOdds(spread?.away || -110)}`}
+                      />
+                      {ml ? (
+                        <OddsBtn type="moneyline" sel={`${game.awayTeam} ML`} odds={ml.away} label={fmtOdds(ml.away)} />
+                      ) : <div className="h-7 bg-zinc-800/40 rounded flex items-center justify-center text-[10px] text-zinc-600">—</div>}
+                      {total ? (
+                        <OddsBtn type="total" sel={`Over ${total.line}`} odds={total.over} label={`O ${total.line}`} />
+                      ) : <div className="h-7 bg-zinc-800/40 rounded flex items-center justify-center text-[10px] text-zinc-600">—</div>}
                     </div>
-                    
-                    {bet.notes && (
-                      <div className="mt-3 p-2 bg-muted/50 rounded text-sm">
-                        <div className="text-muted-foreground mb-1">Notes:</div>
-                        <div>{bet.notes}</div>
+
+                    {/* Home row */}
+                    <div className="grid grid-cols-[1fr_80px_80px_80px] gap-1 px-3 py-1.5 items-center border-t border-border/10">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <img src={teamLogo(homeCode)} alt="" className="h-5 w-5 flex-shrink-0" />
+                        <span className="text-sm font-medium truncate">{homeCode}</span>
                       </div>
-                    )}
+                      <OddsBtn
+                        type="spread" sel={`${game.homeTeam} -1.5`}
+                        odds={spread?.home || -110}
+                        label={`-1.5 ${fmtOdds(spread?.home || -110)}`}
+                      />
+                      {ml ? (
+                        <OddsBtn type="moneyline" sel={`${game.homeTeam} ML`} odds={ml.home} label={fmtOdds(ml.home)} />
+                      ) : <div className="h-7 bg-zinc-800/40 rounded" />}
+                      {total ? (
+                        <OddsBtn type="total" sel={`Under ${total.line}`} odds={total.under} label={`U ${total.line}`} />
+                      ) : <div className="h-7 bg-zinc-800/40 rounded" />}
+                    </div>
                   </div>
                 );
               })}
             </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No virtual bets yet.</p>
-              <p className="text-sm">Start by placing your first virtual bet above!</p>
-            </div>
           )}
-        </CardContent>
-      </Card>
 
-      {/* AI Generated Bet Slip */}
-      {aiBetSlip && aiBetSlip.length > 0 && (
-        <Card className="mb-8 border-blue-200 dark:border-blue-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5 text-blue-600" />
-              AI Generated Bet Slip
-            </CardTitle>
-            <CardDescription>
-              Optimized game predictions using 10% of your bankroll with confidence-based stake allocation.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {aiBetSlip.map((bet, index) => (
-                <div key={index} className="p-4 border rounded-lg bg-muted/20">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <div className="font-semibold">{bet.matchup}</div>
-                      <div className="text-sm text-muted-foreground">{bet.betType}: {bet.selection}</div>
+          {/* Bet History (collapsible) */}
+          <div className="mt-6">
+            <button onClick={() => setShowHistory(!showHistory)} className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 mb-2">
+              <ChevronDown className={`h-3 w-3 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
+              Bet History ({virtualBets.length})
+            </button>
+            {showHistory && (
+              <div className="space-y-1">
+                {virtualBets.slice(0, 20).map((bet: any) => (
+                  <div key={bet.id} className="flex items-center justify-between py-1.5 px-2.5 rounded bg-zinc-900/30 border border-border/20 text-[11px]">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Badge className={`text-[9px] px-1 ${
+                        bet.result === 'win' ? 'bg-emerald-500/10 text-emerald-400' :
+                        bet.result === 'loss' ? 'bg-red-500/10 text-red-400' :
+                        'bg-amber-500/10 text-amber-400'
+                      }`}>{bet.status === 'settled' ? bet.result?.toUpperCase() : 'PENDING'}</Badge>
+                      <span className="text-zinc-300 truncate">{bet.selection}</span>
                     </div>
-                    <div className="text-right">
-                      <div className="font-mono">{bet.odds > 0 ? '+' : ''}{bet.odds}</div>
-                      <Badge variant={bet.confidence >= 80 ? "default" : bet.confidence >= 70 ? "secondary" : "outline"}>
-                        {bet.confidence.toFixed(0)}% confident
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <div className="text-muted-foreground">Stake</div>
-                      <div className="font-semibold">${bet.stake.toFixed(2)}</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground">Potential Return</div>
-                      <div className="font-semibold text-blue-600">${bet.expectedReturn.toFixed(2)}</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground">AI Probability</div>
-                      <div className="font-semibold">{bet.aiProbability.toFixed(1)}%</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground">Implied Value</div>
-                      <div className={`font-semibold ${bet.impliedValue > 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                        {bet.impliedValue > 0 ? '+' : ''}{bet.impliedValue.toFixed(1)}%
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-3 p-3 bg-background rounded border-l-4 border-l-blue-500">
-                    <div className="text-sm text-muted-foreground mb-1">AI Reasoning</div>
-                    <div className="text-sm">{bet.reasoning}</div>
-                  </div>
-                </div>
-              ))}
-              
-              <Separator />
-              
-              <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                <div>
-                  <div className="font-semibold">Total Bet Slip Summary</div>
-                  <div className="text-sm text-muted-foreground">
-                    {aiBetSlip.length} bets • 10% bankroll allocation
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-muted-foreground">Total Stake</div>
-                  <div className="text-xl font-bold">
-                    ${aiBetSlip.reduce((sum, bet) => sum + bet.stake, 0).toFixed(2)}
-                  </div>
-                  <div className="text-sm text-blue-600">
-                    Potential: ${aiBetSlip.reduce((sum, bet) => sum + bet.expectedReturn, 0).toFixed(2)}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button 
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                  onClick={() => {
-                    toast({
-                      title: "Place All Bets",
-                      description: "This feature will be available soon!",
-                    });
-                  }}
-                >
-                  <Calculator className="h-4 w-4 mr-2" />
-                  Place All Bets
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => setAiBetSlip(null)}
-                >
-                  Clear Slip
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Pick Slip Section */}
-      {currentSlip && currentSlip.items.length > 0 && (
-        <Card className="mb-6 border-blue-200 dark:border-blue-800">
-          <CardHeader className="bg-blue-50 dark:bg-blue-950/20">
-            <CardTitle className="flex items-center gap-2">
-              <Receipt className="h-5 w-5" />
-              Your Pick Slip
-              <Badge variant="secondary" className="ml-auto">
-                {currentSlip.items.length} {currentSlip.items.length === 1 ? 'bet' : 'bets'}
-              </Badge>
-            </CardTitle>
-            <CardDescription>
-              Review and manage your selected bets. Set stakes and place your bets when ready.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y">
-              {currentSlip.items.map((bet) => (
-                <div key={bet.id} className="p-4 hover:bg-muted/50">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="font-medium text-sm">{bet.selection}</div>
-                      <div className="text-xs text-muted-foreground">{bet.matchup}</div>
-                      
-                      {/* Editable Odds */}
-                      <div className="flex items-center gap-2 mt-1">
-                        <label className="text-xs text-muted-foreground">Odds:</label>
-                        <input
-                          type="number"
-                          value={bet.odds || ''}
-                          onChange={(e) => {
-                            const odds = parseInt(e.target.value) || 0;
-                            updateBetOdds(bet.id, odds);
-                          }}
-                          className="w-16 px-1 py-0.5 text-xs border rounded text-center bg-background text-foreground border-border"
-                          step="1"
-                        />
-                        {bet.odds !== bet.originalOdds && (
-                          <span className="text-xs text-orange-500">
-                            (was {bet.originalOdds > 0 ? '+' : ''}{bet.originalOdds})
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Save to My Picks Checkbox */}
-                      <div className="flex items-center gap-2 mt-1">
-                        <Checkbox
-                          id={`save-${bet.id}`}
-                          checked={bet.saveToMyBets || false}
-                          onCheckedChange={(checked) => updateSaveToMyBets(bet.id, checked as boolean)}
-                        />
-                        <Label htmlFor={`save-${bet.id}`} className="text-xs text-muted-foreground cursor-pointer">
-                          Save to My Picks
-                        </Label>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 ml-4">
-                      <div className="text-right">
-                        <input
-                          type="number"
-                          placeholder="$0"
-                          value={bet.stake || ''}
-                          onChange={(e) => {
-                            const stake = parseFloat(e.target.value) || 0;
-                            updateBetStake(bet.id, stake);
-                          }}
-                          className="w-20 px-2 py-1 text-sm border rounded text-right bg-background text-foreground border-border"
-                          min="0"
-                          step="1"
-                        />
-                        {bet.stake > 0 && (
-                          <div className="text-xs text-blue-600 font-medium">
-                            Win: ${bet.potentialWin.toFixed(2)}
-                          </div>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeBetFromSlip(bet.id)}
-                        className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            {/* Parlay Toggle */}
-            {currentSlip.items.length > 1 && (
-              <div className="px-4 py-3 border-t bg-blue-50/50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="parlayToggle"
-                        checked={isParlayMode}
-                        onChange={(e) => {
-                          setIsParlayMode(e.target.checked);
-                          if (currentSlip) {
-                            currentSlip.betType = e.target.checked ? 'parlay' : 'individual';
-                            currentSlip.parlayOdds = e.target.checked ? calculateParlayOdds(currentSlip.items) : 0;
-                          }
-                        }}
-                        className="rounded"
-                      />
-                      <Label htmlFor="parlayToggle" className="font-medium cursor-pointer">
-                        Parlay Bet
-                      </Label>
-                    </div>
-                    {isParlayMode && (
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                        {currentSlip.items.length} legs
-                      </Badge>
-                    )}
-                  </div>
-                  {isParlayMode && (
-                    <div className="text-right">
-                      <div className="text-sm font-semibold text-blue-700">
-                        {calculateParlayOdds(currentSlip.items) > 0 ? '+' : ''}{calculateParlayOdds(currentSlip.items)}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Combined odds
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                {isParlayMode && (
-                  <div className="mt-3 pt-3 border-t border-blue-200">
-                    <div className="flex items-center gap-3">
-                      <Label htmlFor="parlayStake" className="text-sm font-medium">
-                        Parlay Stake:
-                      </Label>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">$</span>
-                        <Input
-                          id="parlayStake"
-                          type="number"
-                          placeholder="10"
-                          value={parlayStake}
-                          onChange={(e) => setParlayStake(parseFloat(e.target.value) || 0)}
-                          className="w-20 px-2 py-1 text-sm bg-background text-foreground border-border"
-                          min="0"
-                          step="1"
-                        />
-                      </div>
-                      {parlayStake > 0 && (
-                        <div className="text-sm text-blue-600 font-medium">
-                          Potential Win: ${calculateParlayPayout(parlayStake, calculateParlayOdds(currentSlip.items)).toFixed(2)}
-                        </div>
+                    <div className="flex items-center gap-3 flex-shrink-0 text-zinc-500 tabular-nums">
+                      <span>${parseFloat(bet.stake).toFixed(0)}</span>
+                      <span>{fmtOdds(bet.odds)}</span>
+                      {bet.status === 'settled' && bet.result === 'win' && (
+                        <span className="text-emerald-400">+${parseFloat(bet.actualWin).toFixed(0)}</span>
                       )}
                     </div>
                   </div>
-                )}
+                ))}
+                {virtualBets.length === 0 && <p className="text-xs text-zinc-600 text-center py-4">No bets yet</p>}
               </div>
             )}
+          </div>
+        </div>
 
-            {/* Pick Slip Summary */}
-            <div className="p-4 bg-muted/50 border-t">
-              <div className="flex items-center justify-between mb-3">
+        {/* Pick Slip sidebar */}
+        <div className="w-72 flex-shrink-0 hidden lg:block">
+          <div className="sticky top-20">
+            <div className="bg-card border border-border/30 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 bg-zinc-900/50 border-b border-border/20">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">Pick Slip</h3>
+                  {slip.length > 0 && (
+                    <Badge className="bg-amber-500/15 text-amber-400 text-[10px]">{slip.length}</Badge>
+                  )}
+                </div>
+              </div>
+
+              {slip.length === 0 ? (
+                <div className="p-6 text-center text-xs text-zinc-600">
+                  Click odds to add picks
+                </div>
+              ) : (
                 <div>
-                  <div className="font-semibold">
-                    {isParlayMode ? 'Parlay Total' : 'Individual Bets Total'}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {currentSlip.items.length} bets selected
-                    {isParlayMode && <span className="ml-1 text-blue-600">• Parlay</span>}
-                  </div>
-                  
-                  {/* Save All to My Picks Toggle */}
-                  <div className="flex items-center gap-2 mt-2">
-                    <Checkbox
-                      id="saveAllToMyBets"
-                      checked={currentSlip.items.every(item => item.saveToMyBets)}
-                      onCheckedChange={(checked) => {
-                        currentSlip.items.forEach(item => {
-                          updateSaveToMyBets(item.id, checked as boolean);
-                        });
-                      }}
-                    />
-                    <Label htmlFor="saveAllToMyBets" className="text-xs text-muted-foreground cursor-pointer">
-                      Save all bets to My Picks for long-term tracking
-                    </Label>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-bold">
-                    Stake: ${isParlayMode ? parlayStake.toFixed(2) : currentSlip.totalStake.toFixed(2)}
-                  </div>
-                  <div className="text-sm text-blue-600 font-medium">
-                    Potential Win: ${isParlayMode 
-                      ? calculateParlayPayout(parlayStake, calculateParlayOdds(currentSlip.items)).toFixed(2)
-                      : currentSlip.totalPotentialWin.toFixed(2)
-                    }
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {currentSlip.items.filter(item => item.saveToMyBets).length > 0 && (
-                      <span className="text-blue-600">
-                        {currentSlip.items.filter(item => item.saveToMyBets).length} bet{currentSlip.items.filter(item => item.saveToMyBets).length === 1 ? '' : 's'} will be saved to My Picks
-                      </span>
+                  {slip.map(bet => (
+                    <div key={bet.id} className="px-3 py-2.5 border-b border-border/10">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-1.5">
+                          <img src={teamLogo(bet.awayCode)} alt="" className="h-3.5 w-3.5" />
+                          <span className="text-[11px] text-zinc-400">@</span>
+                          <img src={teamLogo(bet.homeCode)} alt="" className="h-3.5 w-3.5" />
+                        </div>
+                        <button onClick={() => removeFromSlip(bet.id)} className="text-zinc-600 hover:text-red-400">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                      <div className="text-xs font-medium text-zinc-200">{bet.selection}</div>
+                      <div className="flex items-center justify-between mt-1.5">
+                        <span className="text-[10px] text-amber-400 tabular-nums">{fmtOdds(bet.odds)}</span>
+                        {!isParlayMode && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] text-zinc-500">$</span>
+                            <input
+                              type="number" value={bet.stake} min={1}
+                              onChange={e => updateStake(bet.id, Math.max(1, parseInt(e.target.value) || 0))}
+                              className="w-14 h-5 text-[11px] text-right bg-zinc-800 border border-zinc-700 rounded px-1 tabular-nums"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      {!isParlayMode && bet.stake > 0 && (
+                        <div className="text-[10px] text-emerald-500/70 text-right mt-0.5 tabular-nums">
+                          Win ${calcPayout(bet.stake, bet.odds).toFixed(2)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Parlay toggle */}
+                  {slip.length >= 2 && (
+                    <div className="px-3 py-2 border-b border-border/10 bg-zinc-900/30">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={isParlayMode} onChange={e => setIsParlayMode(e.target.checked)}
+                          className="rounded border-zinc-600 bg-zinc-800 text-amber-500" />
+                        <span className="text-xs font-medium">Parlay ({slip.length} legs)</span>
+                        {isParlayMode && (
+                          <span className="ml-auto text-[10px] text-amber-400 tabular-nums">{fmtOdds(calcParlayOdds())}</span>
+                        )}
+                      </label>
+                      {isParlayMode && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <span className="text-[10px] text-zinc-500">Stake $</span>
+                          <input type="number" value={parlayStake} min={1}
+                            onChange={e => setParlayStake(Math.max(1, parseInt(e.target.value) || 0))}
+                            className="w-16 h-5 text-[11px] text-right bg-zinc-800 border border-zinc-700 rounded px-1 tabular-nums" />
+                          <span className="text-[10px] text-emerald-500/70 tabular-nums ml-auto">
+                            Win ${calcPayout(parlayStake, calcParlayOdds()).toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Place button */}
+                  <div className="p-3">
+                    <div className="flex items-center justify-between text-xs text-zinc-400 mb-2">
+                      <span>Total Stake</span>
+                      <span className="font-medium text-foreground tabular-nums">${totalSlipStake.toFixed(2)}</span>
+                    </div>
+                    <Button
+                      className="w-full h-9 text-xs bg-amber-600 hover:bg-amber-700"
+                      disabled={totalSlipStake <= 0 || totalSlipStake > bal || placeBetsMutation.isPending}
+                      onClick={placeBets}
+                    >
+                      {placeBetsMutation.isPending ? 'Placing...' : isParlayMode ? `Place Parlay ($${parlayStake})` : `Place ${slip.length} Pick${slip.length !== 1 ? 's' : ''}`}
+                    </Button>
+                    {totalSlipStake > bal && (
+                      <p className="text-[10px] text-red-400 mt-1 text-center">Insufficient balance</p>
                     )}
                   </div>
                 </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button 
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                  disabled={isParlayMode ? parlayStake === 0 : currentSlip.totalStake === 0 || saveBetsMutation.isPending}
-                  onClick={() => {
-                    const totalStake = isParlayMode ? parlayStake : currentSlip.totalStake;
-                    const betDescription = isParlayMode 
-                      ? `Parlay bet (${currentSlip.items.length} legs)` 
-                      : `${currentSlip.items.length} individual bets`;
-                    
-                    // Prepare bets for saving to database
-                    const betsToSave = currentSlip.items.map(item => ({
-                      gameId: item.gameId,
-                      betType: isParlayMode ? 'parlay' : item.betType,
-                      selection: item.selection,
-                      odds: isParlayMode ? calculateParlayOdds(currentSlip.items) : item.odds,
-                      stake: isParlayMode ? parlayStake / currentSlip.items.length : item.stake,
-                      potentialWin: isParlayMode ? calculateParlayPayout(parlayStake, calculateParlayOdds(currentSlip.items)) : item.potentialWin
-                    }));
-
-
-                    
-                    // Save bets to database
-                    saveBetsMutation.mutate(betsToSave, {
-                      onSuccess: () => {
-                        // Also save to My Picks if any bets have saveToMyBets checked
-                        const betsForMyBets = currentSlip.items
-                          .filter(item => item.saveToMyBets)
-                          .map(item => ({
-                            gameId: item.gameId,
-                            betType: item.betType,
-                            selection: item.selection,
-                            odds: item.odds,
-                            stake: item.stake,
-                            potentialWin: item.potentialWin
-                          }));
-
-                        if (betsForMyBets.length > 0) {
-                          // Save to My Picks (regular bets endpoint)
-                          apiRequest("POST", "/api/bets", betsForMyBets).then(() => {
-                            toast({
-                              title: "Bets Saved!",
-                              description: `${betsForMyBets.length} bet${betsForMyBets.length === 1 ? '' : 's'} saved to My Picks for long-term tracking`,
-                            });
-                          }).catch((error) => {
-                            console.error("Failed to save to My Picks:", error);
-                            toast({
-                              title: "Error",
-                              description: "Failed to save some bets to My Picks",
-                              variant: "destructive",
-                            });
-                          });
-                        }
-
-                        toast({
-                          title: "Virtual Bets Placed!",
-                          description: `${betDescription} placed for $${totalStake.toFixed(2)} in prediction game`,
-                        });
-                        
-                        // Clear all selected bets
-                        setSelectedBets(new Set());
-                        
-                        setCurrentSlip(null);
-                        setBettingSlips(prev => prev.filter(s => s.id !== currentSlip.id));
-                        setIsParlayMode(false);
-                        setParlayStake(10);
-                      }
-                    });
-                  }}
-                >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  {saveBetsMutation.isPending 
-                    ? "Placing Bets..." 
-                    : isParlayMode 
-                      ? `Place Parlay ($${parlayStake.toFixed(2)})` 
-                      : `Make Picks ($${currentSlip.totalStake.toFixed(2)})`
-                  }
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    setCurrentSlip(null);
-                    setBettingSlips(prev => prev.filter(s => s.id !== currentSlip.id));
-                  }}
-                >
-                  Clear Slip
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Available Games for Betting */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Available Games for Betting
-          </CardTitle>
-          <CardDescription>
-            Place virtual bets on today's games. Your balance will be updated in real-time.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {gamesLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-24 bg-muted rounded animate-pulse"></div>
-              ))}
-            </div>
-          ) : upcomingGames.length > 0 ? (
-            <div className="space-y-6">
-              {upcomingGames.slice(0, 6).map((game: any) => (
-                <div key={game.gameId} className="border rounded-lg p-4">
-                  {/* Game Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="text-sm text-muted-foreground">
-                      {game.gameTime && !isNaN(new Date(game.gameTime).getTime()) 
-                        ? new Date(game.gameTime).toLocaleTimeString([], { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })
-                        : game.gameTime || "TBD"
-                      } • {game.venue}
-                    </div>
-                    {game.odds?.total && (
-                      <div className="text-sm text-muted-foreground">
-                        Total: {game.odds.total.line}
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Teams and Odds in Traditional Layout */}
-                  <div className="grid grid-cols-4 gap-4">
-                    {/* Teams Column */}
-                    <div className="space-y-2">
-                      <div className="text-sm text-muted-foreground mb-2">Teams</div>
-                      <div className="flex flex-col space-y-1">
-                        <div className="font-medium text-foreground">{game.awayTeam}</div>
-                        <div className="font-medium text-foreground">{game.homeTeam}</div>
-                      </div>
-                    </div>
-                    
-                    {/* Spread Column */}
-                    <div className="space-y-2">
-                      <div className="text-sm text-muted-foreground mb-2">Spread</div>
-                      <div className="flex flex-col space-y-1">
-{(() => {
-                          // Generate realistic MLB run line spreads
-                          const runLines = [1.5, 2.5]; // Common MLB run lines
-                          const randomLine = runLines[Math.floor(Math.random() * runLines.length)];
-                          const spread = game.odds?.spread || {
-                            away: Math.random() > 0.5 ? +randomLine : -randomLine,
-                            home: 0
-                          };
-                          if (!game.odds?.spread) {
-                            spread.home = -spread.away; // Home team gets opposite
-                          }
-                          
-                          const awaySpreadSelection = `${game.awayTeam} ${spread.away > 0 ? '+' : ''}${spread.away}`;
-                          const homeSpreadSelection = `${game.homeTeam} ${spread.home > 0 ? '+' : ''}${spread.home}`;
-                          const awayBetState = getBetState(game.gameId, "spread", awaySpreadSelection, -110);
-                          const homeBetState = getBetState(game.gameId, "spread", homeSpreadSelection, -110);
-
-                          return (
-                            <>
-                              <Button 
-                                variant={awayBetState.isSelected ? "default" : "outline"} 
-                                size="sm" 
-                                className={`justify-center h-6 px-2 font-mono text-xs ${
-                                  awayBetState.isSelected 
-                                    ? "bg-blue-600 text-white border-blue-600" 
-                                    : ""
-                                }`}
-                                disabled={awayBetState.isSelected}
-                                onClick={() => {
-                                  addToBettingSlip(
-                                    game.gameId, 
-                                    `${game.awayTeam} @ ${game.homeTeam}`, 
-                                    "spread", 
-                                    awaySpreadSelection, 
-                                    -110
-                                  );
-                                }}
-                              >
-                                {spread.away > 0 ? '+' : ''}{spread.away} {awayBetState.displayOdds > 0 ? '+' : ''}{awayBetState.displayOdds}
-                              </Button>
-                              <Button 
-                                variant={homeBetState.isSelected ? "default" : "outline"} 
-                                size="sm" 
-                                className={`justify-center h-6 px-2 font-mono text-xs ${
-                                  homeBetState.isSelected 
-                                    ? "bg-blue-600 text-white border-blue-600" 
-                                    : ""
-                                }`}
-                                disabled={homeBetState.isSelected}
-                                onClick={() => {
-                                  addToBettingSlip(
-                                    game.gameId, 
-                                    `${game.awayTeam} @ ${game.homeTeam}`, 
-                                    "spread", 
-                                    homeSpreadSelection, 
-                                    -110
-                                  );
-                                }}
-                              >
-                                {spread.home > 0 ? '+' : ''}{spread.home} {homeBetState.displayOdds > 0 ? '+' : ''}{homeBetState.displayOdds}
-                              </Button>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                    
-                    {/* Moneyline Column */}
-                    <div className="space-y-2">
-                      <div className="text-sm text-muted-foreground mb-2">M/L</div>
-                      <div className="flex flex-col space-y-1">
-{(() => {
-                          // Generate realistic MLB moneyline odds
-                          const moneyline = game.odds?.moneyline || (() => {
-                            const favoriteOdds = [-110, -120, -130, -140, -150, -160, -170, -180];
-                            const underdogOdds = [110, 120, 130, 140, 150, 160, 170, 180];
-                            const isFavoriteAway = Math.random() > 0.5;
-                            
-                            if (isFavoriteAway) {
-                              return {
-                                away: favoriteOdds[Math.floor(Math.random() * favoriteOdds.length)],
-                                home: underdogOdds[Math.floor(Math.random() * underdogOdds.length)]
-                              };
-                            } else {
-                              return {
-                                away: underdogOdds[Math.floor(Math.random() * underdogOdds.length)],
-                                home: favoriteOdds[Math.floor(Math.random() * favoriteOdds.length)]
-                              };
-                            }
-                          })();
-                          
-                          const awayMLSelection = `${game.awayTeam} ML`;
-                          const homeMLSelection = `${game.homeTeam} ML`;
-                          const awayMLBetState = getBetState(game.gameId, "moneyline", awayMLSelection, moneyline.away);
-                          const homeMLBetState = getBetState(game.gameId, "moneyline", homeMLSelection, moneyline.home);
-
-                          return (
-                            <>
-                              <Button 
-                                variant={awayMLBetState.isSelected ? "default" : "outline"} 
-                                size="sm" 
-                                className={`justify-center h-6 px-2 font-mono text-xs ${
-                                  awayMLBetState.isSelected 
-                                    ? "bg-blue-600 text-white border-blue-600" 
-                                    : ""
-                                }`}
-                                disabled={awayMLBetState.isSelected}
-                                onClick={() => {
-                                  addToBettingSlip(
-                                    game.gameId, 
-                                    `${game.awayTeam} @ ${game.homeTeam}`, 
-                                    "moneyline", 
-                                    awayMLSelection, 
-                                    moneyline.away
-                                  );
-                                }}
-                              >
-                                {awayMLBetState.displayOdds > 0 ? '+' : ''}{awayMLBetState.displayOdds}
-                              </Button>
-                              <Button 
-                                variant={homeMLBetState.isSelected ? "default" : "outline"} 
-                                size="sm" 
-                                className={`justify-center h-6 px-2 font-mono text-xs ${
-                                  homeMLBetState.isSelected 
-                                    ? "bg-blue-600 text-white border-blue-600" 
-                                    : ""
-                                }`}
-                                disabled={homeMLBetState.isSelected}
-                                onClick={() => {
-                                  addToBettingSlip(
-                                    game.gameId, 
-                                    `${game.awayTeam} @ ${game.homeTeam}`, 
-                                    "moneyline", 
-                                    homeMLSelection, 
-                                    moneyline.home
-                                  );
-                                }}
-                              >
-                                {homeMLBetState.displayOdds > 0 ? '+' : ''}{homeMLBetState.displayOdds}
-                              </Button>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                    
-                    {/* Total Runs Column */}
-                    <div className="space-y-2">
-                      <div className="text-sm text-muted-foreground mb-2">Runs</div>
-                      <div className="flex flex-col space-y-1">
-{(() => {
-                          // Generate realistic MLB total runs odds
-                          const total = game.odds?.total || (() => {
-                            const totalLines = [7.5, 8.0, 8.5, 9.0, 9.5, 10.0, 10.5]; // Common MLB totals
-                            const overUnderOdds = [-105, -110, -115, -120, 105, 110, 115, 120];
-                            const line = totalLines[Math.floor(Math.random() * totalLines.length)];
-                            const overOdds = overUnderOdds[Math.floor(Math.random() * overUnderOdds.length)];
-                            const underOdds = overOdds > 0 ? -overOdds - 10 : Math.abs(overOdds) + 10;
-                            
-                            return {
-                              line,
-                              over: overOdds,
-                              under: underOdds
-                            };
-                          })();
-                          
-                          const overSelection = `Over ${total.line}`;
-                          const underSelection = `Under ${total.line}`;
-                          const overBetState = getBetState(game.gameId, "total", overSelection, total.over);
-                          const underBetState = getBetState(game.gameId, "total", underSelection, total.under);
-
-                          return (
-                            <>
-                              <Button 
-                                variant={overBetState.isSelected ? "default" : "outline"} 
-                                size="sm" 
-                                className={`justify-center h-6 px-2 font-mono text-xs ${
-                                  overBetState.isSelected 
-                                    ? "bg-blue-600 text-white border-blue-600" 
-                                    : ""
-                                }`}
-                                disabled={overBetState.isSelected}
-                                onClick={() => {
-                                  addToBettingSlip(
-                                    game.gameId, 
-                                    `${game.awayTeam} @ ${game.homeTeam}`, 
-                                    "total", 
-                                    overSelection, 
-                                    total.over
-                                  );
-                                }}
-                              >
-                                O{total.line} {overBetState.displayOdds > 0 ? '+' : ''}{overBetState.displayOdds}
-                              </Button>
-                              <Button 
-                                variant={underBetState.isSelected ? "default" : "outline"} 
-                                size="sm" 
-                                className={`justify-center h-6 px-2 font-mono text-xs ${
-                                  underBetState.isSelected 
-                                    ? "bg-blue-600 text-white border-blue-600" 
-                                    : ""
-                                }`}
-                                disabled={underBetState.isSelected}
-                                onClick={() => {
-                                  addToBettingSlip(
-                                    game.gameId, 
-                                    `${game.awayTeam} @ ${game.homeTeam}`, 
-                                    "total", 
-                                    underSelection, 
-                                    total.under
-                                  );
-                                }}
-                              >
-                                U{total.line} {underBetState.displayOdds > 0 ? '+' : ''}{underBetState.displayOdds}
-                              </Button>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Player Props Section */}
-                  <div className="mt-4 pt-4 border-t">
-                    <div className="text-sm text-muted-foreground mb-3">Player Props</div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                      {/* Dynamic player props based on the game */}
-                      {(() => {
-                        const awayPitcher = game.awayPitcher ? game.awayPitcher.split(' (')[0] : "Away Pitcher";
-                        const homePitcher = game.homePitcher ? game.homePitcher.split(' (')[0] : "Home Pitcher";
-                        const batterNames = ["Mookie Betts", "Ronald Acuña", "Jose Altuve", "Mike Trout", "Juan Soto", "Vladimir Guerrero"];
-                        const randomBatter1 = batterNames[Math.floor(Math.random() * batterNames.length)];
-                        const randomBatter2 = batterNames[Math.floor(Math.random() * batterNames.length)];
-                        
-                        return [
-                          <Button 
-                            key={`strikeouts-${game.gameId}`}
-                            variant="outline" 
-                            size="sm" 
-                            className="text-xs p-1 h-auto"
-                            onClick={() => {
-                              toast({
-                                title: "Bet Placed",
-                                description: `${awayPitcher} Strikeouts Over 7.5 (+115)`,
-                              });
-                            }}
-                          >
-                            <div className="text-center">
-                              <div className="font-medium text-xs">{awayPitcher}</div>
-                              <div className="text-xs">Strikeouts O7.5</div>
-                              <div className="text-muted-foreground text-xs">+115</div>
-                            </div>
-                          </Button>,
-                          
-                          <Button 
-                            key={`hits-${game.gameId}`}
-                            variant="outline" 
-                            size="sm" 
-                            className="text-xs p-1 h-auto"
-                            onClick={() => {
-                              addToBettingSlip(
-                                game.gameId, 
-                                `${game.awayTeam} @ ${game.homeTeam}`, 
-                                "prop", 
-                                `${randomBatter1} Hits Over 1.5`, 
-                                140
-                              );
-                            }}
-                          >
-                            <div className="text-center">
-                              <div className="font-medium text-xs">{randomBatter1}</div>
-                              <div className="text-xs">Hits O1.5</div>
-                              <div className="text-muted-foreground text-xs">+140</div>
-                            </div>
-                          </Button>,
-                          
-                          <Button 
-                            key={`rbis-${game.gameId}`}
-                            variant="outline" 
-                            size="sm" 
-                            className="text-xs p-1 h-auto"
-                            onClick={() => {
-                              addToBettingSlip(
-                                game.gameId, 
-                                `${game.awayTeam} @ ${game.homeTeam}`, 
-                                "prop", 
-                                `${randomBatter2} RBIs Over 0.5`, 
-                                165
-                              );
-                            }}
-                          >
-                            <div className="text-center">
-                              <div className="font-medium text-xs">{randomBatter2}</div>
-                              <div className="text-xs">RBIs O0.5</div>
-                              <div className="text-muted-foreground text-xs">+165</div>
-                            </div>
-                          </Button>,
-                          
-                          <Button 
-                            key={`homerun-${game.gameId}`}
-                            variant="outline" 
-                            size="sm" 
-                            className="text-xs p-1 h-auto"
-                            onClick={() => {
-                              addToBettingSlip(
-                                game.gameId, 
-                                `${game.awayTeam} @ ${game.homeTeam}`, 
-                                "prop", 
-                                `${randomBatter1} Home Run`, 
-                                350
-                              );
-                            }}
-                          >
-                            <div className="text-center">
-                              <div className="font-medium text-xs">{randomBatter1}</div>
-                              <div className="text-xs">Home Run</div>
-                              <div className="text-muted-foreground text-xs">+350</div>
-                            </div>
-                          </Button>,
-                          
-                          <Button 
-                            key={`innings-${game.gameId}`}
-                            variant="outline" 
-                            size="sm" 
-                            className="text-xs p-1 h-auto"
-                            onClick={() => {
-                              addToBettingSlip(
-                                game.gameId, 
-                                `${game.awayTeam} @ ${game.homeTeam}`, 
-                                "prop", 
-                                `${homePitcher} Innings O5.5`, 
-                                -120
-                              );
-                            }}
-                          >
-                            <div className="text-center">
-                              <div className="font-medium text-xs">{homePitcher}</div>
-                              <div className="text-xs">Innings O5.5</div>
-                              <div className="text-muted-foreground text-xs">-120</div>
-                            </div>
-                          </Button>,
-                          
-                          <Button 
-                            key={`walks-${game.gameId}`}
-                            variant="outline" 
-                            size="sm" 
-                            className="text-xs p-1 h-auto"
-                            onClick={() => {
-                              addToBettingSlip(
-                                game.gameId, 
-                                `${game.awayTeam} @ ${game.homeTeam}`, 
-                                "prop", 
-                                `${awayPitcher} Walks U2.5`, 
-                                -115
-                              );
-                            }}
-                          >
-                            <div className="text-center">
-                              <div className="font-medium text-xs">{awayPitcher}</div>
-                              <div className="text-xs">Walks U2.5</div>
-                              <div className="text-muted-foreground text-xs">-115</div>
-                            </div>
-                          </Button>
-                        ];
-                      })()}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No games available for betting at the moment.</p>
-              <p className="text-sm">Check back later for today's games!</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Instructions */}
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle>How Virtual Betting Works</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-semibold mb-2">Getting Started</h4>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• You start with $1,000 in virtual money</li>
-                <li>• Place bets on real games with simulated odds</li>
-                <li>• Track your performance and improve your skills</li>
-                <li>• Reset your balance anytime to start fresh</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">Betting Features</h4>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Moneyline, spread, and total bets available</li>
-                <li>• Real-time balance updates after each bet</li>
-                <li>• Comprehensive win/loss tracking</li>
-                <li>• Performance analytics and statistics</li>
-              </ul>
+              )}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      {/* Mobile slip (fixed bottom) */}
+      {slip.length > 0 && (
+        <div className="lg:hidden fixed bottom-16 left-0 right-0 z-40 px-4 pb-2">
+          <div className="bg-card border border-amber-500/30 rounded-xl p-3 shadow-xl shadow-black/40">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium">{slip.length} pick{slip.length !== 1 ? 's' : ''} — ${totalSlipStake.toFixed(0)}</span>
+              <Button size="sm" className="h-7 text-xs bg-amber-600 hover:bg-amber-700"
+                disabled={totalSlipStake <= 0 || placeBetsMutation.isPending} onClick={placeBets}>
+                Place Picks
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
