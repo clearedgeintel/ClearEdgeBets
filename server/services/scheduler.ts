@@ -950,27 +950,105 @@ Write ONE sentence (max 20 words) explaining why this pick ${result === 'win' ? 
         const playerStats = boxData.playerStats || {};
         const highlights: string[] = [];
 
+        // ── Top 6 hitters by impact score ──
         const hitters = Object.values(playerStats)
           .filter((p: any) => p.Hitting && parseInt(p.Hitting.H || '0') > 0)
           .sort((a: any, b: any) => {
             const aS = parseInt(a.Hitting.HR || '0') * 5 + parseInt(a.Hitting.H || '0') + parseInt(a.Hitting.RBI || '0') * 2;
             const bS = parseInt(b.Hitting.HR || '0') * 5 + parseInt(b.Hitting.H || '0') + parseInt(b.Hitting.RBI || '0') * 2;
             return bS - aS;
-          }).slice(0, 4) as any[];
+          }).slice(0, 6) as any[];
 
         for (const h of hitters) {
           const info = await fetchTank01Player(h.playerID, false);
           const name = info?.longName || `#${h.playerID}`;
           const hit = h.Hitting;
-          highlights.push(`${name} (${h.team}): ${hit.H}-${hit.AB}${parseInt(hit.HR||'0') > 0 ? `, ${hit.HR} HR` : ''}${parseInt(hit.RBI||'0') > 0 ? `, ${hit.RBI} RBI` : ''}`);
+          const parts = [`${hit.H}-${hit.AB}`];
+          if (parseInt(hit.HR || '0') > 0) parts.push(`${hit.HR} HR`);
+          if (parseInt(hit.RBI || '0') > 0) parts.push(`${hit.RBI} RBI`);
+          if (parseInt(hit.R || '0') > 0) parts.push(`${hit.R} R`);
+          if (parseInt(hit.BB || '0') > 0) parts.push(`${hit.BB} BB`);
+          if (parseInt(hit.SO || '0') >= 3) parts.push(`${hit.SO} K (golden sombrero)`);
+          highlights.push(`${name} (${h.team}): ${parts.join(', ')}`);
         }
 
+        // ── Pitcher decisions (W/L/S) ──
+        const decisionPitcherIds = new Set<string>();
         for (const dec of (boxData.decisions || [])) {
+          decisionPitcherIds.add(dec.playerID);
           const info = await fetchTank01Player(dec.playerID, false);
           const name = info?.longName || `#${dec.playerID}`;
           const pitcher = Object.values(playerStats).find((p: any) => p.playerID === dec.playerID) as any;
-          if (pitcher?.Pitching) highlights.push(`${name} (${dec.team}, ${dec.decision}): ${pitcher.Pitching.InningsPitched} IP, ${pitcher.Pitching.ER} ER, ${pitcher.Pitching.SO} K`);
+          if (pitcher?.Pitching) {
+            const p = pitcher.Pitching;
+            highlights.push(`${name} (${dec.team}, ${dec.decision}): ${p.InningsPitched} IP, ${p.H} H, ${p.ER} ER, ${p.SO} K, ${p.BB} BB${parseInt(p.HR || '0') > 0 ? `, ${p.HR} HR allowed` : ''}`);
+          }
         }
+
+        // ── Standout non-decision pitchers (5+ K or 3+ scoreless IP) ──
+        const standoutPitchers = Object.values(playerStats)
+          .filter((p: any) => p.Pitching && !decisionPitcherIds.has(p.playerID))
+          .filter((p: any) => parseInt(p.Pitching.SO || '0') >= 5 || (parseInt(p.Pitching.ER || '0') === 0 && parseFloat(p.Pitching.InningsPitched || '0') >= 3))
+          .slice(0, 3) as any[];
+
+        for (const p of standoutPitchers) {
+          const info = await fetchTank01Player(p.playerID, false);
+          const name = info?.longName || `#${p.playerID}`;
+          const pp = p.Pitching;
+          highlights.push(`${name} (${p.team}, relief): ${pp.InningsPitched} IP, ${pp.ER} ER, ${pp.SO} K`);
+        }
+
+        // ── Game narrative: comebacks, big innings, blowouts ──
+        try {
+          const awayInnings = boxData.lineScore?.away?.scoresByInning || {};
+          const homeInnings = boxData.lineScore?.home?.scoresByInning || {};
+          const inningKeys = Object.keys(awayInnings).filter(k => /^\d+$/.test(k)).sort((a, b) => parseInt(a) - parseInt(b));
+
+          // Find biggest single inning
+          let biggestInning = { team: '', inning: 0, runs: 0 };
+          for (const k of inningKeys) {
+            const aR = parseInt(awayInnings[k] || '0');
+            const hR = parseInt(homeInnings[k] || '0');
+            if (aR > biggestInning.runs) biggestInning = { team: awayCode, inning: parseInt(k), runs: aR };
+            if (hR > biggestInning.runs) biggestInning = { team: homeCode, inning: parseInt(k), runs: hR };
+          }
+          if (biggestInning.runs >= 4) {
+            highlights.push(`BIG INNING: ${biggestInning.team} scored ${biggestInning.runs} runs in the ${biggestInning.inning}${biggestInning.inning === 1 ? 'st' : biggestInning.inning === 2 ? 'nd' : biggestInning.inning === 3 ? 'rd' : 'th'} inning`);
+          }
+
+          // Detect comeback (trailed by 3+ at any point and won)
+          let awayRunning = 0, homeRunning = 0;
+          let maxAwayLead = 0, maxHomeLead = 0;
+          for (const k of inningKeys) {
+            awayRunning += parseInt(awayInnings[k] || '0');
+            homeRunning += parseInt(homeInnings[k] || '0');
+            maxAwayLead = Math.max(maxAwayLead, awayRunning - homeRunning);
+            maxHomeLead = Math.max(maxHomeLead, homeRunning - awayRunning);
+          }
+          if (awayScore > homeScore && maxHomeLead >= 3) {
+            highlights.push(`COMEBACK: ${awayCode} trailed by ${maxHomeLead} at one point and won`);
+          } else if (homeScore > awayScore && maxAwayLead >= 3) {
+            highlights.push(`COMEBACK: ${homeCode} trailed by ${maxAwayLead} at one point and won`);
+          }
+
+          // Walk-off detection
+          const lastInning = inningKeys[inningKeys.length - 1];
+          if (lastInning && parseInt(homeInnings[lastInning] || '0') > 0 && homeScore > awayScore) {
+            const homeNeeded = awayScore - (homeScore - parseInt(homeInnings[lastInning] || '0'));
+            if (homeNeeded >= 0) highlights.push(`WALK-OFF: ${homeCode} won it in their final at-bat`);
+          }
+        } catch {}
+
+        // ── ESPN headlines/news for this game ──
+        try {
+          const espnResp = await fetch(`https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${gameDate.replace(/-/g, '')}`);
+          if (espnResp.ok) {
+            const espnData = await espnResp.json() as any;
+            const match = espnData.events?.find((ev: any) => ev.competitions?.[0]?.competitors?.find((c: any) => c.homeAway === 'away' && c.team?.abbreviation === awayCode));
+            const headline = match?.competitions?.[0]?.headlines?.[0]?.shortLinkText || match?.competitions?.[0]?.headlines?.[0]?.description;
+            if (headline) highlights.push(`ESPN HEADLINE: ${headline}`);
+          }
+        } catch {}
 
         const review = await generateSarcasticGameReview({
           gameId: gameID, awayTeam: getTeamFullName(awayCode), homeTeam: getTeamFullName(homeCode),

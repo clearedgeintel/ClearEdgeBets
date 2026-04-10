@@ -898,16 +898,19 @@ ${input.playerHighlights}
 
 REQUIREMENTS:
 1. Write a clickbait-worthy headline in YOUR voice (sarcastic, funny, max 15 words)
-2. Write a 3-5 paragraph review in markdown format — in character as ${writer.name}
+2. Write a 4-6 paragraph review in markdown format — in character as ${writer.name}
 ${sportSpecificReqs}
-4. Roast the losing team mercilessly but with love
-5. Give backhanded compliments to the winning team
-6. Make at least one reference to the ${isNHL ? 'arena' : 'weather, venue,'} or attendance
-7. Include one ridiculous metaphor or analogy that fits YOUR personality
-8. End with a "**Final Verdict:**" one-liner in YOUR signature style
-9. Tone: match your personality (${writer.mood}) — readers should learn what happened while laughing
-10. Use at least ONE of your writing quirks from the list above — make it unmistakably YOUR column
-11. Work your catchphrase in somewhere natural
+4. **CRITICAL: You MUST name at least 3 specific players from the Key Performances above.** Quote their actual stat lines (e.g. "Judge went 3-for-4 with 2 HR and 5 RBI"). Do NOT write generic recaps that could apply to any game.
+5. **If a BIG INNING, COMEBACK, or WALK-OFF tag is in the Key Performances section, build the narrative around it** — this is the story
+6. **If an ESPN HEADLINE is provided, use it as inspiration for your angle** — but rewrite it in your voice
+7. Roast the losing team mercilessly but with love
+8. Give backhanded compliments to the winning team
+9. Make at least one reference to the ${isNHL ? 'arena' : 'weather, venue,'} or attendance
+10. Include one ridiculous metaphor or analogy that fits YOUR personality
+11. End with a "**Final Verdict:**" one-liner in YOUR signature style
+12. Tone: match your personality (${writer.mood}) — readers should learn what happened while laughing
+13. Use at least ONE of your writing quirks from the list above — make it unmistakably YOUR column
+14. Work your catchphrase in somewhere natural
 
 Return JSON: { "title": "...", "content": "..." }`;
 
@@ -917,7 +920,7 @@ Return JSON: { "title": "...", "content": "..." }`;
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       temperature: 0.95,
-      max_tokens: 1500,
+      max_tokens: 2200,
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
