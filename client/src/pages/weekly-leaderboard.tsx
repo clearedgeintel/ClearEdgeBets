@@ -187,26 +187,26 @@ export default function WeeklyLeaderboard() {
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            {entry.totalBets} bets • {parseFloat(entry.winRate).toFixed(1)}% win rate
+                            {entry.totalBets} bets • {parseFloat(entry.winRate || '0').toFixed(1)}% win rate
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="text-right space-y-1">
                         <div className="flex items-center space-x-4">
                           <div className="text-center">
-                            <div className="text-lg font-bold text-primary">{entry.points}</div>
+                            <div className="text-lg font-bold text-primary">{entry.points || 0}</div>
                             <div className="text-xs text-muted-foreground">Points</div>
                           </div>
                           <div className="text-center">
-                            <div className={`text-lg font-bold ${parseFloat(entry.netProfit) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                              ${parseFloat(entry.netProfit).toFixed(2)}
+                            <div className={`text-lg font-bold ${parseFloat(entry.netProfit || '0') >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                              ${parseFloat(entry.netProfit || '0').toFixed(2)}
                             </div>
                             <div className="text-xs text-muted-foreground">Net P&L</div>
                           </div>
                           <div className="text-center">
-                            <div className={`text-lg font-bold ${parseFloat(entry.profitMargin) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                              {parseFloat(entry.profitMargin).toFixed(1)}%
+                            <div className={`text-lg font-bold ${parseFloat(entry.profitMargin || '0') >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                              {parseFloat(entry.profitMargin || '0').toFixed(1)}%
                             </div>
                             <div className="text-xs text-muted-foreground">ROI</div>
                           </div>
@@ -242,7 +242,7 @@ export default function WeeklyLeaderboard() {
                   <Target className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{parseFloat(currentWeekStats.winRate).toFixed(1)}%</div>
+                  <div className="text-2xl font-bold">{parseFloat(currentWeekStats.winRate || '0').toFixed(1)}%</div>
                   <p className="text-xs text-muted-foreground">
                     {currentWeekStats.wonBets}W / {currentWeekStats.lostBets}L
                   </p>
@@ -255,11 +255,11 @@ export default function WeeklyLeaderboard() {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-2xl font-bold ${parseFloat(currentWeekStats.netProfit) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    ${parseFloat(currentWeekStats.netProfit).toFixed(2)}
+                  <div className={`text-2xl font-bold ${parseFloat(currentWeekStats.netProfit || '0') >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    ${parseFloat(currentWeekStats.netProfit || '0').toFixed(2)}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    ${parseFloat(currentWeekStats.totalStaked).toFixed(2)} staked
+                    ${parseFloat(currentWeekStats.totalStaked || '0').toFixed(2)} staked
                   </p>
                 </CardContent>
               </Card>
@@ -270,8 +270,8 @@ export default function WeeklyLeaderboard() {
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-2xl font-bold ${parseFloat(currentWeekStats.profitMargin) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {parseFloat(currentWeekStats.profitMargin).toFixed(1)}%
+                  <div className={`text-2xl font-bold ${parseFloat(currentWeekStats.profitMargin || '0') >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {parseFloat(currentWeekStats.profitMargin || '0').toFixed(1)}%
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Return on investment
