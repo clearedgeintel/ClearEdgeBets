@@ -29,20 +29,25 @@ export default function Home() {
   const { data: dailyContent } = useQuery<{ history: { year: number; event: string } | null; picks: Array<{ pick: string; rationale: string }> }>({ queryKey: ['/api/homepage/daily-content'], queryFn: () => fetch('/api/homepage/daily-content').then(r => r.json()), staleTime: 3600000 });
   const { data: expertPicks = [] } = useQuery<any[]>({ queryKey: ['/api/expert-picks', today], queryFn: () => fetch(`/api/expert-picks?date=${today}`).then(r => r.json()), staleTime: 300000 });
 
-  const featured = blogReviews[0];
-  const moreReviews = blogReviews.slice(1, 4);
+  const safeGames = Array.isArray(todayGames) ? todayGames : [];
+  const safeNhlScores = Array.isArray(nhlScores) ? nhlScores : [];
+  const safeBlogReviews = Array.isArray(blogReviews) ? blogReviews : [];
+  const safeExpertPicks = Array.isArray(expertPicks) ? expertPicks : [];
+
+  const featured = safeBlogReviews[0];
+  const moreReviews = safeBlogReviews.slice(1, 4);
   const yesterdayGamesList = Object.values(yesterdayScores || {});
 
   // Merge AI picks + expert picks into "Today's Edge"
   const edgePicks = [
-    ...expertPicks.slice(0, 4).map((p: any) => ({ source: EXPERT_AVATARS[p.expertId] || '🎯', label: p.expertId, pick: p.selection, rationale: p.rationale, confidence: p.confidence })),
+    ...safeExpertPicks.slice(0, 4).map((p: any) => ({ source: EXPERT_AVATARS[p.expertId] || '🎯', label: p.expertId, pick: p.selection, rationale: p.rationale, confidence: p.confidence })),
     ...(dailyContent?.picks || []).slice(0, 2).map((p) => ({ source: '🤖', label: 'AI', pick: p.pick, rationale: p.rationale, confidence: null as number | null })),
   ].slice(0, 6);
 
   return (
     <div>
       {/* ── Yesterday's Scores — Card Strip ── */}
-      {(yesterdayGamesList.length > 0 || nhlScores.filter((g: any) => g.status === 'final').length > 0) && (
+      {(yesterdayGamesList.length > 0 || safeNhlScores.filter((g: any) => g.status === 'final').length > 0) && (
         <div className="border-b border-border/30 bg-zinc-950/60 py-3 px-4">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">Final Scores</span>
@@ -75,7 +80,7 @@ export default function Home() {
                 </Link>
               );
             })}
-            {nhlScores.filter((g: any) => g.status === 'final').map((game: any) => (
+            {safeNhlScores.filter((g: any) => g.status === 'final').map((game: any) => (
               <div key={game.gameId} className="flex-shrink-0 w-[130px] bg-card border border-border/20 rounded-lg p-2.5">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5">
@@ -209,10 +214,10 @@ export default function Home() {
         )}
 
         {/* ── Today's Schedule Rail ── */}
-        {todayGames.length > 0 && (
+        {safeGames.length > 0 && (
           <div className="py-6 border-b border-border/20">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Today · {todayGames.length} games</h2>
+              <h2 className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Today · {safeGames.length} games</h2>
               <Link href="/todays-games">
                 <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-emerald-400 h-6 px-2">
                   Full Schedule <ChevronRight className="h-3 w-3 ml-0.5" />
@@ -220,7 +225,7 @@ export default function Home() {
               </Link>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-              {todayGames.map((game) => (
+              {safeGames.map((game) => (
                 <Link key={game.gameId} href="/todays-games">
                   <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-card border border-border/20 rounded-full hover:border-emerald-500/20 transition-colors cursor-pointer text-xs">
                     <img src={teamLogo(game.awayTeamCode)} alt="" className="h-4 w-4" />
