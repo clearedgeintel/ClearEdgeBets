@@ -58,35 +58,24 @@ export default function VirtualSportsbook() {
   const [showHistory, setShowHistory] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
 
-  // Auth guard
-  if (!user) {
-    return (
-      <div className="max-w-md mx-auto px-4 py-16 text-center">
-        <Trophy className="h-12 w-12 mx-auto mb-4 text-amber-500" />
-        <h1 className="text-xl font-bold mb-2">Prediction Game</h1>
-        <p className="text-sm text-zinc-500 mb-6">Sign in to start with $1,000 virtual money</p>
-        <Button onClick={() => window.location.href = '/auth'} className="w-full">
-          <LogIn className="h-4 w-4 mr-2" /> Sign In to Play
-        </Button>
-      </div>
-    );
-  }
-
-  // Data
+  // All hooks must be called before any conditional return
   const { data: balance } = useQuery<any>({
     queryKey: ['/api/user/balance'],
     queryFn: () => fetch('/api/user/balance', { credentials: 'include' }).then(r => r.json()),
+    enabled: !!user,
   });
 
   const { data: games = [], isLoading } = useQuery<Game[]>({
     queryKey: ['/api/games'],
     queryFn: () => fetch('/api/games', { credentials: 'include' }).then(r => r.json()),
     staleTime: 300000,
+    enabled: !!user,
   });
 
   const { data: virtualBets = [] } = useQuery<any[]>({
     queryKey: ['/api/virtual/bets'],
     queryFn: () => fetch('/api/virtual/bets', { credentials: 'include' }).then(r => r.json()),
+    enabled: !!user,
   });
 
   const placeBetsMutation = useMutation({
@@ -111,6 +100,20 @@ export default function VirtualSportsbook() {
       toast({ title: 'Balance reset to $1,000' });
     },
   });
+
+  // Auth guard — after all hooks
+  if (!user) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-16 text-center">
+        <Trophy className="h-12 w-12 mx-auto mb-4 text-amber-500" />
+        <h1 className="text-xl font-bold mb-2">Prediction Game</h1>
+        <p className="text-sm text-zinc-500 mb-6">Sign in to start with $1,000 virtual money</p>
+        <Button onClick={() => window.location.href = '/auth'} className="w-full">
+          <LogIn className="h-4 w-4 mr-2" /> Sign In to Play
+        </Button>
+      </div>
+    );
+  }
 
   // Filter upcoming games
   const upcoming = useMemo(() => (games || []).filter((g: any) => {
