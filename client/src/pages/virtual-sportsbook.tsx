@@ -177,9 +177,10 @@ export default function VirtualSportsbook() {
   };
 
   const totalSlipStake = isParlayMode ? parlayStake : slip.reduce((s, b) => s + b.stake, 0);
-  const bal = balance?.balance ?? 1000;
-  const pendingBets = virtualBets.filter((b: any) => b.status === 'pending');
-  const settledBets = virtualBets.filter((b: any) => b.status === 'settled');
+  const bal = Number(balance?.balance) || 1000;
+  const betsArray = Array.isArray(virtualBets) ? virtualBets : [];
+  const pendingBets = betsArray.filter((b: any) => b.status === 'pending');
+  const settledBets = betsArray.filter((b: any) => b.status === 'settled');
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
@@ -212,9 +213,9 @@ export default function VirtualSportsbook() {
       {/* Balance strip */}
       <div className="grid grid-cols-4 gap-3 mb-5">
         {[
-          { label: 'Balance', value: `$${bal.toFixed(0)}`, color: 'text-foreground', icon: DollarSign },
-          { label: 'Winnings', value: `$${(balance?.totalWinnings ?? 0).toFixed(0)}`, color: 'text-emerald-400', icon: TrendingUp },
-          { label: 'Losses', value: `$${(balance?.totalLosses ?? 0).toFixed(0)}`, color: 'text-red-400', icon: TrendingDown },
+          { label: 'Balance', value: `$${Math.round(bal)}`, color: 'text-foreground', icon: DollarSign },
+          { label: 'Winnings', value: `$${Math.round(Number(balance?.totalWinnings) || 0)}`, color: 'text-emerald-400', icon: TrendingUp },
+          { label: 'Losses', value: `$${Math.round(Number(balance?.totalLosses) || 0)}`, color: 'text-red-400', icon: TrendingDown },
           { label: 'Win Rate', value: `${balance?.winRate ?? '0.0'}%`, color: 'text-amber-400', icon: Trophy },
         ].map(s => (
           <div key={s.label} className="bg-card border border-border/30 rounded-lg p-3">
@@ -326,11 +327,11 @@ export default function VirtualSportsbook() {
           <div className="mt-6">
             <button onClick={() => setShowHistory(!showHistory)} className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 mb-2">
               <ChevronDown className={`h-3 w-3 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
-              Bet History ({virtualBets.length})
+              Bet History ({betsArray.length})
             </button>
             {showHistory && (
               <div className="space-y-1">
-                {virtualBets.slice(0, 20).map((bet: any) => (
+                {betsArray.slice(0, 20).map((bet: any) => (
                   <div key={bet.id} className="flex items-center justify-between py-1.5 px-2.5 rounded bg-zinc-900/30 border border-border/20 text-[11px]">
                     <div className="flex items-center gap-2 min-w-0">
                       <Badge className={`text-[9px] px-1 ${
@@ -349,7 +350,7 @@ export default function VirtualSportsbook() {
                     </div>
                   </div>
                 ))}
-                {virtualBets.length === 0 && <p className="text-xs text-zinc-600 text-center py-4">No bets yet</p>}
+                {betsArray.length === 0 && <p className="text-xs text-zinc-600 text-center py-4">No bets yet</p>}
               </div>
             )}
           </div>
