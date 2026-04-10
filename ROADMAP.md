@@ -1,6 +1,6 @@
 # ClearEdge Sports — Product & Technical Roadmap
 
-> Last updated: **2026-04-09**  
+> Last updated: **2026-04-09** (evening)  
 > Platform: clearedgesports.ai  
 > Status tracking: [x] Done | [-] In Progress | [ ] Not Started
 
@@ -32,19 +32,39 @@
 ### Technical Debt Addressed Recently
 - [x] Fixed Stripe secret key detection warning
 - [x] Newsletter auto-send via Resend (daily 9:15 AM)
+- [x] Virtual bet settlement: sync past dates, odds fallback, WSH/WAS team code fix
+- [x] Washington Nationals logo fix (WAS→WSH) across all pages
+- [x] Expert picks enriched with pitcher stats, top hitters, injuries, standings, implied probabilities
+- [x] Post-game notes on expert picks (AI-generated why pick won/lost)
+- [x] Game summary page with box scores and player stats
+- [x] Admin roster management (activate/deactivate/create experts and writers)
+- [x] Homepage scorecards redesign (individual cards vs cramped ticker)
 
 ---
 
 ## Phase 1.5 — Immediate Priorities (April–May 2026) [HIGH]
 
 ### Critical
-- [ ] **Split `routes.ts`** into feature modules (`games.ts`, `experts.ts`, `content.ts`, `admin.ts`, `virtual-bets.ts`, etc.)
-- [ ] **UI/Brand Overhaul** (follow UIROADMAP.md Phases 1–3)
-  - Morning Roast full-bleed hero
-  - Top nav or collapsible sidebar
-  - Content-first homepage ("Today's Edge", scores ticker, compact schedule)
-  - Softer dark theme + gold/amber accent
-  - Expert avatars upgraded to AI portraits
+- [-] **Split `routes.ts`** — Phase 1 done (8 routers extracted, 8723→7929 lines)
+  - [x] `routes/auth.ts` — register, login, logout, session
+  - [x] `routes/experts.ts` — expert panel, picks, follows, admin CRUD
+  - [x] `routes/newsletter.ts` — subscribe, archive, admin generate/send
+  - [x] `routes/virtual-bets.ts` — virtual bets, performance, slip
+  - [x] `routes/blog.ts` — Morning Roast reviews, generate
+  - [x] `routes/social.ts` — groups, friends, invitations
+  - [x] `routes/trivia.ts` — questions, answers, generate
+  - [x] `routes/nhl-games.ts` — NHL games, scores, teams
+  - [ ] Phase 2: games, admin, subscriptions, settlement, odds, power scores
+- [x] **UI/Brand Overhaul** (UIROADMAP.md Phases 1–3 substantially complete)
+  - [x] Morning Roast full-bleed hero + content-first homepage
+  - [x] Collapsible sidebar with icon rail
+  - [x] "Today's Edge" merged picks, scores strip, compact schedule
+  - [x] Softer dark theme (#0f0f11) + amber/gold accent
+  - [x] Nav renames (Today's Matchups, Power Rankings, My History)
+  - [x] Pick Slip floating button (only shows with active bets)
+  - [x] Article readability (15.5px, 1.75 line-height)
+  - [x] Recap links on completed game cards
+  - [ ] Expert avatars upgraded to AI portraits
 - [ ] Type `req.session` properly (remove `as any`)
 
 ### High Value
