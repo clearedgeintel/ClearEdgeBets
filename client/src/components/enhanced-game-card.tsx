@@ -381,6 +381,11 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
               ⚔️ {debate.a.expertId} vs {debate.b.expertId}
             </Badge>
           )}
+          {game.status === "final" && (
+            <Link href="/blog" className="text-[10px] text-amber-500/70 hover:text-amber-400 transition-colors">
+              Read the recap &rarr;
+            </Link>
+          )}
         </div>
 
         {/* Odds toggle */}

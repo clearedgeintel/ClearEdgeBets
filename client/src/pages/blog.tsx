@@ -177,7 +177,7 @@ export default function Blog() {
           </div>
 
           {/* Article body */}
-          <div className="space-y-4">
+          <div className="space-y-4 article-body">
             {selectedReview.content.split('\n').map((paragraph, i) => {
               const trimmed = paragraph.trim();
               if (!trimmed) return null;

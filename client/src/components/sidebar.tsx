@@ -92,21 +92,21 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           description: "5 AI analysts with tracked picks"
         },
         {
-          name: "Games & Odds",
+          name: "Today's Matchups",
           href: "/todays-games",
           icon: Home,
           current: location === "/games" || location === "/todays-games",
-          description: "Today's schedule with 8-book odds"
+          description: "Today's schedule with odds"
         },
         {
-          name: "Rankings",
+          name: "Power Rankings",
           href: "/team-power-scores",
           icon: BarChart3,
           current: location === "/team-power-scores" || location === "/player-rankings",
           description: "Team power scores + player rankings"
         },
         {
-          name: "My Picks",
+          name: "My History",
           href: "/my-bets",
           icon: History,
           current: location === "/my-bets",
@@ -275,7 +275,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
 
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-[#0a0a0c] text-zinc-100">
+    <div className="flex flex-col h-full bg-[#111113] text-zinc-100">
       {/* Header */}
       <div className="p-6 border-b border-border/50">
         <div className="flex items-center space-x-3">
@@ -642,50 +642,29 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
         </div>
       </nav>
 
-      <Separator className="bg-gray-700" />
-
-      {/* Pick Slip Summary */}
-      <div className="p-4">
-        <div className="bg-zinc-800/50 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-medium">Pick Slip</span>
-            <Badge variant="secondary" className="bg-blue-600">
-              {bets.length}
-            </Badge>
-          </div>
-          
-          {bets.length > 0 ? (
-            <div className="space-y-2">
-              <div className="text-sm text-zinc-500">
-                Total Stake: ${bets.reduce((sum, bet) => sum + bet.stake, 0).toFixed(2)}
-              </div>
-              <div className="text-sm text-zinc-500">
-                Potential Win: ${bets.reduce((sum, bet) => sum + bet.potentialWin, 0).toFixed(2)}
-              </div>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="w-full">
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    View Slip
-                  </Button>
-                </DialogTrigger>
-                <DialogContent 
-                  className="max-w-md" 
-                  onPointerDownOutside={(e) => e.preventDefault()}
-                  onInteractOutside={(e) => e.preventDefault()}
-                >
-                  <DialogHeader>
-                    <DialogTitle>Pick Slip</DialogTitle>
-                  </DialogHeader>
-                  <BettingSlip />
-                </DialogContent>
-              </Dialog>
-            </div>
-          ) : (
-            <p className="text-sm text-zinc-500">No active bets</p>
-          )}
+      {/* Pick Slip — only show when bets exist */}
+      {bets.length > 0 && (
+        <div className="p-3">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button size="sm" className="w-full bg-amber-600 hover:bg-amber-700 text-white">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Pick Slip ({bets.length})
+              </Button>
+            </DialogTrigger>
+            <DialogContent
+              className="max-w-md"
+              onPointerDownOutside={(e) => e.preventDefault()}
+              onInteractOutside={(e) => e.preventDefault()}
+            >
+              <DialogHeader>
+                <DialogTitle>Pick Slip</DialogTitle>
+              </DialogHeader>
+              <BettingSlip />
+            </DialogContent>
+          </Dialog>
         </div>
-      </div>
+      )}
     </div>
   );
 
