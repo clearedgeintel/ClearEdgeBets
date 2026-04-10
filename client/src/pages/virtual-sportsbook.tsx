@@ -101,7 +101,14 @@ export default function VirtualSportsbook() {
     },
   });
 
-  // Auth guard — after all hooks
+  // Filter upcoming games (must be before conditional return)
+  const upcoming = useMemo(() => (games || []).filter((g: any) => {
+    if (g.status === 'live' || g.status === 'final') return false;
+    if (g.gameTimeEpoch) return Date.now() < g.gameTimeEpoch * 1000;
+    return true;
+  }), [games]);
+
+  // Auth guard — after ALL hooks
   if (!user) {
     return (
       <div className="max-w-md mx-auto px-4 py-16 text-center">
@@ -114,13 +121,6 @@ export default function VirtualSportsbook() {
       </div>
     );
   }
-
-  // Filter upcoming games
-  const upcoming = useMemo(() => (games || []).filter((g: any) => {
-    if (g.status === 'live' || g.status === 'final') return false;
-    if (g.gameTimeEpoch) return Date.now() < g.gameTimeEpoch * 1000;
-    return true;
-  }), [games]);
 
   // Slip helpers
   const isInSlip = (gameId: string, betType: string, selection: string) =>
@@ -142,12 +142,19 @@ export default function VirtualSportsbook() {
   const updateStake = (id: string, stake: number) =>
     setSlip(prev => prev.map(s => s.id === id ? { ...s, stake } : s));
 
-  const calcPayout = (stake: number, odds: number) =>
-    odds > 0 ? stake + stake * odds / 100 : stake + stake * 100 / Math.abs(odds);
+  const calcPayout = (stake: number, odds: number) => {
+    if (!odds || !stake) return stake;
+    return odds > 0 ? stake + stake * odds / 100 : stake + stake * 100 / Math.abs(odds);
+  };
 
   const calcParlayOdds = () => {
+    if (slip.length === 0) return 0;
     let dec = 1;
-    slip.forEach(s => { dec *= s.odds > 0 ? s.odds / 100 + 1 : 100 / Math.abs(s.odds) + 1; });
+    slip.forEach(s => {
+      if (s.odds === 0) return;
+      dec *= s.odds > 0 ? s.odds / 100 + 1 : 100 / Math.abs(s.odds) + 1;
+    });
+    if (dec <= 1) return 0;
     return dec >= 2 ? Math.round((dec - 1) * 100) : Math.round(-100 / (dec - 1));
   };
 
