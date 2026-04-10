@@ -22,6 +22,11 @@ export const users = pgTable("users", {
   totalVirtualLosses: integer("total_virtual_losses").default(0), // track total losses
   betCount: integer("bet_count").default(0), // track number of bets placed
   winCount: integer("win_count").default(0), // track number of winning bets
+  alertPreferences: jsonb("alert_preferences").$type<{
+    dailyPicks: boolean;
+    settlements: boolean;
+    lineMovements: boolean;
+  }>().default({ dailyPicks: false, settlements: false, lineMovements: false }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

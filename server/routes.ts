@@ -320,6 +320,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const virtualBetsRouter = (await import('./routes/virtual-bets')).default;
   const blogRouter = (await import('./routes/blog')).default;
   const socialRouter = (await import('./routes/social')).default;
+  const parlaysRouter = (await import('./routes/parlays')).default;
+  const alertsRouter = (await import('./routes/alerts')).default;
 
   app.use(nhlGamesRouter);
   app.use(authRouter);
@@ -329,6 +331,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(virtualBetsRouter);
   app.use(blogRouter);
   app.use(socialRouter);
+  app.use(parlaysRouter);
+  app.use(alertsRouter);
   // Simple test user creation for initial setup
   app.post("/api/create-first-user", async (req, res) => {
     try {
@@ -5027,82 +5031,88 @@ Format as JSON:
     }
   });
 
-  // Odds comparison endpoint for Pro tier
+  // Odds comparison endpoint for Pro tier — real multi-book odds from Tank01
   app.get("/api/odds-comparison", async (req, res) => {
     try {
       const { date } = req.query;
       const targetDate = date ? String(date) : new Date().toISOString().split('T')[0];
-      
-      // Mock odds comparison data for multiple sportsbooks
-      const games = await storage.getAllTodaysGames();
-      
+
+      const BOOK_DISPLAY: Record<string, string> = {
+        draftkings: "DraftKings",
+        fanduel: "FanDuel",
+        betmgm: "BetMGM",
+        caesars: "Caesars",
+        bet365: "Bet365",
+        fanatics: "Fanatics",
+        hardrock: "Hard Rock",
+        pointsbet: "PointsBet",
+      };
+
+      const [games, oddsMap] = await Promise.all([
+        fetchTank01Games(targetDate),
+        fetchTank01Odds(targetDate),
+      ]);
+
       const oddsComparison = games.map(game => {
-        const bookmakers = [
-          {
-            name: "DraftKings",
-            moneyline: { away: -115, home: 105 },
-            spread: { away: -110, home: -110, line: 1.5 },
-            total: { over: -115, under: -105, line: 9.5 },
-            bestLines: {
-              moneylineAway: true,  // Best line for away ML
-              moneylineHome: false,
-              spreadAway: false,
-              spreadHome: true,     // Best line for home spread
-              totalOver: false,
-              totalUnder: true      // Best line for under
-            }
-          },
-          {
-            name: "FanDuel",
-            moneyline: { away: -120, home: 110 },
-            spread: { away: -105, home: -115, line: 1.5 },
-            total: { over: -110, under: -110, line: 9.5 },
-            bestLines: {
-              moneylineAway: false,
-              moneylineHome: true,  // Best line for home ML
-              spreadAway: true,     // Best line for away spread
-              spreadHome: false,
-              totalOver: true,      // Best line for over
-              totalUnder: false
-            }
-          },
-          {
-            name: "BetMGM",
-            moneyline: { away: -118, home: 108 },
-            spread: { away: -108, home: -112, line: 1.5 },
-            total: { over: -112, under: -108, line: 9.5 },
+        const gameOdds = oddsMap[game.gameID];
+        const books = gameOdds ? parseMultiBookOdds(gameOdds) : [];
+
+        // Build bookmakers array in the shape the frontend expects
+        const bookmakers = books
+          .filter(b => b.moneyline || b.runline || b.total)
+          .map(b => ({
+            name: BOOK_DISPLAY[b.bookmaker] || b.bookmaker,
+            moneyline: b.moneyline
+              ? { away: b.moneyline.away, home: b.moneyline.home }
+              : { away: 0, home: 0 },
+            spread: b.runline
+              ? { away: b.runline.awayOdds, home: b.runline.homeOdds, line: parseFloat(b.runline.awaySpread) || 1.5 }
+              : { away: 0, home: 0, line: 1.5 },
+            total: b.total
+              ? { over: b.total.overOdds, under: b.total.underOdds, line: parseFloat(b.total.line) || 0 }
+              : { over: 0, under: 0, line: 0 },
             bestLines: {
               moneylineAway: false,
               moneylineHome: false,
               spreadAway: false,
               spreadHome: false,
               totalOver: false,
-              totalUnder: false
-            }
-          },
-          {
-            name: "Caesars",
-            moneyline: { away: -116, home: 106 },
-            spread: { away: -115, home: -105, line: 1.5 },
-            total: { over: -118, under: -102, line: 9.5 },
-            bestLines: {
-              moneylineAway: false,
-              moneylineHome: false,
-              spreadAway: false,
-              spreadHome: false,
-              totalOver: false,
-              totalUnder: false
-            }
+              totalUnder: false,
+            },
+          }));
+
+        // Determine best lines across all bookmakers (higher odds = better for bettor)
+        if (bookmakers.length > 1) {
+          let bestMLAway = -Infinity, bestMLHome = -Infinity;
+          let bestSpreadAway = -Infinity, bestSpreadHome = -Infinity;
+          let bestTotalOver = -Infinity, bestTotalUnder = -Infinity;
+
+          for (const bk of bookmakers) {
+            if (bk.moneyline.away > bestMLAway) bestMLAway = bk.moneyline.away;
+            if (bk.moneyline.home > bestMLHome) bestMLHome = bk.moneyline.home;
+            if (bk.spread.away > bestSpreadAway) bestSpreadAway = bk.spread.away;
+            if (bk.spread.home > bestSpreadHome) bestSpreadHome = bk.spread.home;
+            if (bk.total.over > bestTotalOver) bestTotalOver = bk.total.over;
+            if (bk.total.under > bestTotalUnder) bestTotalUnder = bk.total.under;
           }
-        ];
+
+          for (const bk of bookmakers) {
+            bk.bestLines.moneylineAway = bk.moneyline.away === bestMLAway && bestMLAway !== 0;
+            bk.bestLines.moneylineHome = bk.moneyline.home === bestMLHome && bestMLHome !== 0;
+            bk.bestLines.spreadAway = bk.spread.away === bestSpreadAway && bestSpreadAway !== 0;
+            bk.bestLines.spreadHome = bk.spread.home === bestSpreadHome && bestSpreadHome !== 0;
+            bk.bestLines.totalOver = bk.total.over === bestTotalOver && bestTotalOver !== 0;
+            bk.bestLines.totalUnder = bk.total.under === bestTotalUnder && bestTotalUnder !== 0;
+          }
+        }
 
         return {
-          gameId: game.gameId,
-          awayTeam: game.awayTeam,
-          homeTeam: game.homeTeam,
+          gameId: game.gameID,
+          awayTeam: getTeamFullName(game.away),
+          homeTeam: getTeamFullName(game.home),
           gameTime: game.gameTime,
-          venue: game.venue,
-          bookmakers
+          venue: getTeamVenue(game.home),
+          bookmakers,
         };
       });
 
