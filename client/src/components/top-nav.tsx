@@ -1,26 +1,67 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Bell, User, Settings, LogOut, Crown, Zap, Shield, ChevronDown, Menu } from "lucide-react";
+import { Bell, User, Settings, LogOut, Crown, Zap, Shield, ChevronDown, Menu, Flame } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import LoginForm from "@/components/auth/login-form";
 import RegisterForm from "@/components/auth/register-form";
 import Sidebar from "@/components/sidebar";
 
+const NAV_TABS: { label: string; href: string; match: (p: string) => boolean; featured?: boolean }[] = [
+  { label: "Feed", href: "/feed", match: (p) => p === "/feed" || p === "/" },
+  { label: "Today's Matchups", href: "/todays-games", match: (p) => p === "/todays-games" || p === "/games" },
+  { label: "Experts", href: "/experts", match: (p) => p.startsWith("/experts") || p === "/expert-leaderboard" },
+  { label: "Power Rankings", href: "/team-power-scores", match: (p) => p === "/team-power-scores" || p === "/player-rankings" },
+  { label: "Play", href: "/virtual-sportsbook", match: (p) => p === "/virtual-sportsbook" || p === "/weekly-leaderboard" || p === "/groups" || p.startsWith("/contests"), featured: true },
+];
+
+function StreakChip() {
+  const { user } = useAuth();
+  const { data: bets = [] } = useQuery<any[]>({
+    queryKey: ["/api/virtual/bets"],
+    queryFn: () => fetch("/api/virtual/bets", { credentials: "include" }).then((r) => (r.ok ? r.json() : [])),
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+
+  if (!user) return null;
+  const safe = Array.isArray(bets) ? bets : [];
+  const settled = safe
+    .filter((b: any) => b?.status === "settled" && (b?.result === "win" || b?.result === "loss"))
+    .sort((a: any, b: any) => new Date(b?.settledAt || b?.placedAt || 0).getTime() - new Date(a?.settledAt || a?.placedAt || 0).getTime());
+  let streak = 0;
+  for (const b of settled) {
+    if (b.result === "win") streak++;
+    else break;
+  }
+  if (streak < 2) return null;
+  return (
+    <Link href="/virtual-performance">
+      <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-300 text-xs font-semibold cursor-pointer hover:bg-amber-500/15 transition-colors">
+        <Flame className="h-3.5 w-3.5" />
+        <span className="tabular-nums">{streak}</span>
+        <span className="text-amber-300/70 hidden md:inline">streak</span>
+      </div>
+    </Link>
+  );
+}
+
 export default function TopNav() {
   const { user, logout } = useAuth();
+  const [location] = useLocation();
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -97,24 +138,36 @@ export default function TopNav() {
             </Link>
           </div>
 
-          {/* Center - Status */}
-          <div className="hidden md:flex items-center space-x-4">
-            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></div>
-              <span>Live Updates</span>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {new Date().toLocaleDateString('en-US', { 
-                weekday: 'short', 
-                month: 'short', 
-                day: 'numeric' 
-              })}
-            </div>
-          </div>
+          {/* Center - Primary nav tabs (desktop) */}
+          <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
+            {NAV_TABS.map((t) => {
+              const active = t.match(location);
+              const base = "relative px-3 py-1.5 rounded-md text-sm font-medium transition-colors";
+              if (t.featured) {
+                return (
+                  <Link key={t.href} href={t.href}>
+                    <span className={`${base} flex items-center gap-1.5 border ${active ? "bg-amber-500/20 text-amber-200 border-amber-500/50" : "bg-amber-500/10 text-amber-300 border-amber-500/25 hover:bg-amber-500/15"}`}>
+                      {t.label}
+                      <Badge className="h-4 text-[9px] bg-amber-500/30 text-amber-100 border-amber-500/40 hover:bg-amber-500/30 px-1">NEW</Badge>
+                    </span>
+                  </Link>
+                );
+              }
+              return (
+                <Link key={t.href} href={t.href}>
+                  <span className={`${base} ${active ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+                    {t.label}
+                    {active && <span className="absolute left-3 right-3 -bottom-0.5 h-0.5 bg-amber-400 rounded-full" />}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
 
           {/* Right Side - User Info */}
-          <div className="flex items-center space-x-4">
-            
+          <div className="flex items-center space-x-3">
+            <StreakChip />
+
             {/* Notifications */}
             <Button variant="ghost" size="sm" className="relative">
               <Bell className="h-4 w-4" />

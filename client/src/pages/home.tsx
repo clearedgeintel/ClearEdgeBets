@@ -44,6 +44,17 @@ export default function Home() {
     ...(dailyContent?.picks || []).slice(0, 2).map((p) => ({ source: '🤖', label: 'AI', pick: p.pick, rationale: p.rationale, confidence: null as number | null })),
   ].slice(0, 6);
 
+  // Consensus detection — 3+ experts on the same selection
+  const pickCounts = safeExpertPicks.reduce<Record<string, number>>((acc: Record<string, number>, p: any) => {
+    const k = (p.selection || '').trim();
+    if (k) acc[k] = (acc[k] || 0) + 1;
+    return acc;
+  }, {});
+  const consensus = Object.entries(pickCounts)
+    .map(([selection, count]) => ({ selection, count: count as number }))
+    .filter((e) => e.count >= 3)
+    .sort((a, b) => b.count - a.count)[0];
+
   return (
     <div>
       {/* ── Yesterday's Scores — Card Strip ── */}
@@ -61,7 +72,7 @@ export default function Home() {
               const homeR = parseInt(game.lineScore?.home?.R || '0');
               return (
                 <Link key={game.gameID} href={`/game-summary/${game.gameID}`}>
-                  <div className="flex-shrink-0 w-[130px] bg-card border border-border/20 rounded-lg p-2.5 cursor-pointer hover:border-emerald-500/30 transition-colors">
+                  <div className="flex-shrink-0 w-[130px] bg-card border border-border/20 rounded-lg p-2.5 cursor-pointer hover:border-amber-500/30 transition-colors">
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-1.5">
                         <img src={teamLogo(away)} alt="" className="h-4 w-4" />
@@ -169,15 +180,30 @@ export default function Home() {
           <div className="py-6 border-b border-border/20">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-                <Target className="h-4 w-4 text-emerald-400" />
+                <Target className="h-4 w-4 text-amber-400" />
                 Today's Edge
               </h2>
               <Link href="/experts">
-                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-emerald-400">
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-amber-300">
                   All Expert Picks <ChevronRight className="h-3 w-3 ml-0.5" />
                 </Button>
               </Link>
             </div>
+
+            {consensus && (
+              <Link href="/experts">
+                <div className="mb-3 flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-500/30 bg-gradient-to-r from-amber-500/15 via-amber-500/8 to-transparent cursor-pointer hover:border-amber-500/50 transition-colors">
+                  <span className="text-xl" aria-hidden>🔥</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10px] uppercase tracking-wider font-bold text-amber-300">
+                      Consensus Pick · {consensus.count} experts agree
+                    </div>
+                    <div className="text-sm font-semibold text-foreground truncate">{consensus.selection}</div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-amber-400 flex-shrink-0" />
+                </div>
+              </Link>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {edgePicks.map((pick, i) => (
                 <div key={i} className="flex items-start gap-2.5 p-3 bg-card border border-border/20 rounded-lg">
@@ -219,7 +245,7 @@ export default function Home() {
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Today · {safeGames.length} games</h2>
               <Link href="/todays-games">
-                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-emerald-400 h-6 px-2">
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-amber-300 h-6 px-2">
                   Full Schedule <ChevronRight className="h-3 w-3 ml-0.5" />
                 </Button>
               </Link>
@@ -227,7 +253,7 @@ export default function Home() {
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
               {safeGames.map((game) => (
                 <Link key={game.gameId} href="/todays-games">
-                  <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-card border border-border/20 rounded-full hover:border-emerald-500/20 transition-colors cursor-pointer text-xs">
+                  <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-card border border-border/20 rounded-full hover:border-amber-500/30 transition-colors cursor-pointer text-xs">
                     <img src={teamLogo(game.awayTeamCode)} alt="" className="h-4 w-4" />
                     <span className="font-medium text-foreground">{game.awayTeamCode}</span>
                     <span className="text-zinc-600">@</span>
@@ -250,7 +276,7 @@ export default function Home() {
             { href: '/trivia', emoji: '❓', label: 'Trivia' },
           ].map(link => (
             <Link key={link.href} href={link.href}>
-              <div className="p-3 bg-card border border-border/20 rounded-lg text-center hover:border-emerald-500/20 transition-colors cursor-pointer">
+              <div className="p-3 bg-card border border-border/20 rounded-lg text-center hover:border-amber-500/30 transition-colors cursor-pointer">
                 <span className="text-lg">{link.emoji}</span>
                 <div className="text-[10px] font-medium text-muted-foreground mt-1">{link.label}</div>
               </div>

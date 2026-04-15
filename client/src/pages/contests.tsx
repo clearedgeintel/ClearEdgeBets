@@ -92,7 +92,7 @@ export default function Contests() {
     const groupName = groups.find((g) => g.id === c.groupId)?.name || `Group #${c.groupId}`;
 
     return (
-      <Card className="bg-zinc-900/50 border-border/30 hover:border-amber-500/30 transition-colors">
+      <Card className="play-card bg-zinc-900/50 border-border/30">
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
             <div>

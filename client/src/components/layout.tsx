@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { useLocation } from "wouter";
 import Sidebar from "./sidebar";
 import SidebarRail from "./sidebar-rail";
 import TopNav from "./top-nav";
@@ -10,6 +11,7 @@ interface LayoutProps {
 }
 
 export default function Layout({ children }: LayoutProps) {
+  const [location] = useLocation();
   return (
     <div className="min-h-screen flex">
       {/* Sidebar area — hidden on mobile/tablet, visible on lg+ */}
@@ -29,7 +31,7 @@ export default function Layout({ children }: LayoutProps) {
       <div className="flex-1 flex flex-col min-w-0">
         <TopNav />
         <main className="flex-1 overflow-y-auto pb-16 lg:pb-0">
-          <div className="page-enter">
+          <div key={location} className="page-enter">
             {children}
           </div>
         </main>
