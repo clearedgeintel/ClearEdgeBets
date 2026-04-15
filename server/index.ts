@@ -73,8 +73,31 @@ app.use((req, res, next) => {
   next();
 });
 
+async function promoteAdmin() {
+  const email = process.env.ADMIN_EMAIL || 'tim.hull@clearedgeintel.com';
+  try {
+    const { db } = await import('./db');
+    const { users } = await import('@shared/schema');
+    const { eq } = await import('drizzle-orm');
+    const [existing] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (!existing) {
+      log(`admin seed: ${email} not registered yet — run scripts/seed-admin.mjs to create`);
+      return;
+    }
+    if (!existing.isAdmin || existing.subscriptionTier !== 'elite') {
+      await db.update(users)
+        .set({ isAdmin: true, subscriptionTier: 'elite' })
+        .where(eq(users.id, existing.id));
+      log(`admin seed: promoted ${email} to admin/elite`);
+    }
+  } catch (err: any) {
+    log(`admin seed skipped: ${err.message}`);
+  }
+}
+
 (async () => {
   const server = await registerRoutes(app);
+  await promoteAdmin();
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
