@@ -331,7 +331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(newsletterRouter);
   app.use(virtualBetsRouter);
   app.use(blogRouter);
-  app.use(socialRouter);
+  app.use('/api', socialRouter);
   app.use(parlaysRouter);
   app.use(alertsRouter);
   app.use(contestsRouter);
