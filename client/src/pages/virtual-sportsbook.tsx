@@ -236,7 +236,24 @@ export default function VirtualSportsbook() {
           </div>
 
           {isLoading ? (
-            <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-16 bg-zinc-800/50 rounded-lg animate-pulse" />)}</div>
+            <div className="space-y-1.5">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-card border border-border/20 rounded-lg overflow-hidden animate-pulse">
+                  <div className="h-5 bg-zinc-900/60" />
+                  {[0, 1].map((row) => (
+                    <div key={row} className="grid grid-cols-[1fr_80px_80px_80px] gap-1 px-3 py-1.5 items-center">
+                      <div className="flex items-center gap-2">
+                        <div className="h-5 w-5 rounded-full bg-zinc-800/70" />
+                        <div className="h-3 w-10 bg-zinc-800/70 rounded" />
+                      </div>
+                      <div className="h-7 bg-zinc-800/50 rounded" />
+                      <div className="h-7 bg-zinc-800/50 rounded" />
+                      <div className="h-7 bg-zinc-800/50 rounded" />
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           ) : upcoming.length === 0 ? (
             <div className="text-center py-12 text-zinc-600 text-sm">No upcoming games</div>
           ) : (

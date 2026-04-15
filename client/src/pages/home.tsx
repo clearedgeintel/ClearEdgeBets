@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Pen, History, Target, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Link } from "wouter";
@@ -22,12 +23,12 @@ export default function Home() {
   const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
   const today = new Date().toISOString().split('T')[0];
 
-  const { data: todayGames = [] } = useQuery<TodayGame[]>({ queryKey: ["/api/games"], refetchInterval: 60000 });
-  const { data: yesterdayScores } = useQuery<Record<string, ScoreGame>>({ queryKey: ["/api/scores/yesterday", yesterday], queryFn: () => fetch(`/api/scores/yesterday?date=${yesterday}`).then(r => r.ok ? r.json() : {}), staleTime: 300000 });
+  const { data: todayGames = [], isLoading: gamesLoading } = useQuery<TodayGame[]>({ queryKey: ["/api/games"], refetchInterval: 60000 });
+  const { data: yesterdayScores, isLoading: scoresLoading } = useQuery<Record<string, ScoreGame>>({ queryKey: ["/api/scores/yesterday", yesterday], queryFn: () => fetch(`/api/scores/yesterday?date=${yesterday}`).then(r => r.ok ? r.json() : {}), staleTime: 300000 });
   const { data: nhlScores = [] } = useQuery<any[]>({ queryKey: ["/api/nhl/scores", yesterday], queryFn: () => fetch(`/api/nhl/scores?date=${yesterday}`).then(r => r.json()), staleTime: 300000 });
-  const { data: blogReviews = [] } = useQuery<BlogReview[]>({ queryKey: ['/api/blog/reviews'], queryFn: () => fetch('/api/blog/reviews').then(r => r.json()) });
+  const { data: blogReviews = [], isLoading: blogLoading } = useQuery<BlogReview[]>({ queryKey: ['/api/blog/reviews'], queryFn: () => fetch('/api/blog/reviews').then(r => r.json()) });
   const { data: dailyContent } = useQuery<{ history: { year: number; event: string } | null; picks: Array<{ pick: string; rationale: string }> }>({ queryKey: ['/api/homepage/daily-content'], queryFn: () => fetch('/api/homepage/daily-content').then(r => r.json()), staleTime: 3600000 });
-  const { data: expertPicks = [] } = useQuery<any[]>({ queryKey: ['/api/expert-picks', today], queryFn: () => fetch(`/api/expert-picks?date=${today}`).then(r => r.json()), staleTime: 300000 });
+  const { data: expertPicks = [], isLoading: picksLoading } = useQuery<any[]>({ queryKey: ['/api/expert-picks', today], queryFn: () => fetch(`/api/expert-picks?date=${today}`).then(r => r.json()), staleTime: 300000 });
 
   const safeGames = Array.isArray(todayGames) ? todayGames : [];
   const safeNhlScores = Array.isArray(nhlScores) ? nhlScores : [];
@@ -57,7 +58,17 @@ export default function Home() {
 
   return (
     <div>
-      {/* ── Yesterday's Scores — Card Strip ── */}
+      {/* ── Yesterday's Scores — Card Strip (skeleton) ── */}
+      {scoresLoading && yesterdayGamesList.length === 0 && safeNhlScores.length === 0 && (
+        <div className="border-b border-border/30 bg-zinc-950/60 py-3 px-4">
+          <Skeleton className="h-3 w-24 mb-2" />
+          <div className="flex gap-2 overflow-hidden pb-1">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="flex-shrink-0 w-[130px] h-[70px] rounded-lg" />
+            ))}
+          </div>
+        </div>
+      )}
       {(yesterdayGamesList.length > 0 || safeNhlScores.filter((g: any) => g.status === 'final').length > 0) && (
         <div className="border-b border-border/30 bg-zinc-950/60 py-3 px-4">
           <div className="flex items-center gap-2 mb-2">
@@ -109,6 +120,19 @@ export default function Home() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Morning Roast Hero (skeleton) ── */}
+      {blogLoading && !featured && (
+        <div className="relative aspect-[16/9] sm:aspect-[21/9] bg-zinc-900">
+          <Skeleton className="absolute inset-0 rounded-none" />
+          <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 space-y-2">
+            <Skeleton className="h-4 w-28 bg-zinc-800" />
+            <Skeleton className="h-8 w-3/4 bg-zinc-800" />
+            <Skeleton className="h-8 w-1/2 bg-zinc-800" />
+            <Skeleton className="h-3 w-40 bg-zinc-800 mt-3" />
           </div>
         </div>
       )}
@@ -175,6 +199,27 @@ export default function Home() {
           </div>
         )}
 
+        {/* ── Today's Edge (skeleton) ── */}
+        {picksLoading && edgePicks.length === 0 && (
+          <div className="py-6 border-b border-border/20">
+            <div className="flex items-center justify-between mb-4">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-6 w-24" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-start gap-2.5 p-3 bg-card border border-border/20 rounded-lg">
+                  <Skeleton className="h-6 w-6 rounded-full flex-shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-4 w-4/5" />
+                    <Skeleton className="h-3 w-3/5" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ── Today's Edge (merged picks) ── */}
         {edgePicks.length > 0 && (
           <div className="py-6 border-b border-border/20">
@@ -235,6 +280,21 @@ export default function Home() {
                 </h3>
                 <p className="text-sm text-zinc-400 leading-relaxed">{dailyContent.history.event}</p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Today's Schedule Rail (skeleton) ── */}
+        {gamesLoading && safeGames.length === 0 && (
+          <div className="py-6 border-b border-border/20">
+            <div className="flex items-center justify-between mb-3">
+              <Skeleton className="h-3 w-28" />
+              <Skeleton className="h-6 w-24" />
+            </div>
+            <div className="flex gap-2 overflow-hidden pb-1">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="flex-shrink-0 h-9 w-40 rounded-full" />
+              ))}
             </div>
           </div>
         )}

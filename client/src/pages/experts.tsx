@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { Target, TrendingUp, Users, ChevronDown, ChevronUp, UserPlus, UserMinus, Sparkles, Clock, History } from "lucide-react";
@@ -79,7 +80,7 @@ export default function Experts() {
     });
   };
 
-  const { data: experts = [] } = useQuery<ExpertWithRecord[]>({
+  const { data: experts = [], isLoading: expertsLoading } = useQuery<ExpertWithRecord[]>({
     queryKey: ['/api/experts'],
     queryFn: () => fetch('/api/experts').then(r => r.json()),
   });
@@ -176,6 +177,32 @@ export default function Experts() {
       </div>
 
       <div className="space-y-4">
+        {expertsLoading && experts.length === 0 && Array.from({ length: 5 }).map((_, i) => (
+          <Card key={`sk-${i}`} className="border border-zinc-700/60 overflow-hidden rounded-xl">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-start gap-4">
+                <Skeleton className="h-12 w-12 rounded-full flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-5 w-36" />
+                    <Skeleton className="h-4 w-16 rounded-full" />
+                  </div>
+                  <Skeleton className="h-3 w-4/5" />
+                  <div className="flex gap-2 pt-1">
+                    <Skeleton className="h-5 w-14 rounded-full" />
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                    <Skeleton className="h-5 w-14 rounded-full" />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Skeleton className="h-8 w-16 rounded-md" />
+                  <Skeleton className="h-8 w-16 rounded-md" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
         {experts.map(expert => {
           const isExpanded = !collapsedExperts.has(expert.id);
           const expertPicks = todayPicks.filter(p => p.expertId === expert.id);
