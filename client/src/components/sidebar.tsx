@@ -54,21 +54,19 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
   const { user, hasAccess } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [virtualSportsbookExpanded, setVirtualSportsbookExpanded] = useState(true);
-  const [baseballExpanded, setBaseballExpanded] = useState(true);
-  const [footballExpanded, setFootballExpanded] = useState(false);
-  const [golfExpanded, setGolfExpanded] = useState(false);
+  const [generalExpanded, setGeneralExpanded] = useState(true);
+  const [baseballExpanded, setBaseballExpanded] = useState(false);
   const [hockeyExpanded, setHockeyExpanded] = useState(false);
-  const [basketballExpanded, setBasketballExpanded] = useState(false);
 
 
 
   const sportsNavigation = [
     {
-      sport: "Baseball",
-      icon: HomePlate,
-      expanded: baseballExpanded,
-      setExpanded: setBaseballExpanded,
-      active: location === "/" || location.startsWith("/baseball") || location === "/games" || location === "/todays-games" || location === "/daily-picks" || location === "/daily-digest" || location === "/my-bets" || location === "/performance-tracking",
+      sport: "General",
+      icon: Home,
+      expanded: generalExpanded,
+      setExpanded: setGeneralExpanded,
+      active: location === "/feed" || location === "/blog" || location === "/experts" || location === "/expert-leaderboard" || location === "/team-power-scores" || location === "/player-rankings" || location === "/my-bets" || location === "/trivia" || location === "/newsletter" || location === "/odds-comparison" || location === "/hot-trends" || location === "/enhanced-odds" || location === "/kelly-calculator" || location === "/expected-value" || location === "/ai-assistant" || location === "/parlay-builder" || location === "/prop-finder" || location === "/player-prop-builder" || location === "/analytics" || location === "/performance-tracking",
       freeItems: [
         {
           name: "Feed",
@@ -90,13 +88,6 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           icon: Target,
           current: location === "/experts" || location === "/expert-leaderboard",
           description: "5 AI analysts with tracked picks"
-        },
-        {
-          name: "Today's Matchups",
-          href: "/todays-games",
-          icon: Home,
-          current: location === "/games" || location === "/todays-games",
-          description: "Today's schedule with odds"
         },
         {
           name: "Power Rankings",
@@ -173,6 +164,64 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
       ]
     },
     {
+      sport: "Prediction Game",
+      icon: Trophy,
+      featured: true,
+      expanded: virtualSportsbookExpanded,
+      setExpanded: setVirtualSportsbookExpanded,
+      active: location === "/virtual-sportsbook" || location === "/weekly-leaderboard" || location === "/groups" || location.startsWith("/contests"),
+      freeItems: [
+        {
+          name: "Play Now",
+          href: "/virtual-sportsbook",
+          icon: CircleDot,
+          current: location === "/virtual-sportsbook",
+          description: "Make predictions with virtual balance"
+        },
+        {
+          name: "My Contests",
+          href: "/contests",
+          icon: Trophy,
+          current: location === "/contests" || location.startsWith("/contests/"),
+          description: "Group contests — create or join"
+        },
+        {
+          name: "Weekly Leaderboard",
+          href: "/weekly-leaderboard",
+          icon: BarChart3,
+          current: location === "/weekly-leaderboard",
+          description: "Compete with other users weekly"
+        },
+        {
+          name: "Groups",
+          href: "/groups",
+          icon: Users,
+          current: location === "/groups",
+          description: "Create groups and invite friends"
+        }
+      ],
+      proItems: [],
+      eliteItems: []
+    },
+    {
+      sport: "Baseball",
+      icon: HomePlate,
+      expanded: baseballExpanded,
+      setExpanded: setBaseballExpanded,
+      active: location === "/games" || location === "/todays-games" || location.startsWith("/baseball"),
+      freeItems: [
+        {
+          name: "Today's Matchups",
+          href: "/todays-games",
+          icon: Calendar,
+          current: location === "/games" || location === "/todays-games",
+          description: "Today's MLB schedule with odds"
+        }
+      ],
+      proItems: [],
+      eliteItems: []
+    },
+    {
       sport: "Hockey",
       icon: CircleDot,
       expanded: hockeyExpanded,
@@ -189,38 +238,6 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
       ],
       proItems: [],
       eliteItems: [],
-    },
-    {
-      sport: "Prediction Game",
-      icon: CircleDot,
-      expanded: virtualSportsbookExpanded,
-      setExpanded: setVirtualSportsbookExpanded,
-      active: location === "/virtual-sportsbook" || location === "/weekly-leaderboard" || location === "/groups",
-      freeItems: [
-        {
-          name: "Virtual Predictions",
-          href: "/virtual-sportsbook",
-          icon: CircleDot,
-          current: location === "/virtual-sportsbook",
-          description: "Practice predictions with $1,000 virtual balance"
-        },
-        {
-          name: "Weekly Leaderboard",
-          href: "/weekly-leaderboard",
-          icon: Trophy,
-          current: location === "/weekly-leaderboard",
-          description: "Compete with other users weekly"
-        },
-        {
-          name: "Groups",
-          href: "/groups",
-          icon: Users,
-          current: location === "/groups",
-          description: "Create groups and invite friends"
-        }
-      ],
-      proItems: [],
-      eliteItems: []
     }
   ];
 
@@ -330,17 +347,28 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
               <button
                 onClick={() => sport.setExpanded(!sport.expanded)}
                 className={`w-full flex items-center justify-between px-3 py-3 rounded-lg transition-all duration-200 group ${
-                  sport.active
+                  (sport as any).featured
+                    ? sport.active
+                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                      : "bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/15"
+                    : sport.active
                     ? "bg-zinc-800/50 text-white"
                     : "text-zinc-400 hover:bg-zinc-800/30 hover:text-white"
                 }`}
               >
                 <div className="flex items-center space-x-3">
-                  <SportIcon className={`h-5 w-5 transition-colors duration-200 ${sport.active ? "text-white" : "text-zinc-500 group-hover:text-white"}`} />
+                  <SportIcon className={`h-5 w-5 transition-colors duration-200 ${
+                    (sport as any).featured
+                      ? "text-amber-400"
+                      : sport.active ? "text-white" : "text-zinc-500 group-hover:text-white"
+                  }`} />
                   <span className="font-semibold transition-colors duration-200">{sport.sport}</span>
+                  {(sport as any).featured && (
+                    <Badge className="h-5 text-[10px] bg-amber-500/30 text-amber-200 border-amber-500/40 hover:bg-amber-500/30">NEW</Badge>
+                  )}
                 </div>
-                {sport.expanded ? 
-                  <ChevronDown className="h-4 w-4" /> : 
+                {sport.expanded ?
+                  <ChevronDown className="h-4 w-4" /> :
                   <ChevronRight className="h-4 w-4" />
                 }
               </button>

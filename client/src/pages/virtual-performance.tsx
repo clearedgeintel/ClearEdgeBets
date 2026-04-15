@@ -6,6 +6,12 @@ import { CalendarDays, TrendingUp, TrendingDown, Target, DollarSign, BarChart3, 
 import { useState, useMemo } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+function teamLogo(code: string, sport: 'mlb' | 'nhl' = 'mlb') {
+  if (!code) return '';
+  const c = code.toUpperCase() === 'WAS' ? 'wsh' : code.toLowerCase();
+  return `https://a.espncdn.com/i/teamlogos/${sport}/500/scoreboard/${c}.png`;
+}
+
 interface VirtualBet {
   id: number;
   userId: number;
@@ -512,13 +518,25 @@ export default function VirtualPerformance() {
                               <div className="space-y-2">
                                 <div className="text-sm text-slate-400 font-medium">Final Score</div>
                                 <div className="flex items-center justify-between bg-slate-900 rounded-lg p-3">
-                                  <div className="text-center">
-                                    <div className="text-white font-medium">{gameResult.awayTeam}</div>
+                                  <div className="flex flex-col items-center gap-1">
+                                    <img
+                                      src={teamLogo(gameResult.awayTeam)}
+                                      alt={gameResult.awayTeam}
+                                      className="h-8 w-8"
+                                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                    />
+                                    <div className="text-white font-medium text-sm">{gameResult.awayTeam}</div>
                                     <div className="text-2xl font-bold text-blue-400">{gameResult.awayScore}</div>
                                   </div>
                                   <div className="text-slate-400 text-sm">@</div>
-                                  <div className="text-center">
-                                    <div className="text-white font-medium">{gameResult.homeTeam}</div>
+                                  <div className="flex flex-col items-center gap-1">
+                                    <img
+                                      src={teamLogo(gameResult.homeTeam)}
+                                      alt={gameResult.homeTeam}
+                                      className="h-8 w-8"
+                                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                    />
+                                    <div className="text-white font-medium text-sm">{gameResult.homeTeam}</div>
                                     <div className="text-2xl font-bold text-blue-400">{gameResult.homeScore}</div>
                                   </div>
                                 </div>

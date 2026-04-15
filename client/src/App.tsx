@@ -44,6 +44,8 @@ const GameSummary = lazy(() => import("@/pages/game-summary"));
 const VirtualSportsbook = lazy(() => import("@/pages/virtual-sportsbook"));
 const WeeklyLeaderboard = lazy(() => import("@/pages/weekly-leaderboard"));
 const Groups = lazy(() => import("@/pages/groups"));
+const Contests = lazy(() => import("@/pages/contests"));
+const ContestDetail = lazy(() => import("@/pages/contest-detail"));
 const StripeSetup = lazy(() => import("@/pages/stripe-setup"));
 const PlayerPropBuilder = lazy(() => import("@/pages/player-prop-builder"));
 const Help = lazy(() => import("@/pages/help"));
@@ -125,6 +127,8 @@ function Router() {
           <Route path="/virtual-performance">{() => <ProtectedRoute component={VirtualPerformance} />}</Route>
           <Route path="/weekly-leaderboard">{() => <ProtectedRoute component={WeeklyLeaderboard} />}</Route>
           <Route path="/groups">{() => <ProtectedRoute component={Groups} />}</Route>
+          <Route path="/contests">{() => <ProtectedRoute component={Contests} />}</Route>
+          <Route path="/contests/:id">{(params) => <ProtectedRoute component={() => <ContestDetail id={params.id} />} />}</Route>
           <Route path="/editors-desk">{() => <ProtectedRoute component={EditorsDesk} />}</Route>
           <Route path="/performance-tracking">{() => <ProtectedRoute component={PerformanceTracking} />}</Route>
           <Route path="/analytics">{() => <ProtectedRoute component={PerformanceAnalytics} />}</Route>

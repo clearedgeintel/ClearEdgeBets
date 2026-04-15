@@ -549,6 +549,42 @@ export const groupLeaderboards = pgTable("group_leaderboards", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Contests - finite group-scoped competitions with configurable duration + starting bankroll
+export const contests = pgTable("contests", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").notNull().references(() => groups.id),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  startingBankroll: integer("starting_bankroll").notNull().default(100000), // cents — $1,000
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  status: text("status").notNull().default("scheduled"), // scheduled | active | completed | cancelled
+  winnerId: integer("winner_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Contest entries - per-user bankroll scoped to a contest
+export const contestEntries = pgTable("contest_entries", {
+  id: serial("id").primaryKey(),
+  contestId: integer("contest_id").notNull().references(() => contests.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  currentBalance: integer("current_balance").notNull(), // cents
+  totalBets: integer("total_bets").default(0),
+  wonBets: integer("won_bets").default(0),
+  lostBets: integer("lost_bets").default(0),
+  joinedAt: timestamp("joined_at").defaultNow(),
+});
+
+export const insertContestSchema = createInsertSchema(contests);
+export type InsertContest = z.infer<typeof insertContestSchema>;
+export type Contest = typeof contests.$inferSelect;
+
+export const insertContestEntrySchema = createInsertSchema(contestEntries);
+export type InsertContestEntry = z.infer<typeof insertContestEntrySchema>;
+export type ContestEntry = typeof contestEntries.$inferSelect;
+
 // Type exports for groups
 export const insertGroupSchema = createInsertSchema(groups);
 export type InsertGroup = z.infer<typeof insertGroupSchema>;
@@ -610,6 +646,7 @@ export const virtualBets = pgTable("virtual_bets", {
   settledAt: timestamp("settled_at"),
   notes: text("notes"),
   confidence: integer("confidence"),
+  contestId: integer("contest_id"),
 });
 
 // Virtual Betting Slip - Temporary storage for unsaved virtual bets

@@ -285,7 +285,16 @@ class SchedulerService {
       if (report.betsSettled + report.virtualBetsSettled > 0) {
         logger.info(`Settlement: ${report.gamesProcessed} games, ${report.betsSettled} real, ${report.virtualBetsSettled} virtual${report.errors.length > 0 ? `, ${report.errors.length} errors` : ''}`);
       }
-      
+
+      // Tick contest state: start scheduled ones, complete expired ones
+      try {
+        const { completeExpiredContests } = await import('../routes/contests');
+        const closed = await completeExpiredContests();
+        if (closed > 0) logger.info(`Contests completed: ${closed}`);
+      } catch (e) {
+        console.error('Contest tick failed:', e);
+      }
+
     } catch (error) {
       console.error('❌ Scheduled bet settlement failed:', error);
     }

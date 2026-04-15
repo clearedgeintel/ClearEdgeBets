@@ -147,13 +147,18 @@ export async function runSettlement(options?: {
                 settledAt: new Date(),
               }).where(eq(virtualBets.id, bet.id));
 
-              // Update virtual balance
+              // Update balance — contest-scoped bets update the contest entry only,
+              // regular bets update the main virtual balance.
               if (bet.userId) {
-                const balanceChange = result.outcome === 'win' ? Math.round(result.payout) - stake
-                  : result.outcome === 'push' || result.outcome === 'void' ? 0
-                  : 0; // loss: stake already deducted on placement
-
-                if (result.outcome === 'win') {
+                if (bet.contestId) {
+                  const payoutCents = Math.round(result.payout);
+                  const mappedResult: 'win' | 'loss' | 'push' =
+                    result.outcome === 'win' ? 'win'
+                      : (result.outcome === 'push' || result.outcome === 'void') ? 'push'
+                      : 'loss';
+                  const { applyContestSettlement } = await import('../routes/contests');
+                  await applyContestSettlement(bet.id, mappedResult, payoutCents);
+                } else if (result.outcome === 'win') {
                   await db.update(users).set({
                     virtualBalance: sql`${users.virtualBalance} + ${Math.round(result.payout)}`,
                     totalVirtualWinnings: sql`${users.totalVirtualWinnings} + ${Math.round(result.payout)}`,

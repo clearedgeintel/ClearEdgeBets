@@ -73,6 +73,15 @@
 - [ ] Email + Telegram daily alerts (Resend + Telegram bot)
 - [ ] Player props system (use existing schema + Tank01/ESPN data)
 
+### Prediction Game Expansion (April 2026)
+- [x] **Nav IA reorg** — general items (Morning Roast, Expert Panel, Feed, Newsletter, etc.) lifted out of the Baseball sport collapsible into a flat "General" section; Prediction Game promoted to its own featured nav block with NEW badge; sport sections now contain only sport-scoped items (schedules)
+- [x] **Prediction Game visual lift** — team logos on virtual sportsbook game cards and virtual performance final-score panels; `teamLogo()` helper made sport-aware (`mlb` | `nhl`)
+- [x] **Group Contests v1** — group-scoped finite competitions with configurable start date, duration (1/3/7/14/30 days), and starting bankroll ($500 / $1k / $5k / $10k). Each entrant gets an isolated contest bankroll; settlement routes contest bets to `contestEntries.currentBalance` instead of the main virtual balance. Winner = highest balance at `endDate`. Scheduler promotes `scheduled` → `active` and closes expired contests each tick.
+  - Schema: `contests`, `contestEntries`, `virtualBets.contestId`
+  - Routes: `server/routes/contests.ts` (CRUD + join + contest-scoped bet placement + leaderboard)
+  - UI: `/contests` (tabs: active/upcoming/completed), `/contests/:id` (leaderboard + your bets)
+- [ ] **Group Contests v2** — sport filter, bet-type rules (straight-only vs parlays, min/max stake), alternative scoring modes (ROI / win-rate / points-per-pick), entry fees in coins, max entrants, invite-only, prize payouts (winner-take-all or top-3 coin splits), public/global contests, contest chat, rank-change notifications
+
 ---
 
 ## Phase 2 — Product Expansion (Q2–Q3 2026)
