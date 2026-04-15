@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ExpertAvatar } from "@/components/expert-avatar";
 import { Pen, History, Target, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Link } from "wouter";
@@ -12,7 +13,7 @@ function teamLogo(code: string) {
   return `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${c}.png`;
 }
 
-const EXPERT_AVATARS: Record<string, string> = { contrarian: '🕵️‍♂️', quant: '🧑‍💻', sharp: '🎯', homie: '😄', closer: '⏰' };
+const EMOJI_FALLBACK: Record<string, string> = { contrarian: '🕵️‍♂️', quant: '🧑‍💻', sharp: '🎯', homie: '😄', closer: '⏰' };
 
 interface ScoreGame { gameID: string; away: string; home: string; lineScore?: { away?: { R?: string }; home?: { R?: string } }; }
 interface BlogReview { id: number; title: string; content: string; author: string; authorMood?: string; heroImage?: string; awayTeam: string; homeTeam: string; awayScore: number; homeScore: number; awayLogo?: string; homeLogo?: string; }
@@ -29,6 +30,8 @@ export default function Home() {
   const { data: blogReviews = [], isLoading: blogLoading } = useQuery<BlogReview[]>({ queryKey: ['/api/blog/reviews'], queryFn: () => fetch('/api/blog/reviews').then(r => r.json()) });
   const { data: dailyContent } = useQuery<{ history: { year: number; event: string } | null; picks: Array<{ pick: string; rationale: string }> }>({ queryKey: ['/api/homepage/daily-content'], queryFn: () => fetch('/api/homepage/daily-content').then(r => r.json()), staleTime: 3600000 });
   const { data: expertPicks = [], isLoading: picksLoading } = useQuery<any[]>({ queryKey: ['/api/expert-picks', today], queryFn: () => fetch(`/api/expert-picks?date=${today}`).then(r => r.json()), staleTime: 300000 });
+  const { data: experts = [] } = useQuery<Array<{ id: string; avatar: string; name: string }>>({ queryKey: ['/api/experts'], queryFn: () => fetch('/api/experts').then(r => r.json()), staleTime: 600000 });
+  const expertById = new Map(Array.isArray(experts) ? experts.map((e) => [e.id, e]) : []);
 
   const safeGames = Array.isArray(todayGames) ? todayGames : [];
   const safeNhlScores = Array.isArray(nhlScores) ? nhlScores : [];
@@ -41,8 +44,22 @@ export default function Home() {
 
   // Merge AI picks + expert picks into "Today's Edge"
   const edgePicks = [
-    ...safeExpertPicks.slice(0, 4).map((p: any) => ({ source: EXPERT_AVATARS[p.expertId] || '🎯', label: p.expertId, pick: p.selection, rationale: p.rationale, confidence: p.confidence })),
-    ...(dailyContent?.picks || []).slice(0, 2).map((p) => ({ source: '🤖', label: 'AI', pick: p.pick, rationale: p.rationale, confidence: null as number | null })),
+    ...safeExpertPicks.slice(0, 4).map((p: any) => ({
+      avatar: expertById.get(p.expertId)?.avatar || EMOJI_FALLBACK[p.expertId] || '🎯',
+      name: expertById.get(p.expertId)?.name || p.expertId,
+      label: p.expertId,
+      pick: p.selection,
+      rationale: p.rationale,
+      confidence: p.confidence,
+    })),
+    ...(dailyContent?.picks || []).slice(0, 2).map((p) => ({
+      avatar: '🤖',
+      name: 'AI',
+      label: 'AI',
+      pick: p.pick,
+      rationale: p.rationale,
+      confidence: null as number | null,
+    })),
   ].slice(0, 6);
 
   // Consensus detection — 3+ experts on the same selection
@@ -252,7 +269,7 @@ export default function Home() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {edgePicks.map((pick, i) => (
                 <div key={i} className="flex items-start gap-2.5 p-3 bg-card border border-border/20 rounded-lg">
-                  <span className="text-lg flex-shrink-0 mt-0.5">{pick.source}</span>
+                  <ExpertAvatar avatar={pick.avatar} name={pick.name} size="md" className="flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-foreground">{pick.pick}</div>
                     <div className="text-[10px] text-zinc-500 mt-0.5 line-clamp-1">{pick.rationale}</div>

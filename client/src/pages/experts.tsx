@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ExpertAvatar } from "@/components/expert-avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { Target, TrendingUp, Users, ChevronDown, ChevronUp, UserPlus, UserMinus, Sparkles, Clock, History } from "lucide-react";
@@ -218,7 +219,7 @@ export default function Experts() {
                 <div className="p-3 sm:p-4 cursor-pointer hover:bg-zinc-800/20 transition-colors"
                   onClick={() => toggleExpert(expert.id)}>
                   <div className="flex items-center gap-3">
-                    <div className="text-2xl sm:text-3xl flex-shrink-0">{expert.avatar}</div>
+                    <ExpertAvatar avatar={expert.avatar} name={expert.name} size="lg" className="flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <h3 className="font-bold text-sm sm:text-base text-foreground">{expert.name}</h3>
