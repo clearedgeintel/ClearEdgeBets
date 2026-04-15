@@ -69,16 +69,23 @@ export default function Groups() {
 
   const createGroupMutation = useMutation({
     mutationFn: async (groupData: typeof newGroup) => {
-      return await apiRequest('POST', '/api/groups', groupData);
+      const res = await apiRequest('POST', '/api/groups', groupData);
+      return await (res as any).json();
     },
-    onSuccess: () => {
+    onSuccess: (created: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
       setCreateDialogOpen(false);
       setNewGroup({ name: '', description: '', isPrivate: false, maxMembers: 50 });
-      toast({
-        title: "Success",
-        description: "Group created successfully!",
-      });
+      const code = created?.inviteCode;
+      if (code) {
+        navigator.clipboard.writeText(code).catch(() => {});
+        toast({
+          title: "Group created",
+          description: `Invite code: ${code} (copied to clipboard) — share this to invite friends.`,
+        });
+      } else {
+        toast({ title: "Success", description: "Group created successfully!" });
+      }
     },
     onError: (error: any) => {
       toast({
@@ -90,8 +97,9 @@ export default function Groups() {
   });
 
   const joinGroupMutation = useMutation({
-    mutationFn: async ({ groupId, inviteCode }: { groupId: number; inviteCode: string }) => {
-      return await apiRequest('POST', `/api/groups/${groupId}/join`, { inviteCode });
+    mutationFn: async (inviteCode: string) => {
+      const res = await apiRequest('POST', '/api/groups/join-by-code', { inviteCode });
+      return await (res as any).json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
@@ -177,19 +185,7 @@ export default function Groups() {
       });
       return;
     }
-    
-    // Find group by invite code
-    const group = groups.find((g: Group) => g.inviteCode === joinCode.trim().toUpperCase());
-    if (!group) {
-      toast({
-        title: "Error",
-        description: "Invalid invite code",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    joinGroupMutation.mutate({ groupId: group.id, inviteCode: joinCode.trim() });
+    joinGroupMutation.mutate(joinCode.trim());
   };
 
   const copyInviteCode = (inviteCode: string) => {

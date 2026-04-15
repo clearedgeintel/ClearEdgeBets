@@ -90,6 +90,30 @@ router.get("/groups/:groupId/members", async (req, res) => {
   }
 });
 
+// Join a group by invite code (no membership needed — this is how new members get in)
+router.post("/groups/join-by-code", async (req, res) => {
+  try {
+    const userId = (req.session as any)?.userId;
+    if (!userId) return res.status(401).json({ error: "Not authenticated" });
+
+    const code = (req.body?.inviteCode || "").trim().toUpperCase();
+    if (!code) return res.status(400).json({ error: "Invite code is required" });
+
+    const all = await storage.getAllGroups();
+    const group = all.find((g) => (g.inviteCode || "").toUpperCase() === code);
+    if (!group) return res.status(404).json({ error: "Invalid invite code" });
+
+    const existing = await storage.getUserGroupRole(group.id, userId);
+    if (existing) return res.status(400).json({ error: "Already a member of this group" });
+
+    const membership = await storage.addGroupMember(group.id, userId);
+    res.json({ group, membership });
+  } catch (error) {
+    console.error("Error joining by code:", error);
+    res.status(500).json({ error: "Failed to join group" });
+  }
+});
+
 router.post("/groups/:groupId/join", async (req, res) => {
   try {
     const userId = (req.session as any)?.userId;
