@@ -30,9 +30,13 @@ export default function MobileNav() {
           const showBadge = featured && activeCount > 0;
           return (
             <Link key={href} href={href}>
-              <button className={`relative flex flex-col items-center justify-center gap-0.5 w-16 py-1 transition-colors ${active ? 'text-amber-400' : featured ? 'text-amber-300/80' : 'text-zinc-500'}`}>
+              <button
+                aria-label={showBadge ? `${label} (${activeCount} active)` : label}
+                aria-current={active ? 'page' : undefined}
+                className={`relative flex flex-col items-center justify-center gap-0.5 w-16 py-1 transition-colors ${active ? 'text-amber-400' : featured ? 'text-amber-300/80' : 'text-zinc-500'}`}
+              >
                 <div className="relative">
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-5 w-5" aria-hidden="true" />
                   {showBadge && (
                     <span className="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-amber-500 text-[9px] font-bold text-black flex items-center justify-center tabular-nums">
                       {activeCount > 9 ? '9+' : activeCount}

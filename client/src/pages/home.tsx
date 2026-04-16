@@ -111,14 +111,14 @@ export default function Home() {
                   <div className="flex-shrink-0 w-[130px] bg-card border border-border/20 rounded-lg p-2.5 cursor-pointer hover:border-amber-500/30 transition-colors">
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-1.5">
-                        <img src={teamLogo(away)} alt="" className="h-4 w-4" />
+                        <img src={teamLogo(away)} alt="" loading="lazy" decoding="async" className="h-4 w-4" />
                         <span className={`text-xs font-medium ${awayR > homeR ? 'text-foreground' : 'text-zinc-500'}`}>{away}</span>
                       </div>
                       <span className={`text-sm font-bold tabular-nums ${awayR > homeR ? 'text-foreground' : 'text-zinc-500'}`}>{awayR}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        <img src={teamLogo(home)} alt="" className="h-4 w-4" />
+                        <img src={teamLogo(home)} alt="" loading="lazy" decoding="async" className="h-4 w-4" />
                         <span className={`text-xs font-medium ${homeR > awayR ? 'text-foreground' : 'text-zinc-500'}`}>{home}</span>
                       </div>
                       <span className={`text-sm font-bold tabular-nums ${homeR > awayR ? 'text-foreground' : 'text-zinc-500'}`}>{homeR}</span>
@@ -167,7 +167,13 @@ export default function Home() {
         <Link href="/blog">
           <div className="relative aspect-[16/9] sm:aspect-[21/9] bg-zinc-900 cursor-pointer group">
             {featured.heroImage ? (
-              <img src={featured.heroImage} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700" />
+              <img
+                src={featured.heroImage}
+                alt={featured.title}
+                fetchPriority="high"
+                decoding="async"
+                className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700"
+              />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
                 <div className="flex items-center gap-6">
@@ -360,11 +366,11 @@ export default function Home() {
               {safeGames.map((game) => (
                 <Link key={game.gameId} href="/todays-games">
                   <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-card border border-border/20 rounded-full hover:border-amber-500/30 transition-colors cursor-pointer text-xs">
-                    <img src={teamLogo(game.awayTeamCode)} alt="" className="h-4 w-4" />
+                    <img src={teamLogo(game.awayTeamCode)} alt="" loading="lazy" decoding="async" className="h-4 w-4" />
                     <span className="font-medium text-foreground">{game.awayTeamCode}</span>
                     <span className="text-zinc-600">@</span>
                     <span className="font-medium text-foreground">{game.homeTeamCode}</span>
-                    <img src={teamLogo(game.homeTeamCode)} alt="" className="h-4 w-4" />
+                    <img src={teamLogo(game.homeTeamCode)} alt="" loading="lazy" decoding="async" className="h-4 w-4" />
                     <span className="text-zinc-600 text-[10px]">{game.gameTime}</span>
                   </div>
                 </Link>
