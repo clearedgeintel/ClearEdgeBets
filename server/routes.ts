@@ -984,6 +984,9 @@ Return JSON:
       // 1. Morning Roast recaps
       const reviews = await storage.getRecentBlogReviews(15);
       reviews.forEach(r => {
+        // Derive team codes from gameId (format: "YYYY-MM-DD_AWAY@HOME")
+        const parts = (r.gameId || '').split('_')[1]?.split('@') || [];
+        const teams = [parts[0], parts[1]].filter(Boolean);
         items.push({
           id: `recap-${r.id}`,
           type: 'recap',
@@ -995,7 +998,7 @@ Return JSON:
           image: r.heroImage || undefined,
           awayLogo: r.awayLogo || undefined,
           homeLogo: r.homeLogo || undefined,
-          meta: { venue: r.venue, mood: r.authorMood, slug: r.slug },
+          meta: { venue: r.venue, mood: r.authorMood, slug: r.slug, teams, sport: r.sport || 'mlb' },
           timestamp: r.createdAt.toISOString ? r.createdAt.toISOString() : String(r.createdAt),
         });
       });
@@ -1009,6 +1012,8 @@ Return JSON:
       ]);
       const AVATARS: Record<string, string> = { contrarian: '🕵️‍♂️', quant: '🧑‍💻', sharp: '🎯', homie: '😄', closer: '⏰' };
       [...todayPicks, ...yesterdayPicks].forEach(p => {
+        const parts = (p.gameId || '').split('_')[1]?.split('@') || [];
+        const teams = [parts[0], parts[1]].filter(Boolean);
         items.push({
           id: `pick-${p.id}`,
           type: 'expert_pick',
@@ -1016,7 +1021,7 @@ Return JSON:
           subtitle: p.rationale,
           author: p.expertId,
           authorAvatar: AVATARS[p.expertId] || '🎯',
-          meta: { confidence: p.confidence, odds: p.odds, result: p.result, pickType: p.pickType, gameId: p.gameId },
+          meta: { confidence: p.confidence, odds: p.odds, result: p.result, pickType: p.pickType, gameId: p.gameId, teams, sport: p.sport || 'mlb' },
           timestamp: p.createdAt.toISOString ? p.createdAt.toISOString() : String(p.createdAt),
         });
       });

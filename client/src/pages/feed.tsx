@@ -3,9 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Pen, Target, Mail, ChevronRight, Clock } from "lucide-react";
+import { Pen, Target, Mail, ChevronRight, Clock, Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { FadeIn } from "@/components/fade-in";
+import { useAuth } from "@/contexts/auth-context";
 
 interface FeedItem {
   id: string;
@@ -43,6 +44,7 @@ function timeAgo(ts: string): string {
 
 export default function Feed() {
   const [filter, setFilter] = useState<string>('all');
+  const { user } = useAuth();
 
   const { data: items = [], isLoading } = useQuery<FeedItem[]>({
     queryKey: ['/api/feed'],
@@ -50,7 +52,28 @@ export default function Feed() {
     refetchInterval: 60000,
   });
 
-  const filtered = filter === 'all' ? items : items.filter(i => i.type === filter);
+  // "For You" weighting: build set of favorite team codes from user's prefs.
+  // Codes are stored as "sport:code" (e.g. "mlb:NYY") — extract just the code.
+  const favoriteCodes = new Set<string>(
+    (user?.favoriteTeams || []).map((t) => t.split(':').pop() || '').filter(Boolean)
+  );
+  const isForYou = (i: FeedItem) => {
+    if (favoriteCodes.size === 0) return false;
+    const teams: string[] = (i.meta?.teams as string[]) || [];
+    return teams.some((t) => favoriteCodes.has(t));
+  };
+
+  const reordered = favoriteCodes.size > 0
+    ? [...items].sort((a, b) => {
+        const aFor = isForYou(a) ? 1 : 0;
+        const bFor = isForYou(b) ? 1 : 0;
+        if (aFor !== bFor) return bFor - aFor;
+        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+      })
+    : items;
+
+  const filtered = filter === 'all' ? reordered : reordered.filter(i => i.type === filter);
+  const forYouCount = filtered.filter(isForYou).length;
 
   const filters = [
     { key: 'all', label: 'All' },
@@ -64,7 +87,11 @@ export default function Feed() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-xl font-bold text-foreground tracking-tight">Feed</h1>
-        <p className="text-xs text-muted-foreground mt-1">Everything happening across ClearEdge Sports</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {favoriteCodes.size > 0 && forYouCount > 0
+            ? <>Personalized for your {favoriteCodes.size} team{favoriteCodes.size !== 1 ? 's' : ''} · {forYouCount} item{forYouCount !== 1 ? 's' : ''} matched</>
+            : 'Everything happening across ClearEdge Sports'}
+        </p>
       </div>
 
       {/* Filter tabs */}
@@ -131,6 +158,11 @@ export default function Feed() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <Badge className={`border text-[9px] px-1 py-0 ${config.color}`}>{config.label}</Badge>
+                        {isForYou(item) && (
+                          <Badge className="border text-[9px] px-1 py-0 bg-amber-500/15 text-amber-300 border-amber-500/30 flex items-center gap-0.5">
+                            <Sparkles className="h-2.5 w-2.5" /> For You
+                          </Badge>
+                        )}
                         <span className="text-[10px] text-zinc-600 flex items-center gap-0.5">
                           <Clock className="h-2.5 w-2.5" />{timeAgo(item.timestamp)}
                         </span>
