@@ -14,7 +14,8 @@ function teamLogo(code: string) {
 }
 
 interface TeamPowerScore {
-  team: string;
+  team: string;           // full name, e.g. "New York Yankees"
+  teamCode: string;       // abbreviation, e.g. "NYY"
   advBattingScore: number;
   pitchingScore: number;
   teamPowerScore: number;
@@ -116,8 +117,8 @@ export default function TeamPowerScores() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              {topTeam && <img src={teamLogo(topTeam.team)} alt="" className="h-8 w-8" />}
-              <div className="text-2xl font-bold text-green-600">{topTeam ? getTeamName(topTeam.team) : ''}</div>
+              {topTeam && <img src={teamLogo(topTeam.teamCode || topTeam.team)} alt="" className="h-8 w-8" />}
+              <div className="text-2xl font-bold text-green-600">{topTeam ? (topTeam.team || getTeamName(topTeam.teamCode)) : ''}</div>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Power Score: {topTeam?.teamPowerScore} (Rank #{topTeam?.rank})
@@ -160,8 +161,8 @@ export default function TeamPowerScores() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              {bottomTeam && <img src={teamLogo(bottomTeam.team)} alt="" className="h-8 w-8" />}
-              <div className="text-2xl font-bold text-red-600">{bottomTeam ? getTeamName(bottomTeam.team) : ''}</div>
+              {bottomTeam && <img src={teamLogo(bottomTeam.teamCode || bottomTeam.team)} alt="" className="h-8 w-8" />}
+              <div className="text-2xl font-bold text-red-600">{bottomTeam ? (bottomTeam.team || getTeamName(bottomTeam.teamCode)) : ''}</div>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Power Score: {bottomTeam?.teamPowerScore} (Rank #{bottomTeam?.rank})
@@ -216,15 +217,16 @@ export default function TeamPowerScores() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Link href={`/team/${team.team}`} className="flex items-center gap-3 group">
+                    <Link href={`/team/${team.teamCode || team.team}`} className="flex items-center gap-3 group">
                       <img
-                        src={teamLogo(team.team)}
+                        src={teamLogo(team.teamCode || team.team)}
                         alt={team.team}
                         className="h-8 w-8 group-hover:scale-110 transition-transform"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                       />
                       <div>
-                        <div className="font-bold text-base group-hover:text-emerald-400 transition-colors">{getTeamName(team.team)}</div>
-                        <div className="text-xs text-muted-foreground">{team.team} • {getTeamDivision(team.team)}</div>
+                        <div className="font-bold text-base group-hover:text-emerald-400 transition-colors">{team.team || getTeamName(team.teamCode)}</div>
+                        <div className="text-xs text-muted-foreground">{team.teamCode || team.team} • {getTeamDivision(team.teamCode || team.team)}</div>
                       </div>
                     </Link>
                   </TableCell>
