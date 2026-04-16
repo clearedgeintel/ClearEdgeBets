@@ -189,6 +189,20 @@ router.post("/api/contests/:id/join", async (req, res) => {
       .limit(1);
     if (existing) return res.json(existing);
 
+    // v2 gate: max entrants
+    if (contest.maxEntrants) {
+      const currentEntrants = await db
+        .select({ id: contestEntries.id })
+        .from(contestEntries)
+        .where(eq(contestEntries.contestId, id));
+      if (currentEntrants.length >= contest.maxEntrants) {
+        return res.status(400).json({ error: "Contest is full" });
+      }
+    }
+
+    // v2: entry fee enforcement deferred until a dedicated coin ledger exists;
+    // for now we store the config on the contest but don't deduct.
+
     const [entry] = await db
       .insert(contestEntries)
       .values({
@@ -238,6 +252,21 @@ router.post("/api/contests/:id/bets", async (req, res) => {
     if (stakeCents <= 0) return res.status(400).json({ error: "Stake must be positive" });
     if (entry.currentBalance < stakeCents) {
       return res.status(400).json({ error: "Insufficient contest balance" });
+    }
+
+    // v2 gates: sport filter, parlay toggle, min/max stake
+    const effectiveSport = sport || "mlb";
+    if (contest.sport && contest.sport !== effectiveSport) {
+      return res.status(400).json({ error: `This contest is ${contest.sport.toUpperCase()}-only` });
+    }
+    if (contest.allowParlays === false && String(betType).toLowerCase() === "parlay") {
+      return res.status(400).json({ error: "Parlays are disabled in this contest" });
+    }
+    if (contest.minStakeCents && stakeCents < contest.minStakeCents) {
+      return res.status(400).json({ error: `Minimum stake is $${(contest.minStakeCents / 100).toFixed(2)}` });
+    }
+    if (contest.maxStakeCents && stakeCents > contest.maxStakeCents) {
+      return res.status(400).json({ error: `Maximum stake is $${(contest.maxStakeCents / 100).toFixed(2)}` });
     }
 
     const oddsNum = Number(odds);

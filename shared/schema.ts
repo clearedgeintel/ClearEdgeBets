@@ -561,6 +561,14 @@ export const contests = pgTable("contests", {
   endDate: timestamp("end_date").notNull(),
   status: text("status").notNull().default("scheduled"), // scheduled | active | completed | cancelled
   winnerId: integer("winner_id").references(() => users.id),
+  // v2 configuration knobs
+  sport: text("sport"),                                     // null = all sports; else 'mlb' | 'nhl' | 'nfl' | 'nba'
+  scoringMode: text("scoring_mode").notNull().default("balance"), // balance | roi | win_rate
+  allowParlays: boolean("allow_parlays").notNull().default(true),
+  minStakeCents: integer("min_stake_cents").default(0),
+  maxStakeCents: integer("max_stake_cents"),               // null = no cap
+  entryFeeCoins: integer("entry_fee_coins").default(0),
+  maxEntrants: integer("max_entrants"),                     // null = no cap
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
