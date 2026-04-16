@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { celebrate } from "@/lib/confetti";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
@@ -76,7 +77,27 @@ export default function VirtualSportsbook() {
     queryKey: ['/api/virtual/bets'],
     queryFn: () => fetch('/api/virtual/bets', { credentials: 'include' }).then(r => r.json()),
     enabled: !!user,
+    refetchInterval: 60_000,
   });
+
+  // Fire confetti on any newly-settled win. The first render seeds the
+  // "seen" set so historical wins don't trigger on mount — only fresh
+  // transitions during this session.
+  const seenWinIds = useRef<Set<number> | null>(null);
+  useEffect(() => {
+    const safe = Array.isArray(virtualBets) ? virtualBets : [];
+    const currentWinIds = new Set(
+      safe.filter((b: any) => b?.status === 'settled' && b?.result === 'win').map((b: any) => b.id)
+    );
+    if (seenWinIds.current === null) {
+      seenWinIds.current = currentWinIds;
+      return;
+    }
+    const seen = seenWinIds.current;
+    const hasNew = Array.from(currentWinIds).some((id) => !seen.has(id as number));
+    if (hasNew) celebrate();
+    seenWinIds.current = currentWinIds;
+  }, [virtualBets]);
 
   const placeBetsMutation = useMutation({
     mutationFn: (bets: any[]) => Promise.all(bets.map(b =>

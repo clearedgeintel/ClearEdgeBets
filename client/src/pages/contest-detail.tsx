@@ -1,5 +1,8 @@
+import { useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/auth-context";
+import { celebrate } from "@/lib/confetti";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +56,7 @@ function fmt(cents: number) {
 }
 
 export default function ContestDetail({ id }: ContestDetailProps) {
+  const { user } = useAuth();
   const { data, isLoading } = useQuery<ContestDetailData>({
     queryKey: [`/api/contests/${id}`],
   });
@@ -60,6 +64,17 @@ export default function ContestDetail({ id }: ContestDetailProps) {
   const { data: myBets = [] } = useQuery<ContestBet[]>({
     queryKey: [`/api/contests/${id}/bets`],
   });
+
+  // Fire confetti once if the user is the winner of a completed contest
+  const celebratedRef = useRef(false);
+  useEffect(() => {
+    if (celebratedRef.current) return;
+    if (!user || !data) return;
+    if (data.status === 'completed' && data.winnerId === user.id) {
+      celebratedRef.current = true;
+      celebrate({ intensity: 'big' });
+    }
+  }, [user, data]);
 
   if (isLoading) return (
     <div className="container mx-auto px-4 py-6 space-y-6 max-w-5xl">
