@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronUp, Brain, User, Target, TrendingUp, DollarSign, Wind, Thermometer, CloudRain } from "lucide-react";
+import { ChevronDown, ChevronUp, Brain, User, Target, TrendingUp, DollarSign, Wind, Thermometer, CloudRain, BarChart3 } from "lucide-react";
+import { ExpertAvatar } from "./expert-avatar";
 import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { LiveScore } from "@/components/live-score";
 import { Link } from "wouter";
@@ -135,7 +136,7 @@ function teamLogoUrl(code: string): string {
 export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showBooks, setShowBooks] = useState(false);
-  const [showOdds, setShowOdds] = useState(true); // Show odds by default
+  const [showOdds, setShowOdds] = useState(false);
   const { addBet } = useBettingSlip();
 
   // Fetch expert picks for this game
@@ -388,75 +389,84 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
           )}
         </div>
 
-        {/* Odds toggle */}
+        {/* Context strip: weather, park factor — editorial content first */}
+        <div className="flex flex-wrap items-center gap-1.5 mt-2 text-[10px] text-muted-foreground">
+          {game.weather && (
+            <>
+              <span className="flex items-center gap-0.5">
+                <Thermometer className="h-2.5 w-2.5" />{Math.round(game.weather.temperature)}°
+              </span>
+              <span className="flex items-center gap-0.5">
+                <Wind className="h-2.5 w-2.5" />{Math.round(game.weather.windSpeed)}mph
+              </span>
+              {game.weather.totalRunsImpact !== 'neutral' && (
+                <Badge className={`text-[9px] px-1 py-0 border ${game.weather.totalRunsImpact === 'favor_over' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
+                  {game.weather.totalRunsImpact === 'favor_over' ? 'Over' : 'Under'}
+                </Badge>
+              )}
+            </>
+          )}
+          {game.parkFactor && (
+            <Badge className={`text-[9px] px-1 py-0 border ${
+              game.parkFactor.factor >= 1.05 ? 'bg-orange-500/10 text-orange-400 border-orange-500/20'
+              : game.parkFactor.factor <= 0.95 ? 'bg-sky-500/10 text-sky-400 border-sky-500/20'
+              : 'bg-zinc-500/10 text-zinc-500 border-zinc-700'
+            }`}>PF {game.parkFactor.factor.toFixed(2)}</Badge>
+          )}
+          {game.venue && <span className="text-zinc-600 hidden sm:inline">{game.venue}</span>}
+        </div>
+
+        {/* Odds toggle — hidden by default, editorial-first */}
         {(moneylineOdds || totalOdds || spreadOdds) && (
           <div className="mt-2">
             {showOdds ? (
-              <div className="flex items-center justify-center gap-4 text-[11px] tabular-nums">
-                {moneylineOdds && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground">ML</span>
-                    <span className="text-blue-400 cursor-pointer hover:text-blue-300" onClick={() => addBet({ gameId: game.gameId, betType: 'moneyline', selection: game.awayTeamCode, odds: moneylineOdds.awayOdds || 0, stake: 10, potentialWin: 0 })}>
-                      {formatOdds(moneylineOdds.awayOdds || 0)}
-                    </span>
-                    <span className="text-zinc-600">/</span>
-                    <span className="text-blue-400 cursor-pointer hover:text-blue-300" onClick={() => addBet({ gameId: game.gameId, betType: 'moneyline', selection: game.homeTeamCode, odds: moneylineOdds.homeOdds || 0, stake: 10, potentialWin: 0 })}>
-                      {formatOdds(moneylineOdds.homeOdds || 0)}
-                    </span>
-                  </div>
-                )}
-                {spreadOdds && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground">RL</span>
-                    <span className="text-emerald-400">{spreadOdds.awaySpread}/{spreadOdds.homeSpread}</span>
-                  </div>
-                )}
-                {totalOdds && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground">O/U</span>
-                    <span className="text-amber-400">{totalOdds.total}</span>
-                  </div>
-                )}
-                {playLean && (
-                  <Badge className={`text-[10px] px-1.5 py-0 border ${playLean.strength === 'strong' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
-                    {playLean.strength === 'strong' ? '🔥' : '👉'} {playLean.team} {playLean.strength === 'strong' ? 'Strong Play' : 'Lean'}
-                  </Badge>
-                )}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 text-[11px] tabular-nums">
+                  {moneylineOdds && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground">ML</span>
+                      <span className="text-blue-400 cursor-pointer hover:text-blue-300" onClick={() => addBet({ gameId: game.gameId, betType: 'moneyline', selection: game.awayTeamCode, odds: moneylineOdds.awayOdds || 0, stake: 10, potentialWin: 0 })}>
+                        {formatOdds(moneylineOdds.awayOdds || 0)}
+                      </span>
+                      <span className="text-zinc-600">/</span>
+                      <span className="text-blue-400 cursor-pointer hover:text-blue-300" onClick={() => addBet({ gameId: game.gameId, betType: 'moneyline', selection: game.homeTeamCode, odds: moneylineOdds.homeOdds || 0, stake: 10, potentialWin: 0 })}>
+                        {formatOdds(moneylineOdds.homeOdds || 0)}
+                      </span>
+                    </div>
+                  )}
+                  {spreadOdds && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground">RL</span>
+                      <span className="text-emerald-400">{spreadOdds.awaySpread}/{spreadOdds.homeSpread}</span>
+                    </div>
+                  )}
+                  {totalOdds && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground">O/U</span>
+                      <span className="text-amber-400">{totalOdds.total}</span>
+                    </div>
+                  )}
+                  {playLean && (
+                    <Badge className={`text-[10px] px-1.5 py-0 border ${playLean.strength === 'strong' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
+                      {playLean.strength === 'strong' ? '🔥' : '👉'} {playLean.team} {playLean.strength === 'strong' ? 'Strong Play' : 'Lean'}
+                    </Badge>
+                  )}
+                </div>
+                <button onClick={() => setShowOdds(false)} className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors ml-2">
+                  Hide
+                </button>
               </div>
             ) : (
-              <button onClick={() => setShowOdds(true)} className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors">
-                Show Odds →
+              <button onClick={() => setShowOdds(true)} className="text-[10px] text-zinc-500 hover:text-amber-400 transition-colors flex items-center gap-1">
+                <BarChart3 className="h-3 w-3" /> Show Odds
               </button>
             )}
           </div>
         )}
 
-        {/* Context strip: weather, park factor, AI confidence */}
+        {/* Expert picks + edge score + expand */}
         <div className="flex flex-wrap items-center justify-between mt-2 gap-1">
           <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
-            {game.weather && (
-              <>
-                <span className="flex items-center gap-0.5">
-                  <Thermometer className="h-2.5 w-2.5" />{Math.round(game.weather.temperature)}°
-                </span>
-                <span className="flex items-center gap-0.5">
-                  <Wind className="h-2.5 w-2.5" />{Math.round(game.weather.windSpeed)}mph
-                </span>
-                {game.weather.totalRunsImpact !== 'neutral' && (
-                  <Badge className={`text-[9px] px-1 py-0 border ${game.weather.totalRunsImpact === 'favor_over' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
-                    {game.weather.totalRunsImpact === 'favor_over' ? 'Over' : 'Under'}
-                  </Badge>
-                )}
-              </>
-            )}
-            {game.parkFactor && (
-              <Badge className={`text-[9px] px-1 py-0 border ${
-                game.parkFactor.factor >= 1.05 ? 'bg-orange-500/10 text-orange-400 border-orange-500/20'
-                : game.parkFactor.factor <= 0.95 ? 'bg-sky-500/10 text-sky-400 border-sky-500/20'
-                : 'bg-zinc-500/10 text-zinc-500 border-zinc-700'
-              }`}>PF {game.parkFactor.factor.toFixed(2)}</Badge>
-            )}
-            {game.venue && <span className="text-zinc-600 hidden sm:inline">{game.venue}</span>}
           </div>
 
           {/* Inline expert pick summary (visible without expanding) */}
@@ -464,7 +474,7 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
             <div className="flex flex-wrap items-center gap-2 mt-1.5">
               {expertPicks.slice(0, 3).map((pick: any) => (
                 <div key={pick.id} className="flex items-center gap-1 text-[10px]">
-                  <span>{pick.expertId === 'contrarian' ? '🕵️‍♂️' : pick.expertId === 'quant' ? '🧑‍💻' : pick.expertId === 'sharp' ? '🎯' : pick.expertId === 'homie' ? '😄' : '⏰'}</span>
+                  <ExpertAvatar avatar={`/experts/${pick.expertId}.png`} name={pick.expertId} size="sm" className="h-4 w-4" />
                   <span className="text-foreground font-medium">{pick.selection}</span>
                   <Badge className={`text-[8px] px-1 py-0 border tabular-nums ${pick.confidence >= 75 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-zinc-800 text-zinc-500 border-zinc-700'}`}>{pick.confidence}%</Badge>
                 </div>
