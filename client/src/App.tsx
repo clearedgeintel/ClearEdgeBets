@@ -46,6 +46,7 @@ const WeeklyLeaderboard = lazy(() => import("@/pages/weekly-leaderboard"));
 const Groups = lazy(() => import("@/pages/groups"));
 const Contests = lazy(() => import("@/pages/contests"));
 const ContestDetail = lazy(() => import("@/pages/contest-detail"));
+const H2H = lazy(() => import("@/pages/h2h"));
 const StripeSetup = lazy(() => import("@/pages/stripe-setup"));
 const PlayerPropBuilder = lazy(() => import("@/pages/player-prop-builder"));
 const Help = lazy(() => import("@/pages/help"));
@@ -129,6 +130,7 @@ function Router() {
           <Route path="/groups">{() => <ProtectedRoute component={Groups} />}</Route>
           <Route path="/contests">{() => <ProtectedRoute component={Contests} />}</Route>
           <Route path="/contests/:id">{(params) => <ProtectedRoute component={() => <ContestDetail id={params.id} />} />}</Route>
+          <Route path="/h2h">{() => <ProtectedRoute component={H2H} />}</Route>
           <Route path="/editors-desk">{() => <ProtectedRoute component={EditorsDesk} />}</Route>
           <Route path="/performance-tracking">{() => <ProtectedRoute component={PerformanceTracking} />}</Route>
           <Route path="/analytics">{() => <ProtectedRoute component={PerformanceAnalytics} />}</Route>
