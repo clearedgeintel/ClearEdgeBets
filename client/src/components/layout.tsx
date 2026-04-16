@@ -22,10 +22,7 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen flex">
       {showOnboarding && (
-        <OnboardingModal open={true} onComplete={() => {
-          setOnboardingDismissed(true);
-          if (user) user.onboardingComplete = true;
-        }} />
+        <OnboardingModal open={true} onComplete={() => setOnboardingDismissed(true)} />
       )}
       {/* Sidebar area — rail visible at md+ (tablet + desktop); full sidebar on hover */}
       <div className="hidden md:block flex-shrink-0 w-16 relative z-40 group/sidebar">
