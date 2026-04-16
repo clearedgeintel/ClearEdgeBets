@@ -169,62 +169,66 @@ export default function Home() {
         </div>
       )}
 
-      {/* ── Morning Roast Hero (skeleton) ── */}
+      {/* ── Morning Roast Banner (skeleton) ── */}
       {blogLoading && !featured && (
-        <div className="relative aspect-[16/9] sm:aspect-[21/9] bg-zinc-900">
-          <Skeleton className="absolute inset-0 rounded-none" />
-          <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 space-y-2">
-            <Skeleton className="h-4 w-28 bg-zinc-800" />
-            <Skeleton className="h-8 w-3/4 bg-zinc-800" />
-            <Skeleton className="h-8 w-1/2 bg-zinc-800" />
-            <Skeleton className="h-3 w-40 bg-zinc-800 mt-3" />
+        <div className="max-w-7xl mx-auto px-4 pt-4">
+          <div className="flex gap-4 h-[180px] bg-card border border-border/30 rounded-lg overflow-hidden">
+            <Skeleton className="w-[40%] sm:w-[320px] flex-shrink-0" />
+            <div className="flex-1 p-4 space-y-2">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-6 w-4/5" />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-3 w-32 mt-4" />
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── Morning Roast Full-Bleed Hero ── */}
+      {/* ── Morning Roast Compact Banner Row ── */}
       {featured && (
-        <Link href="/blog">
-          <div className="relative aspect-[16/9] sm:aspect-[21/9] bg-zinc-900 cursor-pointer group">
-            {featured.heroImage ? (
-              <img
-                src={featured.heroImage}
-                alt={featured.title}
-                fetchPriority="high"
-                decoding="async"
-                className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
-                <div className="flex items-center gap-6">
-                  {featured.awayLogo && <img src={featured.awayLogo} alt="" className="h-20 w-20 opacity-40" />}
-                  <span className="text-4xl font-bold text-zinc-600 tabular-nums">{featured.awayScore} - {featured.homeScore}</span>
-                  {featured.homeLogo && <img src={featured.homeLogo} alt="" className="h-20 w-20 opacity-40" />}
-                </div>
+        <div className="max-w-7xl mx-auto px-4 pt-4">
+          <Link href="/blog">
+            <div className="flex flex-col sm:flex-row gap-0 sm:gap-4 bg-card border border-border/30 rounded-lg overflow-hidden group cursor-pointer hover:border-amber-500/30 transition-colors">
+              <div className="relative w-full sm:w-[320px] flex-shrink-0 aspect-[16/9] sm:aspect-auto sm:h-[180px] bg-zinc-900">
+                {featured.heroImage ? (
+                  <img
+                    src={featured.heroImage}
+                    alt={featured.title}
+                    fetchPriority="high"
+                    decoding="async"
+                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center gap-4">
+                    {featured.awayLogo && <img src={featured.awayLogo} alt="" className="h-14 w-14 opacity-40" />}
+                    <span className="text-2xl font-bold text-zinc-600 tabular-nums">{featured.awayScore}-{featured.homeScore}</span>
+                    {featured.homeLogo && <img src={featured.homeLogo} alt="" className="h-14 w-14 opacity-40" />}
+                  </div>
+                )}
               </div>
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8">
-              <div className="max-w-4xl">
+              <div className="flex-1 p-4 sm:p-5 flex flex-col justify-center min-w-0">
                 <div className="flex items-center gap-2 mb-2">
                   <Badge className="bg-amber-500 text-black text-[10px] font-bold uppercase tracking-wider">Morning Roast</Badge>
-                  <span className="text-white/50 text-xs">{featured.awayTeam.split(' ').pop()} {featured.awayScore} - {featured.homeScore} {featured.homeTeam.split(' ').pop()}</span>
+                  <span className="text-zinc-500 text-[11px]">{featured.awayTeam.split(' ').pop()} {featured.awayScore}–{featured.homeScore} {featured.homeTeam.split(' ').pop()}</span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight mb-2 group-hover:text-amber-100 transition-colors">
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight mb-2 group-hover:text-amber-200 transition-colors line-clamp-3">
                   {featured.title}
                 </h1>
-                <div className="flex items-center gap-2 text-white/60 text-sm">
+                <div className="flex items-center gap-2 text-zinc-500 text-xs mt-auto">
                   <Pen className="h-3 w-3 text-amber-400" />
                   <span>{featured.author}</span>
-                  {featured.authorMood === 'grumpy' && <span className="text-red-400 text-xs">(grumpy)</span>}
+                  {featured.authorMood === 'grumpy' && <span className="text-red-400">(grumpy)</span>}
+                  <span className="text-zinc-600 ml-auto hidden sm:inline group-hover:text-amber-300 transition-colors">Read recap →</span>
                 </div>
               </div>
             </div>
-          </div>
-        </Link>
+          </Link>
+        </div>
       )}
 
-      <div className="max-w-5xl mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+        {/* ── LEFT COLUMN: editorial content ── */}
+        <div>
         {/* ── More Stories ── */}
         {moreReviews.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 py-6 border-b border-border/20">
@@ -356,6 +360,86 @@ export default function Home() {
           </div>
         )}
 
+        </div>
+        {/* ── RIGHT COLUMN: dashboard ── */}
+        <aside className="lg:sticky lg:top-20 lg:self-start space-y-4 py-6 lg:py-0">
+          {/* Play Now CTA */}
+          <Link href="/virtual-sportsbook">
+            <div className="play-card bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-amber-500/30 rounded-lg p-4 cursor-pointer">
+              <div className="flex items-center gap-2 mb-1">
+                <Trophy className="h-4 w-4 text-amber-400" />
+                <span className="text-sm font-bold text-amber-200 uppercase tracking-wider">Play Now</span>
+              </div>
+              <p className="text-xs text-zinc-400">Free virtual bets, live leaderboards, group contests.</p>
+            </div>
+          </Link>
+
+          {/* Active contests (reuses existing query) */}
+          {activeContests.length > 0 && (
+            <div className="bg-card border border-border/30 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-amber-300">Your live contests</span>
+                <Link href="/contests" className="text-[10px] text-zinc-500 hover:text-amber-300">All →</Link>
+              </div>
+              <div className="space-y-1.5">
+                {activeContests.slice(0, 3).map((c) => (
+                  <Link key={c.id} href={`/contests/${c.id}`}>
+                    <div className="flex items-center justify-between p-2 rounded bg-zinc-900/60 hover:bg-zinc-800 transition-colors cursor-pointer">
+                      <span className="text-xs font-medium truncate flex-1">{c.name}</span>
+                      {c.myEntry && (
+                        <span className="text-[11px] tabular-nums text-amber-300">
+                          ${Math.round((c.myEntry.currentBalance || 0) / 100)}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Top 3 Power Rankings */}
+          <TopRankings />
+
+          {/* Expert Panel teaser */}
+          <div className="bg-card border border-border/30 rounded-lg p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Expert Panel</span>
+              <Link href="/experts" className="text-[10px] text-zinc-500 hover:text-amber-300">Meet them →</Link>
+            </div>
+            <div className="flex items-center gap-2">
+              {Array.isArray(experts) && experts.slice(0, 5).map((e) => (
+                <ExpertAvatar key={e.id} avatar={e.avatar} name={e.name} size="sm" className="h-7 w-7" />
+              ))}
+            </div>
+            <p className="text-[11px] text-zinc-500 mt-2">5 analysts with tracked W/L. {safeExpertPicks.length} picks today.</p>
+          </div>
+
+          {/* Trivia CTA */}
+          <Link href="/trivia">
+            <div className="bg-card border border-border/30 rounded-lg p-3 cursor-pointer hover:border-amber-500/30 transition-colors group">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">❓</span>
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-foreground group-hover:text-amber-200">Daily Trivia</div>
+                  <div className="text-[11px] text-zinc-500">Earn 100 coins · 30 seconds</div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-zinc-600 group-hover:text-amber-400" />
+              </div>
+            </div>
+          </Link>
+
+          {/* Newsletter tease */}
+          <Link href="/newsletter">
+            <div className="bg-card border border-border/30 rounded-lg p-3 cursor-pointer hover:border-amber-500/30 transition-colors group">
+              <div className="text-[10px] uppercase tracking-wider font-bold text-zinc-400 mb-1">Daily Newsletter</div>
+              <div className="text-xs text-zinc-400 group-hover:text-zinc-200">Get ClearEdge in your inbox every morning at 9:15 AM.</div>
+            </div>
+          </Link>
+        </aside>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4">
         {/* ── Today's Schedule Rail (skeleton) ── */}
         {gamesLoading && safeGames.length === 0 && (
           <div className="py-6 border-b border-border/20">
@@ -415,6 +499,41 @@ export default function Home() {
             </Link>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function TopRankings() {
+  const { data: rankings = [] } = useQuery<Array<{ team: string; teamCode: string; rank: number; teamPowerScore: number }>>({
+    queryKey: ['/api/team-power-scores'],
+    queryFn: () => fetch('/api/team-power-scores').then((r) => (r.ok ? r.json() : [])),
+    staleTime: 600_000,
+  });
+  const top = (Array.isArray(rankings) ? rankings : []).slice(0, 3);
+  if (top.length === 0) return null;
+  return (
+    <div className="bg-card border border-border/30 rounded-lg p-3">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Top Power Rankings</span>
+        <Link href="/team-power-scores" className="text-[10px] text-zinc-500 hover:text-amber-300">All →</Link>
+      </div>
+      <div className="space-y-1.5">
+        {top.map((t) => (
+          <Link key={t.teamCode} href={`/team/${t.teamCode}`}>
+            <div className="flex items-center gap-2 p-1.5 rounded hover:bg-zinc-900/60 transition-colors cursor-pointer">
+              <span className="text-[10px] font-bold text-zinc-500 w-4">#{t.rank}</span>
+              <img
+                src={teamLogo(t.teamCode)}
+                alt=""
+                className="h-5 w-5"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+              <span className="text-xs font-medium text-foreground truncate flex-1">{t.team}</span>
+              <span className="text-[10px] tabular-nums text-amber-300">{t.teamPowerScore}</span>
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );
