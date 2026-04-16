@@ -177,6 +177,8 @@ export default function Experts() {
         )}
       </div>
 
+      <DebatesBanner picks={todayPicks} experts={experts} />
+
       <div className="space-y-4">
         {expertsLoading && experts.length === 0 && Array.from({ length: 5 }).map((_, i) => (
           <Card key={`sk-${i}`} className="border border-zinc-700/60 overflow-hidden rounded-xl">
@@ -218,7 +220,7 @@ export default function Experts() {
                 {/* Expert header */}
                 <div className="p-3 sm:p-4 cursor-pointer hover:bg-zinc-800/20 transition-colors"
                   onClick={() => toggleExpert(expert.id)}>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-start gap-3">
                     <ExpertAvatar avatar={expert.avatar} name={expert.name} size="lg" className="flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
@@ -226,8 +228,22 @@ export default function Experts() {
                         <Badge className={`border text-[9px] ${riskColors[expert.riskLevel]}`}>{expert.riskLevel}</Badge>
                       </div>
                       <p className="text-[10px] sm:text-xs text-zinc-500 mt-0.5 line-clamp-1">{expert.style}</p>
+                      {/* Bio snippet — columnist-style, always visible */}
+                      {!isExpanded && expert.bio && (
+                        <p className="text-[11px] text-zinc-400 mt-1.5 line-clamp-2 leading-relaxed">{expert.bio}</p>
+                      )}
+                      {/* Latest pick headline */}
+                      {!isExpanded && expertPicks[0] && (
+                        <div className="flex items-center gap-1.5 mt-1.5 text-[11px]">
+                          <span className="text-amber-400/70">Today:</span>
+                          <span className="font-medium text-foreground truncate">{expertPicks[0].selection}</span>
+                          <Badge className={`text-[9px] px-1 py-0 border tabular-nums flex-shrink-0 ${expertPicks[0].confidence >= 75 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-zinc-800 text-zinc-500 border-zinc-700'}`}>
+                            {expertPicks[0].confidence}%
+                          </Badge>
+                        </div>
+                      )}
                     </div>
-                    <ChevronDown className={`h-4 w-4 text-zinc-500 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`h-4 w-4 text-zinc-500 flex-shrink-0 mt-1 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                   </div>
                   {/* Stats row */}
                   <div className="flex items-center gap-2 mt-2 ml-9 sm:ml-12 flex-wrap">
@@ -407,6 +423,71 @@ export default function Experts() {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+interface DebatesBannerProps {
+  picks: ExpertPick[];
+  experts: ExpertWithRecord[];
+}
+
+function DebatesBanner({ picks, experts }: DebatesBannerProps) {
+  const safePicks = Array.isArray(picks) ? picks : [];
+  const expertById = new Map((experts || []).map((e) => [e.id, e]));
+
+  // Group picks by gameId, find games where experts disagree on selection
+  const debates = (() => {
+    const byGame = new Map<string, ExpertPick[]>();
+    for (const p of safePicks) {
+      if (!p.gameId) continue;
+      const arr = byGame.get(p.gameId) || [];
+      arr.push(p);
+      byGame.set(p.gameId, arr);
+    }
+    const out: Array<{ gameId: string; a: ExpertPick; b: ExpertPick }> = [];
+    byGame.forEach((list, gameId) => {
+      if (list.length < 2) return;
+      for (let i = 0; i < list.length; i++) {
+        for (let j = i + 1; j < list.length; j++) {
+          if (list[i].selection !== list[j].selection) {
+            if (!out.some((d) => d.gameId === gameId)) {
+              out.push({ gameId, a: list[i], b: list[j] });
+            }
+            return;
+          }
+        }
+      }
+    });
+    return out.slice(0, 3);
+  })();
+
+  if (debates.length === 0) return null;
+
+  return (
+    <div className="mb-4 space-y-2">
+      <div className="text-[10px] uppercase tracking-wider font-bold text-purple-300 flex items-center gap-1.5">
+        <span>⚔️</span> Debates
+      </div>
+      {debates.map((d) => {
+        const ea = expertById.get(d.a.expertId);
+        const eb = expertById.get(d.b.expertId);
+        const matchup = (d.gameId.split("_")[1] || d.gameId).replace(/@/g, " @ ");
+        return (
+          <div key={`${d.gameId}-${d.a.expertId}-${d.b.expertId}`} className="bg-gradient-to-r from-purple-500/10 to-transparent border border-purple-500/30 rounded-lg p-3">
+            <div className="text-[10px] text-zinc-500 mb-1.5">{matchup}</div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-medium text-foreground">{ea?.name || d.a.expertId}</span>
+              <span className="text-purple-300">picks</span>
+              <span className="font-semibold text-foreground">{d.a.selection}</span>
+              <span className="text-zinc-600 mx-1">·</span>
+              <span className="font-medium text-foreground">{eb?.name || d.b.expertId}</span>
+              <span className="text-purple-300">picks</span>
+              <span className="font-semibold text-foreground">{d.b.selection}</span>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
