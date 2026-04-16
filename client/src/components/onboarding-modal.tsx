@@ -30,6 +30,19 @@ const NHL_TEAMS = [
   { code: "MIN", name: "Wild", sport: "nhl" }, { code: "NSH", name: "Predators", sport: "nhl" },
 ];
 
+const NBA_TEAMS = [
+  { code: "ATL", name: "Hawks" }, { code: "BOS", name: "Celtics" }, { code: "BKN", name: "Nets" },
+  { code: "CHA", name: "Hornets" }, { code: "CHI", name: "Bulls" }, { code: "CLE", name: "Cavaliers" },
+  { code: "DAL", name: "Mavericks" }, { code: "DEN", name: "Nuggets" }, { code: "DET", name: "Pistons" },
+  { code: "GS", name: "Warriors" }, { code: "HOU", name: "Rockets" }, { code: "IND", name: "Pacers" },
+  { code: "LAC", name: "Clippers" }, { code: "LAL", name: "Lakers" }, { code: "MEM", name: "Grizzlies" },
+  { code: "MIA", name: "Heat" }, { code: "MIL", name: "Bucks" }, { code: "MIN", name: "Timberwolves" },
+  { code: "NO", name: "Pelicans" }, { code: "NY", name: "Knicks" }, { code: "OKC", name: "Thunder" },
+  { code: "ORL", name: "Magic" }, { code: "PHI", name: "76ers" }, { code: "PHO", name: "Suns" },
+  { code: "POR", name: "Trail Blazers" }, { code: "SAC", name: "Kings" }, { code: "SA", name: "Spurs" },
+  { code: "TOR", name: "Raptors" }, { code: "UTA", name: "Jazz" }, { code: "WAS", name: "Wizards" },
+];
+
 function teamLogo(code: string, sport: string = "mlb") {
   const c = code.toUpperCase() === "WAS" ? "wsh" : code.toLowerCase();
   return `https://a.espncdn.com/i/teamlogos/${sport}/500/scoreboard/${c}.png`;
@@ -115,6 +128,10 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
           <div>
             <h3 className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-2">NHL</h3>
             <TeamGrid teams={NHL_TEAMS} sport="nhl" />
+          </div>
+          <div>
+            <h3 className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-2">NBA</h3>
+            <TeamGrid teams={NBA_TEAMS} sport="nba" />
           </div>
         </div>
 

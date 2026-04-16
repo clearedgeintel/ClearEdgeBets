@@ -313,6 +313,7 @@ export default function Contests() {
                         <SelectItem value="">All sports</SelectItem>
                         <SelectItem value="mlb">MLB</SelectItem>
                         <SelectItem value="nhl">NHL</SelectItem>
+                        <SelectItem value="nba">NBA</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

@@ -57,6 +57,7 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
   const [generalExpanded, setGeneralExpanded] = useState(true);
   const [baseballExpanded, setBaseballExpanded] = useState(false);
   const [hockeyExpanded, setHockeyExpanded] = useState(false);
+  const [basketballExpanded, setBasketballExpanded] = useState(false);
 
 
 
@@ -234,6 +235,24 @@ export default function Sidebar({ isMobileSheet = false, onNavigate }: SidebarPr
           icon: Calendar,
           current: location === "/nhl/games",
           description: "Today's NHL schedule with odds"
+        },
+      ],
+      proItems: [],
+      eliteItems: [],
+    },
+    {
+      sport: "Basketball",
+      icon: CircleDot,
+      expanded: basketballExpanded,
+      setExpanded: setBasketballExpanded,
+      active: location.startsWith("/nba"),
+      freeItems: [
+        {
+          name: "NBA Games",
+          href: "/nba/games",
+          icon: Calendar,
+          current: location === "/nba/games",
+          description: "Today's NBA schedule with odds"
         },
       ],
       proItems: [],
