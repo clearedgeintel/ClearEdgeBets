@@ -1,6 +1,6 @@
 # ClearEdge Sports — UI/UX Roadmap
 
-> Last updated: 2026-04-15 (post-Phase-3 content layer)
+> Last updated: 2026-04-16 (full UIROADMAP sweep — Batches A–F)
 > Context: ClearEdge has evolved from a sports betting analytics tool into an **AI-automated sports news + expert analysis platform**. The UI needs to catch up.
 
 ---
@@ -73,7 +73,7 @@ Multi-sport visual system (sport-specific accents + switcher + universal game ca
 - [x] **Share buttons** — X intent + copy link wired on article page
 - [x] **Category tags** — Blowout / Close Game / Walk-Off / Shutout / Extras auto-detected from box score
 - [x] **Related stories** — `GET /api/blog/related?slug&author&gameDate&limit` endpoint; article view renders a "More from {author}" / "More from this day" rail using the broader pool
-- [ ] **Writer follow** — users can follow specific beat writers and get their content surfaced first
+- [x] **Writer follow** — `user_writer_follows` table + `/api/blog/writer-follow` + Follow/Following toggle next to author byline. For-You feed boosts recaps by followed authors.
 
 ### 2.2 Expert Panel Redesign
 - [x] **AI-generated expert portraits** — `ExpertAvatar` renders URL or emoji fallback; 5 DALL-E portraits in `client/public/experts/`
@@ -84,13 +84,13 @@ Multi-sport visual system (sport-specific accents + switcher + universal game ca
 - [x] **Contest chat** — `contest_messages` table + REST endpoints + bubble-style chat drawer on contest-detail with 8s polling
 - [x] **Columnist profile cards** — bio snippet (2-line clamp) + "Today: {pick selection} {confidence%}" headline visible on the collapsed card; full bio in expanded view
 - [x] **Expert vs Expert "Debate" cards** — `DebatesBanner` surfaces up to 3 disagreements above the expert list (same gameId, different selections)
-- [ ] **Picks as "analysis cards"** not table rows — each pick gets its own mini-card with rationale visible by default (partially done: collapsed card shows top pick + confidence; full mini-card treatment still pending)
+- [x] **Picks as "analysis cards"** — each today's pick renders as its own card with matchup row (team logos), result-aware left border stripe, bold headline, odds/confidence/units/result badges, rationale, post-game recap, and share button
 
 ### 2.3 Game Cards Reimagined
 - [x] **Default view: editorial** — team logos, pitchers, venue, weather, park factor, expert picks (with portrait avatars) visible first; odds collapsed behind toggle
 - [x] **Odds behind a toggle** — "Show Odds" button with BarChart3 icon; Hide button when expanded
 - [x] **Inline Morning Roast link** — "Read the recap →" link on completed game cards (existed)
-- [ ] **Live game state** — during games, show inning/score with a green "LIVE" badge (not yet wired into EnhancedGameCard)
+- [x] **Live game state** — pulsing red dot + LIVE badge with running score for in-progress games; FINAL tag post-game
 
 ### 2.4 Feed Experience
 - [x] **Unified content feed** — `feed.tsx` already blends recaps, expert picks, newsletters, trivia, rankings with date separators
@@ -114,42 +114,42 @@ Multi-sport visual system (sport-specific accents + switcher + universal game ca
 - [x] **Scroll-triggered animations** — `useInView` hook + `FadeIn` wrapper pair with `.scroll-fade`; applied to feed items (can spread to more surfaces)
 
 ### 3.3 Responsive Refinements
-- [ ] **Tablet breakpoint pass** (768–1024px) — sidebar-rail + top-nav tabs behavior check
-- [ ] **Game cards on tablet** — 2-column grid with slightly larger text
-- [ ] **Morning Roast on tablet** — featured story + 2 cards (not 3)
-- [ ] **Expert Panel on mobile** — horizontal swipe carousel instead of vertical stack
+- [x] **Tablet breakpoint pass** (768–1024px) — sidebar rail now visible at md+ instead of lg+ only
+- [x] **Game cards on tablet** — Today's Games already at md:grid-cols-2; no change needed
+- [x] **Morning Roast on tablet** — "More Stories" grid is now 1 → 2 (md) → 3 (lg) cols
+- [x] **Expert Panel on mobile** — horizontal scroll-snap carousel (85% card width) on <sm; vertical stack at sm+
 
 ---
 
 ## Phase 4 — Engagement Patterns (2-4 weeks)
 
 ### 4.1 Onboarding
-- [x] **Team selection** — `OnboardingModal` on first login: MLB + NHL team grid, multi-select, persists `favoriteTeams` + `onboardingComplete`; drives For You feed
-- [ ] **First-visit flow** — "What are you here for?" → Sports News / Expert Picks / Prediction Game → tailors the homepage (team selection done; interest step still pending)
-- [ ] **Guided tour** — 4-step tooltip tour: "Here's the Morning Roast", "Meet our Expert Panel", "Play the Prediction Game", "Subscribe for daily picks"
+- [x] **Team selection** — `OnboardingModal` on first login: MLB + NHL + NBA team grid, multi-select, persists `favoriteTeams` + `onboardingComplete`; drives For You feed
+- [x] **First-visit flow** — Step 1 "What brings you to ClearEdge?" with 3 options (news / picks / play); persists to `users.primary_interest`. Step 2 is the team picker.
+- [ ] **Guided tour** — 4-step tooltip tour (deferred — needs tour library choice + product design)
 
 ### 4.2 Retention Hooks
 - [x] **Streak counter** — flame chip in top nav, computed from virtual-bet win streak (`top-nav.tsx` `StreakChip`)
 - [x] **Trivia of the Day popup** — `DailyTriviaBubble` floating card (bottom-right), once-per-day localStorage gate, 2s delay, links to `/trivia`
-- [ ] **Weekly wrap-up email** — "Your week: 3 trivia correct, Expert Sharp went 5-2, 12 new recaps"
+- [ ] **Weekly wrap-up email** — deferred (needs Resend template + cron + user prefs)
 
 ### 4.3 Social & Community
-- [ ] **Comments on Morning Roast articles** — threaded with upvote/downvote
+- [x] **Comments on Morning Roast articles** — `article_comments` table with threaded replies (parentId); 2000-char composer + inline replies under each top-level
 - [x] **Shareable expert picks** — `/api/og/pick/:id` 1200×630 PNG shipped via satori; Share button on expert pick cards
 - [x] **Contest chat** — `contest_messages` table + REST polling + bubble chat drawer on contest-detail
 - [x] **Active-contest banner** — gold "Live Contest" banner on homepage when user has ≥1 active entry
 - [x] **Win confetti** — `canvas-confetti` fires on bet-settle win + contest champion (throttled, gold palette)
 - [x] **Sortable contest leaderboard** — Balance / ROI / Win % sort toggle with re-ranked display
-- [ ] **Leaderboard badges** — top 10 trivia players get a profile badge
+- [x] **Leaderboard badges** — 🏆 Champion (rank 1), 🥈 Elite (2-3), 🔥 Sharp (4-10) on weekly leaderboard
 
 ---
 
 ## Phase 5 — Platform Maturity (ongoing)
 
 ### 5.1 Multi-Sport Visual System
-- [ ] **Sport-specific color accents** — MLB (emerald), NFL (blue), NBA (orange), NHL (ice blue)
-- [ ] **Sport switcher in nav** — tab bar or dropdown to switch between sports. Each sport has its own Morning Roast, Expert Panel, Games page
-- [ ] **Universal game card component** — same card structure works for MLB, NFL, NBA, NHL with sport-specific data fields
+- [x] **Sport-specific color accents** — `.sport-mlb` emerald, `.sport-nhl` ice blue, `.sport-nba` orange, `.sport-nfl` blue tokens + `SportBadge` component (feed items, sport switcher)
+- [x] **Sport switcher in nav** — `SportSwitcher` component (MLB · NHL · NBA pills) on Today's Matchups, NHL Games, NBA Games pages. Homepage scores strip now shows all three sports' finals.
+- [ ] **Universal game card component** — deferred (multi-session refactor). Today's Matchups uses rich `EnhancedGameCard`; NHL/NBA pages use simpler per-sport cards. Closing the gap would require normalizing pitcher/period/quarter/park-factor differences.
 
 ### 5.2 Content CMS
 - [ ] **Admin content editor** — rich text editor for Morning Roast articles (currently generated markdown only)
@@ -157,10 +157,10 @@ Multi-sport visual system (sport-specific accents + switcher + universal game ca
 - [ ] **Content calendar view** — see what's scheduled, what's published, gaps in coverage
 
 ### 5.3 Performance & Accessibility
-- [ ] **Image optimization** — ESPN images served via proxy with resizing (avoid loading 500px logos at 32px display size)
-- [ ] **Lazy load below-fold sections** — defer Expert Picks, Yesterday's Scores, Today's Games until user scrolls
-- [ ] **WCAG 2.1 AA compliance** — check contrast ratios on dark theme, add aria labels to interactive elements
-- [ ] **Core Web Vitals** — target LCP < 2.5s, CLS < 0.1, FID < 100ms
+- [x] **Image caching proxy** — `GET /api/img?u=<url>` caches upstream images with 30-day immutable header (SHA-1 keyed disk cache, SSRF-safe host whitelist). Resize deferred (needs `sharp`).
+- [x] **Lazy-load images** — `loading="lazy"` + `decoding="async"` on below-fold team logos; `fetchPriority="high"` + proper alt on hero image
+- [x] **WCAG (partial)** — aria-label on icon-only buttons (mobile nav, notifications), aria-current on active tabs, aria-hidden on decorative icons. Broader color-contrast audit still open.
+- [ ] **Core Web Vitals** — preload hero image done; defer non-critical CSS, audit CLS, Lighthouse-driven fixes still open
 
 ---
 
