@@ -15,7 +15,7 @@ function calcPayout(stakeInCents: number, americanOdds: number): number {
 
 // ── Helper: require auth ────────────────────────────────────────────
 function getSessionUserId(req: any): number | null {
-  return (req.session as any)?.userId ?? null;
+  return req.session.userId ?? null;
 }
 
 // ── POST /api/parlays — Create a parlay bet ─────────────────────────

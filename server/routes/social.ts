@@ -12,7 +12,7 @@ const router = Router();
 
 router.post("/groups", async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -40,7 +40,7 @@ router.post("/groups", async (req, res) => {
 
 router.get("/groups", async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -93,7 +93,7 @@ router.get("/groups/:groupId/members", async (req, res) => {
 // Join a group by invite code (no membership needed — this is how new members get in)
 router.post("/groups/join-by-code", async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: "Not authenticated" });
 
     const code = (req.body?.inviteCode || "").trim().toUpperCase();
@@ -116,7 +116,7 @@ router.post("/groups/join-by-code", async (req, res) => {
 
 router.post("/groups/:groupId/join", async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -142,7 +142,7 @@ router.post("/groups/:groupId/join", async (req, res) => {
 
 router.post("/groups/:groupId/leave", async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -158,7 +158,7 @@ router.post("/groups/:groupId/leave", async (req, res) => {
 
 router.post("/groups/:groupId/invite-code", async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -183,7 +183,7 @@ router.post("/groups/:groupId/invite-code", async (req, res) => {
 
 router.post("/friend-invitations", async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -209,7 +209,7 @@ router.post("/friend-invitations", async (req, res) => {
 
 router.get("/friend-invitations", async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -225,7 +225,7 @@ router.get("/friend-invitations", async (req, res) => {
 
 router.post("/friend-invitations/:invitationId/accept", async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -241,7 +241,7 @@ router.post("/friend-invitations/:invitationId/accept", async (req, res) => {
 
 router.post("/friend-invitations/:invitationId/decline", async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -259,7 +259,7 @@ router.post("/friend-invitations/:invitationId/decline", async (req, res) => {
 
 router.get("/friends", async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -274,7 +274,7 @@ router.get("/friends", async (req, res) => {
 
 router.delete("/friends/:friendId", async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }

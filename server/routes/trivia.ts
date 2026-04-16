@@ -15,7 +15,7 @@ router.get('/api/trivia', async (req, res) => {
 // Submit an answer
 router.post('/api/trivia/answer', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const { questionId, answer } = req.body;
     if (!questionId || !answer) return res.status(400).json({ error: 'questionId and answer required' });
@@ -53,7 +53,7 @@ router.post('/api/trivia/answer', async (req, res) => {
 // Admin: generate trivia from yesterday's games
 router.post('/api/admin/generate-trivia', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const user = await storage.getUser(userId);
     if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });

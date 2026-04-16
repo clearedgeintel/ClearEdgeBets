@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
@@ -422,7 +422,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Set session
-      (req.session as any).userId = user.id;
+      req.session.userId = user.id;
 
       res.json({ 
         user: { 
@@ -452,7 +452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/me", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
@@ -481,7 +481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Subscription Routes
   app.post("/api/subscription/create", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
@@ -825,7 +825,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Tank01: raw games for a date
   app.get('/api/admin/tank01/games', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Not authenticated" });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
@@ -840,7 +840,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Tank01: raw multi-book odds for a date
   app.get('/api/admin/tank01/odds', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Not authenticated" });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
@@ -861,7 +861,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Tank01: player lookup by ID
   app.get('/api/admin/tank01/player/:id', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Not authenticated" });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
@@ -875,7 +875,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Tank01: teams with standings
   app.get('/api/admin/tank01/teams', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Not authenticated" });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
@@ -1182,7 +1182,7 @@ Return JSON:
 
   app.get('/api/editorial/slate', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -1268,7 +1268,7 @@ Return JSON:
   // Publish an editorial column to The Morning Roast (admin)
   app.post('/api/admin/editorial-publish', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -1346,7 +1346,7 @@ Return JSON:
   // Create an assignment: topic + writers → generate columns (admin)
   app.post('/api/editorial/assign', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -1438,7 +1438,7 @@ Return JSON:
   // Submit an answer
   app.post('/api/trivia/answer', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
       const { questionId, answer } = req.body;
       if (!questionId || !answer) return res.status(400).json({ error: 'questionId and answer required' });
@@ -1481,7 +1481,7 @@ Return JSON:
   // Admin: generate trivia from yesterday's games
   app.post('/api/admin/generate-trivia', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -1549,7 +1549,7 @@ Return JSON: { "questions": [{ "question": "...", "options": ["A answer", "B ans
 
   app.post('/api/ai-assistant/chat', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
 
       const { message, history } = req.body;
@@ -1680,7 +1680,7 @@ RULES:
 
   app.post('/api/coin-store/purchase', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
 
       const { packId } = req.body;
@@ -1794,7 +1794,7 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
       let picks = await storage.getExpertPicksByDate(date);
 
       // Admin and paid users get everything
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       const user = userId ? await storage.getUser(userId) : null;
 
       if (!user?.isAdmin) {
@@ -1830,7 +1830,7 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
   // Follow/fade toggle (authenticated, tier-gated)
   app.post('/api/expert-follow', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
       const { expertId, mode } = req.body;
       if (!expertId || !mode) return res.status(400).json({ error: 'expertId and mode required' });
@@ -1857,7 +1857,7 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
   // Get user's follows (authenticated)
   app.get('/api/expert-follows', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.json([]);
       res.json(await storage.getUserExpertFollows(userId));
     } catch { res.json([]); }
@@ -1868,7 +1868,7 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
   // Get all experts (with DB active status)
   app.get('/api/admin/expert-analysts', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -1899,7 +1899,7 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
   // Toggle expert active status
   app.patch('/api/admin/expert-analysts/:id/toggle', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -1919,7 +1919,7 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
   // Create or update expert
   app.post('/api/admin/expert-analysts', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -1955,7 +1955,7 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
   // Get all writers (with DB active status)
   app.get('/api/admin/beat-writers', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -1986,7 +1986,7 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
   // Toggle writer active status
   app.patch('/api/admin/beat-writers/:id/toggle', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -2006,7 +2006,7 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
   // Create or update writer
   app.post('/api/admin/beat-writers', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -2043,7 +2043,7 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
   // Admin: generate expert picks for today
   app.post('/api/admin/generate-expert-picks', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -2499,7 +2499,7 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
   // Get yesterday's completed games available for review (admin)
   app.get('/api/blog/available-games', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -2546,7 +2546,7 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
   // Generate a sarcastic review for a specific game (admin)
   app.post('/api/blog/generate-review', async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: 'Not authenticated' });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -3362,7 +3362,7 @@ Format as JSON:
   // Admin endpoint to fetch all bets
   app.get("/api/admin/bets", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Authentication required" });
       const sessionUser = await storage.getUser(userId);
       if (!sessionUser || !sessionUser.isAdmin) return res.status(403).json({ error: "Admin access required" });
@@ -3378,7 +3378,7 @@ Format as JSON:
   // Admin endpoint to manually trigger daily picks generation
   app.post("/api/admin/generate-daily-picks", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Authentication required" });
       const sessionUser = await storage.getUser(userId);
       if (!sessionUser || !sessionUser.isAdmin) return res.status(403).json({ error: "Admin access required" });
@@ -4086,7 +4086,7 @@ Format as JSON:
   // Manual virtual bet settlement endpoint
   app.post("/api/admin/settle-virtual-bets", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Authentication required" });
       const sessionUser = await storage.getUser(userId);
       if (!sessionUser || !sessionUser.isAdmin) return res.status(403).json({ error: "Admin access required" });
@@ -4180,7 +4180,7 @@ Format as JSON:
   // Generate AI summaries for all current games
   app.post("/api/admin/generate-ai-summaries", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Authentication required" });
       const sessionUser = await storage.getUser(userId);
       if (!sessionUser || !sessionUser.isAdmin) return res.status(403).json({ error: "Admin access required" });
@@ -4339,7 +4339,7 @@ Format as JSON:
   // Subscription management
   app.post("/api/subscription/create", async (req, res) => {
     try {
-      const sessionUserId = (req.session as any)?.userId;
+      const sessionUserId = req.session.userId;
       if (!sessionUserId) {
         return res.status(401).json({ error: "Authentication required" });
       }
@@ -4429,7 +4429,7 @@ Format as JSON:
   // Scheduler status & manual triggers
   app.get("/api/admin/scheduler-status", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Not authenticated" });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
@@ -4441,7 +4441,7 @@ Format as JSON:
 
   app.post("/api/admin/trigger-task", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Not authenticated" });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
@@ -4491,7 +4491,7 @@ Format as JSON:
   // API Call Tracking endpoints
   app.get("/api/admin/api-calls", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Not authenticated" });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
@@ -4509,7 +4509,7 @@ Format as JSON:
   // Single call detail with full payloads
   app.get("/api/admin/api-calls/:id", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Not authenticated" });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
@@ -4524,7 +4524,7 @@ Format as JSON:
 
   app.get("/api/admin/api-stats", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Not authenticated" });
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
@@ -4537,7 +4537,7 @@ Format as JSON:
   // Admin API routes
   app.get("/api/admin/stats", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
@@ -4602,7 +4602,7 @@ Format as JSON:
 
   app.get("/api/admin/users", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
@@ -4638,7 +4638,7 @@ Format as JSON:
 
   app.get("/api/admin/activity", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
@@ -4692,7 +4692,7 @@ Format as JSON:
 
   app.get("/api/admin/performance", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
@@ -4881,7 +4881,7 @@ Format as JSON:
   // Admin stats endpoint
   app.get("/api/admin/stats", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Authentication required" });
       const sessionUser = await storage.getUser(userId);
       if (!sessionUser || !sessionUser.isAdmin) return res.status(403).json({ error: "Admin access required" });
@@ -4916,7 +4916,7 @@ Format as JSON:
   // Admin users endpoint
   app.get("/api/admin/users", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Authentication required" });
       const sessionUser = await storage.getUser(userId);
       if (!sessionUser || !sessionUser.isAdmin) return res.status(403).json({ error: "Admin access required" });
@@ -4946,7 +4946,7 @@ Format as JSON:
   // Admin update tier endpoint
   app.post("/api/admin/update-tier", async (req, res) => {
     try {
-      const sessionUserId = (req.session as any)?.userId;
+      const sessionUserId = req.session.userId;
       if (!sessionUserId) return res.status(401).json({ error: "Authentication required" });
       const sessionUser = await storage.getUser(sessionUserId);
       if (!sessionUser || !sessionUser.isAdmin) return res.status(403).json({ error: "Admin access required" });
@@ -4985,7 +4985,7 @@ Format as JSON:
   // Create admin user endpoint
   app.post("/api/admin/create-admin", async (req, res) => {
     try {
-      const sessionUserId = (req.session as any)?.userId;
+      const sessionUserId = req.session.userId;
       if (!sessionUserId) return res.status(401).json({ error: "Authentication required" });
       const sessionUser = await storage.getUser(sessionUserId);
       if (!sessionUser || !sessionUser.isAdmin) return res.status(403).json({ error: "Admin access required" });
@@ -5455,7 +5455,7 @@ Format as JSON:
   // Admin routes for user management and referral codes
   app.get('/api/admin/stats', async (req: Request, res: Response) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: 'Authentication required' });
       }
@@ -5475,7 +5475,7 @@ Format as JSON:
 
   app.get('/api/admin/users', async (req: Request, res: Response) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: 'Authentication required' });
       }
@@ -5500,7 +5500,7 @@ Format as JSON:
 
   app.post('/api/admin/users', async (req: Request, res: Response) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: 'Authentication required' });
       }
@@ -5950,7 +5950,7 @@ Format as JSON:
       }
 
       // Store user ID in session
-      (req.session as any).userId = user.id;
+      req.session.userId = user.id;
       
       res.json({
         message: "Login successful",
@@ -5969,7 +5969,7 @@ Format as JSON:
   // Virtual Balance Management Routes
   app.get("/api/user/balance", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
@@ -5994,7 +5994,7 @@ Format as JSON:
 
   app.post("/api/user/balance/reset", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
@@ -6027,7 +6027,7 @@ Format as JSON:
   // Enhanced bet placement with virtual balance validation
   app.post("/api/place-bet", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
@@ -6091,7 +6091,7 @@ Format as JSON:
   // Create Stripe checkout session
   app.post("/api/subscriptions/create-checkout", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
@@ -6158,7 +6158,7 @@ Format as JSON:
   // Subscription tier change endpoint
   app.post("/api/subscription/change", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
@@ -6403,7 +6403,7 @@ Format as JSON:
   // Cancel subscription
   app.post("/api/subscriptions/cancel", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
@@ -6657,7 +6657,7 @@ Format as JSON:
   // Bet Settlement Routes
   app.post('/api/admin/settle-bets', async (req: Request, res: Response) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: 'Authentication required' });
       }
@@ -6684,7 +6684,7 @@ Format as JSON:
   // Update game status (for testing completed games)
   app.post('/api/admin/update-game-status', async (req: Request, res: Response) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: 'Authentication required' });
       }
@@ -6717,7 +6717,7 @@ Format as JSON:
   // Sync live game data from MLB API
   app.post('/api/admin/sync-live-games', async (req: Request, res: Response) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: 'Authentication required' });
       }
@@ -6763,7 +6763,7 @@ Format as JSON:
   // Simulate game completion for testing
   app.post('/api/admin/complete-game', async (req: Request, res: Response) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: 'Authentication required' });
       }
@@ -6804,7 +6804,7 @@ Format as JSON:
   // Get all phrase detection rules
   app.get("/api/admin/phrase-rules", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Authentication required" });
       }
@@ -6825,7 +6825,7 @@ Format as JSON:
   // Get phrase detection rules by category
   app.get("/api/admin/phrase-rules/:category", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Authentication required" });
       }
@@ -6847,7 +6847,7 @@ Format as JSON:
   // Create new phrase detection rule
   app.post("/api/admin/phrase-rules", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Authentication required" });
       }
@@ -6881,7 +6881,7 @@ Format as JSON:
   // Update phrase detection rule
   app.patch("/api/admin/phrase-rules/:id", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Authentication required" });
       }
@@ -6910,7 +6910,7 @@ Format as JSON:
   // Toggle phrase detection rule active status
   app.patch("/api/admin/phrase-rules/:id/toggle", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Authentication required" });
       }
@@ -6934,7 +6934,7 @@ Format as JSON:
   // Delete phrase detection rule
   app.delete("/api/admin/phrase-rules/:id", async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.session.userId;
       if (!userId) {
         return res.status(401).json({ error: "Authentication required" });
       }

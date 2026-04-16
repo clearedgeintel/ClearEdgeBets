@@ -30,7 +30,7 @@ router.get('/blog/reviews/:slug', async (req, res) => {
 // Get yesterday's completed games available for review (admin)
 router.get('/blog/available-games', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const user = await storage.getUser(userId);
     if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -77,7 +77,7 @@ router.get('/blog/available-games', async (req, res) => {
 // Generate a sarcastic review for a specific game (admin)
 router.post('/blog/generate-review', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const user = await storage.getUser(userId);
     if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });

@@ -63,7 +63,7 @@ router.get('/api/newsletter/:slug/view', async (req, res) => {
 // Admin: subscriber list + metrics
 router.get('/api/admin/newsletter/subscribers', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const user = await storage.getUser(userId);
     if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -77,7 +77,7 @@ router.get('/api/admin/newsletter/subscribers', async (req, res) => {
 // Admin: all newsletters with full metrics
 router.get('/api/admin/newsletter/all', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const user = await storage.getUser(userId);
     if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -88,7 +88,7 @@ router.get('/api/admin/newsletter/all', async (req, res) => {
 // Admin: generate newsletter
 router.post('/api/admin/newsletter/generate', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const user = await storage.getUser(userId);
     if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -154,7 +154,7 @@ router.post('/api/admin/newsletter/generate', async (req, res) => {
 // Send newsletter to all active subscribers (admin)
 router.post('/api/admin/newsletter/send/:id', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const user = await storage.getUser(userId);
     if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -198,7 +198,7 @@ router.post('/api/admin/newsletter/send/:id', async (req, res) => {
 // Legacy mark-sent (backward compat)
 router.post('/api/admin/newsletter/mark-sent/:id', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const user = await storage.getUser(userId);
     if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });

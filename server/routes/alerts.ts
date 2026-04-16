@@ -18,7 +18,7 @@ const DEFAULT_PREFS = { dailyPicks: false, settlements: false, lineMovements: fa
 
 router.get('/api/alerts/preferences', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -40,7 +40,7 @@ router.get('/api/alerts/preferences', async (req, res) => {
 
 router.post('/api/alerts/preferences', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -69,7 +69,7 @@ router.post('/api/alerts/preferences', async (req, res) => {
 
 router.post('/api/admin/alerts/send-daily', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }

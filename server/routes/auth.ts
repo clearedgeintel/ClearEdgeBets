@@ -92,7 +92,7 @@ router.post("/api/auth/login", async (req, res) => {
     }
 
     // Set session
-    (req.session as any).userId = user.id;
+    req.session.userId = user.id;
 
     res.json({
       user: {
@@ -122,7 +122,7 @@ router.post("/api/auth/logout", (req, res) => {
 
 router.get("/api/auth/me", async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }

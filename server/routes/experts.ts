@@ -32,7 +32,7 @@ router.get('/expert-picks', async (req, res) => {
     let picks = await storage.getExpertPicksByDate(date);
 
     // Admin and paid users get everything
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     const user = userId ? await storage.getUser(userId) : null;
 
     if (!user?.isAdmin) {
@@ -68,7 +68,7 @@ router.get('/expert-picks/expert/:id', async (req, res) => {
 // Follow/fade toggle (authenticated, tier-gated)
 router.post('/expert-follow', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const { expertId, mode } = req.body;
     if (!expertId || !mode) return res.status(400).json({ error: 'expertId and mode required' });
@@ -95,7 +95,7 @@ router.post('/expert-follow', async (req, res) => {
 // Get user's follows (authenticated)
 router.get('/expert-follows', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.json([]);
     res.json(await storage.getUserExpertFollows(userId));
   } catch { res.json([]); }
@@ -106,7 +106,7 @@ router.get('/expert-follows', async (req, res) => {
 // Get all experts (with DB active status)
 router.get('/admin/expert-analysts', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const user = await storage.getUser(userId);
     if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -137,7 +137,7 @@ router.get('/admin/expert-analysts', async (req, res) => {
 // Toggle expert active status
 router.patch('/admin/expert-analysts/:id/toggle', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const user = await storage.getUser(userId);
     if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -157,7 +157,7 @@ router.patch('/admin/expert-analysts/:id/toggle', async (req, res) => {
 // Create or update expert
 router.post('/admin/expert-analysts', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const user = await storage.getUser(userId);
     if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -193,7 +193,7 @@ router.post('/admin/expert-analysts', async (req, res) => {
 // Get all writers (with DB active status)
 router.get('/admin/beat-writers', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const user = await storage.getUser(userId);
     if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -224,7 +224,7 @@ router.get('/admin/beat-writers', async (req, res) => {
 // Toggle writer active status
 router.patch('/admin/beat-writers/:id/toggle', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const user = await storage.getUser(userId);
     if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -244,7 +244,7 @@ router.patch('/admin/beat-writers/:id/toggle', async (req, res) => {
 // Create or update writer
 router.post('/admin/beat-writers', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const user = await storage.getUser(userId);
     if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });
@@ -281,7 +281,7 @@ router.post('/admin/beat-writers', async (req, res) => {
 // Admin: generate expert picks for today
 router.post('/admin/generate-expert-picks', async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const user = await storage.getUser(userId);
     if (!user?.isAdmin) return res.status(403).json({ error: 'Admin access required' });

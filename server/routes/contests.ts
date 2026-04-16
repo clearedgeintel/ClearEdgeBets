@@ -4,7 +4,7 @@
  * Each entrant gets an isolated bankroll — contest bets do NOT touch the main virtual balance.
  */
 
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { db } from "../db";
 import {
   contests,
@@ -18,8 +18,8 @@ import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
 
 const router = Router();
 
-function auth(req: any): number | null {
-  return (req.session as any)?.userId ?? null;
+function auth(req: Request): number | null {
+  return req.session.userId ?? null;
 }
 
 async function isGroupMember(groupId: number, userId: number): Promise<boolean> {
