@@ -1,6 +1,6 @@
 # ClearEdge Sports — Product & Technical Roadmap
 
-> Last updated: **2026-04-09** (evening)  
+> Last updated: **2026-04-15**  
 > Platform: clearedgesports.ai  
 > Status tracking: [x] Done | [-] In Progress | [ ] Not Started
 
@@ -64,8 +64,19 @@
   - [x] Pick Slip floating button (only shows with active bets)
   - [x] Article readability (15.5px, 1.75 line-height)
   - [x] Recap links on completed game cards
-  - [ ] Expert avatars upgraded to AI portraits
-- [ ] Type `req.session` properly (remove `as any`)
+  - [x] Expert avatars upgraded to AI portraits (`scripts/generate-expert-portraits.mjs` with DALL-E, 5 PNGs in `client/public/experts/`, `ExpertAvatar` component renders URL or emoji fallback)
+  - [x] Gold primary accent (`#eab308`) across CSS vars, ring, chart-1, sidebar; `.play-card` hover utility
+  - [x] Desktop top-nav tabs (Feed · Today's Matchups · Experts · Power Rankings · **Play** with NEW badge)
+  - [x] Streak chip in top nav (computed from `/api/virtual/bets` win streak)
+  - [x] 🔥 Consensus Pick banner on Today's Edge when ≥3 experts agree
+  - [x] Page-fade transitions keyed on location
+  - [x] Loading skeletons on home, experts, virtual sportsbook, groups, contests, contest-detail, my-bets, weekly-leaderboard (blog already had one)
+- [x] Type `req.session` properly (`server/types/session.d.ts` augments `SessionData.userId`; stripped 102 `(req.session as any)` casts across `server/routes.ts` and `server/routes/*.ts`)
+
+### Platform Infrastructure
+- [x] **Social router `/api` prefix fix** — `server/routes.ts` mounts `socialRouter` at `/api` so `/api/groups`, `/api/friends`, `/api/friend-invitations` actually resolve. Entire social feature was silently broken (falling through to Vite SPA catch-all).
+- [x] **Admin seeding** — boot-time promotion in `server/index.ts` ensures `ADMIN_EMAIL` (default `tim.hull@clearedgeintel.com`) is always `is_admin=true` + tier `elite`. `scripts/seed-admin.mjs` + `npm run seed:admin` for fresh-DB creation with `ADMIN_PASSWORD`.
+- [x] **Group invite code UX** — surface code in create-group toast (auto-copied to clipboard); new `POST /api/groups/join-by-code` endpoint looks up group server-side (old client-side lookup scanned only the user's own groups, so joining never worked).
 
 ### High Value
 - [ ] Full multi-book odds comparison with best-line highlighting
@@ -84,7 +95,20 @@
 
 ---
 
-## Phase 2 — Product Expansion (Q2–Q3 2026)
+## Phase 2 — Prediction Game Spotlight (April–May 2026)
+
+Make the Prediction Game the most obvious, socially-shareable feature on the site.
+
+- [ ] **Active-contest banner on homepage** — gold-bordered banner above Today's Edge when user has ≥1 `status='active'` contest entry, with deep-link to the leaderboard
+- [ ] **Bottom-nav Play badge** — numeric dot on the Play tab in `mobile-bottom-nav.tsx` when user has active contests
+- [ ] **Shareable pick cards** — `/api/og/pick/:id` endpoint rendering a 1200×630 PNG (expert portrait + team logos + pick + confidence + wordmark) via `satori`/`@vercel/og`; Share button on expert cards and Today's Edge items
+- [ ] **Contest chat** — `contest_messages` table + polling endpoint + chat drawer on `contest-detail.tsx`; server-side filter via existing `phrase_detection_rules`
+- [ ] **Group Contests v2** — extend `contests` with `sport`, `scoring_mode` (net profit / ROI / win-rate), `allow_parlays`, `min_stake`, `max_stake`, `entry_fee_coins`, `max_entrants`, `prize_split`; settlement engine honors parlay/stake flags per contest
+- [ ] **"Beat the Experts" H2H teaser** — new route `/h2h` pitting user's 7-day virtual-bet record vs each expert; "Challenge" CTA pre-populates a 7-day contest seeded against the expert's picks
+- [ ] **Confetti on win** — `canvas-confetti` fires from bet-settle toast (win outcome) and contest completion
+- [ ] **Richer contest leaderboard** — team logos on recent-bets column, ROI/win-rate sort toggle
+
+## Phase 2b — Multi-Sport & Betting Tools (Q2–Q3 2026)
 
 - [ ] **NFL integration** via Tank01 (spreads, totals, props)
 - [ ] **NBA integration**
@@ -97,24 +121,47 @@
 
 ---
 
-## Phase 3 — Platform Maturity & Engagement (Q3–Q4 2026)
+## Phase 3 — Content & Engagement Layer (Q2–Q3 2026)
 
+- [ ] **"For You" feed** — blended timeline in `feed.tsx` mixing Morning Roast articles, expert picks, consensus alerts, trivia prompts, contest updates, weighted by user follows + favorite teams
+- [ ] **Expert Panel columnist redesign** — larger portrait + 2-sentence bio on hover, latest-pick headline, consensus/debate mini-cards
+- [ ] **Editorial-first game cards** — pitchers, weather, park factor visible by default; odds collapse behind a "Show Odds" toggle for free users
+- [ ] **Morning Roast article polish** — related stories rail (`/api/blog/related?tags=`), reading-time chip, author bio footer, section pulls
+- [ ] **Onboarding modal** — post-signup "Pick 3 favorite teams" grid; persist to `users.favorite_teams` jsonb
+- [ ] **Daily trivia popup** — first-visit-of-day bubble "earn 100 coins · 30s"
+- [ ] **Writer follow** — users can follow specific beat writers to prioritize their content in the feed
 - [ ] College sports (CFB + CBB)
-- [ ] Unified content feed personalization ("For You")
-- [ ] Onboarding flow + favorite teams + streak counter
 - [ ] Comments on Morning Roast articles
-- [ ] Shareable expert pick cards
-- [ ] Beat the Expert H2H mode
 - [ ] Discord / Telegram community access
 - [ ] AI chat assistant (conversational "Which unders have edge today?")
 
-### Technical Improvements
-- [ ] Replace in-memory cache with Redis / Supabase Edge
-- [ ] Image optimization proxy for ESPN assets
-- [ ] Centralized error handling middleware
-- [ ] Rate limiting on AI endpoints
-- [ ] WCAG 2.1 AA compliance
-- [ ] Core Web Vitals optimization
+---
+
+## Phase 4 — Production Readiness & Performance (Q3 2026)
+
+- [ ] **Finish `routes.ts` split** — extract remaining routers (games, admin, subscriptions, settlement, odds, power scores); target `server/routes.ts` < 1000 lines
+- [ ] **React ErrorBoundary** around each lazy route + centralized Express error middleware with request-id
+- [ ] **Rate limiting** per-user on AI endpoints (separate bucket for expensive endpoints)
+- [ ] **Caching** — move `server/lib/cache.ts` to Redis (Upstash) with stampede protection; cache `/api/experts`, `/api/blog/reviews`, `/api/games`
+- [ ] **SEO** — dynamic `<title>` + meta + Open Graph per route (article, expert profile, contest) via `react-helmet-async`; `/sitemap.xml` + `robots.txt`
+- [ ] **WCAG 2.1 AA** — axe-core audit in Vitest; focus rings, ARIA labels on icon buttons, keyboard nav
+- [ ] **Core Web Vitals** — preload hero image, lazy-load below-fold, image-optimization proxy for ESPN logos; target Lighthouse 95+
+- [ ] **Test coverage ≥ 60%** on critical paths (settlement, contests, auth); currently 50 tests
+- [ ] **Stripe webhook hardening** — signature verification, idempotency key, replay protection
+- [ ] **Admin API logging dashboard** — searchable, filterable payload logs
+- [ ] **Database indices** — `expert_picks(expert_id, game_date)`, `virtual_bets(user_id, status)`, `contest_entries(contest_id)`
+
+---
+
+## Phase 5 — Growth & Monetization (ongoing)
+
+- [ ] **Email + Telegram daily alerts** (Resend already wired for newsletter; add Telegram bot + preference center at `/account/alerts`)
+- [ ] **Referral system polish** — visible referral code on account page, tracked conversions, reward unlocks (e.g., 2 referrals = free Pro week)
+- [ ] **Coin store visual upgrade** — gold-accented tiles, limited-time bundles, purchase-modal confetti
+- [ ] **"Sharp Pass" (Elite) launch** — parlay builder, prop finder, AI chat all behind Elite gate; landing at `/sharp-pass`
+- [ ] **Analytics + A/B testing** — PostHog or Plausible; funnel events (view → signup → first-bet → first-contest → subscribe); feature flags for experiment gating
+- [ ] Leaderboard badges for top trivia players
+- [ ] Weekly wrap-up email ("Your week: 3 trivia correct, Expert Sharp went 5-2, 12 new recaps")
 
 ---
 

@@ -1,6 +1,6 @@
 # ClearEdge Sports — UI/UX Roadmap
 
-> Last updated: 2026-04-04
+> Last updated: 2026-04-15
 > Context: ClearEdge has evolved from a sports betting analytics tool into an **AI-automated sports news + expert analysis platform**. The UI needs to catch up.
 
 ---
@@ -37,45 +37,42 @@ The **content is editorial** (beat writers, game recaps, expert analysis) but th
 ## Phase 1 — Identity Alignment (1-2 weeks)
 
 ### 1.1 Homepage Redesign
-- [ ] **Remove hero logo/tagline block** — the site name is already in the nav. Use that space for content
-- [ ] **Morning Roast as full-bleed hero** — featured story image should span the full viewport width (no max-w-5xl constraint on the hero)
-- [ ] **Merge "Picks of the Day" and "Expert Picks Today"** into one section called "Today's Edge" — shows the 3 best picks from across all experts with one-line rationale
-- [ ] **Yesterday's scores as a ticker strip** — thin horizontal bar below the nav (like ESPN), not a card section
-- [ ] **Today's games as a compact schedule rail** — horizontal scroll of game pills (LAD@WSH 7:05, NYM@SF 10:15) instead of a 3-column grid
+- [x] **Remove hero logo/tagline block**
+- [x] **Morning Roast as full-bleed hero** (`aspect-[16/9] sm:aspect-[21/9]`, outside `max-w-5xl` constraint)
+- [x] **Merge "Picks of the Day" and "Expert Picks Today"** into "Today's Edge"
+- [x] **Yesterday's scores as a ticker strip** (`home.tsx:49-103`, horizontal scroll of 130px cards)
+- [x] **Today's games as a compact schedule rail** (pill-shaped horizontal scroll)
 
 ### 1.2 Navigation Overhaul
-- [ ] **Replace sidebar with top navigation tabs** on desktop — "Feed | Games | Experts | Rankings | Play" — content area gets full width
-- [ ] **Or: make sidebar collapsible** — collapsed by default showing only icons, expands on hover. Gives content more breathing room
-- [ ] **Rename sidebar categories** to match editorial voice:
-  - "Games & Odds" → "Today's Matchups"
-  - "Rankings" → "Power Rankings"
-  - "My Picks" → "My History"
-  - "Tools & Calculators" → move to a settings/utility page, not primary nav
-- [ ] **Remove "Pick Slip" from sidebar footer** — move to a floating button (like a shopping cart) that only appears when items are added
-- [ ] **Mobile bottom nav update** — swap "Players" for "Trivia" (more engagement-oriented)
+- [x] **Desktop top navigation tabs** (Feed · Today's Matchups · Experts · Power Rankings · **Play**) in `top-nav.tsx`
+- [x] **Sidebar collapsible** — icon rail (w-16) expands to full sidebar (w-72) on hover; `layout.tsx`
+- [x] **Rename sidebar categories** — Today's Matchups, Power Rankings, My History
+- [x] **Tools & Calculators** moved to General section (not per-sport)
+- [x] **Pick Slip floating button** — only shows when `bets.length > 0`
+- [x] **Mobile bottom nav** — Home · Feed · Experts · Roast · Games
 
 ### 1.3 Typography & Spacing
-- [ ] **Increase body text size** from 14px to 15-16px for article content (blog readability)
-- [ ] **Add a serif option for article body text** — sans-serif for UI, serif for long-form content (like Substack/Medium)
-- [ ] **Increase line-height** on Morning Roast articles from 1.5 to 1.7 for readability
-- [ ] **Add section dividers** — thin horizontal rules between homepage sections instead of relying on spacing alone
+- [x] **Body text 15.5px** with 1.75 line-height (`.article-body` in `index.css`)
+- [x] **Serif for long-form** — Lora font, applied via `.article-body`
+- [x] **Section dividers** — `border-b border-border/20` between homepage sections
 
 ---
 
 ## Phase 2 — Content Experience (2-3 weeks)
 
 ### 2.1 Morning Roast Enhancements
-- [ ] **Article reading time estimate** — "3 min read" badge on each story card
-- [ ] **Share buttons** — Twitter/X, copy link, share to group
-- [ ] **Related stories** at the bottom of each article — "More from Chip Dalloway" or "Other games from April 3"
-- [ ] **Category tags** — "Blowout", "Walk-off", "Shutout", "Extra Innings" auto-tagged from box score data
+- [x] **Article reading time** — computed from word count in `blog.tsx`
+- [x] **Share buttons** — X intent + copy link wired on article page
+- [x] **Category tags** — Blowout / Close Game / Walk-Off / Shutout / Extras auto-detected from box score
+- [ ] **Related stories** at the bottom of each article (`/api/blog/related?tags=` endpoint — Phase 3)
 - [ ] **Writer follow** — users can follow specific beat writers and get their content surfaced first
 
 ### 2.2 Expert Panel Redesign
-- [ ] **Expert cards as "columnist" profiles** — larger avatar (generated AI portrait instead of emoji), bio snippet visible without expanding
-- [ ] **Picks presented as "analysis cards"** not table rows — each pick gets its own mini-card with rationale visible by default
-- [ ] **Consensus indicator** — when 3+ experts agree, show a "🔥 Consensus Pick" banner on the game card
-- [ ] **Expert vs Expert** — when two experts disagree on the same game, highlight it as a "Debate" card
+- [x] **AI-generated expert portraits** — `ExpertAvatar` renders URL or emoji fallback; 5 DALL-E portraits in `client/public/experts/`
+- [x] **Consensus indicator** — 🔥 "Consensus Pick — N experts agree" banner on Today's Edge (home.tsx)
+- [ ] **Columnist profile cards** — larger avatar + 2-sentence bio on hover, latest pick headline (Phase 3)
+- [ ] **Picks as "analysis cards"** not table rows — each pick gets its own mini-card with rationale visible by default
+- [ ] **Expert vs Expert "Debate" cards** — when two experts disagree on the same game
 
 ### 2.3 Game Cards Reimagined
 - [ ] **Default view: editorial** — show team logos, pitchers, venue, weather, expert pick count. No odds unless user expands
@@ -93,19 +90,19 @@ The **content is editorial** (beat writers, game recaps, expert analysis) but th
 ## Phase 3 — Visual Polish (1-2 weeks)
 
 ### 3.1 Color & Branding
-- [ ] **Soften the dark theme** — move background from `#09090b` (near-black) to `#0f0f11` (slightly lighter). Reduces eye strain for long reading sessions
-- [ ] **Reduce emerald green usage** — green screams "money/profit" which reinforces betting. Use it sparingly for positive indicators only. Primary accent → amber/gold for "ClearEdge" branding
-- [ ] **Add warm accent** — introduce a warm tone (amber or terracotta) for editorial content to differentiate from the cool analytics palette
-- [ ] **Expert avatars upgrade** — replace emoji avatars with AI-generated portrait illustrations (consistent art style, like The Athletic's columnist headshots)
+- [x] **Softened dark theme** — `#0f0f11` background, `#141416` lifted cards
+- [x] **Reduced emerald** — emerald reserved for positive/win indicators only
+- [x] **Gold primary accent** — `#eab308` on CSS vars, ring, chart-1, sidebar
+- [x] **Expert avatars** — AI-generated DALL-E portraits (5 personas) shipped
 
 ### 3.2 Motion & Interaction
-- [ ] **Page transitions** — subtle fade-in when navigating between pages (150ms ease-out)
-- [ ] **Scroll-triggered animations** — Morning Roast cards fade in as they enter viewport
-- [ ] **Hover states on game cards** — subtle scale (1.01) + border glow on hover
-- [ ] **Loading skeletons** — match the actual content layout (not generic gray blocks)
+- [x] **Page transitions** — `.page-enter` fade keyed on `location` in `layout.tsx`
+- [x] **Hover states on game cards** — `.play-card` utility (scale 1.01 + gold glow) on Prediction Game cards
+- [x] **Loading skeletons** — layout-matching skeletons on home (5 sections), experts, virtual sportsbook, groups, contests, contest-detail, my-bets, weekly-leaderboard, blog
+- [ ] **Scroll-triggered animations** — `.scroll-fade` utility exists but not wired to IntersectionObserver yet
 
 ### 3.3 Responsive Refinements
-- [ ] **Tablet breakpoint** (768-1024px) — currently jumps from mobile (bottom nav) to desktop (sidebar). Add a middle state: top tabs + no sidebar
+- [ ] **Tablet breakpoint pass** (768–1024px) — sidebar-rail + top-nav tabs behavior check
 - [ ] **Game cards on tablet** — 2-column grid with slightly larger text
 - [ ] **Morning Roast on tablet** — featured story + 2 cards (not 3)
 - [ ] **Expert Panel on mobile** — horizontal swipe carousel instead of vertical stack
@@ -120,14 +117,15 @@ The **content is editorial** (beat writers, game recaps, expert analysis) but th
 - [ ] **Guided tour** — 4-step tooltip tour: "Here's the Morning Roast", "Meet our Expert Panel", "Play the Prediction Game", "Subscribe for daily picks"
 
 ### 4.2 Retention Hooks
-- [ ] **Daily streak counter** — "You've visited 5 days in a row! 🔥" — visible in nav
-- [ ] **Trivia of the Day popup** — show 1 question on homepage visit (before scrolling), earn quick coins
-- [ ] **Weekly wrap-up email** — "Your week: 3 trivia correct, Expert Sharp went 5-2, Morning Roast had 12 new recaps"
+- [x] **Streak counter** — flame chip in top nav, computed from virtual-bet win streak (`top-nav.tsx` `StreakChip`)
+- [ ] **Trivia of the Day popup** — first-visit-of-day bubble on homepage
+- [ ] **Weekly wrap-up email** — "Your week: 3 trivia correct, Expert Sharp went 5-2, 12 new recaps"
 
 ### 4.3 Social & Community
-- [ ] **Comment on Morning Roast articles** — threaded comments with upvote/downvote
-- [ ] **Share expert picks** — "I'm following The Quant's play tonight" → shareable card image
-- [ ] **Leaderboard badges** — top 10 trivia players get a badge on their profile
+- [ ] **Comments on Morning Roast articles** — threaded with upvote/downvote
+- [ ] **Shareable expert picks** — `/api/og/pick/:id` 1200×630 PNG with portrait + logos + pick + confidence (Phase 2)
+- [ ] **Contest chat** — `contest_messages` table with phrase-detection filter (Phase 2)
+- [ ] **Leaderboard badges** — top 10 trivia players get a profile badge
 
 ---
 
@@ -183,18 +181,24 @@ The **content is editorial** (beat writers, game recaps, expert analysis) but th
 
 ---
 
-## Design Tokens (proposed updates)
+## Design Tokens (shipped — see `client/src/index.css`)
 
 ```css
-/* Shift from "trading terminal" to "premium sports publication" */
---background: #0f0f11;          /* slightly warmer than #09090b */
---card: #141416;                /* lift cards more from background */
---primary: #eab308;             /* gold as brand primary (was emerald) */
---primary-positive: #22c55e;    /* keep green for positive indicators only */
---secondary: #3b82f6;           /* blue for data/analytics elements */
---accent-warm: #d97706;         /* amber for editorial warmth */
---text-article: #d4d4d8;        /* slightly brighter for long-form reading */
---text-ui: #a1a1aa;             /* muted for interface elements */
+/* ClearEdge Sports — Premium Sports Publication Theme */
+--background: #0f0f11;          /* softer dark (was #09090b) */
+--card: #141416;                /* lifted card surface */
+--primary: #eab308;             /* gold — editorial warmth */
+--secondary: #3b82f6;           /* blue — data/analytics */
+--accent: #22c55e;              /* green — positive/win indicators only */
+--ring: #eab308;
+--warning: #f59e0b;
+--text-article: #d4d4d8;        /* brighter for long-form reading */
+
+/* Component utilities */
+.card-glow      /* gold glow on hover */
+.play-card      /* stronger gold treatment + scale(1.01) — Prediction Game cards */
+.page-enter     /* 150ms fade on route change */
+.article-body   /* 15.5px Lora serif, 1.75 line-height */
 ```
 
 ---
