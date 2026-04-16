@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExpertAvatar } from "@/components/expert-avatar";
-import { Pen, History, Target, ChevronRight } from "lucide-react";
+import { Pen, History, Target, ChevronRight, Trophy } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Link } from "wouter";
 import { format, subDays } from "date-fns";
@@ -20,7 +20,6 @@ interface BlogReview { id: number; title: string; content: string; author: strin
 interface TodayGame { gameId: string; awayTeam: string; homeTeam: string; awayTeamCode: string; homeTeamCode: string; gameTime: string; awayPitcher?: string; homePitcher?: string; odds: Array<{ market: string; awayOdds?: number; homeOdds?: number; total?: string }>; }
 
 export default function Home() {
-  useAuth();
   const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
   const today = new Date().toISOString().split('T')[0];
 
@@ -32,6 +31,15 @@ export default function Home() {
   const { data: expertPicks = [], isLoading: picksLoading } = useQuery<any[]>({ queryKey: ['/api/expert-picks', today], queryFn: () => fetch(`/api/expert-picks?date=${today}`).then(r => r.json()), staleTime: 300000 });
   const { data: experts = [] } = useQuery<Array<{ id: string; avatar: string; name: string }>>({ queryKey: ['/api/experts'], queryFn: () => fetch('/api/experts').then(r => r.json()), staleTime: 600000 });
   const expertById = new Map(Array.isArray(experts) ? experts.map((e) => [e.id, e]) : []);
+
+  const { user } = useAuth();
+  const { data: myContests = [] } = useQuery<Array<{ id: number; name: string; status: string; endDate: string; myEntry: { currentBalance: number } | null; startingBankroll: number }>>({
+    queryKey: ['/api/contests'],
+    queryFn: () => fetch('/api/contests', { credentials: 'include' }).then((r) => (r.ok ? r.json() : [])),
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+  const activeContests = (Array.isArray(myContests) ? myContests : []).filter((c) => c.status === 'active' && c.myEntry);
 
   const safeGames = Array.isArray(todayGames) ? todayGames : [];
   const safeNhlScores = Array.isArray(nhlScores) ? nhlScores : [];
@@ -214,6 +222,27 @@ export default function Home() {
               </Link>
             ))}
           </div>
+        )}
+
+        {/* ── Active Contests Banner ── */}
+        {activeContests.length > 0 && (
+          <Link href={activeContests.length === 1 ? `/contests/${activeContests[0].id}` : '/contests'}>
+            <div className="mt-4 flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/8 to-transparent cursor-pointer hover:border-amber-500/60 transition-colors">
+              <Trophy className="h-5 w-5 text-amber-400 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-wider font-bold text-amber-300">
+                  {activeContests.length === 1 ? 'Live Contest' : `${activeContests.length} Live Contests`}
+                </div>
+                <div className="text-sm font-semibold text-foreground truncate">
+                  {activeContests.length === 1
+                    ? activeContests[0].name
+                    : activeContests.slice(0, 2).map((c) => c.name).join(' · ')}
+                </div>
+              </div>
+              <span className="text-xs text-amber-300 hidden sm:inline">View Leaderboard</span>
+              <ChevronRight className="h-4 w-4 text-amber-400 flex-shrink-0" />
+            </div>
+          </Link>
         )}
 
         {/* ── Today's Edge (skeleton) ── */}
