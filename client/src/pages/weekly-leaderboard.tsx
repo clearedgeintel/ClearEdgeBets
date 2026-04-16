@@ -147,10 +147,21 @@ export default function WeeklyLeaderboard() {
         <TabsContent value="leaderboard" className="space-y-4">
           {isLoading ? (
             <Card>
-              <CardContent className="flex items-center justify-center h-64">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-muted-foreground">Loading leaderboard...</p>
+              <CardContent className="p-0">
+                <div className="divide-y divide-border/30">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 animate-pulse">
+                      <div className="h-8 w-8 rounded-full bg-muted flex-shrink-0" />
+                      <div className="flex-1 space-y-1">
+                        <div className="h-4 w-40 bg-muted rounded" />
+                        <div className="h-3 w-24 bg-muted/70 rounded" />
+                      </div>
+                      <div className="text-right space-y-1">
+                        <div className="h-4 w-16 bg-muted rounded ml-auto" />
+                        <div className="h-3 w-12 bg-muted/70 rounded ml-auto" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>

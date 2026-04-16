@@ -398,7 +398,25 @@ export default function MyBets() {
           </TabsContent>
 
           <TabsContent value="pending" className="space-y-4">
-            {pendingBets.length === 0 ? (
+            {betsLoading && pendingBets.length === 0 ? (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 w-2/5 bg-muted rounded" />
+                          <div className="h-3 w-3/5 bg-muted/70 rounded" />
+                          <div className="h-5 w-16 bg-muted rounded-full" />
+                        </div>
+                        <div className="h-5 w-14 bg-muted rounded" />
+                      </div>
+                      <div className="h-3 w-1/3 bg-muted/70 rounded" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : pendingBets.length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
                   <div className="text-muted-foreground">

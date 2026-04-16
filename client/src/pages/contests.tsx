@@ -319,7 +319,33 @@ export default function Contests() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12 text-zinc-500">Loading contests...</div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i} className="bg-zinc-900/50 border-border/30 animate-pulse">
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2">
+                    <div className="h-5 w-36 bg-muted rounded" />
+                    <div className="h-3 w-24 bg-muted/70 rounded" />
+                  </div>
+                  <div className="h-5 w-16 bg-muted rounded-full" />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-3 gap-2">
+                  {[0, 1, 2].map((k) => (
+                    <div key={k} className="space-y-1">
+                      <div className="h-2 w-12 bg-muted/70 rounded mx-auto" />
+                      <div className="h-4 w-14 bg-muted rounded mx-auto" />
+                    </div>
+                  ))}
+                </div>
+                <div className="h-12 bg-muted/60 rounded" />
+                <div className="h-8 bg-muted/60 rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : contests.length === 0 ? (
         <Card className="bg-zinc-900/40 border-dashed">
           <CardContent className="py-12 text-center text-zinc-500">

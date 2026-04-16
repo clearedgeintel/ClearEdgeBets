@@ -61,7 +61,42 @@ export default function ContestDetail({ id }: ContestDetailProps) {
     queryKey: [`/api/contests/${id}/bets`],
   });
 
-  if (isLoading) return <div className="p-8 text-center text-zinc-500">Loading...</div>;
+  if (isLoading) return (
+    <div className="container mx-auto px-4 py-6 space-y-6 max-w-5xl">
+      <div className="h-8 w-28 bg-muted/60 rounded animate-pulse" />
+      <Card className="bg-zinc-900/60 border-amber-500/20 animate-pulse">
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <div className="h-7 w-48 bg-muted rounded" />
+              <div className="h-3 w-64 bg-muted/70 rounded" />
+            </div>
+            <div className="h-5 w-16 bg-muted rounded-full" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="space-y-1">
+                <div className="h-2 w-14 bg-muted/70 rounded mx-auto" />
+                <div className="h-4 w-20 bg-muted rounded mx-auto" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="animate-pulse">
+        <CardHeader>
+          <div className="h-5 w-32 bg-muted rounded" />
+        </CardHeader>
+        <CardContent className="space-y-1">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-10 bg-zinc-900/40 rounded" />
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
   if (!data) return <div className="p-8 text-center text-zinc-500">Contest not found</div>;
 
   const start = new Date(data.startDate);
