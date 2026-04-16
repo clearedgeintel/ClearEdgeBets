@@ -201,7 +201,7 @@ export default function Home() {
       <div className="max-w-5xl mx-auto px-4">
         {/* ── More Stories ── */}
         {moreReviews.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 py-6 border-b border-border/20">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 py-6 border-b border-border/20">
             {moreReviews.map((review) => (
               <Link key={review.id} href="/blog">
                 <div className="flex gap-3 group cursor-pointer">

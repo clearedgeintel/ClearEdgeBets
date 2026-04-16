@@ -27,8 +27,8 @@ export default function Layout({ children }: LayoutProps) {
           if (user) user.onboardingComplete = true;
         }} />
       )}
-      {/* Sidebar area — hidden on mobile/tablet, visible on lg+ */}
-      <div className="hidden lg:block flex-shrink-0 w-16 relative z-40 group/sidebar">
+      {/* Sidebar area — rail visible at md+ (tablet + desktop); full sidebar on hover */}
+      <div className="hidden md:block flex-shrink-0 w-16 relative z-40 group/sidebar">
         {/* Rail: always visible at w-16 */}
         <div className="fixed top-0 left-0 h-screen w-16 bg-[#111113] border-r border-border/20 group-hover/sidebar:opacity-0 transition-opacity duration-200">
           <SidebarRail />

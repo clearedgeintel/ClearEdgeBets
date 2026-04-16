@@ -179,7 +179,8 @@ export default function Experts() {
 
       <DebatesBanner picks={todayPicks} experts={experts} />
 
-      <div className="space-y-4">
+      {/* Desktop: vertical stack. Mobile (<sm): horizontal scroll-snap carousel for compact browsing */}
+      <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-none sm:flex-col sm:gap-4 sm:overflow-visible sm:snap-none sm:pb-0">
         {expertsLoading && experts.length === 0 && Array.from({ length: 5 }).map((_, i) => (
           <Card key={`sk-${i}`} className="border border-zinc-700/60 overflow-hidden rounded-xl">
             <CardContent className="p-4 sm:p-5">
@@ -215,7 +216,7 @@ export default function Experts() {
           const streak = getStreak(history);
 
           return (
-            <Card key={expert.id} className="border border-zinc-700/60 overflow-hidden rounded-xl shadow-md shadow-black/20">
+            <Card key={expert.id} className="border border-zinc-700/60 overflow-hidden rounded-xl shadow-md shadow-black/20 snap-start flex-shrink-0 w-[85%] min-w-[85%] sm:w-auto sm:min-w-0 sm:flex-shrink">
               <CardContent className="p-0">
                 {/* Expert header */}
                 <div className="p-3 sm:p-4 cursor-pointer hover:bg-zinc-800/20 transition-colors"
