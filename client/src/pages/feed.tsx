@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Pen, Target, Mail, ChevronRight, Clock } from "lucide-react";
 import { Link } from "wouter";
+import { FadeIn } from "@/components/fade-in";
 
 interface FeedItem {
   id: string;
@@ -99,7 +100,7 @@ export default function Feed() {
             const showDateSeparator = !prevItem || new Date(item.timestamp).toDateString() !== new Date(prevItem.timestamp).toDateString();
 
             return (
-              <div key={item.id}>
+              <FadeIn key={item.id}>
                 {/* Date separator */}
                 {showDateSeparator && (
                   <div className="flex items-center gap-2 py-3">
@@ -172,7 +173,7 @@ export default function Feed() {
                     <ChevronRight className="h-4 w-4 text-zinc-700 group-hover:text-zinc-400 flex-shrink-0 mt-1" />
                   </div>
                 </Link>
-              </div>
+              </FadeIn>
             );
           })}
         </div>
