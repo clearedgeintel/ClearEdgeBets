@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
@@ -75,6 +75,24 @@ export default function ContestDetail({ id }: ContestDetailProps) {
       celebrate({ intensity: 'big' });
     }
   }, [user, data]);
+
+  const [sort, setSort] = useState<'balance' | 'roi' | 'winRate'>('balance');
+  const sortedRows = useMemo(() => {
+    if (!data) return [];
+    const withMetrics = data.leaderboard.map((r) => {
+      const delta = r.currentBalance - data.startingBankroll;
+      const roi = data.startingBankroll > 0 ? (delta / data.startingBankroll) * 100 : 0;
+      const settled = (r.wonBets || 0) + (r.lostBets || 0);
+      const winRate = settled > 0 ? ((r.wonBets || 0) / settled) * 100 : 0;
+      return { ...r, delta, roi, winRate, settled };
+    });
+    const sorted = [...withMetrics].sort((a, b) => {
+      if (sort === 'balance') return b.currentBalance - a.currentBalance;
+      if (sort === 'roi') return b.roi - a.roi;
+      return b.winRate - a.winRate;
+    });
+    return sorted.map((r, i) => ({ ...r, displayRank: i + 1 }));
+  }, [data, sort]);
 
   if (isLoading) return (
     <div className="container mx-auto px-4 py-6 space-y-6 max-w-5xl">
@@ -173,38 +191,52 @@ export default function ContestDetail({ id }: ContestDetailProps) {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <CardTitle className="text-lg">Leaderboard</CardTitle>
+          <div className="flex items-center gap-1">
+            {(['balance', 'roi', 'winRate'] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setSort(mode)}
+                className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
+                  sort === mode
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                    : 'text-zinc-500 hover:text-zinc-300 border border-transparent'
+                }`}
+              >
+                {mode === 'balance' ? 'Balance' : mode === 'roi' ? 'ROI' : 'Win %'}
+              </button>
+            ))}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-1">
-            {data.leaderboard.map((row) => {
-              const delta = row.currentBalance - data.startingBankroll;
+            {sortedRows.map((row) => {
               const isWinner = data.winnerId === row.userId;
               return (
                 <div
                   key={row.entryId}
                   className={`flex items-center justify-between py-2 px-3 rounded ${
-                    isWinner ? "bg-amber-500/10 border border-amber-500/30" : "bg-zinc-900/40"
+                    isWinner ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-zinc-900/40'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-zinc-500 w-6 text-right">#{row.rank}</span>
+                    <span className="text-zinc-500 w-6 text-right">#{row.displayRank}</span>
                     {isWinner && <Crown className="h-4 w-4 text-amber-400" />}
                     <span className="font-medium">{row.username || `User #${row.userId}`}</span>
-                    <span className="text-xs text-zinc-500">
-                      {row.wonBets}-{row.lostBets}
-                    </span>
+                    <span className="text-xs text-zinc-500">{row.wonBets}-{row.lostBets}</span>
                   </div>
                   <div className="flex items-center gap-4 tabular-nums">
                     <span className="font-semibold">{fmt(row.currentBalance)}</span>
+                    <span className="text-xs w-14 text-right text-zinc-400">
+                      {row.settled > 0 ? `${row.winRate.toFixed(0)}%` : '—'}
+                    </span>
                     <span
                       className={`text-xs w-16 text-right ${
-                        delta > 0 ? "text-emerald-400" : delta < 0 ? "text-red-400" : "text-zinc-500"
+                        row.delta > 0 ? 'text-emerald-400' : row.delta < 0 ? 'text-red-400' : 'text-zinc-500'
                       }`}
                     >
-                      {delta >= 0 ? "+" : ""}
-                      {fmt(delta)}
+                      {row.delta >= 0 ? '+' : ''}{fmt(row.delta)}
                     </span>
                   </div>
                 </div>
@@ -232,21 +264,21 @@ export default function ContestDetail({ id }: ContestDetailProps) {
                   <div className="flex items-center gap-2 min-w-0">
                     <Badge
                       className={`text-[9px] ${
-                        bet.result === "win"
-                          ? "bg-emerald-500/10 text-emerald-400"
-                          : bet.result === "loss"
-                          ? "bg-red-500/10 text-red-400"
-                          : "bg-amber-500/10 text-amber-400"
+                        bet.result === 'win'
+                          ? 'bg-emerald-500/10 text-emerald-400'
+                          : bet.result === 'loss'
+                          ? 'bg-red-500/10 text-red-400'
+                          : 'bg-amber-500/10 text-amber-400'
                       }`}
                     >
-                      {bet.status === "settled" ? bet.result?.toUpperCase() : "PENDING"}
+                      {bet.status === 'settled' ? bet.result?.toUpperCase() : 'PENDING'}
                     </Badge>
                     <span className="truncate">{bet.selection}</span>
                   </div>
                   <div className="flex items-center gap-3 tabular-nums text-zinc-500">
                     <span>${bet.stake}</span>
                     <span>{bet.odds > 0 ? `+${bet.odds}` : bet.odds}</span>
-                    {bet.status === "settled" && bet.result === "win" && (
+                    {bet.status === 'settled' && bet.result === 'win' && (
                       <span className="text-emerald-400">+${bet.actualWin}</span>
                     )}
                   </div>
