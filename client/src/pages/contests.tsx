@@ -11,8 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy, Plus, Users, Clock, DollarSign, Crown } from "lucide-react";
+import { Trophy, Plus, Crown } from "lucide-react";
 import { format } from "date-fns";
 
 interface Contest {
@@ -53,6 +54,12 @@ export default function Contests() {
     startingBankroll: 1000,
     startDate: format(new Date(), "yyyy-MM-dd"),
     durationDays: 7,
+    sport: "",
+    scoringMode: "balance",
+    allowParlays: true,
+    minStake: "",
+    maxStake: "",
+    maxEntrants: "",
   });
 
   const { data: contests = [], isLoading } = useQuery<Contest[]>({
@@ -293,6 +300,53 @@ export default function Contests() {
                   onChange={(e) => setForm({ ...form, startDate: e.target.value })}
                 />
               </div>
+
+              {/* v2 options */}
+              <div className="pt-2 border-t border-border/20 space-y-3">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Contest Rules</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Sport</Label>
+                    <Select value={form.sport} onValueChange={(v) => setForm({ ...form, sport: v })}>
+                      <SelectTrigger><SelectValue placeholder="All sports" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All sports</SelectItem>
+                        <SelectItem value="mlb">MLB</SelectItem>
+                        <SelectItem value="nhl">NHL</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Winner by</Label>
+                    <Select value={form.scoringMode} onValueChange={(v) => setForm({ ...form, scoringMode: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="balance">Highest balance</SelectItem>
+                        <SelectItem value="roi">Best ROI</SelectItem>
+                        <SelectItem value="win_rate">Best win rate</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm">Allow parlays</Label>
+                  <Switch checked={form.allowParlays} onCheckedChange={(v) => setForm({ ...form, allowParlays: v })} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Min stake ($)</Label>
+                    <Input type="number" placeholder="No min" value={form.minStake} onChange={(e) => setForm({ ...form, minStake: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Max stake ($)</Label>
+                    <Input type="number" placeholder="No max" value={form.maxStake} onChange={(e) => setForm({ ...form, maxStake: e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <Label>Max entrants</Label>
+                  <Input type="number" placeholder="Unlimited" value={form.maxEntrants} onChange={(e) => setForm({ ...form, maxEntrants: e.target.value })} />
+                </div>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setCreateOpen(false)}>
@@ -308,6 +362,12 @@ export default function Contests() {
                     startingBankroll: form.startingBankroll,
                     startDate: form.startDate,
                     durationDays: form.durationDays,
+                    sport: form.sport || undefined,
+                    scoringMode: form.scoringMode,
+                    allowParlays: form.allowParlays,
+                    minStake: form.minStake ? Number(form.minStake) : undefined,
+                    maxStake: form.maxStake ? Number(form.maxStake) : undefined,
+                    maxEntrants: form.maxEntrants ? Number(form.maxEntrants) : undefined,
                   })
                 }
               >

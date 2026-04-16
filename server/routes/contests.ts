@@ -37,7 +37,10 @@ router.post("/api/contests", async (req, res) => {
     const userId = auth(req);
     if (!userId) return res.status(401).json({ error: "Not authenticated" });
 
-    const { groupId, name, description, startingBankroll, startDate, durationDays } = req.body;
+    const {
+      groupId, name, description, startingBankroll, startDate, durationDays,
+      sport, scoringMode, allowParlays, minStake, maxStake, maxEntrants,
+    } = req.body;
     if (!groupId || !name || !startDate || !durationDays) {
       return res.status(400).json({ error: "groupId, name, startDate, durationDays required" });
     }
@@ -69,6 +72,13 @@ router.post("/api/contests", async (req, res) => {
         startDate: start,
         endDate: end,
         status,
+        sport: sport || null,
+        scoringMode: scoringMode || "balance",
+        allowParlays: allowParlays !== false,
+        minStakeCents: minStake ? Math.round(Number(minStake) * 100) : 0,
+        maxStakeCents: maxStake ? Math.round(Number(maxStake) * 100) : null,
+        entryFeeCoins: 0,
+        maxEntrants: maxEntrants ? Number(maxEntrants) : null,
       })
       .returning();
 
