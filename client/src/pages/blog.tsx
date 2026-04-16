@@ -240,6 +240,8 @@ export default function Blog() {
             <Sparkles className="h-3 w-3 text-amber-400" />
             Written by {selectedReview.author} | AI-assisted sarcastic recap | For entertainment purposes only
           </div>
+
+          <ArticleComments reviewId={selectedReview.id} />
         </article>
       </div>
     );
@@ -418,6 +420,163 @@ export default function Blog() {
         </div>
       )}
     </div>
+  );
+}
+
+interface ArticleCommentRow {
+  id: number;
+  reviewId: number;
+  userId: number;
+  parentId: number | null;
+  body: string;
+  username: string | null;
+  createdAt: string;
+}
+
+function ArticleComments({ reviewId }: { reviewId: number }) {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const [draft, setDraft] = useState("");
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+
+  const { data: comments = [], isLoading } = useQuery<ArticleCommentRow[]>({
+    queryKey: ["/api/blog/comments", reviewId],
+    queryFn: () => fetch(`/api/blog/comments?reviewId=${reviewId}`).then((r) => (r.ok ? r.json() : [])),
+    staleTime: 30_000,
+  });
+
+  const postMutation = useMutation({
+    mutationFn: async ({ body, parentId }: { body: string; parentId: number | null }) => {
+      const res = await fetch("/api/blog/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ reviewId, body, parentId }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "Failed");
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/blog/comments", reviewId] });
+      setDraft("");
+      setReplyingTo(null);
+    },
+  });
+
+  const safe = Array.isArray(comments) ? comments : [];
+  const topLevel = safe.filter((c) => !c.parentId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const repliesFor = (parentId: number) =>
+    safe.filter((c) => c.parentId === parentId).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+  return (
+    <section className="mt-10 pt-6 border-t border-border/30">
+      <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">
+        Comments ({safe.length})
+      </h3>
+
+      {user ? (
+        <form
+          className="mb-6"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (draft.trim()) postMutation.mutate({ body: draft.trim(), parentId: null });
+          }}
+        >
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Share a take..."
+            maxLength={2000}
+            rows={3}
+            className="w-full p-3 text-sm bg-zinc-900 border border-border/30 rounded-lg resize-none focus:outline-none focus:border-amber-500/40"
+          />
+          <div className="flex justify-end mt-2">
+            <button
+              type="submit"
+              disabled={!draft.trim() || postMutation.isPending}
+              className="px-4 py-1.5 text-xs font-medium rounded-md bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white transition-colors"
+            >
+              {postMutation.isPending ? "Posting..." : "Post"}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <p className="text-sm text-muted-foreground mb-6">Sign in to join the discussion.</p>
+      )}
+
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-16 bg-zinc-900/40 rounded animate-pulse" />
+          ))}
+        </div>
+      ) : topLevel.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Be the first to comment.</p>
+      ) : (
+        <div className="space-y-4">
+          {topLevel.map((c) => (
+            <div key={c.id} className="bg-zinc-900/40 border border-border/20 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="h-6 w-6 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-[10px] font-bold text-amber-300">
+                  {(c.username || "?").charAt(0).toUpperCase()}
+                </div>
+                <span className="text-xs font-semibold text-foreground">{c.username || `User #${c.userId}`}</span>
+                <span className="text-[10px] text-zinc-600">{new Date(c.createdAt).toLocaleDateString()}</span>
+              </div>
+              <p className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{c.body}</p>
+              {user && (
+                <button
+                  onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
+                  className="text-[10px] text-zinc-500 hover:text-amber-400 mt-2 transition-colors"
+                >
+                  {replyingTo === c.id ? "Cancel" : "Reply"}
+                </button>
+              )}
+              {replyingTo === c.id && user && (
+                <form
+                  className="mt-2"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (draft.trim()) postMutation.mutate({ body: draft.trim(), parentId: c.id });
+                  }}
+                >
+                  <textarea
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    placeholder="Reply..."
+                    rows={2}
+                    maxLength={2000}
+                    className="w-full p-2 text-xs bg-zinc-950 border border-border/30 rounded focus:outline-none focus:border-amber-500/40"
+                  />
+                  <div className="flex justify-end mt-1">
+                    <button
+                      type="submit"
+                      disabled={!draft.trim() || postMutation.isPending}
+                      className="px-3 py-1 text-[11px] font-medium rounded bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white"
+                    >
+                      Reply
+                    </button>
+                  </div>
+                </form>
+              )}
+              {repliesFor(c.id).length > 0 && (
+                <div className="mt-3 pl-4 border-l-2 border-border/20 space-y-2">
+                  {repliesFor(c.id).map((r) => (
+                    <div key={r.id} className="text-xs">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="font-semibold text-foreground">{r.username || `User #${r.userId}`}</span>
+                        <span className="text-[10px] text-zinc-600">{new Date(r.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-zinc-400 whitespace-pre-wrap">{r.body}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 

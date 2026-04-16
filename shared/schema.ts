@@ -967,6 +967,21 @@ export const insertUserExpertFollowSchema = createInsertSchema(userExpertFollows
 export type InsertUserExpertFollow = z.infer<typeof insertUserExpertFollowSchema>;
 export type UserExpertFollow = typeof userExpertFollows.$inferSelect;
 
+// Article comments — threaded one level via parentId
+export const articleComments = pgTable("article_comments", {
+  id: serial("id").primaryKey(),
+  reviewId: integer("review_id").notNull(),
+  userId: integer("user_id").notNull(),
+  parentId: integer("parent_id"),  // null for top-level, comment id for replies
+  body: text("body").notNull(),
+  isHidden: boolean("is_hidden").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertArticleCommentSchema = createInsertSchema(articleComments).omit({ id: true, createdAt: true });
+export type InsertArticleComment = z.infer<typeof insertArticleCommentSchema>;
+export type ArticleComment = typeof articleComments.$inferSelect;
+
 // User beat-writer follows (Morning Roast authors)
 export const userWriterFollows = pgTable("user_writer_follows", {
   id: serial("id").primaryKey(),

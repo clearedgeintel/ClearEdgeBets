@@ -2549,6 +2549,82 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
     }
   });
 
+  // Article comments — list (public)
+  app.get('/api/blog/comments', async (req, res) => {
+    try {
+      const reviewId = parseInt(String(req.query.reviewId || ''));
+      if (!reviewId) return res.status(400).json({ error: 'reviewId required' });
+      const { db } = await import('./db');
+      const { articleComments, users } = await import('@shared/schema');
+      const { eq, and, desc } = await import('drizzle-orm');
+      const rows = await db
+        .select({
+          id: articleComments.id,
+          reviewId: articleComments.reviewId,
+          userId: articleComments.userId,
+          parentId: articleComments.parentId,
+          body: articleComments.body,
+          isHidden: articleComments.isHidden,
+          createdAt: articleComments.createdAt,
+          username: users.username,
+        })
+        .from(articleComments)
+        .leftJoin(users, eq(users.id, articleComments.userId))
+        .where(and(eq(articleComments.reviewId, reviewId), eq(articleComments.isHidden, false)))
+        .orderBy(desc(articleComments.createdAt))
+        .limit(200);
+      res.json(rows);
+    } catch (err) {
+      console.error('Error fetching comments:', err);
+      res.status(500).json({ error: 'Failed to fetch comments' });
+    }
+  });
+
+  // Post a comment
+  app.post('/api/blog/comments', async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const { reviewId, body, parentId } = req.body as { reviewId: number; body: string; parentId?: number };
+      if (!reviewId || !body || typeof body !== 'string' || body.trim().length === 0) {
+        return res.status(400).json({ error: 'reviewId and body required' });
+      }
+      if (body.length > 2000) return res.status(400).json({ error: 'Comment too long (max 2000 chars)' });
+      const { db } = await import('./db');
+      const { articleComments } = await import('@shared/schema');
+      const [row] = await db.insert(articleComments).values({
+        reviewId: Number(reviewId),
+        userId,
+        body: body.trim(),
+        parentId: parentId ? Number(parentId) : null,
+      }).returning();
+      res.status(201).json(row);
+    } catch (err) {
+      console.error('Error posting comment:', err);
+      res.status(500).json({ error: 'Failed to post comment' });
+    }
+  });
+
+  // Admin: hide/unhide a comment
+  app.post('/api/blog/comments/:id/hide', async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: 'Admin only' });
+      const id = Number(req.params.id);
+      const { hidden } = req.body as { hidden: boolean };
+      const { db } = await import('./db');
+      const { articleComments } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+      await db.update(articleComments).set({ isHidden: !!hidden }).where(eq(articleComments.id, id));
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Error hiding comment:', err);
+      res.status(500).json({ error: 'Failed to update comment' });
+    }
+  });
+
   // Related stories: same-author + same-date recaps (excluding the current one)
   app.get('/api/blog/related', async (req, res) => {
     try {
