@@ -27,6 +27,8 @@ export const users = pgTable("users", {
     settlements: boolean;
     lineMovements: boolean;
   }>().default({ dailyPicks: false, settlements: false, lineMovements: false }),
+  favoriteTeams: jsonb("favorite_teams").$type<string[]>().default([]),
+  onboardingComplete: boolean("onboarding_complete").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

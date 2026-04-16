@@ -139,12 +139,38 @@ router.get("/api/auth/me", async (req, res) => {
         email: user.email,
         subscriptionTier: user.subscriptionTier,
         subscriptionStatus: user.subscriptionStatus,
-        isAdmin: user.isAdmin || false
+        isAdmin: user.isAdmin || false,
+        favoriteTeams: user.favoriteTeams || [],
+        onboardingComplete: user.onboardingComplete || false,
       }
     });
   } catch (error) {
     console.error("Auth check error:", error);
     res.status(500).json({ error: "Authentication check failed" });
+  }
+});
+
+router.post("/api/auth/onboarding", async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ error: "Not authenticated" });
+
+    const { favoriteTeams } = req.body;
+    if (!Array.isArray(favoriteTeams)) {
+      return res.status(400).json({ error: "favoriteTeams must be an array" });
+    }
+
+    const { db } = await import("../db");
+    const { users } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    await db.update(users)
+      .set({ favoriteTeams, onboardingComplete: true })
+      .where(eq(users.id, userId));
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Onboarding error:", error);
+    res.status(500).json({ error: "Failed to save onboarding" });
   }
 });
 

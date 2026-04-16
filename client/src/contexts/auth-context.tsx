@@ -10,6 +10,8 @@ interface User {
   isAdmin?: boolean;
   createdAt?: Date | string;
   subscriptionEndDate?: Date | string;
+  favoriteTeams?: string[];
+  onboardingComplete?: boolean;
 }
 
 interface AuthContextType {

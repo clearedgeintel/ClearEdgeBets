@@ -1,10 +1,12 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/contexts/auth-context";
 import Sidebar from "./sidebar";
 import SidebarRail from "./sidebar-rail";
 import TopNav from "./top-nav";
 import Footer from "./footer";
 import MobileNav from "./mobile-bottom-nav";
+import { OnboardingModal } from "./onboarding-modal";
 
 interface LayoutProps {
   children: ReactNode;
@@ -12,8 +14,18 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
+  const { user } = useAuth();
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
+  const showOnboarding = !!user && !user.onboardingComplete && !onboardingDismissed;
+
   return (
     <div className="min-h-screen flex">
+      {showOnboarding && (
+        <OnboardingModal open={true} onComplete={() => {
+          setOnboardingDismissed(true);
+          if (user) user.onboardingComplete = true;
+        }} />
+      )}
       {/* Sidebar area — hidden on mobile/tablet, visible on lg+ */}
       <div className="hidden lg:block flex-shrink-0 w-16 relative z-40 group/sidebar">
         {/* Rail: always visible at w-16 */}
