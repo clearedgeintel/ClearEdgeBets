@@ -13,14 +13,17 @@
 - A community prediction game (virtual balance, leaderboard)
 - A data reference tool (power scores, park factors, odds)
 
-### What the UI still says:
-- "Pick Slip" in sidebar footer
-- Pro/Elite tier gating around calculators and odds tools
-- Moneyline odds prominent on every game card
-- Sidebar organized like a sportsbook dashboard
+### What the UI now does right (shipped):
+- Content-first homepage (Morning Roast hero → Today's Edge → schedule rail)
+- Editorial nav (Feed · Matchups · Experts · Rankings · **Play**) with sidebar icon rail
+- Pick Slip is a floating button (only appears with active bets)
+- Gold (#eab308) brand accent, AI expert portraits, loading skeletons everywhere
+- Prediction Game promoted with NEW badge, active-contest banner, Play badge on mobile
+- Shareable OG pick cards, contest chat, Beat the Experts H2H, sortable leaderboards
+- Win confetti, streak chip, consensus banner
 
-### The gap:
-The **content is editorial** (beat writers, game recaps, expert analysis) but the **navigation is transactional** (parlays, props, Kelly calculator). New users see a sports blog but navigate a betting terminal.
+### Remaining gap:
+Editorial game cards still lead with odds (should lead with pitchers/weather and hide odds behind a toggle). "For You" feed personalization, onboarding, and multi-sport visual system still ahead.
 
 ---
 
@@ -49,7 +52,7 @@ The **content is editorial** (beat writers, game recaps, expert analysis) but th
 - [x] **Rename sidebar categories** — Today's Matchups, Power Rankings, My History
 - [x] **Tools & Calculators** moved to General section (not per-sport)
 - [x] **Pick Slip floating button** — only shows when `bets.length > 0`
-- [x] **Mobile bottom nav** — Home · Feed · Experts · Roast · Games
+- [x] **Mobile bottom nav** — Home · Feed · **Play** (with active-contest badge) · Experts · Roast
 
 ### 1.3 Typography & Spacing
 - [x] **Body text 15.5px** with 1.75 line-height (`.article-body` in `index.css`)
@@ -70,6 +73,10 @@ The **content is editorial** (beat writers, game recaps, expert analysis) but th
 ### 2.2 Expert Panel Redesign
 - [x] **AI-generated expert portraits** — `ExpertAvatar` renders URL or emoji fallback; 5 DALL-E portraits in `client/public/experts/`
 - [x] **Consensus indicator** — 🔥 "Consensus Pick — N experts agree" banner on Today's Edge (home.tsx)
+- [x] **Shareable pick cards** — `/api/og/pick/:id` renders 1200×630 PNG via `satori` + `@resvg/resvg-js` (expert portrait, team logos, pick, confidence, ClearEdge wordmark); Share2 button on each expert pick card opens X intent
+- [x] **Beat the Experts H2H** — `/h2h` page with side-by-side user-vs-expert comparison (win %, ROI, record), AHEAD badges, Challenge CTA linking to contest creation
+- [x] **Contests v2 create dialog** — sport filter, scoring mode (balance/ROI/win-rate), parlay toggle, min/max stake, max entrants wired into create dialog + server-side enforcement
+- [x] **Contest chat** — `contest_messages` table + REST endpoints + bubble-style chat drawer on contest-detail with 8s polling
 - [ ] **Columnist profile cards** — larger avatar + 2-sentence bio on hover, latest pick headline (Phase 3)
 - [ ] **Picks as "analysis cards"** not table rows — each pick gets its own mini-card with rationale visible by default
 - [ ] **Expert vs Expert "Debate" cards** — when two experts disagree on the same game
@@ -123,8 +130,11 @@ The **content is editorial** (beat writers, game recaps, expert analysis) but th
 
 ### 4.3 Social & Community
 - [ ] **Comments on Morning Roast articles** — threaded with upvote/downvote
-- [ ] **Shareable expert picks** — `/api/og/pick/:id` 1200×630 PNG with portrait + logos + pick + confidence (Phase 2)
-- [ ] **Contest chat** — `contest_messages` table with phrase-detection filter (Phase 2)
+- [x] **Shareable expert picks** — `/api/og/pick/:id` 1200×630 PNG shipped via satori; Share button on expert pick cards
+- [x] **Contest chat** — `contest_messages` table + REST polling + bubble chat drawer on contest-detail
+- [x] **Active-contest banner** — gold "Live Contest" banner on homepage when user has ≥1 active entry
+- [x] **Win confetti** — `canvas-confetti` fires on bet-settle win + contest champion (throttled, gold palette)
+- [x] **Sortable contest leaderboard** — Balance / ROI / Win % sort toggle with re-ranked display
 - [ ] **Leaderboard badges** — top 10 trivia players get a profile badge
 
 ---
@@ -151,18 +161,22 @@ The **content is editorial** (beat writers, game recaps, expert analysis) but th
 
 ## Priority Matrix
 
-| Change | Impact | Effort | Priority |
-|--------|--------|--------|----------|
-| Remove hero logo block, Morning Roast full-bleed | High | Low | ⭐ Do first |
-| Merge duplicate pick sections | High | Low | ⭐ Do first |
-| Scores as ticker strip | Medium | Low | ⭐ Do first |
-| Sidebar collapsible or top tabs | High | Medium | Phase 1 |
-| Article reading time + share buttons | Medium | Low | Phase 2 |
-| Expert consensus banner on game cards | High | Low | Phase 2 |
-| Unified content feed | High | High | Phase 2 |
-| Soften dark theme + warm accent | Medium | Low | Phase 3 |
-| Expert avatar upgrade (AI portraits) | Medium | Medium | Phase 3 |
-| Onboarding flow | High | Medium | Phase 4 |
+| Change | Impact | Effort | Status |
+|--------|--------|--------|--------|
+| Morning Roast full-bleed hero | High | Low | ✅ Shipped |
+| Merge picks → Today's Edge | High | Low | ✅ Shipped |
+| Scores ticker strip | Medium | Low | ✅ Shipped |
+| Sidebar collapsible + top tabs | High | Medium | ✅ Shipped |
+| Article reading time + share | Medium | Low | ✅ Shipped |
+| Expert consensus banner | High | Low | ✅ Shipped |
+| Gold theme + AI portraits | Medium | Medium | ✅ Shipped |
+| OG shareable pick cards | High | Medium | ✅ Shipped |
+| Contest chat + H2H + v2 dialog | High | Medium | ✅ Shipped |
+| Win confetti + streak chip | Medium | Low | ✅ Shipped |
+| Loading skeletons (9 pages) | Medium | Medium | ✅ Shipped |
+| Editorial game cards (Show Odds) | High | Medium | Next |
+| Unified "For You" feed | High | High | Next |
+| Onboarding flow + fav teams | High | Medium | Phase 4 |
 | Multi-sport visual system | High | High | Phase 5 |
 
 ---
