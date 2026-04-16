@@ -7,6 +7,7 @@ import TopNav from "./top-nav";
 import Footer from "./footer";
 import MobileNav from "./mobile-bottom-nav";
 import { OnboardingModal } from "./onboarding-modal";
+import { DailyTriviaBubble } from "./daily-trivia-bubble";
 
 interface LayoutProps {
   children: ReactNode;
@@ -53,6 +54,7 @@ export default function Layout({ children }: LayoutProps) {
         </div>
 
         <MobileNav />
+        <DailyTriviaBubble />
       </div>
     </div>
   );
