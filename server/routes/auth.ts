@@ -141,6 +141,7 @@ router.get("/api/auth/me", async (req, res) => {
         subscriptionStatus: user.subscriptionStatus,
         isAdmin: user.isAdmin || false,
         favoriteTeams: user.favoriteTeams || [],
+        primaryInterest: user.primaryInterest || null,
         onboardingComplete: user.onboardingComplete || false,
       }
     });
@@ -155,16 +156,17 @@ router.post("/api/auth/onboarding", async (req, res) => {
     const userId = req.session.userId;
     if (!userId) return res.status(401).json({ error: "Not authenticated" });
 
-    const { favoriteTeams } = req.body;
+    const { favoriteTeams, primaryInterest } = req.body as { favoriteTeams: unknown; primaryInterest?: string };
     if (!Array.isArray(favoriteTeams)) {
       return res.status(400).json({ error: "favoriteTeams must be an array" });
     }
+    const validInterest = ['news', 'picks', 'play'].includes(String(primaryInterest)) ? String(primaryInterest) : null;
 
     const { db } = await import("../db");
     const { users } = await import("@shared/schema");
     const { eq } = await import("drizzle-orm");
     await db.update(users)
-      .set({ favoriteTeams, onboardingComplete: true })
+      .set({ favoriteTeams: favoriteTeams as string[], primaryInterest: validInterest, onboardingComplete: true })
       .where(eq(users.id, userId));
 
     res.json({ success: true });

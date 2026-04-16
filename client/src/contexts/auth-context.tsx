@@ -11,6 +11,7 @@ interface User {
   createdAt?: Date | string;
   subscriptionEndDate?: Date | string;
   favoriteTeams?: string[];
+  primaryInterest?: string | null;
   onboardingComplete?: boolean;
 }
 
