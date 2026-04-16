@@ -8,9 +8,9 @@ const router = Router();
 // Get user's virtual bets
 router.get("/api/virtual/bets", async (req, res) => {
   try {
-    const userId = parseInt(req.query.userId as string);
+    const userId = req.session.userId ?? parseInt(req.query.userId as string);
     if (!userId) {
-      return res.status(400).json({ error: "User ID required" });
+      return res.status(401).json({ error: "Not authenticated" });
     }
 
     const virtualBets = await storage.getUserVirtualBets(userId);
@@ -33,7 +33,9 @@ router.get("/api/virtual/bets", async (req, res) => {
 // Place a virtual bet (paper trading)
 router.post("/api/virtual/bets", async (req, res) => {
   try {
-    const { userId, gameId, betType, selection, odds, stake } = req.body;
+    const sessionUserId = req.session.userId;
+    const { userId: bodyUserId, gameId, betType, selection, odds, stake, sport } = req.body;
+    const userId = sessionUserId ?? bodyUserId;
 
     if (!userId || !gameId || !betType || !selection || !odds || !stake) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -60,8 +62,10 @@ router.post("/api/virtual/bets", async (req, res) => {
     const newBalance = currentBalance - stakeInCents;
     await storage.updateVirtualBalance(userId, newBalance);
 
+    const validSport = ['mlb', 'nhl', 'nba'].includes(String(sport)) ? String(sport) : 'mlb';
     const virtualBet = await storage.createVirtualBet({
       userId,
+      sport: validSport,
       gameId,
       betType,
       selection,

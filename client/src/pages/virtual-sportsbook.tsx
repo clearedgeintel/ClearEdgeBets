@@ -22,6 +22,7 @@ function fmtOdds(odds: number) {
 
 interface Game {
   gameId: string;
+  sport: 'mlb' | 'nhl' | 'nba';
   awayTeam: string;
   homeTeam: string;
   awayTeamCode?: string;
@@ -30,16 +31,48 @@ interface Game {
   gameTimeEpoch?: number | null;
   venue: string;
   status?: string;
-  odds?: {
-    moneyline?: { away: number; home: number };
-    total?: { line: number; over: number; under: number };
-    spread?: { away: number; home: number };
+  odds?: any; // heterogeneous across sports — handled by normalizer below
+}
+
+type SportTab = 'mlb' | 'nhl' | 'nba';
+
+function normalizeNHLOrNBA(raw: any, sport: 'nhl' | 'nba'): Game {
+  // NHL/NBA return a flat shape: { gameId, away, home, awayName, homeName, gameTime, moneyline, puckLine|spread, total }
+  const spreadKey = sport === 'nhl' ? 'puckLine' : 'spread';
+  const spread = raw[spreadKey];
+  const oddsArr: any[] = [];
+  if (raw.moneyline) oddsArr.push({ market: 'moneyline', awayOdds: raw.moneyline.away, homeOdds: raw.moneyline.home });
+  if (spread) oddsArr.push({
+    market: 'spreads',
+    awaySpread: parseFloat(String(spread.away)),
+    homeSpread: parseFloat(String(spread.home)),
+    awaySpreadOdds: spread.awayOdds ?? -110,
+    homeSpreadOdds: spread.homeOdds ?? -110,
+  });
+  if (raw.total) oddsArr.push({
+    market: 'totals',
+    total: parseFloat(String(raw.total.line)),
+    overOdds: raw.total.overOdds ?? -110,
+    underOdds: raw.total.underOdds ?? -110,
+  });
+  return {
+    gameId: raw.gameId,
+    sport,
+    awayTeam: raw.awayName || raw.away,
+    homeTeam: raw.homeName || raw.home,
+    awayTeamCode: raw.away,
+    homeTeamCode: raw.home,
+    gameTime: raw.gameTime || '',
+    venue: '',
+    status: 'scheduled',
+    odds: oddsArr,
   };
 }
 
 interface SlipItem {
   id: string;
   gameId: string;
+  sport: 'mlb' | 'nhl' | 'nba';
   matchup: string;
   awayCode: string;
   homeCode: string;
@@ -58,6 +91,7 @@ export default function VirtualSportsbook() {
   const [parlayStake, setParlayStake] = useState(10);
   const [showHistory, setShowHistory] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
+  const [sport, setSport] = useState<SportTab>('mlb');
 
   // All hooks must be called before any conditional return
   const { data: balance } = useQuery<any>({
@@ -66,12 +100,38 @@ export default function VirtualSportsbook() {
     enabled: !!user,
   });
 
-  const { data: games = [], isLoading } = useQuery<Game[]>({
+  const { data: mlbGames = [], isLoading: mlbLoading } = useQuery<any[]>({
     queryKey: ['/api/games'],
     queryFn: () => fetch('/api/games', { credentials: 'include' }).then(r => r.json()),
     staleTime: 300000,
-    enabled: !!user,
+    enabled: !!user && sport === 'mlb',
   });
+
+  const { data: nhlGames = [], isLoading: nhlLoading } = useQuery<any[]>({
+    queryKey: ['/api/nhl/games'],
+    queryFn: () => fetch('/api/nhl/games').then(r => r.json()),
+    staleTime: 300000,
+    enabled: !!user && sport === 'nhl',
+  });
+
+  const { data: nbaGames = [], isLoading: nbaLoading } = useQuery<any[]>({
+    queryKey: ['/api/nba/games'],
+    queryFn: () => fetch('/api/nba/games').then(r => r.json()),
+    staleTime: 300000,
+    enabled: !!user && sport === 'nba',
+  });
+
+  const games: Game[] = useMemo(() => {
+    if (sport === 'mlb') {
+      return (Array.isArray(mlbGames) ? mlbGames : []).map((g: any) => ({ ...g, sport: 'mlb' as const }));
+    }
+    if (sport === 'nhl') {
+      return (Array.isArray(nhlGames) ? nhlGames : []).map((g: any) => normalizeNHLOrNBA(g, 'nhl'));
+    }
+    return (Array.isArray(nbaGames) ? nbaGames : []).map((g: any) => normalizeNHLOrNBA(g, 'nba'));
+  }, [sport, mlbGames, nhlGames, nbaGames]);
+
+  const isLoading = sport === 'mlb' ? mlbLoading : sport === 'nhl' ? nhlLoading : nbaLoading;
 
   const { data: virtualBets = [] } = useQuery<any[]>({
     queryKey: ['/api/virtual/bets'],
@@ -153,7 +213,7 @@ export default function VirtualSportsbook() {
     const homeCode = game.homeTeamCode || game.gameId.match(/@\s*([A-Z]{2,3})/)?.[1] || '';
     setSlip(prev => [...prev, {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      gameId: game.gameId, matchup: `${game.awayTeam} @ ${game.homeTeam}`,
+      gameId: game.gameId, sport: game.sport, matchup: `${game.awayTeam} @ ${game.homeTeam}`,
       awayCode, homeCode, betType, selection, odds, stake: 10,
     }]);
   };
@@ -184,14 +244,14 @@ export default function VirtualSportsbook() {
       // Place as single virtual bet with parlay note
       const pOdds = calcParlayOdds();
       placeBetsMutation.mutate([{
-        gameId: slip[0].gameId, betType: 'parlay',
+        gameId: slip[0].gameId, sport: slip[0].sport, betType: 'parlay',
         selection: slip.map(s => s.selection).join(' + '),
         odds: pOdds, stake: parlayStake,
         potentialWin: Math.round(calcPayout(parlayStake, pOdds)),
       }]);
     } else {
       placeBetsMutation.mutate(slip.filter(s => s.stake > 0).map(s => ({
-        gameId: s.gameId, betType: s.betType, selection: s.selection,
+        gameId: s.gameId, sport: s.sport, betType: s.betType, selection: s.selection,
         odds: s.odds, stake: s.stake, potentialWin: Math.round(calcPayout(s.stake, s.odds)),
       })));
     }
@@ -251,8 +311,22 @@ export default function VirtualSportsbook() {
       <div className="flex gap-5">
         {/* Games column */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Today's Lines</h2>
+          {/* Sport tabs */}
+          <div className="flex items-center gap-1 mb-3">
+            {(['mlb', 'nhl', 'nba'] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setSport(s)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                  sport === s
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                    : 'bg-zinc-900 text-zinc-500 hover:text-zinc-300 border border-transparent'
+                }`}
+              >
+                {s.toUpperCase()}
+              </button>
+            ))}
+            <div className="flex-1" />
             <span className="text-[10px] text-zinc-600">{upcoming.length} games</span>
           </div>
 
