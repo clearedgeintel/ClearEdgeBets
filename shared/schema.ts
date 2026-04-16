@@ -585,6 +585,19 @@ export const contestEntries = pgTable("contest_entries", {
   joinedAt: timestamp("joined_at").defaultNow(),
 });
 
+// Contest chat messages
+export const contestMessages = pgTable("contest_messages", {
+  id: serial("id").primaryKey(),
+  contestId: integer("contest_id").notNull().references(() => contests.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertContestMessageSchema = createInsertSchema(contestMessages);
+export type InsertContestMessage = z.infer<typeof insertContestMessageSchema>;
+export type ContestMessage = typeof contestMessages.$inferSelect;
+
 export const insertContestSchema = createInsertSchema(contests);
 export type InsertContest = z.infer<typeof insertContestSchema>;
 export type Contest = typeof contests.$inferSelect;

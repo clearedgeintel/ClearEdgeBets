@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/auth-context";
 import { celebrate } from "@/lib/confetti";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Trophy, Crown } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, Trophy, Crown, MessageCircle, Send } from "lucide-react";
 import { format } from "date-fns";
 
 interface ContestDetailProps {
@@ -288,6 +290,89 @@ export default function ContestDetail({ id }: ContestDetailProps) {
           </CardContent>
         </Card>
       )}
+
+      <ContestChat contestId={Number(id)} />
     </div>
+  );
+}
+
+function ContestChat({ contestId }: { contestId: number }) {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const [draft, setDraft] = useState("");
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const { data: messages = [] } = useQuery<Array<{ id: number; userId: number; username: string; message: string; createdAt: string }>>({
+    queryKey: [`/api/contests/${contestId}/messages`],
+    refetchInterval: 8000,
+  });
+
+  const sendMutation = useMutation({
+    mutationFn: async (message: string) => apiRequest("POST", `/api/contests/${contestId}/messages`, { message }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [`/api/contests/${contestId}/messages`] });
+      setDraft("");
+    },
+  });
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages.length]);
+
+  const safeMessages = Array.isArray(messages) ? messages : [];
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <MessageCircle className="h-4 w-4 text-amber-400" />
+          Chat
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="h-56 overflow-y-auto scrollbar-none space-y-2 mb-3 bg-zinc-950/40 rounded p-2">
+          {safeMessages.length === 0 && (
+            <div className="text-center py-8 text-zinc-600 text-xs">No messages yet. Say something!</div>
+          )}
+          {safeMessages.map((m) => {
+            const isMe = m.userId === user?.id;
+            return (
+              <div key={m.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+                <div className={`max-w-[80%] rounded-lg px-3 py-1.5 text-sm ${
+                  isMe ? "bg-amber-500/20 text-amber-100" : "bg-zinc-800 text-zinc-300"
+                }`}>
+                  {!isMe && <span className="text-[10px] font-semibold text-zinc-500 block">{m.username}</span>}
+                  {m.message}
+                </div>
+                <span className="text-[9px] text-zinc-600 mt-0.5">
+                  {m.createdAt ? format(new Date(m.createdAt), "h:mm a") : ""}
+                </span>
+              </div>
+            );
+          })}
+          <div ref={bottomRef} />
+        </div>
+        {user && (
+          <form
+            className="flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (draft.trim()) sendMutation.mutate(draft.trim());
+            }}
+          >
+            <Input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Type a message..."
+              maxLength={500}
+              className="flex-1"
+            />
+            <Button type="submit" size="sm" disabled={!draft.trim() || sendMutation.isPending}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </form>
+        )}
+      </CardContent>
+    </Card>
   );
 }

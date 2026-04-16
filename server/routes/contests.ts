@@ -9,12 +9,13 @@ import { db } from "../db";
 import {
   contests,
   contestEntries,
+  contestMessages,
   groups,
   groupMemberships,
   users,
   virtualBets,
 } from "../../shared/schema";
-import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull } from "drizzle-orm";
 
 const router = Router();
 
@@ -341,6 +342,84 @@ router.get("/api/contests/:id/bets", async (req, res) => {
   } catch (err) {
     console.error("Error listing contest bets:", err);
     res.status(500).json({ error: "Failed to list contest bets" });
+  }
+});
+
+// ── Contest chat ──────────────────────────────────────────────────────────
+
+router.get("/api/contests/:id/messages", async (req, res) => {
+  try {
+    const userId = auth(req);
+    if (!userId) return res.status(401).json({ error: "Not authenticated" });
+
+    const id = Number(req.params.id);
+    const [contest] = await db.select().from(contests).where(eq(contests.id, id)).limit(1);
+    if (!contest) return res.status(404).json({ error: "Contest not found" });
+    if (!(await isGroupMember(contest.groupId, userId))) {
+      return res.status(403).json({ error: "Not a member of this group" });
+    }
+
+    const after = req.query.after ? Number(req.query.after) : 0;
+    const rows = await db
+      .select({
+        id: contestMessages.id,
+        userId: contestMessages.userId,
+        message: contestMessages.message,
+        createdAt: contestMessages.createdAt,
+        username: users.username,
+      })
+      .from(contestMessages)
+      .leftJoin(users, eq(users.id, contestMessages.userId))
+      .where(
+        after
+          ? and(eq(contestMessages.contestId, id), eq(contestMessages.id, after))
+          : eq(contestMessages.contestId, id)
+      )
+      .orderBy(asc(contestMessages.createdAt))
+      .limit(100);
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching contest messages:", err);
+    res.status(500).json({ error: "Failed to fetch messages" });
+  }
+});
+
+router.post("/api/contests/:id/messages", async (req, res) => {
+  try {
+    const userId = auth(req);
+    if (!userId) return res.status(401).json({ error: "Not authenticated" });
+
+    const id = Number(req.params.id);
+    const { message } = req.body;
+    if (!message || typeof message !== "string" || message.trim().length === 0) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+    if (message.length > 500) {
+      return res.status(400).json({ error: "Message too long (max 500 chars)" });
+    }
+
+    const [contest] = await db.select().from(contests).where(eq(contests.id, id)).limit(1);
+    if (!contest) return res.status(404).json({ error: "Contest not found" });
+
+    const [entry] = await db
+      .select()
+      .from(contestEntries)
+      .where(and(eq(contestEntries.contestId, id), eq(contestEntries.userId, userId)))
+      .limit(1);
+    if (!entry) return res.status(403).json({ error: "Join the contest to chat" });
+
+    const [msg] = await db
+      .insert(contestMessages)
+      .values({ contestId: id, userId, message: message.trim() })
+      .returning();
+
+    const [user] = await db.select({ username: users.username }).from(users).where(eq(users.id, userId)).limit(1);
+
+    res.status(201).json({ ...msg, username: user?.username });
+  } catch (err) {
+    console.error("Error posting contest message:", err);
+    res.status(500).json({ error: "Failed to post message" });
   }
 });
 
