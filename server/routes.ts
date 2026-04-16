@@ -2498,6 +2498,24 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
     }
   });
 
+  // Related stories: same-author + same-date recaps (excluding the current one)
+  app.get('/api/blog/related', async (req, res) => {
+    try {
+      const { slug, author, gameDate, limit } = req.query as Record<string, string>;
+      const take = Math.min(Number(limit) || 4, 10);
+      const all = await storage.getRecentBlogReviews(100);
+      const excluded = slug ? all.filter((r: any) => r.slug !== slug) : all;
+      const byAuthor = author ? excluded.filter((r: any) => r.author === author) : [];
+      const byDate = gameDate ? excluded.filter((r: any) => r.gameDate === gameDate && !byAuthor.find((a: any) => a.id === r.id)) : [];
+      const fill = excluded.filter((r: any) => !byAuthor.find((a: any) => a.id === r.id) && !byDate.find((a: any) => a.id === r.id));
+      const related = [...byAuthor, ...byDate, ...fill].slice(0, take);
+      res.json(related);
+    } catch (error) {
+      console.error('Error fetching related stories:', error);
+      res.status(500).json({ error: 'Failed to fetch related stories' });
+    }
+  });
+
   // Get yesterday's completed games available for review (admin)
   app.get('/api/blog/available-games', async (req, res) => {
     try {

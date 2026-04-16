@@ -55,6 +55,22 @@ export default function Blog() {
     queryFn: () => fetch('/api/blog/reviews', { credentials: 'include' }).then(r => r.json()),
   });
 
+  const { data: relatedFromApi = [] } = useQuery<BlogReview[]>({
+    queryKey: ['/api/blog/related', selectedReview?.slug],
+    queryFn: () => {
+      if (!selectedReview) return Promise.resolve([]);
+      const params = new URLSearchParams({
+        slug: selectedReview.slug,
+        author: selectedReview.author,
+        gameDate: selectedReview.gameDate || '',
+        limit: '4',
+      });
+      return fetch(`/api/blog/related?${params}`).then(r => r.ok ? r.json() : []);
+    },
+    enabled: !!selectedReview,
+    staleTime: 300_000,
+  });
+
   const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
   const { data: availableData } = useQuery<{ date: string; games: AvailableGame[]; reviewedCount: number; totalCompleted: number }>({
     queryKey: ['/api/blog/available-games', yesterday],
@@ -98,10 +114,12 @@ export default function Blog() {
     if (selectedReview.content.toLowerCase().includes('extra inning')) tags.push('Extras');
     if (scoreDiff <= 1) tags.push('Nail-Biter');
 
-    // Related stories — same author or same date
-    const relatedByAuthor = reviews.filter(r => r.id !== selectedReview.id && r.author === selectedReview.author).slice(0, 2);
-    const relatedByDate = reviews.filter(r => r.id !== selectedReview.id && r.gameDate === selectedReview.gameDate && !relatedByAuthor.find(ra => ra.id === r.id)).slice(0, 2);
-    const relatedStories = [...relatedByAuthor, ...relatedByDate].slice(0, 3);
+    // Related stories — from dedicated endpoint (broader pool, server-deduped)
+    const fallbackByAuthor = reviews.filter(r => r.id !== selectedReview.id && r.author === selectedReview.author).slice(0, 2);
+    const fallbackByDate = reviews.filter(r => r.id !== selectedReview.id && r.gameDate === selectedReview.gameDate && !fallbackByAuthor.find(ra => ra.id === r.id)).slice(0, 2);
+    const fallback = [...fallbackByAuthor, ...fallbackByDate].slice(0, 4);
+    const relatedStories = relatedFromApi.length > 0 ? relatedFromApi : fallback;
+    const relatedByAuthor = fallbackByAuthor;
 
     const shareUrl = `${window.location.origin}/blog#${selectedReview.slug}`;
     const copyLink = () => { navigator.clipboard.writeText(shareUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); };
