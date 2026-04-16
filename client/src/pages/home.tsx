@@ -26,6 +26,7 @@ export default function Home() {
   const { data: todayGames = [], isLoading: gamesLoading } = useQuery<TodayGame[]>({ queryKey: ["/api/games"], refetchInterval: 60000 });
   const { data: yesterdayScores, isLoading: scoresLoading } = useQuery<Record<string, ScoreGame>>({ queryKey: ["/api/scores/yesterday", yesterday], queryFn: () => fetch(`/api/scores/yesterday?date=${yesterday}`).then(r => r.ok ? r.json() : {}), staleTime: 300000 });
   const { data: nhlScores = [] } = useQuery<any[]>({ queryKey: ["/api/nhl/scores", yesterday], queryFn: () => fetch(`/api/nhl/scores?date=${yesterday}`).then(r => r.json()), staleTime: 300000 });
+  const { data: nbaScores = [] } = useQuery<any[]>({ queryKey: ["/api/nba/scores", yesterday], queryFn: () => fetch(`/api/nba/scores?date=${yesterday}`).then(r => r.json()), staleTime: 300000 });
   const { data: blogReviews = [], isLoading: blogLoading } = useQuery<BlogReview[]>({ queryKey: ['/api/blog/reviews'], queryFn: () => fetch('/api/blog/reviews').then(r => r.json()) });
   const { data: dailyContent } = useQuery<{ history: { year: number; event: string } | null; picks: Array<{ pick: string; rationale: string }> }>({ queryKey: ['/api/homepage/daily-content'], queryFn: () => fetch('/api/homepage/daily-content').then(r => r.json()), staleTime: 3600000 });
   const { data: expertPicks = [], isLoading: picksLoading } = useQuery<any[]>({ queryKey: ['/api/expert-picks', today], queryFn: () => fetch(`/api/expert-picks?date=${today}`).then(r => r.json()), staleTime: 300000 });
@@ -43,6 +44,7 @@ export default function Home() {
 
   const safeGames = Array.isArray(todayGames) ? todayGames : [];
   const safeNhlScores = Array.isArray(nhlScores) ? nhlScores : [];
+  const safeNbaScores = Array.isArray(nbaScores) ? nbaScores : [];
   const safeBlogReviews = Array.isArray(blogReviews) ? blogReviews : [];
   const safeExpertPicks = Array.isArray(expertPicks) ? expertPicks : [];
 
@@ -94,7 +96,7 @@ export default function Home() {
           </div>
         </div>
       )}
-      {(yesterdayGamesList.length > 0 || safeNhlScores.filter((g: any) => g.status === 'final').length > 0) && (
+      {(yesterdayGamesList.length > 0 || safeNhlScores.filter((g: any) => g.status === 'final').length > 0 || safeNbaScores.filter((g: any) => g.status === 'final').length > 0) && (
         <div className="border-b border-border/30 bg-zinc-950/60 py-3 px-4">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">Final Scores</span>
@@ -131,14 +133,32 @@ export default function Home() {
               <div key={game.gameId} className="flex-shrink-0 w-[130px] bg-card border border-border/20 rounded-lg p-2.5">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5">
-                    <img src={`https://a.espncdn.com/i/teamlogos/nhl/500/${game.awayTeamCode?.toLowerCase()}.png`} alt="" className="h-4 w-4" />
+                    <img src={`https://a.espncdn.com/i/teamlogos/nhl/500/${game.awayTeamCode?.toLowerCase()}.png`} alt="" loading="lazy" className="h-4 w-4" />
                     <span className={`text-xs font-medium ${(game.awayScore ?? 0) > (game.homeScore ?? 0) ? 'text-foreground' : 'text-zinc-500'}`}>{game.awayTeamCode}</span>
                   </div>
                   <span className={`text-sm font-bold tabular-nums ${(game.awayScore ?? 0) > (game.homeScore ?? 0) ? 'text-foreground' : 'text-zinc-500'}`}>{game.awayScore ?? 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <img src={`https://a.espncdn.com/i/teamlogos/nhl/500/${game.homeTeamCode?.toLowerCase()}.png`} alt="" className="h-4 w-4" />
+                    <img src={`https://a.espncdn.com/i/teamlogos/nhl/500/${game.homeTeamCode?.toLowerCase()}.png`} alt="" loading="lazy" className="h-4 w-4" />
+                    <span className={`text-xs font-medium ${(game.homeScore ?? 0) > (game.awayScore ?? 0) ? 'text-foreground' : 'text-zinc-500'}`}>{game.homeTeamCode}</span>
+                  </div>
+                  <span className={`text-sm font-bold tabular-nums ${(game.homeScore ?? 0) > (game.awayScore ?? 0) ? 'text-foreground' : 'text-zinc-500'}`}>{game.homeScore ?? 0}</span>
+                </div>
+              </div>
+            ))}
+            {safeNbaScores.filter((g: any) => g.status === 'final').map((game: any) => (
+              <div key={game.gameId} className="flex-shrink-0 w-[130px] bg-card border border-border/20 rounded-lg p-2.5">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <img src={`https://a.espncdn.com/i/teamlogos/nba/500/${game.awayTeamCode?.toLowerCase()}.png`} alt="" loading="lazy" className="h-4 w-4" />
+                    <span className={`text-xs font-medium ${(game.awayScore ?? 0) > (game.homeScore ?? 0) ? 'text-foreground' : 'text-zinc-500'}`}>{game.awayTeamCode}</span>
+                  </div>
+                  <span className={`text-sm font-bold tabular-nums ${(game.awayScore ?? 0) > (game.homeScore ?? 0) ? 'text-foreground' : 'text-zinc-500'}`}>{game.awayScore ?? 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <img src={`https://a.espncdn.com/i/teamlogos/nba/500/${game.homeTeamCode?.toLowerCase()}.png`} alt="" loading="lazy" className="h-4 w-4" />
                     <span className={`text-xs font-medium ${(game.homeScore ?? 0) > (game.awayScore ?? 0) ? 'text-foreground' : 'text-zinc-500'}`}>{game.homeTeamCode}</span>
                   </div>
                   <span className={`text-sm font-bold tabular-nums ${(game.homeScore ?? 0) > (game.awayScore ?? 0) ? 'text-foreground' : 'text-zinc-500'}`}>{game.homeScore ?? 0}</span>

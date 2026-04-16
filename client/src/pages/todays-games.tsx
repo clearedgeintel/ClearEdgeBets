@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SportSwitcher } from "@/components/sport-switcher";
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter, Calendar, BarChart3, TrendingUp, Clock, ChevronLeft, ChevronRight, CalendarIcon, Brain, User, Target } from "lucide-react";
 import { format, addDays, subDays, isSameDay } from "date-fns";
@@ -182,10 +183,13 @@ export default function TodaysGames() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-foreground flex items-center space-x-3">
-                <Calendar className="h-8 w-8 text-primary" />
-                <span>MLB Games</span>
-              </h1>
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <h1 className="text-3xl font-bold text-foreground flex items-center space-x-3">
+                  <Calendar className="h-8 w-8 text-primary" />
+                  <span>MLB Games</span>
+                </h1>
+                <SportSwitcher />
+              </div>
               <p className="text-muted-foreground mt-2">
                 Live odds, AI analysis, and sports insights for {isSameDay(selectedDate, new Date()) ? "today's" : format(selectedDate, "MMMM d")} matchups
               </p>

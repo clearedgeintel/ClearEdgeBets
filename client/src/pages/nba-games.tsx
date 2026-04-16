@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar } from "lucide-react";
+import { SportSwitcher } from "@/components/sport-switcher";
 
 interface NBAGame {
   gameId: string;
@@ -29,10 +30,13 @@ export default function NBAGames() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
       <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-          <span>🏀</span> NBA Games
-        </h1>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-1">{games.length} games today</p>
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <span>🏀</span> NBA Games
+          </h1>
+          <SportSwitcher />
+        </div>
+        <p className="text-xs sm:text-sm text-muted-foreground">{games.length} games today</p>
       </div>
 
       {isLoading && (
