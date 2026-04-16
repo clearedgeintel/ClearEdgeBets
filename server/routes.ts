@@ -324,8 +324,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const alertsRouter = (await import('./routes/alerts')).default;
   const contestsRouter = (await import('./routes/contests')).default;
   const ogCardsRouter = (await import('./routes/og-cards')).default;
+  const nbaGamesRouter = (await import('./routes/nba-games')).default;
 
   app.use(nhlGamesRouter);
+  app.use(nbaGamesRouter);
   app.use(authRouter);
   app.use(triviaRouter);
   app.use(expertsRouter);

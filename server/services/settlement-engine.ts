@@ -13,6 +13,7 @@ import { bankrollManager } from './bankroll-manager';
 // Register sport modules
 import '../sports/mlb/index';
 import '../sports/nhl/index';
+import '../sports/nba/index';
 
 export interface SettlementReport {
   gamesProcessed: number;
