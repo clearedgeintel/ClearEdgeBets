@@ -1,6 +1,6 @@
 # ClearEdge Sports — Product & Technical Roadmap
 
-> Last updated: **2026-04-15**  
+> Last updated: **2026-04-15** (post-Phase-3 sweep)  
 > Platform: clearedgesports.ai  
 > Status tracking: [x] Done | [-] In Progress | [ ] Not Started
 
@@ -123,15 +123,21 @@ Make the Prediction Game the most obvious, socially-shareable feature on the sit
 
 ## Phase 3 — Content & Engagement Layer (Q2–Q3 2026)
 
-- [ ] **"For You" feed** — blended timeline in `feed.tsx` mixing Morning Roast articles, expert picks, consensus alerts, trivia prompts, contest updates, weighted by user follows + favorite teams
-- [ ] **Expert Panel columnist redesign** — larger portrait + 2-sentence bio on hover, latest-pick headline, consensus/debate mini-cards
-- [ ] **Editorial-first game cards** — pitchers, weather, park factor visible by default; odds collapse behind a "Show Odds" toggle for free users
-- [ ] **Morning Roast article polish** — related stories rail (`/api/blog/related?tags=`), reading-time chip, author bio footer, section pulls
-- [ ] **Onboarding modal** — post-signup "Pick 3 favorite teams" grid; persist to `users.favorite_teams` jsonb
-- [ ] **Daily trivia popup** — first-visit-of-day bubble "earn 100 coins · 30s"
+- [x] **"For You" feed** — blended timeline in `feed.tsx` mixing Morning Roast, expert picks, newsletters, trivia, rankings; weighted by `users.favorite_teams` (server enriches meta.teams; client hoists matches with "For You" sparkles pill)
+- [x] **Expert Panel columnist redesign** — bio snippet + "Today: {pick selection} {confidence%}" headline visible on collapsed expert cards
+- [x] **Debate cards** — `DebatesBanner` detects 2+ experts picking opposite sides of the same gameId and renders purple-accented "Expert A picks X · Expert B picks Y" rows above the expert list
+- [x] **Editorial-first game cards** — `showOdds` defaults to false; pitchers/weather/park-factor/expert-picks visible first; "Show Odds" toggle with BarChart3 icon
+- [x] **Morning Roast related stories** — `/api/blog/related?slug&author&gameDate&limit` endpoint with same-author → same-date → recent priority; article view swaps in with client-cache fallback
+- [x] **Onboarding modal** — post-login "Pick your teams" grid (30 MLB + 16 NHL) with ESPN logos; persists `favoriteTeams` + marks `onboardingComplete`; shows once per user
+- [x] **Daily trivia popup** — `DailyTriviaBubble` fixed-position card, once-per-day localStorage gate, 2s delay, links to `/trivia`
+- [x] **Scroll-triggered animations** — `useInView` IntersectionObserver hook + `FadeIn` wrapper; applied to feed items
 - [ ] **Writer follow** — users can follow specific beat writers to prioritize their content in the feed
+- [ ] **"What are you here for?" onboarding step** — tailors homepage (News / Picks / Play) before team selection
+- [ ] **Guided tour** — 4-step tooltip tour for new users
+- [ ] **Weekly wrap-up email** — personalized summary each Monday
+- [ ] **Comments on Morning Roast articles** — threaded with upvote/downvote
+- [ ] **Leaderboard badges** — top trivia players get profile badges
 - [ ] College sports (CFB + CBB)
-- [ ] Comments on Morning Roast articles
 - [ ] Discord / Telegram community access
 - [ ] AI chat assistant (conversational "Which unders have edge today?")
 

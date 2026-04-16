@@ -1,6 +1,6 @@
 # ClearEdge Sports — UI/UX Roadmap
 
-> Last updated: 2026-04-15
+> Last updated: 2026-04-15 (post-Phase-3 content layer)
 > Context: ClearEdge has evolved from a sports betting analytics tool into an **AI-automated sports news + expert analysis platform**. The UI needs to catch up.
 
 ---
@@ -16,14 +16,19 @@
 ### What the UI now does right (shipped):
 - Content-first homepage (Morning Roast hero → Today's Edge → schedule rail)
 - Editorial nav (Feed · Matchups · Experts · Rankings · **Play**) with sidebar icon rail
+- Editorial-first game cards: pitchers / weather / park factor / expert picks lead, odds hidden behind toggle
 - Pick Slip is a floating button (only appears with active bets)
 - Gold (#eab308) brand accent, AI expert portraits, loading skeletons everywhere
 - Prediction Game promoted with NEW badge, active-contest banner, Play badge on mobile
 - Shareable OG pick cards, contest chat, Beat the Experts H2H, sortable leaderboards
-- Win confetti, streak chip, consensus banner
+- Columnist expert cards (bio + today's pick headline), Debate banner
+- Unified feed with "For You" personalization via favorite-team weighting
+- Morning Roast: reading time + share buttons + related stories rail + category tags
+- Onboarding modal (team picker), daily trivia popup
+- Win confetti, streak chip, consensus banner, scroll-fade on feed reveal
 
 ### Remaining gap:
-Editorial game cards still lead with odds (should lead with pitchers/weather and hide odds behind a toggle). "For You" feed personalization, onboarding, and multi-sport visual system still ahead.
+Multi-sport visual system (sport-specific accents + switcher + universal game card), tablet breakpoint refinements, writer follow, article comments, guided tour, accessibility/performance hardening.
 
 ---
 
@@ -67,7 +72,7 @@ Editorial game cards still lead with odds (should lead with pitchers/weather and
 - [x] **Article reading time** — computed from word count in `blog.tsx`
 - [x] **Share buttons** — X intent + copy link wired on article page
 - [x] **Category tags** — Blowout / Close Game / Walk-Off / Shutout / Extras auto-detected from box score
-- [ ] **Related stories** at the bottom of each article (`/api/blog/related?tags=` endpoint — Phase 3)
+- [x] **Related stories** — `GET /api/blog/related?slug&author&gameDate&limit` endpoint; article view renders a "More from {author}" / "More from this day" rail using the broader pool
 - [ ] **Writer follow** — users can follow specific beat writers and get their content surfaced first
 
 ### 2.2 Expert Panel Redesign
@@ -77,20 +82,20 @@ Editorial game cards still lead with odds (should lead with pitchers/weather and
 - [x] **Beat the Experts H2H** — `/h2h` page with side-by-side user-vs-expert comparison (win %, ROI, record), AHEAD badges, Challenge CTA linking to contest creation
 - [x] **Contests v2 create dialog** — sport filter, scoring mode (balance/ROI/win-rate), parlay toggle, min/max stake, max entrants wired into create dialog + server-side enforcement
 - [x] **Contest chat** — `contest_messages` table + REST endpoints + bubble-style chat drawer on contest-detail with 8s polling
-- [ ] **Columnist profile cards** — larger avatar + 2-sentence bio on hover, latest pick headline (Phase 3)
-- [ ] **Picks as "analysis cards"** not table rows — each pick gets its own mini-card with rationale visible by default
-- [ ] **Expert vs Expert "Debate" cards** — when two experts disagree on the same game
+- [x] **Columnist profile cards** — bio snippet (2-line clamp) + "Today: {pick selection} {confidence%}" headline visible on the collapsed card; full bio in expanded view
+- [x] **Expert vs Expert "Debate" cards** — `DebatesBanner` surfaces up to 3 disagreements above the expert list (same gameId, different selections)
+- [ ] **Picks as "analysis cards"** not table rows — each pick gets its own mini-card with rationale visible by default (partially done: collapsed card shows top pick + confidence; full mini-card treatment still pending)
 
 ### 2.3 Game Cards Reimagined
-- [ ] **Default view: editorial** — show team logos, pitchers, venue, weather, expert pick count. No odds unless user expands
-- [ ] **Odds behind a toggle** — "Show Odds" button reveals the 8-book comparison. Keeps the default view clean for casual fans
-- [ ] **Inline Morning Roast link** — if a recap exists for this matchup, show "Read the recap →" link on the card
-- [ ] **Live game state** — during games, show inning/score with a green "LIVE" badge. After completion, show final score with "Read Recap" link
+- [x] **Default view: editorial** — team logos, pitchers, venue, weather, park factor, expert picks (with portrait avatars) visible first; odds collapsed behind toggle
+- [x] **Odds behind a toggle** — "Show Odds" button with BarChart3 icon; Hide button when expanded
+- [x] **Inline Morning Roast link** — "Read the recap →" link on completed game cards (existed)
+- [ ] **Live game state** — during games, show inning/score with a green "LIVE" badge (not yet wired into EnhancedGameCard)
 
 ### 2.4 Feed Experience
-- [ ] **Unified content feed** — blend Morning Roast articles, expert picks, trivia results, and game updates into one scrollable timeline (like Twitter/X)
-- [ ] **"For You" personalization** — based on followed experts and favorite teams, surface relevant content first
-- [ ] **Content type indicators** — small icon badges: ☕ recap, 🎯 expert pick, ❓ trivia, 📊 ranking change
+- [x] **Unified content feed** — `feed.tsx` already blends recaps, expert picks, newsletters, trivia, rankings with date separators
+- [x] **"For You" personalization** — favorite teams hoist matching items to the top with an amber sparkles "For You" pill; header switches to "Personalized for your N teams"
+- [x] **Content type indicators** — type badges per item (☕ ⛩️ 📧 ❓ 📊)
 
 ---
 
@@ -106,7 +111,7 @@ Editorial game cards still lead with odds (should lead with pitchers/weather and
 - [x] **Page transitions** — `.page-enter` fade keyed on `location` in `layout.tsx`
 - [x] **Hover states on game cards** — `.play-card` utility (scale 1.01 + gold glow) on Prediction Game cards
 - [x] **Loading skeletons** — layout-matching skeletons on home (5 sections), experts, virtual sportsbook, groups, contests, contest-detail, my-bets, weekly-leaderboard, blog
-- [ ] **Scroll-triggered animations** — `.scroll-fade` utility exists but not wired to IntersectionObserver yet
+- [x] **Scroll-triggered animations** — `useInView` hook + `FadeIn` wrapper pair with `.scroll-fade`; applied to feed items (can spread to more surfaces)
 
 ### 3.3 Responsive Refinements
 - [ ] **Tablet breakpoint pass** (768–1024px) — sidebar-rail + top-nav tabs behavior check
@@ -119,13 +124,13 @@ Editorial game cards still lead with odds (should lead with pitchers/weather and
 ## Phase 4 — Engagement Patterns (2-4 weeks)
 
 ### 4.1 Onboarding
-- [ ] **First-visit flow** — "What are you here for?" → Sports News / Expert Picks / Prediction Game → tailors the homepage
-- [ ] **Team selection** — on signup, pick 3 favorite teams. Used for "For You" feed and Morning Roast prioritization
+- [x] **Team selection** — `OnboardingModal` on first login: MLB + NHL team grid, multi-select, persists `favoriteTeams` + `onboardingComplete`; drives For You feed
+- [ ] **First-visit flow** — "What are you here for?" → Sports News / Expert Picks / Prediction Game → tailors the homepage (team selection done; interest step still pending)
 - [ ] **Guided tour** — 4-step tooltip tour: "Here's the Morning Roast", "Meet our Expert Panel", "Play the Prediction Game", "Subscribe for daily picks"
 
 ### 4.2 Retention Hooks
 - [x] **Streak counter** — flame chip in top nav, computed from virtual-bet win streak (`top-nav.tsx` `StreakChip`)
-- [ ] **Trivia of the Day popup** — first-visit-of-day bubble on homepage
+- [x] **Trivia of the Day popup** — `DailyTriviaBubble` floating card (bottom-right), once-per-day localStorage gate, 2s delay, links to `/trivia`
 - [ ] **Weekly wrap-up email** — "Your week: 3 trivia correct, Expert Sharp went 5-2, 12 new recaps"
 
 ### 4.3 Social & Community
@@ -174,9 +179,14 @@ Editorial game cards still lead with odds (should lead with pitchers/weather and
 | Contest chat + H2H + v2 dialog | High | Medium | ✅ Shipped |
 | Win confetti + streak chip | Medium | Low | ✅ Shipped |
 | Loading skeletons (9 pages) | Medium | Medium | ✅ Shipped |
-| Editorial game cards (Show Odds) | High | Medium | Next |
-| Unified "For You" feed | High | High | Next |
-| Onboarding flow + fav teams | High | Medium | Phase 4 |
+| Editorial game cards (Show Odds) | High | Medium | ✅ Shipped |
+| Unified "For You" feed | High | High | ✅ Shipped |
+| Onboarding + favorite teams | High | Medium | ✅ Shipped |
+| Daily trivia popup | Medium | Low | ✅ Shipped |
+| Related stories + columnist cards + Debates | Medium | Medium | ✅ Shipped |
+| Writer follow | Medium | Low | Next |
+| Comments on Morning Roast | Medium | Medium | Next |
+| WCAG AA + Core Web Vitals | High | High | Phase 4 |
 | Multi-sport visual system | High | High | Phase 5 |
 
 ---
