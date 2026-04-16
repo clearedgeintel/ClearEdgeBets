@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ExpertAvatar } from "@/components/expert-avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
-import { Target, TrendingUp, Users, ChevronDown, ChevronUp, UserPlus, UserMinus, Sparkles, Clock, History } from "lucide-react";
+import { Target, TrendingUp, Users, ChevronDown, ChevronUp, UserPlus, UserMinus, Sparkles, Clock, History, Share2 } from "lucide-react";
 import { format } from "date-fns";
 
 interface ExpertWithRecord {
@@ -322,7 +322,22 @@ export default function Experts() {
                                   )}
                                 </div>
                               </div>
-                              <p className="text-[11px] text-zinc-500 leading-relaxed">{pick.rationale}</p>
+                              <div className="flex items-center justify-between mt-1">
+                                <p className="text-[11px] text-zinc-500 leading-relaxed flex-1">{pick.rationale}</p>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const url = `${window.location.origin}/api/og/pick/${pick.id}`;
+                                    const text = `${expert.name}: ${pick.selection} (${pick.confidence}% confidence) — ClearEdge Sports`;
+                                    const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+                                    window.open(tweetUrl, '_blank', 'width=550,height=420');
+                                  }}
+                                  className="flex-shrink-0 ml-2 p-1 rounded hover:bg-zinc-800 transition-colors text-zinc-600 hover:text-zinc-300"
+                                  title="Share on X"
+                                >
+                                  <Share2 className="h-3 w-3" />
+                                </button>
+                              </div>
                             </div>
                           );
                         })}

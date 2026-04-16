@@ -323,6 +323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const parlaysRouter = (await import('./routes/parlays')).default;
   const alertsRouter = (await import('./routes/alerts')).default;
   const contestsRouter = (await import('./routes/contests')).default;
+  const ogCardsRouter = (await import('./routes/og-cards')).default;
 
   app.use(nhlGamesRouter);
   app.use(authRouter);
@@ -335,6 +336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(parlaysRouter);
   app.use(alertsRouter);
   app.use(contestsRouter);
+  app.use(ogCardsRouter);
   // Simple test user creation for initial setup
   app.post("/api/create-first-user", async (req, res) => {
     try {
