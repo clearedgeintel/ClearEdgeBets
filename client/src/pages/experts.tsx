@@ -316,8 +316,8 @@ export default function Experts() {
                           <Target className="h-3 w-3" /> Today's Picks
                         </h4>
                         {expertPicks.map(pick => {
-                          const codes = pick.gameId.split('@');
-                          const awayCode = (codes[0] || '').replace(/^\d+_/, '').trim();
+                          const codes = (pick.gameId || '').split('@');
+                          const awayCode = (codes[0] || '').replace(/^\d+_/, '').replace(/^\d{4}-\d{2}-\d{2}_/, '').trim();
                           const homeCode = (codes[1] || '').trim();
                           const resultBorder = pick.result === 'win' ? 'border-l-emerald-500/60'
                             : pick.result === 'loss' ? 'border-l-red-500/60'
@@ -413,7 +413,7 @@ export default function Experts() {
                         {/* Last 5 picks detail */}
                         <div className="space-y-1.5">
                           {history.slice(0, 5).map(pick => {
-                            const codes = pick.gameId.split('@');
+                            const codes = (pick.gameId || '').split('@');
                             return (
                               <div key={pick.id} className="py-1.5 px-2.5 rounded bg-zinc-900/30 border border-border/20">
                                 <div className="flex items-center justify-between">
@@ -498,7 +498,7 @@ function DebatesBanner({ picks, experts }: DebatesBannerProps) {
       {debates.map((d) => {
         const ea = expertById.get(d.a.expertId);
         const eb = expertById.get(d.b.expertId);
-        const matchup = (d.gameId.split("_")[1] || d.gameId).replace(/@/g, " @ ");
+        const matchup = ((d.gameId || '').split("_")[1] || d.gameId || '').replace(/@/g, " @ ");
         return (
           <div key={`${d.gameId}-${d.a.expertId}-${d.b.expertId}`} className="bg-gradient-to-r from-purple-500/10 to-transparent border border-purple-500/30 rounded-lg p-3">
             <div className="text-[10px] text-zinc-500 mb-1.5">{matchup}</div>
