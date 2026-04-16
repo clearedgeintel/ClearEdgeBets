@@ -168,6 +168,7 @@ export default function Blog() {
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-foreground">{selectedReview.author}</span>
                 {selectedReview.authorMood === 'grumpy' && <Badge className="bg-red-500/15 text-red-400 border border-red-500/20 text-[10px] px-1.5 py-0">Grumpy</Badge>}
+                <WriterFollowButton author={selectedReview.author} />
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{selectedReview.gameDate}</span>
@@ -417,5 +418,43 @@ export default function Blog() {
         </div>
       )}
     </div>
+  );
+}
+
+function WriterFollowButton({ author }: { author: string }) {
+  const qc = useQueryClient();
+  const { data: follows = [] } = useQuery<Array<{ author: string }>>({
+    queryKey: ["/api/blog/writer-follows"],
+    queryFn: () => fetch("/api/blog/writer-follows", { credentials: "include" }).then((r) => (r.ok ? r.json() : [])),
+    staleTime: 60_000,
+  });
+  const isFollowing = follows.some((f) => f.author === author);
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/blog/writer-follow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ author, action: isFollowing ? "unfollow" : "follow" }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/blog/writer-follows"] }),
+  });
+
+  return (
+    <button
+      onClick={() => mutation.mutate()}
+      disabled={mutation.isPending}
+      className={`text-[10px] font-medium px-2 py-0.5 rounded-full border transition-colors ${
+        isFollowing
+          ? "bg-amber-500/15 text-amber-300 border-amber-500/40 hover:bg-amber-500/10"
+          : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700 hover:text-zinc-200"
+      }`}
+    >
+      {isFollowing ? "Following" : "Follow"}
+    </button>
   );
 }

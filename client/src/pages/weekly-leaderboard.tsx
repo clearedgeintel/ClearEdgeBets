@@ -196,6 +196,15 @@ export default function WeeklyLeaderboard() {
                             <Badge className={getTierBadgeColor(entry.user.subscriptionTier)}>
                               {entry.user.subscriptionTier}
                             </Badge>
+                            {entry.rank === 1 && (
+                              <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px]">🏆 Champion</Badge>
+                            )}
+                            {entry.rank > 1 && entry.rank <= 3 && (
+                              <Badge className="bg-zinc-300/15 text-zinc-200 border border-zinc-400/40 text-[9px]">🥈 Elite</Badge>
+                            )}
+                            {entry.rank > 3 && entry.rank <= 10 && (
+                              <Badge className="bg-orange-500/15 text-orange-300 border border-orange-500/30 text-[9px]">🔥 Sharp</Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {entry.totalBets} bets • {parseFloat(entry.winRate || '0').toFixed(1)}% win rate

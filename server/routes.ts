@@ -2505,6 +2505,48 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
     }
   });
 
+  // Writer follows — list current user's followed writers
+  app.get('/api/blog/writer-follows', async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const { db } = await import('./db');
+      const { userWriterFollows } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+      const rows = await db.select().from(userWriterFollows).where(eq(userWriterFollows.userId, userId));
+      res.json(rows);
+    } catch (err) {
+      console.error('Error fetching writer follows:', err);
+      res.status(500).json({ error: 'Failed to fetch writer follows' });
+    }
+  });
+
+  // Follow or unfollow a writer
+  app.post('/api/blog/writer-follow', async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+      const { author, action } = req.body as { author: string; action: 'follow' | 'unfollow' };
+      if (!author) return res.status(400).json({ error: 'author is required' });
+      const { db } = await import('./db');
+      const { userWriterFollows } = await import('@shared/schema');
+      const { eq, and } = await import('drizzle-orm');
+      if (action === 'unfollow') {
+        await db.delete(userWriterFollows).where(and(eq(userWriterFollows.userId, userId), eq(userWriterFollows.author, author)));
+      } else {
+        const [existing] = await db.select().from(userWriterFollows)
+          .where(and(eq(userWriterFollows.userId, userId), eq(userWriterFollows.author, author))).limit(1);
+        if (!existing) {
+          await db.insert(userWriterFollows).values({ userId, author });
+        }
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Error updating writer follow:', err);
+      res.status(500).json({ error: 'Failed to update follow' });
+    }
+  });
+
   // Related stories: same-author + same-date recaps (excluding the current one)
   app.get('/api/blog/related', async (req, res) => {
     try {

@@ -966,6 +966,18 @@ export const insertUserExpertFollowSchema = createInsertSchema(userExpertFollows
 export type InsertUserExpertFollow = z.infer<typeof insertUserExpertFollowSchema>;
 export type UserExpertFollow = typeof userExpertFollows.$inferSelect;
 
+// User beat-writer follows (Morning Roast authors)
+export const userWriterFollows = pgTable("user_writer_follows", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  author: text("author").notNull(),  // author name as stored on blog_reviews.author
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertUserWriterFollowSchema = createInsertSchema(userWriterFollows).omit({ id: true, createdAt: true });
+export type InsertUserWriterFollow = z.infer<typeof insertUserWriterFollowSchema>;
+export type UserWriterFollow = typeof userWriterFollows.$inferSelect;
+
 // Daily trivia
 export const triviaQuestions = pgTable("trivia_questions", {
   id: serial("id").primaryKey(),

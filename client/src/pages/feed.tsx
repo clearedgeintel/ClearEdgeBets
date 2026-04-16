@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Pen, Target, Mail, ChevronRight, Clock, Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { FadeIn } from "@/components/fade-in";
+import { SportBadge } from "@/components/sport-badge";
 import { useAuth } from "@/contexts/auth-context";
 
 interface FeedItem {
@@ -57,7 +58,18 @@ export default function Feed() {
   const favoriteCodes = new Set<string>(
     (user?.favoriteTeams || []).map((t) => t.split(':').pop() || '').filter(Boolean)
   );
+
+  // Plus followed writers — recap items from followed authors count as "For You"
+  const { data: writerFollows = [] } = useQuery<Array<{ author: string }>>({
+    queryKey: ['/api/blog/writer-follows'],
+    queryFn: () => fetch('/api/blog/writer-follows', { credentials: 'include' }).then((r) => (r.ok ? r.json() : [])),
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+  const followedAuthors = new Set<string>((writerFollows || []).map((f) => f.author));
+
   const isForYou = (i: FeedItem) => {
+    if (i.type === 'recap' && i.author && followedAuthors.has(i.author)) return true;
     if (favoriteCodes.size === 0) return false;
     const teams: string[] = (i.meta?.teams as string[]) || [];
     return teams.some((t) => favoriteCodes.has(t));
@@ -158,6 +170,7 @@ export default function Feed() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <Badge className={`border text-[9px] px-1 py-0 ${config.color}`}>{config.label}</Badge>
+                        {item.meta?.sport && <SportBadge sport={item.meta.sport as string} />}
                         {isForYou(item) && (
                           <Badge className="border text-[9px] px-1 py-0 bg-amber-500/15 text-amber-300 border-amber-500/30 flex items-center gap-0.5">
                             <Sparkles className="h-2.5 w-2.5" /> For You

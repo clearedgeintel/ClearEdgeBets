@@ -316,30 +316,55 @@ export default function Experts() {
                         </h4>
                         {expertPicks.map(pick => {
                           const codes = pick.gameId.split('@');
+                          const awayCode = (codes[0] || '').replace(/^\d+_/, '').trim();
+                          const homeCode = (codes[1] || '').trim();
+                          const resultBorder = pick.result === 'win' ? 'border-l-emerald-500/60'
+                            : pick.result === 'loss' ? 'border-l-red-500/60'
+                            : 'border-l-amber-500/40';
                           return (
-                            <div key={pick.id} className="p-2.5 bg-zinc-900/50 border border-border/30 rounded-lg">
-                              <div className="flex items-center justify-between mb-1">
-                                <div className="flex items-center gap-2">
-                                  {codes[0] && <img src={teamLogo(codes[0])} alt="" className="h-4 w-4" />}
-                                  <span className="text-sm font-medium text-foreground">{pick.selection}</span>
-                                </div>
+                            <div key={pick.id} className={`p-3 bg-zinc-900/60 border border-border/30 border-l-2 ${resultBorder} rounded-lg`}>
+                              {/* Matchup row */}
+                              <div className="flex items-center gap-2 mb-2 text-[10px] text-zinc-500">
+                                {awayCode && <img src={teamLogo(awayCode)} alt="" className="h-3.5 w-3.5" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />}
+                                <span className="uppercase font-medium">{awayCode}</span>
+                                <span className="text-zinc-700">@</span>
+                                <span className="uppercase font-medium">{homeCode}</span>
+                                {homeCode && <img src={teamLogo(homeCode)} alt="" className="h-3.5 w-3.5" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />}
+                                <span className="ml-auto uppercase tracking-wider text-zinc-600">{pick.pickType || 'moneyline'}</span>
+                              </div>
+
+                              {/* Headline */}
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-base font-semibold text-foreground">{pick.selection}</span>
                                 <div className="flex items-center gap-1 flex-shrink-0">
-                                  <Badge className="bg-zinc-800 text-zinc-300 border border-zinc-700 text-[9px] tabular-nums">
+                                  <Badge className="bg-zinc-800 text-zinc-300 border border-zinc-700 text-[10px] tabular-nums">
                                     {pick.odds > 0 ? '+' : ''}{pick.odds}
                                   </Badge>
-                                  <Badge className={`text-[9px] border tabular-nums ${pick.confidence >= 75 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-zinc-800 text-zinc-500 border-zinc-700'}`}>{pick.confidence}%</Badge>
+                                  <Badge className={`text-[10px] border tabular-nums ${pick.confidence >= 75 ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' : pick.confidence >= 60 ? 'bg-amber-500/15 text-amber-400 border-amber-500/25' : 'bg-zinc-800 text-zinc-400 border-zinc-700'}`}>
+                                    {pick.confidence}%
+                                  </Badge>
                                   {pick.units && (
-                                    <Badge className="bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[9px] tabular-nums">
-                                      {pick.units}u
-                                    </Badge>
+                                    <Badge className="bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] tabular-nums">{pick.units}u</Badge>
                                   )}
                                   {pick.result && pick.result !== 'pending' && (
-                                    <Badge className={`text-[9px] border ${resultColors[pick.result]}`}>{pick.result.toUpperCase()}</Badge>
+                                    <Badge className={`text-[10px] border font-bold ${resultColors[pick.result]}`}>{pick.result.toUpperCase()}</Badge>
                                   )}
                                 </div>
                               </div>
-                              <div className="flex items-center justify-between mt-1">
-                                <p className="text-[11px] text-zinc-500 leading-relaxed flex-1">{pick.rationale}</p>
+
+                              {/* Rationale */}
+                              <p className="text-xs text-zinc-400 leading-relaxed mt-2">{pick.rationale}</p>
+
+                              {/* Post-game note (only if settled) */}
+                              {pick.postGameNote && pick.result && pick.result !== 'pending' && (
+                                <div className={`mt-2 pt-2 border-t border-border/20 text-[11px] leading-snug ${pick.result === 'win' ? 'text-emerald-400/80' : 'text-red-400/80'}`}>
+                                  <span className="font-semibold uppercase tracking-wider text-[9px] mr-1.5">Recap</span>
+                                  {pick.postGameNote}
+                                </div>
+                              )}
+
+                              {/* Share button */}
+                              <div className="flex justify-end mt-2">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -348,10 +373,10 @@ export default function Experts() {
                                     const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
                                     window.open(tweetUrl, '_blank', 'width=550,height=420');
                                   }}
-                                  className="flex-shrink-0 ml-2 p-1 rounded hover:bg-zinc-800 transition-colors text-zinc-600 hover:text-zinc-300"
+                                  className="flex items-center gap-1 p-1 text-[10px] text-zinc-600 hover:text-amber-400 transition-colors"
                                   title="Share on X"
                                 >
-                                  <Share2 className="h-3 w-3" />
+                                  <Share2 className="h-3 w-3" /> Share
                                 </button>
                               </div>
                             </div>

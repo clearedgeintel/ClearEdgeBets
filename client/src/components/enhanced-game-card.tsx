@@ -347,11 +347,24 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
           {/* Game info center */}
           <div className="flex flex-col items-center flex-shrink-0 px-2">
             {game.status === "final" ? (
-              <div className="text-lg font-bold tabular-nums">{game.awayScore} - {game.homeScore}</div>
+              <>
+                <div className="text-lg font-bold tabular-nums">{game.awayScore} - {game.homeScore}</div>
+                <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Final</div>
+              </>
+            ) : game.status === "live" || game.status === "inprogress" || game.status === "in_progress" ? (
+              <>
+                <div className="text-lg font-bold tabular-nums">{game.awayScore ?? 0} - {game.homeScore ?? 0}</div>
+                <div className="flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-[9px] font-bold text-red-400 uppercase tracking-wider">Live</span>
+                </div>
+              </>
             ) : (
-              <div className="text-xs text-muted-foreground font-medium">{game.gameTime}</div>
+              <>
+                <div className="text-xs text-muted-foreground font-medium">{game.gameTime}</div>
+                <div className="text-[10px] text-muted-foreground">@</div>
+              </>
             )}
-            <div className="text-[10px] text-muted-foreground">@</div>
           </div>
 
           {/* Home team */}
