@@ -95,24 +95,22 @@
 
 ---
 
-## Phase 2 — Prediction Game Spotlight (April–May 2026)
+## Phase 2 — Prediction Game Spotlight (April–May 2026) ✅ COMPLETE
 
-Make the Prediction Game the most obvious, socially-shareable feature on the site.
-
-- [ ] **Active-contest banner on homepage** — gold-bordered banner above Today's Edge when user has ≥1 `status='active'` contest entry, with deep-link to the leaderboard
-- [ ] **Bottom-nav Play badge** — numeric dot on the Play tab in `mobile-bottom-nav.tsx` when user has active contests
-- [ ] **Shareable pick cards** — `/api/og/pick/:id` endpoint rendering a 1200×630 PNG (expert portrait + team logos + pick + confidence + wordmark) via `satori`/`@vercel/og`; Share button on expert cards and Today's Edge items
-- [ ] **Contest chat** — `contest_messages` table + polling endpoint + chat drawer on `contest-detail.tsx`; server-side filter via existing `phrase_detection_rules`
-- [ ] **Group Contests v2** — extend `contests` with `sport`, `scoring_mode` (net profit / ROI / win-rate), `allow_parlays`, `min_stake`, `max_stake`, `entry_fee_coins`, `max_entrants`, `prize_split`; settlement engine honors parlay/stake flags per contest
-- [ ] **"Beat the Experts" H2H teaser** — new route `/h2h` pitting user's 7-day virtual-bet record vs each expert; "Challenge" CTA pre-populates a 7-day contest seeded against the expert's picks
-- [ ] **Confetti on win** — `canvas-confetti` fires from bet-settle toast (win outcome) and contest completion
-- [ ] **Richer contest leaderboard** — team logos on recent-bets column, ROI/win-rate sort toggle
+- [x] **Active-contest banner on homepage**
+- [x] **Bottom-nav Play badge**
+- [x] **Shareable pick cards** (`/api/og/pick/:id` via satori + @resvg/resvg-js)
+- [x] **Contest chat** (`contest_messages` table + REST polling + chat drawer)
+- [x] **Group Contests v2 schema** (sport, scoring_mode, allow_parlays, min/max stake, entry_fee_coins, max_entrants) + server enforcement + UI
+- [x] **"Beat the Experts" H2H** (`/h2h` page with side-by-side comparison + Challenge CTA)
+- [x] **Confetti on win** (`canvas-confetti` on bet-settle + contest champion)
+- [x] **Richer contest leaderboard** (sortable Balance/ROI/Win%, win-rate column)
 
 ## Phase 2b — Multi-Sport & Betting Tools (Q2–Q3 2026)
 
 - [ ] **NFL integration** via Tank01 (spreads, totals, props)
-- [ ] **NBA integration**
-- [ ] Sport selector on Games page + universal game card component
+- [x] **NBA integration** (server/sports/nba module + routes + settlement graders + /nba/games page + sidebar + sportsbook tabs + onboarding team picker)
+- [x] Sport switcher on Games pages (`SportSwitcher` component on all 3)
 - [ ] Expand Expert Panel to all sports
 - [ ] Live line-movement heatmap
 - [ ] Parlay Builder with EV guidance + same-game parlays + boost promotions
@@ -131,12 +129,12 @@ Make the Prediction Game the most obvious, socially-shareable feature on the sit
 - [x] **Onboarding modal** — post-login "Pick your teams" grid (30 MLB + 16 NHL) with ESPN logos; persists `favoriteTeams` + marks `onboardingComplete`; shows once per user
 - [x] **Daily trivia popup** — `DailyTriviaBubble` fixed-position card, once-per-day localStorage gate, 2s delay, links to `/trivia`
 - [x] **Scroll-triggered animations** — `useInView` IntersectionObserver hook + `FadeIn` wrapper; applied to feed items
-- [ ] **Writer follow** — users can follow specific beat writers to prioritize their content in the feed
-- [ ] **"What are you here for?" onboarding step** — tailors homepage (News / Picks / Play) before team selection
+- [x] **Writer follow** — `user_writer_follows` table + endpoints + Follow button on article + For-You feed boost
+- [x] **Interest-step onboarding** — "What brings you?" (news/picks/play) → team picker → persists `primaryInterest` + `favoriteTeams`
 - [ ] **Guided tour** — 4-step tooltip tour for new users
 - [ ] **Weekly wrap-up email** — personalized summary each Monday
-- [ ] **Comments on Morning Roast articles** — threaded with upvote/downvote
-- [ ] **Leaderboard badges** — top trivia players get profile badges
+- [x] **Comments on Morning Roast articles** — `article_comments` table + threaded replies + admin hide
+- [x] **Leaderboard badges** — 🏆 Champion / 🥈 Elite / 🔥 Sharp on weekly leaderboard
 - [ ] College sports (CFB + CBB)
 - [ ] Discord / Telegram community access
 - [ ] AI chat assistant (conversational "Which unders have edge today?")
