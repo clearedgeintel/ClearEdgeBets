@@ -5,17 +5,13 @@ import { Button } from "@/components/ui/button";
 import { CalendarDays, TrendingUp, TrendingDown, Target, DollarSign, BarChart3, Filter } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-function teamLogo(code: string, sport: 'mlb' | 'nhl' = 'mlb') {
-  if (!code) return '';
-  const c = code.toUpperCase() === 'WAS' ? 'wsh' : code.toLowerCase();
-  return `https://a.espncdn.com/i/teamlogos/${sport}/500/scoreboard/${c}.png`;
-}
+import { teamLogo, type Sport } from "@/lib/team-logo";
 
 interface VirtualBet {
   id: number;
   userId: number;
   gameId: string;
+  sport?: Sport;  // server defaults to 'mlb'; populated for nhl/nba bets
   betType: string;
   selection: string;
   odds: number;
@@ -520,7 +516,7 @@ export default function VirtualPerformance() {
                                 <div className="flex items-center justify-between bg-slate-900 rounded-lg p-3">
                                   <div className="flex flex-col items-center gap-1">
                                     <img
-                                      src={teamLogo(gameResult.awayTeam)}
+                                      src={teamLogo(gameResult.awayTeam, bet.sport)}
                                       alt={gameResult.awayTeam}
                                       className="h-8 w-8"
                                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
@@ -531,7 +527,7 @@ export default function VirtualPerformance() {
                                   <div className="text-slate-400 text-sm">@</div>
                                   <div className="flex flex-col items-center gap-1">
                                     <img
-                                      src={teamLogo(gameResult.homeTeam)}
+                                      src={teamLogo(gameResult.homeTeam, bet.sport)}
                                       alt={gameResult.homeTeam}
                                       className="h-8 w-8"
                                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}

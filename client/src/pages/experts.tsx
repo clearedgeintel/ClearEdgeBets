@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { Target, TrendingUp, Users, ChevronDown, ChevronUp, UserPlus, UserMinus, Sparkles, Clock, History, Share2 } from "lucide-react";
 import { format } from "date-fns";
+import { teamLogo, type Sport } from "@/lib/team-logo";
 
 interface ExpertWithRecord {
   id: string;
@@ -36,6 +37,7 @@ interface ExpertPick {
   rationale: string;
   result: string;
   units: string;
+  sport?: Sport;  // server defaults to 'mlb'; populated for nhl/nba picks
   postGameNote?: string;
   createdAt: string;
 }
@@ -43,11 +45,6 @@ interface ExpertPick {
 interface UserFollow {
   expertId: string;
   mode: string;
-}
-
-function teamLogo(code: string) {
-  const c = code.toUpperCase() === 'WAS' ? 'wsh' : code.toLowerCase();
-  return `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${c}.png`;
 }
 
 const riskColors: Record<string, string> = {
@@ -326,11 +323,11 @@ export default function Experts() {
                             <div key={pick.id} className={`p-3 bg-zinc-900/60 border border-border/30 border-l-2 ${resultBorder} rounded-lg`}>
                               {/* Matchup row */}
                               <div className="flex items-center gap-2 mb-2 text-[10px] text-zinc-500">
-                                {awayCode && <img src={teamLogo(awayCode)} alt="" className="h-3.5 w-3.5" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />}
+                                {awayCode && <img src={teamLogo(awayCode, pick.sport)} alt="" className="h-3.5 w-3.5" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />}
                                 <span className="uppercase font-medium">{awayCode}</span>
                                 <span className="text-zinc-700">@</span>
                                 <span className="uppercase font-medium">{homeCode}</span>
-                                {homeCode && <img src={teamLogo(homeCode)} alt="" className="h-3.5 w-3.5" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />}
+                                {homeCode && <img src={teamLogo(homeCode, pick.sport)} alt="" className="h-3.5 w-3.5" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />}
                                 <span className="ml-auto uppercase tracking-wider text-zinc-600">{pick.pickType || 'moneyline'}</span>
                               </div>
 
@@ -418,7 +415,7 @@ export default function Experts() {
                               <div key={pick.id} className="py-1.5 px-2.5 rounded bg-zinc-900/30 border border-border/20">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2 min-w-0">
-                                    {codes[0] && <img src={teamLogo(codes[0])} alt="" className="h-3.5 w-3.5 flex-shrink-0" />}
+                                    {codes[0] && <img src={teamLogo(codes[0], pick.sport)} alt="" className="h-3.5 w-3.5 flex-shrink-0" />}
                                     <span className="text-[11px] text-zinc-300 truncate">{pick.selection}</span>
                                     <span className="text-[10px] text-zinc-600">{pick.gameDate}</span>
                                   </div>

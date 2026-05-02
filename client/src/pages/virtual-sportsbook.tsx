@@ -10,11 +10,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { DollarSign, TrendingUp, TrendingDown, RotateCcw, Trophy, BarChart3, LogIn, X, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
-
-function teamLogo(code: string) {
-  const c = code.toUpperCase() === 'WAS' ? 'wsh' : code.toLowerCase();
-  return `https://a.espncdn.com/i/teamlogos/mlb/500/scoreboard/${c}.png`;
-}
+import { teamLogo } from "@/lib/team-logo";
 
 function fmtOdds(odds: number) {
   return odds > 0 ? `+${odds}` : `${odds}`;
@@ -411,7 +407,7 @@ export default function VirtualSportsbook() {
                     {/* Away row */}
                     <div className="grid grid-cols-[1fr_80px_80px_80px] gap-1 px-3 py-1.5 items-center">
                       <div className="flex items-center gap-2 min-w-0">
-                        <img src={teamLogo(awayCode)} alt="" className="h-5 w-5 flex-shrink-0" />
+                        <img src={teamLogo(awayCode, game.sport)} alt="" className="h-5 w-5 flex-shrink-0" />
                         <span className="text-sm font-medium truncate">{awayCode}</span>
                       </div>
                       {spread ? (
@@ -433,7 +429,7 @@ export default function VirtualSportsbook() {
                     {/* Home row */}
                     <div className="grid grid-cols-[1fr_80px_80px_80px] gap-1 px-3 py-1.5 items-center border-t border-border/10">
                       <div className="flex items-center gap-2 min-w-0">
-                        <img src={teamLogo(homeCode)} alt="" className="h-5 w-5 flex-shrink-0" />
+                        <img src={teamLogo(homeCode, game.sport)} alt="" className="h-5 w-5 flex-shrink-0" />
                         <span className="text-sm font-medium truncate">{homeCode}</span>
                       </div>
                       {spread ? (
@@ -513,9 +509,9 @@ export default function VirtualSportsbook() {
                     <div key={bet.id} className="px-3 py-2.5 border-b border-border/10">
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-1.5">
-                          <img src={teamLogo(bet.awayCode)} alt="" className="h-3.5 w-3.5" />
+                          <img src={teamLogo(bet.awayCode, bet.sport)} alt="" className="h-3.5 w-3.5" />
                           <span className="text-[11px] text-zinc-400">@</span>
-                          <img src={teamLogo(bet.homeCode)} alt="" className="h-3.5 w-3.5" />
+                          <img src={teamLogo(bet.homeCode, bet.sport)} alt="" className="h-3.5 w-3.5" />
                         </div>
                         <button onClick={() => removeFromSlip(bet.id)} className="text-zinc-600 hover:text-red-400">
                           <X className="h-3 w-3" />
