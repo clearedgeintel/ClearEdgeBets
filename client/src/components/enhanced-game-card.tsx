@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronUp, Brain, User, Target, TrendingUp, DollarSign, Wind, Thermometer, CloudRain, BarChart3 } from "lucide-react";
+import { ChevronDown, ChevronUp, Brain, User, Target, TrendingUp, DollarSign, Wind, Thermometer, CloudRain } from "lucide-react";
 import { ExpertAvatar } from "./expert-avatar";
 import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { LiveScore } from "@/components/live-score";
@@ -136,7 +136,6 @@ function teamLogoUrl(code: string): string {
 export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showBooks, setShowBooks] = useState(false);
-  const [showOdds, setShowOdds] = useState(false);
   const { addBet } = useBettingSlip();
 
   // Fetch expert picks for this game
@@ -429,50 +428,37 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
           {game.venue && <span className="text-zinc-600 hidden sm:inline">{game.venue}</span>}
         </div>
 
-        {/* Odds toggle — hidden by default, editorial-first */}
+        {/* Odds — always visible */}
         {(moneylineOdds || totalOdds || spreadOdds) && (
-          <div className="mt-2">
-            {showOdds ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 text-[11px] tabular-nums">
-                  {moneylineOdds && (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-muted-foreground">ML</span>
-                      <span className="text-blue-400 cursor-pointer hover:text-blue-300" onClick={() => addBet({ gameId: game.gameId, betType: 'moneyline', selection: game.awayTeamCode, odds: moneylineOdds.awayOdds || 0, stake: 10, potentialWin: 0 })}>
-                        {formatOdds(moneylineOdds.awayOdds || 0)}
-                      </span>
-                      <span className="text-zinc-600">/</span>
-                      <span className="text-blue-400 cursor-pointer hover:text-blue-300" onClick={() => addBet({ gameId: game.gameId, betType: 'moneyline', selection: game.homeTeamCode, odds: moneylineOdds.homeOdds || 0, stake: 10, potentialWin: 0 })}>
-                        {formatOdds(moneylineOdds.homeOdds || 0)}
-                      </span>
-                    </div>
-                  )}
-                  {spreadOdds && (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-muted-foreground">RL</span>
-                      <span className="text-emerald-400">{spreadOdds.awaySpread}/{spreadOdds.homeSpread}</span>
-                    </div>
-                  )}
-                  {totalOdds && (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-muted-foreground">O/U</span>
-                      <span className="text-amber-400">{totalOdds.total}</span>
-                    </div>
-                  )}
-                  {playLean && (
-                    <Badge className={`text-[10px] px-1.5 py-0 border ${playLean.strength === 'strong' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
-                      {playLean.strength === 'strong' ? '🔥' : '👉'} {playLean.team} {playLean.strength === 'strong' ? 'Strong Play' : 'Lean'}
-                    </Badge>
-                  )}
-                </div>
-                <button onClick={() => setShowOdds(false)} className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors ml-2">
-                  Hide
-                </button>
+          <div className="mt-2 flex items-center gap-4 text-[11px] tabular-nums">
+            {moneylineOdds && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">ML</span>
+                <span className="text-blue-400 cursor-pointer hover:text-blue-300" onClick={() => addBet({ gameId: game.gameId, betType: 'moneyline', selection: game.awayTeamCode, odds: moneylineOdds.awayOdds || 0, stake: 10, potentialWin: 0 })}>
+                  {formatOdds(moneylineOdds.awayOdds || 0)}
+                </span>
+                <span className="text-zinc-600">/</span>
+                <span className="text-blue-400 cursor-pointer hover:text-blue-300" onClick={() => addBet({ gameId: game.gameId, betType: 'moneyline', selection: game.homeTeamCode, odds: moneylineOdds.homeOdds || 0, stake: 10, potentialWin: 0 })}>
+                  {formatOdds(moneylineOdds.homeOdds || 0)}
+                </span>
               </div>
-            ) : (
-              <button onClick={() => setShowOdds(true)} className="text-[10px] text-zinc-500 hover:text-amber-400 transition-colors flex items-center gap-1">
-                <BarChart3 className="h-3 w-3" /> Show Odds
-              </button>
+            )}
+            {spreadOdds && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">RL</span>
+                <span className="text-emerald-400">{spreadOdds.awaySpread}/{spreadOdds.homeSpread}</span>
+              </div>
+            )}
+            {totalOdds && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">O/U</span>
+                <span className="text-amber-400">{totalOdds.total}</span>
+              </div>
+            )}
+            {playLean && (
+              <Badge className={`text-[10px] px-1.5 py-0 border ${playLean.strength === 'strong' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
+                {playLean.strength === 'strong' ? '🔥' : '👉'} {playLean.team} {playLean.strength === 'strong' ? 'Strong Play' : 'Lean'}
+              </Badge>
             )}
           </div>
         )}
