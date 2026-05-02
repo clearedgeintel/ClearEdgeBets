@@ -355,10 +355,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const nhlGamesRouter = (await import('./routes/nhl-games')).default;
   const authRouter = (await import('./routes/auth')).default;
   const triviaRouter = (await import('./routes/trivia')).default;
-  const expertsRouter = (await import('./routes/experts')).default;
   const newsletterRouter = (await import('./routes/newsletter')).default;
   const virtualBetsRouter = (await import('./routes/virtual-bets')).default;
-  const blogRouter = (await import('./routes/blog')).default;
   const socialRouter = (await import('./routes/social')).default;
   const parlaysRouter = (await import('./routes/parlays')).default;
   const alertsRouter = (await import('./routes/alerts')).default;
@@ -372,10 +370,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(imageProxyRouter);
   app.use(authRouter);
   app.use(triviaRouter);
-  app.use(expertsRouter);
   app.use(newsletterRouter);
   app.use(virtualBetsRouter);
-  app.use(blogRouter);
   app.use('/api', socialRouter);
   app.use(parlaysRouter);
   app.use(alertsRouter);
