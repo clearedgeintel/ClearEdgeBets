@@ -32,9 +32,27 @@ import { fetchTank01Games, fetchTank01Odds, fetchTank01Player, fetchTank01Teams,
 import { getBeatWriterForGame as getBeatWriterForGameFn } from "@shared/beat-writers";
 // Note: Auth will be handled by existing system
 import Stripe from "stripe";
-import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 import bcrypt from "bcrypt";
 import { STRIPE_PRODUCTS, getProductByTier, getTierByPriceId } from "./stripe-config";
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || '' });
+
+async function claudeJson<T = any>(opts: { model: string; prompt: string; maxTokens: number; temperature?: number; system?: string }): Promise<T> {
+  const sys = [opts.system, 'Respond with ONLY valid JSON. No markdown fences, no preamble.'].filter(Boolean).join('\n\n');
+  const params: Anthropic.MessageCreateParamsNonStreaming = {
+    model: opts.model,
+    max_tokens: opts.maxTokens,
+    system: sys,
+    messages: [{ role: 'user', content: opts.prompt }],
+  };
+  if (opts.temperature !== undefined) params.temperature = opts.temperature;
+  const r = await anthropic.messages.create(params);
+  const block = r.content[0];
+  const text = block?.type === 'text' ? block.text : '';
+  const stripped = text.trim().replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/, '').trim();
+  return JSON.parse(stripped || '{}') as T;
+}
 
 // Helper function to generate CFL pick reasoning
 function convertMLBGameToGameFormat(mlbGame: any, targetDate: string) {
@@ -918,12 +936,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return `${getTeamFullName(g.away)} @ ${getTeamFullName(g.home)} (${g.gameTime})${consensus.moneyline ? ` ML: ${consensus.moneyline.away}/${consensus.moneyline.home}` : ''}${consensus.total ? ` O/U: ${consensus.total.line}` : ''}`;
       }).join('\n');
 
-      const { default: OpenAI } = await import('openai');
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
-
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: `Generate two things for a sports site homepage. Today is ${monthDay}.
+      const result = await claudeJson<any>({
+        model: 'claude-haiku-4-5',
+        maxTokens: 600,
+        temperature: 0.8,
+        prompt: `Generate two things for a sports site homepage. Today is ${monthDay}.
 
 1. **This Day in Baseball History**: One fascinating, surprising, or funny historical event that happened on ${monthDay} in MLB history. 2-3 sentences. Include the year. Make it interesting — not just "player X was born."
 
@@ -941,13 +958,8 @@ Return JSON:
     { "pick": "Over 8.5 CIN@TEX", "rationale": "..." },
     { "pick": "Dodgers -1.5 (+125)", "rationale": "..." }
   ]
-}` }],
-        response_format: { type: 'json_object' },
-        temperature: 0.8,
-        max_tokens: 600,
+}`,
       });
-
-      const result = JSON.parse(response.choices[0].message.content || '{}');
       const content = {
         date: dateKey,
         monthDay,
@@ -1405,7 +1417,7 @@ Return JSON:
       const assignmentId = `ed-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const results: any[] = [];
 
-      // Generate columns sequentially (to avoid OpenAI rate limits)
+      // Generate columns sequentially (to avoid AI rate limits)
       for (const writerName of writerNames) {
         const writer = getBeatWriter(writerName);
         if (!writer) continue;
@@ -1513,12 +1525,11 @@ Return JSON:
         `${getTeamFullName(g.away)} ${g.lineScore?.away?.R || '0'} @ ${getTeamFullName(g.home)} ${g.lineScore?.home?.R || '0'}`
       ).join('\n');
 
-      const { default: OpenAI } = await import('openai');
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
-
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: `Generate 5 fun baseball trivia questions based on yesterday's MLB games and general baseball knowledge.
+      const result = await claudeJson<any>({
+        model: 'claude-haiku-4-5',
+        maxTokens: 1500,
+        temperature: 0.9,
+        prompt: `Generate 5 fun baseball trivia questions based on yesterday's MLB games and general baseball knowledge.
 
 Yesterday's results:
 ${scoreLines || 'No games yesterday'}
@@ -1527,13 +1538,8 @@ Create a mix: 2 questions about yesterday's games, 2 general baseball history/st
 
 Each question should have exactly 4 options (A, B, C, D).
 
-Return JSON: { "questions": [{ "question": "...", "options": ["A answer", "B answer", "C answer", "D answer"], "correctAnswer": "A answer", "explanation": "Brief explanation", "difficulty": "easy|medium|hard", "category": "yesterday|stats|history|fun" }] }` }],
-        response_format: { type: 'json_object' },
-        temperature: 0.9,
-        max_tokens: 1500,
+Return JSON: { "questions": [{ "question": "...", "options": ["A answer", "B answer", "C answer", "D answer"], "correctAnswer": "A answer", "explanation": "Brief explanation", "difficulty": "easy|medium|hard", "category": "yesterday|stats|history|fun" }] }`,
       });
-
-      const result = JSON.parse(response.choices[0].message.content || '{}');
       const saved = [];
       for (const q of (result.questions || []).slice(0, 5)) {
         const s = await storage.createTriviaQuestion({
@@ -1646,31 +1652,26 @@ RULES:
 - Never make up stats. If data isn't in the context above, say so.
 - Keep responses concise but complete — list all games when asked.`;
 
-      const { default: OpenAI } = await import('openai');
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
-
-      // Build conversation history
-      const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
-        { role: 'system', content: systemPrompt },
-      ];
-
-      // Add conversation history (last 6 turns)
+      // Build conversation history (Anthropic uses top-level system + role-alternating messages)
+      const convo: Anthropic.MessageParam[] = [];
       if (history && Array.isArray(history)) {
         history.slice(-6).forEach((h: any) => {
-          messages.push({ role: h.type === 'user' ? 'user' : 'assistant', content: h.content });
+          convo.push({ role: h.type === 'user' ? 'user' : 'assistant', content: h.content });
         });
       }
+      convo.push({ role: 'user', content: message });
 
-      messages.push({ role: 'user', content: message });
-
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages,
-        temperature: 0.8,
+      const response = await anthropic.messages.create({
+        model: 'claude-haiku-4-5',
         max_tokens: 800,
+        system: systemPrompt,
+        temperature: 0.8,
+        messages: convo,
       });
 
-      res.json({ response: response.choices[0].message.content });
+      const block = response.content[0];
+      const text = block?.type === 'text' ? block.text : '';
+      res.json({ response: text });
     } catch (error: any) {
       console.error('AI Assistant error:', error);
       res.status(500).json({ error: error.message });
@@ -1745,16 +1746,15 @@ RULES:
 
       const injuryList = injured.map((p: any) => `${p.longName} (${p.pos}) — ${p.injury.description}`).join('\n');
 
-      const { default: OpenAI } = await import('openai');
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
-
       const cacheKey = `injury-impact-${code}`;
       const cached = getCached<any>(cacheKey);
       if (cached) return res.json(cached);
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: `Rate the injury impact for the ${getTeamFullName(code)}.
+      const result = await claudeJson<any>({
+        model: 'claude-haiku-4-5',
+        maxTokens: 600,
+        temperature: 0.7,
+        prompt: `Rate the injury impact for the ${getTeamFullName(code)}.
 
 Injured players:
 ${injuryList}
@@ -1762,13 +1762,8 @@ ${injuryList}
 For each player, rate their absence impact 1-10 (10 = devastating, 1 = negligible).
 Then give an overall team impact score 1-10 and a 1-sentence summary.
 
-Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "...", "impact": 8, "note": "brief note" }], "overallImpact": 7, "summary": "..." }` }],
-        response_format: { type: 'json_object' },
-        temperature: 0.7,
-        max_tokens: 600,
+Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "...", "impact": 8, "note": "brief note" }], "overallImpact": 7, "summary": "..." }`,
       });
-
-      const result = JSON.parse(response.choices[0].message.content || '{}');
       const data = { team: code, teamName: getTeamFullName(code), ...result };
       setCache(cacheKey, data, 3600);
       res.json(data);
@@ -3065,9 +3060,6 @@ Return JSON: { "injuries": [{ "name": "...", "position": "...", "description": "
     const underdogTeam = homeFavorite ? awayTeam : homeTeam;
     
     try {
-      // Use OpenAI to generate intelligent betting recommendations
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      
       const prompt = `Generate 3 specific betting recommendations for this MLB game:
 
 Game: ${awayTeam} @ ${homeTeam}
@@ -3103,14 +3095,11 @@ Format as JSON:
   ]
 }`;
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" },
-        max_tokens: 1000,
+      const aiPicks = await claudeJson<any>({
+        model: "claude-haiku-4-5",
+        prompt,
+        maxTokens: 1000,
       });
-
-      const aiPicks = JSON.parse(response.choices[0].message.content || '{"picks": []}');
       
       // Ensure we have valid picks and add odds from actual data
       const picks = aiPicks.picks?.map((pick: any, index: number) => {
@@ -7901,7 +7890,7 @@ Format as JSON:
         };
       });
       
-      // Prepare data for OpenAI prompt using RapidAPI enhanced analytics
+      // Prepare data for Claude prompt using RapidAPI enhanced analytics
       const gamesData = enhancedGames.map(game => ({
         homeTeam: game.homeTeam,
         awayTeam: game.awayTeam,
@@ -7927,7 +7916,7 @@ Format as JSON:
         awayPitchingScore: game.awayPitchingScore
       }));
       
-      // Read the OpenAI prompt template
+      // Read the Claude prompt template
       const promptTemplate = `You are a professional betting analyst assistant writing a newsletter called **"The Daily Dose."**
 
 You are given a list of today's MLB games with the following fields:
@@ -8037,7 +8026,7 @@ Do not return markdown, raw JSON, or explanations.
 
 List of games: ${JSON.stringify(gamesData, null, 2)}`;
 
-      // Generate newsletter with OpenAI
+      // Generate newsletter with Claude
       const newsletterHtml = await generateNewsletterHtml(promptTemplate);
       
       const metadata = {

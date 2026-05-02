@@ -72,11 +72,14 @@ router.post('/api/admin/generate-trivia', async (req, res) => {
       `${getTeamFullName(g.away)} ${g.lineScore?.away?.R || '0'} @ ${getTeamFullName(g.home)} ${g.lineScore?.home?.R || '0'}`
     ).join('\n');
 
-    const { default: OpenAI } = await import('openai');
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
+    const Anthropic = (await import('@anthropic-ai/sdk')).default;
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || '' });
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 1500,
+      temperature: 0.9,
+      system: 'Respond with ONLY valid JSON. No markdown fences, no preamble.',
       messages: [{ role: 'user', content: `Generate 5 fun baseball trivia questions based on yesterday's MLB games and general baseball knowledge.
 
 Yesterday's results:
@@ -87,12 +90,12 @@ Create a mix: 2 questions about yesterday's games, 2 general baseball history/st
 Each question should have exactly 4 options (A, B, C, D).
 
 Return JSON: { "questions": [{ "question": "...", "options": ["A answer", "B answer", "C answer", "D answer"], "correctAnswer": "A answer", "explanation": "Brief explanation", "difficulty": "easy|medium|hard", "category": "yesterday|stats|history|fun" }] }` }],
-      response_format: { type: 'json_object' },
-      temperature: 0.9,
-      max_tokens: 1500,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || '{}');
+    const block = response.content[0];
+    const text = block?.type === 'text' ? block.text : '';
+    const stripped = text.trim().replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/, '').trim();
+    const result = JSON.parse(stripped || '{}');
     const saved = [];
     for (const q of (result.questions || []).slice(0, 5)) {
       const s = await storage.createTriviaQuestion({

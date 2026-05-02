@@ -153,7 +153,7 @@ function guessService(url: string): string {
   if (url.includes('espn.com')) return 'ESPN';
   if (url.includes('odds-api') || url.includes('the-odds-api')) return 'Odds API';
   if (url.includes('openweathermap.org')) return 'OpenWeatherMap';
-  if (url.includes('openai.com')) return 'OpenAI';
+  if (url.includes('anthropic.com')) return 'Anthropic';
   if (url.includes('statsapi.mlb.com')) return 'MLB Stats API';
   if (url.includes('stripe.com')) return 'Stripe';
   if (url.includes('baseball-reference')) return 'Baseball Reference';

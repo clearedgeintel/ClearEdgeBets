@@ -1,9 +1,69 @@
-import OpenAI from "openai";
+// Filename retained from the OpenAI era to avoid churning import sites.
+// All AI generation now goes through Anthropic Claude:
+//   gpt-4o      → claude-sonnet-4-6
+//   gpt-4o-mini → claude-haiku-4-5
+import Anthropic from "@anthropic-ai/sdk";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || ""
+const client = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || "",
 });
+
+const MODEL_HEAVY = "claude-sonnet-4-6";   // gpt-4o equivalent
+const MODEL_LIGHT = "claude-haiku-4-5";    // gpt-4o-mini equivalent
+
+function extractText(response: Anthropic.Message): string {
+  for (const block of response.content) {
+    if (block.type === "text") return block.text;
+  }
+  return "";
+}
+
+function stripFences(s: string): string {
+  return s
+    .trim()
+    .replace(/^```(?:json|html)?\s*\n?/i, "")
+    .replace(/\n?```\s*$/, "")
+    .trim();
+}
+
+interface ChatOpts {
+  model: string;
+  system?: string;
+  prompt: string;
+  maxTokens: number;
+  temperature?: number;
+}
+
+async function chatText(opts: ChatOpts): Promise<string> {
+  const params: Anthropic.MessageCreateParamsNonStreaming = {
+    model: opts.model,
+    max_tokens: opts.maxTokens,
+    messages: [{ role: "user", content: opts.prompt }],
+  };
+  if (opts.system) params.system = opts.system;
+  if (opts.temperature !== undefined) params.temperature = opts.temperature;
+  const response = await client.messages.create(params);
+  return extractText(response);
+}
+
+async function chatJson<T = any>(opts: ChatOpts): Promise<T> {
+  const sys = [
+    opts.system,
+    "Respond with ONLY valid JSON. No markdown fences, no preamble, no explanation.",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  const params: Anthropic.MessageCreateParamsNonStreaming = {
+    model: opts.model,
+    max_tokens: opts.maxTokens,
+    system: sys,
+    messages: [{ role: "user", content: opts.prompt }],
+  };
+  if (opts.temperature !== undefined) params.temperature = opts.temperature;
+  const response = await client.messages.create(params);
+  const text = stripFences(extractText(response));
+  return JSON.parse(text) as T;
+}
 
 export interface GameAnalysisData {
   awayTeam: string;
@@ -52,39 +112,24 @@ export interface EnhancedPicksResult {
 
 export async function generateNewsletterHtml(prompt: string): Promise<string> {
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are a professional sports betting analyst writing HTML newsletters. Return only clean, production-ready HTML with no markdown, comments, or explanations."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
+    let html = await chatText({
+      model: MODEL_HEAVY,
+      system: "You are a professional sports betting analyst writing HTML newsletters. Return only clean, production-ready HTML with no markdown, comments, or explanations.",
+      prompt,
+      maxTokens: 8000,
       temperature: 0.7,
-      max_tokens: 8000
     });
 
-    let htmlContent = completion.choices[0]?.message?.content || "<html><body><h1>Newsletter generation failed</h1></body></html>";
-    
     // Extract HTML from markdown code blocks if present
-    if (htmlContent.includes('```html')) {
-      const matches = htmlContent.match(/```html\s*([\s\S]*?)\s*```/);
-      if (matches && matches[1]) {
-        htmlContent = matches[1].trim();
-      }
-    } else if (htmlContent.includes('```')) {
-      // Handle case where there are code blocks without 'html' specifier
-      const matches = htmlContent.match(/```\s*([\s\S]*?)\s*```/);
-      if (matches && matches[1]) {
-        htmlContent = matches[1].trim();
-      }
+    if (html.includes('```html')) {
+      const matches = html.match(/```html\s*([\s\S]*?)\s*```/);
+      if (matches && matches[1]) html = matches[1].trim();
+    } else if (html.includes('```')) {
+      const matches = html.match(/```\s*([\s\S]*?)\s*```/);
+      if (matches && matches[1]) html = matches[1].trim();
     }
-    
-    return htmlContent;
+
+    return html || "<html><body><h1>Newsletter generation failed</h1></body></html>";
   } catch (error) {
     console.error("Error generating newsletter HTML:", error);
     return "<html><body><h1>Error generating newsletter</h1><p>Please try again later.</p></body></html>";
@@ -131,42 +176,31 @@ Provide analysis in JSON format with:
 
 Weight pitching analysis at 60-70% of your decision-making process.`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert MLB betting analyst. Always respond with valid JSON format containing summary, confidence, and valuePlays fields."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      response_format: { type: "json_object" },
-      max_tokens: 1000,
+    const result = await chatJson<any>({
+      model: MODEL_HEAVY,
+      system: "You are an expert MLB betting analyst. Always respond with valid JSON format containing summary, confidence, and valuePlays fields.",
+      prompt,
+      maxTokens: 1000,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || '{}');
-    
     return {
       summary: result.summary || "Analysis unavailable",
       confidence: Math.max(1, Math.min(100, result.confidence || 50)),
-      valuePlays: Array.isArray(result.valuePlays) ? result.valuePlays.slice(0, 3) : []
+      valuePlays: Array.isArray(result.valuePlays) ? result.valuePlays.slice(0, 3) : [],
     };
   } catch (error) {
     console.error("Error generating AI analysis:", error);
     return {
       summary: "AI analysis is temporarily unavailable. Please check back later.",
       confidence: 0,
-      valuePlays: []
+      valuePlays: [],
     };
   }
 }
 
 export async function generateDailyDigest(games: GameAnalysisData[]): Promise<string> {
   try {
-    const prompt = `Generate a daily MLB betting digest based on today's ${games.length} games. 
+    const prompt = `Generate a daily MLB betting digest based on today's ${games.length} games.
 
 Games Summary:
 ${games.map(game => `${game.awayTeam} @ ${game.homeTeam} (${game.gameTime || 'TBD'})`).join('\n')}
@@ -180,22 +214,14 @@ Create a comprehensive daily betting report including:
 
 Write in a professional, engaging style for serious bettors. Keep it informative but accessible.`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are a professional sports betting writer creating daily MLB betting content."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      max_tokens: 1500,
+    const text = await chatText({
+      model: MODEL_LIGHT,
+      system: "You are a professional sports betting writer creating daily MLB betting content.",
+      prompt,
+      maxTokens: 1500,
     });
 
-    return response.choices[0].message.content || "Daily digest unavailable";
+    return text || "Daily digest unavailable";
   } catch (error) {
     console.error("Error generating daily digest:", error);
     return "Daily digest is temporarily unavailable. Please check back later.";
@@ -263,7 +289,7 @@ Time: ${game.gameTime || 'TBD'}
 You MUST use the EXACT GameID format shown in the data above. DO NOT create your own gameId format.
 
 Example GameID formats from the data:
-- CORRECT: "2025-07-23_CIN @ WSH" 
+- CORRECT: "2025-07-23_CIN @ WSH"
 - WRONG: "Cincinnati Reds @ Washington Nationals"
 - WRONG: "Game: Cincinnati Reds @ Washington Nationals"
 
@@ -287,31 +313,18 @@ Focus on picks with genuine edge and value. Avoid public favorites unless there'
 
 **CRITICAL: Ensure all picks are UNIQUE combinations of gameId + pickType + selection. Do not repeat the same bet multiple times.**`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert MLB betting analyst. Always respond with valid JSON containing an array of daily picks with detailed reasoning."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      response_format: { type: "json_object" },
-      max_tokens: 4000,
+    const result = await chatJson<any>({
+      model: MODEL_HEAVY,
+      system: "You are an expert MLB betting analyst. Always respond with valid JSON containing an array of daily picks with detailed reasoning.",
+      prompt,
+      maxTokens: 4000,
     });
 
-    const content = response.choices[0].message.content || '{"picks": []}';
-    console.log('OpenAI picks response:', content.substring(0, 500));
-    
-    const result = JSON.parse(content);
-    const picks = Array.isArray(result.picks) ? result.picks : 
-                  Array.isArray(result.dailyPicks) ? result.dailyPicks : 
+    const picks = Array.isArray(result.picks) ? result.picks :
+                  Array.isArray(result.dailyPicks) ? result.dailyPicks :
                   Array.isArray(result) ? result : [];
-    console.log(`Parsed ${picks.length} picks from OpenAI response`);
-    
+    console.log(`Parsed ${picks.length} picks from Claude response`);
+
     return picks;
   } catch (error) {
     console.error("Error generating daily picks:", error);
@@ -374,23 +387,13 @@ Provide consensus analysis for each market (moneyline, total, spread if availabl
 
 Focus on identifying public vs sharp money discrepancies and line movement significance.`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are a betting market analyst. Respond with valid JSON containing consensus data for each betting market."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      response_format: { type: "json_object" },
-      max_tokens: 1500,
+    const result = await chatJson<any>({
+      model: MODEL_LIGHT,
+      system: "You are a betting market analyst. Respond with valid JSON containing consensus data for each betting market.",
+      prompt,
+      maxTokens: 1500,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || '{"analysis": []}');
     return Array.isArray(result.analysis) ? result.analysis : [];
   } catch (error) {
     console.error("Error generating consensus analysis:", error);
@@ -413,10 +416,10 @@ export async function generateAITicket(requestData: {
 }> {
   try {
     let prompt = '';
-    
+
     switch (requestData.type) {
       case 'daily_market_insight':
-        prompt = `You are an expert MLB betting analyst generating a daily market insight report. 
+        prompt = `You are an expert MLB betting analyst generating a daily market insight report.
 
 **Current Market Data:**
 - Total games analyzed: ${requestData.games?.length || 0}
@@ -424,7 +427,7 @@ export async function generateAITicket(requestData: {
 
 **Analysis Requirements:**
 1. Identify the strongest betting opportunities for today
-2. Highlight any unusual line movements or market inefficiencies  
+2. Highlight any unusual line movements or market inefficiencies
 3. Provide risk assessment for high-profile games
 4. Suggest bankroll management strategies for current market conditions
 5. Flag any red flags or concerning trends
@@ -471,44 +474,32 @@ ${JSON.stringify(requestData.performanceData, null, 2)}
         prompt = `Generate a professional analysis ticket for type: ${requestData.type}`;
     }
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert MLB betting analyst and platform administrator. Generate professional, actionable insights for automated ticket system."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
+    return await chatJson<any>({
+      model: MODEL_HEAVY,
+      system: "You are an expert MLB betting analyst and platform administrator. Generate professional, actionable insights for automated ticket system.",
+      prompt,
+      maxTokens: 1500,
       temperature: 0.3,
-      max_tokens: 1500
     });
-
-    const result = JSON.parse(response.choices[0].message.content || '{}');
-    return result;
   } catch (error) {
     console.error("Error generating AI ticket:", error);
-    
-    // Fallback response structure
+
     return {
-      analysis: `Automated ${requestData.type} analysis generated on ${new Date().toLocaleDateString()}. 
-      Market data has been collected and is ready for review. 
+      analysis: `Automated ${requestData.type} analysis generated on ${new Date().toLocaleDateString()}.
+      Market data has been collected and is ready for review.
       Contact platform administrator for detailed insights.`,
       recommendations: [
         "Review current betting positions",
         "Monitor line movements closely",
-        "Adjust bankroll management strategy"
-      ]
+        "Adjust bankroll management strategy",
+      ],
     };
   }
 }
 
 export async function generateEnhancedBettingPicks(
-  gameData: GameAnalysisData, 
-  existingAnalysis: string, 
+  gameData: GameAnalysisData,
+  existingAnalysis: string,
   odds: {
     moneyline?: { away: number; home: number };
     spread?: { awaySpread: number; homeSpread: number; awayOdds: number; homeOdds: number };
@@ -561,32 +552,22 @@ Return your response as valid JSON in this exact format:
 
 Focus on value betting opportunities where your analysis suggests the true probability differs from implied odds probability. Be specific about why each pick has value based on the existing analysis.`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are a professional sports betting analyst. Analyze games and odds to find value betting opportunities. Always return valid JSON responses only."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
+    const result = await chatJson<any>({
+      model: MODEL_HEAVY,
+      system: "You are a professional sports betting analyst. Analyze games and odds to find value betting opportunities. Always return valid JSON responses only.",
+      prompt,
+      maxTokens: 2000,
       temperature: 0.3,
-      max_tokens: 2000
     });
 
-    const result = JSON.parse(completion.choices[0].message.content || '{}');
-    
     return {
       topPicks: Array.isArray(result.topPicks) ? result.topPicks.slice(0, 3) : [],
       overallConfidence: Math.max(1, Math.min(100, result.overallConfidence || 50)),
       analysisMetadata: {
         oddsAnalyzed: Array.isArray(result.analysisMetadata?.oddsAnalyzed) ? result.analysisMetadata.oddsAnalyzed : [],
         keyFactors: Array.isArray(result.analysisMetadata?.keyFactors) ? result.analysisMetadata.keyFactors : [],
-        riskAssessment: result.analysisMetadata?.riskAssessment || 'medium'
-      }
+        riskAssessment: result.analysisMetadata?.riskAssessment || 'medium',
+      },
     };
   } catch (error) {
     console.error("Error generating enhanced betting picks:", error);
@@ -596,8 +577,8 @@ Focus on value betting opportunities where your analysis suggests the true proba
       analysisMetadata: {
         oddsAnalyzed: [],
         keyFactors: ['Analysis temporarily unavailable'],
-        riskAssessment: 'high'
-      }
+        riskAssessment: 'high',
+      },
     };
   }
 }
@@ -791,15 +772,12 @@ Return JSON: { "picks": [...] }
 You MUST return at least 3 picks. Do NOT return an empty array.`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [{ role: 'user', content: prompt }],
-      response_format: { type: 'json_object' },
+    const result = await chatJson<any>({
+      model: MODEL_HEAVY,
+      prompt,
+      maxTokens: 1800,
       temperature: 0.85,
-      max_tokens: 1800,
     });
-
-    const result = JSON.parse(response.choices[0].message.content || '{}');
     return (result.picks || []).slice(0, expert.maxPicksPerDay);
   } catch (error) {
     console.error(`Error generating picks for ${expert.name}:`, error);
@@ -915,15 +893,12 @@ ${sportSpecificReqs}
 Return JSON: { "title": "...", "content": "..." }`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
+    const result = await chatJson<any>({
+      model: MODEL_HEAVY,
+      prompt,
+      maxTokens: 2200,
       temperature: 0.95,
-      max_tokens: 2200,
     });
-
-    const result = JSON.parse(response.choices[0].message.content || '{}');
     const dateStr = input.gameId.split('_')[0] || '';
     const slug = `${dateStr}-${input.awayTeam.toLowerCase().replace(/[^a-z]/g, '')}-vs-${input.homeTeam.toLowerCase().replace(/[^a-z]/g, '')}`;
 
@@ -986,14 +961,12 @@ Include a headline and end with a "**Final Verdict:**" one-liner.
 Return JSON: { "title": "...", "content": "..." }`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
+    return await chatJson<{ title: string; content: string }>({
+      model: MODEL_HEAVY,
+      prompt,
+      maxTokens: 1500,
       temperature: 0.95,
-      max_tokens: 1500,
     });
-    return JSON.parse(response.choices[0].message.content || '{}');
   } catch (error) {
     console.error(`Error generating column for ${writer.name}:`, error);
     return {
@@ -1057,15 +1030,12 @@ Return JSON: {
 }`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
+    const r = await chatJson<any>({
+      model: MODEL_HEAVY,
+      prompt,
+      maxTokens: 2000,
       temperature: 0.85,
-      max_tokens: 2000,
     });
-
-    const r = JSON.parse(response.choices[0].message.content || '{}');
 
     // Build email-friendly HTML
     const html = `<!DOCTYPE html>

@@ -723,11 +723,13 @@ class SchedulerService {
       const expert = getExpert(pick.expertId);
       const expertName = expert?.name || pick.expertId;
 
-      const openai = (await import('openai')).default;
-      const client = new openai({ apiKey: process.env.OPENAI_API_KEY });
+      const Anthropic = (await import('@anthropic-ai/sdk')).default;
+      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-      const resp = await client.chat.completions.create({
-        model: 'gpt-4o-mini',
+      const resp = await client.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 60,
+        temperature: 0.7,
         messages: [{
           role: 'user',
           content: `An expert sports analyst "${expertName}" made this pick:
@@ -738,11 +740,10 @@ Final score: ${scoreContext}
 
 Write ONE sentence (max 20 words) explaining why this pick ${result === 'win' ? 'hit' : result === 'loss' ? 'missed' : 'pushed'}. Be specific — reference the score or what happened. No fluff.`
         }],
-        max_tokens: 60,
-        temperature: 0.7,
       });
 
-      return resp.choices[0].message.content?.trim() || '';
+      const block = resp.content[0];
+      return (block?.type === 'text' ? block.text : '').trim();
     } catch (err) {
       logger.warn('Failed to generate post-game note: ' + err);
       return '';

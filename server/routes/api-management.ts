@@ -72,15 +72,15 @@ router.get('/admin/apis', async (req, res) => {
         note: process.env.ODDS_API_KEY ? 'Configured and ready' : 'Requires ODDS_API_KEY'
       },
       {
-        name: 'OpenAI API',
-        endpoint: 'https://api.openai.com/v1/',
+        name: 'Anthropic API',
+        endpoint: 'https://api.anthropic.com/v1/',
         status: 'active' as const,
         requestCount: 0,
         lastRequest: 'Used for AI analysis',
         cost: 'Pay per use',
         rateLimit: 'Tier dependent',
         features: ['Game Analysis', 'AI Picks', 'Chat Assistant', 'Content Generation'],
-        note: 'Core AI functionality for betting intelligence'
+        note: 'Core AI functionality (Claude Sonnet 4.6 + Haiku 4.5)'
       }
     ];
 

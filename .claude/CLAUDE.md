@@ -4,7 +4,7 @@
 - **Frontend**: React 18 + TypeScript + Tailwind CSS + shadcn/ui + Wouter routing
 - **Backend**: Express.js + TypeScript + express-session + bcrypt
 - **Database**: Supabase PostgreSQL + Drizzle ORM (30+ tables)
-- **AI**: OpenAI GPT-4o / GPT-4o-mini
+- **AI**: Anthropic Claude Sonnet 4.6 (heavy) / Haiku 4.5 (light) via `@anthropic-ai/sdk`
 - **Sports Data**: Tank01 MLB API (primary), ESPN (fallback)
 - **Weather**: OpenWeatherMap
 - **Payments**: Stripe (subscription billing)
@@ -24,7 +24,7 @@
 | `server/routes.ts` | All API routes (~7,600 lines — needs splitting) |
 | `shared/schema.ts` | Drizzle schema (30+ tables, ~850 lines) |
 | `server/services/tank01-mlb.ts` | Tank01 API + team stat aggregation |
-| `server/services/openai.ts` | All AI generation (picks, reviews, newsletter) |
+| `server/services/openai.ts` | All AI generation (picks, reviews, newsletter) — uses Anthropic SDK; filename retained for import-site stability |
 | `shared/beat-writers.ts` | 25 newsroom writer personalities |
 | `shared/expert-panel.ts` | 5 expert analyst personas |
 | `server/lib/api-tracker.ts` | External API call logging with payloads |
@@ -49,7 +49,7 @@
 - Mobile: `hidden sm:table-cell` for optional table columns, bottom nav on mobile
 
 ## Environment Variables
-DATABASE_URL, SESSION_SECRET, OPENAI_API_KEY, TANK01_API_KEY, ODDS_API_KEY, RAPIDAPI_KEY, OPENWEATHERMAP_API_KEY, STRIPE_SECRET_KEY
+DATABASE_URL, SESSION_SECRET, ANTHROPIC_API_KEY, TANK01_API_KEY, ODDS_API_KEY, RAPIDAPI_KEY, OPENWEATHERMAP_API_KEY, STRIPE_SECRET_KEY
 
 ## Admin User
 - Email: tim.hull@clearedgeintel.com
