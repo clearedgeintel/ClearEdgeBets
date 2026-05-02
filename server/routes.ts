@@ -4101,9 +4101,10 @@ Format as JSON:
       ));
 
       res.json(storedPicks);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating daily picks:", error);
-      res.status(500).json({ error: "Failed to generate daily picks" });
+      const msg = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ error: `Failed to generate daily picks: ${msg.slice(0, 500)}` });
     }
   });
 
