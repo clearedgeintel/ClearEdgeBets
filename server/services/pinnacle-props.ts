@@ -55,7 +55,8 @@ export interface PinnaclePlayerProp {
 async function getTodaysMLBGames(): Promise<MLBGame[]> {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const response = await fetch(`http://localhost:5000/api/games?date=${today}`);
+    const SELF_BASE = `http://127.0.0.1:${process.env.PORT || '5000'}`;
+    const response = await fetch(`${SELF_BASE}/api/games?date=${today}`);
     if (response.ok) {
       const games = await response.json();
       return games.map((game: any) => ({

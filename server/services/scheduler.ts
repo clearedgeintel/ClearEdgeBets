@@ -5,6 +5,9 @@ import { settlePendingBets, settleVirtualBets, syncLiveGameData } from './bet-se
 import { fetchRealMLBOdds } from './realOdds';
 import { logger } from '../lib/logger';
 
+// Self-fetch base — Railway sets PORT (typically not 5000); fall back to 5000 for local dev.
+const SELF_BASE = `http://127.0.0.1:${process.env.PORT || '5000'}`;
+
 interface ScheduledTask {
   name: string;
   schedule: string;
@@ -339,34 +342,38 @@ class SchedulerService {
       }
       
       // Check if games are available by making API call
-      const gamesResponse = await fetch(`http://localhost:5000/api/games`);
+      const gamesResponse = await fetch(`${SELF_BASE}/api/games`);
       let games: any[] = [];
-      
+
       if (gamesResponse.ok) {
         games = await gamesResponse.json();
       }
-      
+
       if (!games || games.length === 0) {
         console.log(`⚠️ No games found for ${today}, skipping picks generation`);
         return;
       }
-      
+
       // Generate picks using the existing endpoint logic
-      const response = await fetch(`http://localhost:5000/api/daily-picks/generate`, {
+      const response = await fetch(`${SELF_BASE}/api/daily-picks/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: today })
       });
-      
+
       if (response.ok) {
         const picks = await response.json();
         console.log(`✅ Generated ${picks.length} daily picks for ${today}`);
       } else {
-        console.error(`❌ Failed to generate daily picks: ${response.status} ${response.statusText}`);
+        const body = await response.text().catch(() => '');
+        const msg = `Daily picks generation failed: ${response.status} ${response.statusText} — ${body.slice(0, 200)}`;
+        console.error(`❌ ${msg}`);
+        throw new Error(msg);
       }
-      
+
     } catch (error) {
       console.error('❌ Failed to generate daily picks:', error);
+      throw error;
     }
   }
 
@@ -483,27 +490,29 @@ class SchedulerService {
    * Auto-generate expert panel picks for today's games.
    */
   private async generateExpertPicks() {
-    try {
-      const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
 
-      // Check if already generated today
-      const existing = await storage.getExpertPicksByDate(today);
-      if (existing.length > 0) {
-        logger.info(`Expert picks: already have ${existing.length} picks for ${today}, skipping`);
-        return;
-      }
+    const existing = await storage.getExpertPicksByDate(today);
+    if (existing.length > 0) {
+      logger.info(`Expert picks: already have ${existing.length} picks for ${today}, skipping`);
+      return;
+    }
 
-      let totalPicks = 0;
+    let totalPicks = 0;
+    let mlbErr: unknown = null;
+    let nhlErr: unknown = null;
 
-      // Generate MLB expert picks
-      totalPicks += await this.generateMLBExpertPicks(today);
+    try { totalPicks += await this.generateMLBExpertPicks(today); }
+    catch (e) { mlbErr = e; logger.error('MLB expert picks error: ' + e); }
 
-      // Generate NHL expert picks
-      totalPicks += await this.generateNHLExpertPicks(today);
+    try { totalPicks += await this.generateNHLExpertPicks(today); }
+    catch (e) { nhlErr = e; logger.error('NHL expert picks error: ' + e); }
 
-      logger.info(`Expert picks: generated ${totalPicks} total picks from 5 experts for ${today}`);
-    } catch (error) {
-      logger.error('Expert picks generation error: ' + error);
+    logger.info(`Expert picks: generated ${totalPicks} total picks from 5 experts for ${today}`);
+
+    // Surface errors when triggered manually so the admin sees what failed
+    if (totalPicks === 0 && (mlbErr || nhlErr)) {
+      throw new Error(`Expert picks generation produced 0 picks. MLB: ${mlbErr ?? 'ok'} | NHL: ${nhlErr ?? 'ok'}`);
     }
   }
 

@@ -26,6 +26,28 @@ function stripFences(s: string): string {
     .trim();
 }
 
+// Extract a JSON object/array from a text blob. Claude sometimes ignores the
+// "respond with ONLY valid JSON" instruction and adds a preamble or trailing
+// commentary; this finds the first `{` or `[` and matches it to its last
+// `}` or `]` so JSON.parse succeeds even with surrounding prose.
+function extractJsonBlob(s: string): string {
+  const stripped = stripFences(s);
+  const firstObj = stripped.indexOf("{");
+  const firstArr = stripped.indexOf("[");
+  let start: number;
+  let openCh: string;
+  let closeCh: string;
+  if (firstObj === -1 && firstArr === -1) return stripped;
+  if (firstObj === -1 || (firstArr !== -1 && firstArr < firstObj)) {
+    start = firstArr; openCh = "["; closeCh = "]";
+  } else {
+    start = firstObj; openCh = "{"; closeCh = "}";
+  }
+  const last = stripped.lastIndexOf(closeCh);
+  if (last <= start) return stripped;
+  return stripped.slice(start, last + 1);
+}
+
 interface ChatOpts {
   model: string;
   system?: string;
@@ -61,8 +83,20 @@ async function chatJson<T = any>(opts: ChatOpts): Promise<T> {
   };
   if (opts.temperature !== undefined) params.temperature = opts.temperature;
   const response = await client.messages.create(params);
-  const text = stripFences(extractText(response));
-  return JSON.parse(text) as T;
+  const rawText = extractText(response);
+  const blob = extractJsonBlob(rawText);
+  try {
+    return JSON.parse(blob) as T;
+  } catch (err) {
+    console.error("chatJson parse failure", {
+      model: opts.model,
+      error: String(err),
+      rawLen: rawText.length,
+      rawHead: rawText.slice(0, 400),
+      blobHead: blob.slice(0, 400),
+    });
+    throw err;
+  }
 }
 
 export interface GameAnalysisData {

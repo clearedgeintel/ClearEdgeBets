@@ -38,6 +38,9 @@ import { STRIPE_PRODUCTS, getProductByTier, getTierByPriceId } from "./stripe-co
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || '' });
 
+// Self-fetch base — Railway sets PORT (not 5000); fall back for local dev.
+const SELF_BASE = `http://127.0.0.1:${process.env.PORT || '5000'}`;
+
 async function claudeJson<T = any>(opts: { model: string; prompt: string; maxTokens: number; temperature?: number; system?: string }): Promise<T> {
   const sys = [opts.system, 'Respond with ONLY valid JSON. No markdown fences, no preamble.'].filter(Boolean).join('\n\n');
   const params: Anthropic.MessageCreateParamsNonStreaming = {
@@ -49,9 +52,24 @@ async function claudeJson<T = any>(opts: { model: string; prompt: string; maxTok
   if (opts.temperature !== undefined) params.temperature = opts.temperature;
   const r = await anthropic.messages.create(params);
   const block = r.content[0];
-  const text = block?.type === 'text' ? block.text : '';
-  const stripped = text.trim().replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/, '').trim();
-  return JSON.parse(stripped || '{}') as T;
+  const rawText = block?.type === 'text' ? block.text : '';
+  // Robust JSON extraction: strip fences, then take the first {...} or [...] blob to tolerate preamble/postamble.
+  const stripped = rawText.trim().replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/, '').trim();
+  const firstObj = stripped.indexOf('{');
+  const firstArr = stripped.indexOf('[');
+  let blob = stripped;
+  if (firstObj !== -1 || firstArr !== -1) {
+    const start = (firstObj === -1 || (firstArr !== -1 && firstArr < firstObj)) ? firstArr : firstObj;
+    const closeCh = stripped[start] === '[' ? ']' : '}';
+    const last = stripped.lastIndexOf(closeCh);
+    if (last > start) blob = stripped.slice(start, last + 1);
+  }
+  try {
+    return JSON.parse(blob || '{}') as T;
+  } catch (err) {
+    console.error('claudeJson parse failure', { model: opts.model, error: String(err), rawHead: rawText.slice(0, 400) });
+    throw err;
+  }
 }
 
 // Helper function to generate CFL pick reasoning
@@ -3164,7 +3182,7 @@ Format as JSON:
       console.log(`Enhanced picks requested for: ${gameId}`);
       
       // Fetch games directly from the main games endpoint to ensure consistency
-      const gamesResponse = await fetch(`http://localhost:5000/api/games`);
+      const gamesResponse = await fetch(`${SELF_BASE}/api/games`);
       const gamesWithAI = await gamesResponse.json();
       
       console.log(`Looking for gameId: "${gameId}"`);
@@ -3214,7 +3232,7 @@ Format as JSON:
       console.log(`All enhanced picks requested for date: ${date || 'today'}`);
       
       // Fetch games directly from the main games endpoint to ensure consistency
-      const gamesUrl = date ? `http://localhost:5000/api/games?date=${date}` : `http://localhost:5000/api/games`;
+      const gamesUrl = date ? `${SELF_BASE}/api/games?date=${date}` : `${SELF_BASE}/api/games`;
       const gamesResponse = await fetch(gamesUrl);
       
       if (!gamesResponse.ok) {
@@ -3739,7 +3757,7 @@ Format as JSON:
       const date = req.query.date as string || new Date().toISOString().split('T')[0];
       
       // Get current games with AI summaries
-      const gamesResponse = await fetch(`http://localhost:5000/api/games?date=${date}`);
+      const gamesResponse = await fetch(`${SELF_BASE}/api/games?date=${date}`);
       let games: any[] = [];
       
       if (gamesResponse.ok) {
@@ -3860,7 +3878,7 @@ Format as JSON:
       const { gameId } = req.params;
       
       // Get the specific game data
-      const gamesResponse = await fetch(`http://localhost:5000/api/games`);
+      const gamesResponse = await fetch(`${SELF_BASE}/api/games`);
       let games: any[] = [];
       
       if (gamesResponse.ok) {
@@ -3911,7 +3929,7 @@ Format as JSON:
       const targetDate = date || new Date().toISOString().split('T')[0];
       
       // Get all games for the specified date
-      const gamesResponse = await fetch(`http://localhost:5000/api/games?date=${targetDate}`);
+      const gamesResponse = await fetch(`${SELF_BASE}/api/games?date=${targetDate}`);
       let games: any[] = [];
       
       if (gamesResponse.ok) {
@@ -3969,7 +3987,7 @@ Format as JSON:
       const date = req.query.date as string || new Date().toISOString().split('T')[0];
       
       // Get current games and provide evaluation status
-      const gamesResponse = await fetch(`http://localhost:5000/api/games?date=${date}`);
+      const gamesResponse = await fetch(`${SELF_BASE}/api/games?date=${date}`);
       let games: any[] = [];
       
       if (gamesResponse.ok) {
@@ -4003,7 +4021,7 @@ Format as JSON:
       const todayString = new Date(easternTime).toISOString().split('T')[0];
       
       // Directly call the games API to get the same real data that's working
-      const gamesResponse = await fetch(`http://localhost:5000/api/games`);
+      const gamesResponse = await fetch(`${SELF_BASE}/api/games`);
       let realGames: any[] = [];
       
       if (gamesResponse.ok) {
@@ -4321,7 +4339,7 @@ Format as JSON:
       const sessionUser = await storage.getUser(userId);
       if (!sessionUser || !sessionUser.isAdmin) return res.status(403).json({ error: "Admin access required" });
 
-      const gamesResponse = await fetch(`http://localhost:5000/api/games`);
+      const gamesResponse = await fetch(`${SELF_BASE}/api/games`);
       let realGames: any[] = [];
       
       if (gamesResponse.ok) {
@@ -5853,7 +5871,7 @@ Format as JSON:
   // Generate missing AI summaries for current games
   app.post('/api/admin/generate-missing-summaries', async (req: Request, res: Response) => {
     try {
-      const games = await fetch('http://localhost:5000/api/games').then(r => r.json());
+      const games = await fetch(`${SELF_BASE}/api/games`).then(r => r.json());
       let generatedCount = 0;
       
       for (const game of games) {
