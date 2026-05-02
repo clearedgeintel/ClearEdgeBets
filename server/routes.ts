@@ -56,7 +56,8 @@ async function claudeJson<T = any>(opts: { model: string; prompt: string; maxTok
   const r = await anthropic.messages.create(params);
   const block = r.content[0];
   const rawText = block?.type === 'text' ? block.text : '';
-  // Robust JSON extraction: strip fences, then take the first {...} or [...] blob to tolerate preamble/postamble.
+  // Robust JSON extraction: strip fences, take the first {...} or [...] blob (tolerates preamble/postamble),
+  // then strip leading + from numeric values (Claude emits "odds": +130 which is invalid JSON).
   const stripped = rawText.trim().replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/, '').trim();
   const firstObj = stripped.indexOf('{');
   const firstArr = stripped.indexOf('[');
@@ -67,6 +68,7 @@ async function claudeJson<T = any>(opts: { model: string; prompt: string; maxTok
     const last = stripped.lastIndexOf(closeCh);
     if (last > start) blob = stripped.slice(start, last + 1);
   }
+  blob = blob.replace(/([:\[,]\s*)\+(\d)/g, '$1$2');
   try {
     return JSON.parse(blob || '{}') as T;
   } catch (err) {

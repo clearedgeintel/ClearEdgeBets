@@ -51,6 +51,13 @@ function extractJsonBlob(s: string): string {
   return stripped.slice(start, last + 1);
 }
 
+// Claude often emits American-odds values like `"odds": +130` — JSON disallows
+// a leading `+` on numbers. Strip the `+` only in number-value positions
+// (after `:`, `,`, or `[`), never inside string literals.
+function sanitizeJson(s: string): string {
+  return s.replace(/([:\[,]\s*)\+(\d)/g, '$1$2');
+}
+
 interface ChatOpts {
   model: string;
   system?: string;
@@ -87,7 +94,7 @@ async function chatJson<T = any>(opts: ChatOpts): Promise<T> {
   if (opts.temperature !== undefined) params.temperature = opts.temperature;
   const response = await client.messages.create(params);
   const rawText = extractText(response);
-  const blob = extractJsonBlob(rawText);
+  const blob = sanitizeJson(extractJsonBlob(rawText));
   try {
     return JSON.parse(blob) as T;
   } catch (err) {
@@ -333,7 +340,7 @@ Return your analysis in JSON format with an array of picks. Each pick MUST inclu
 - gameId: Copy the EXACT GameID string from the games data above (format: "2025-07-23_XXX @ YYY")
 - pickType: "moneyline", "total", "spread", or "prop"
 - selection: Detailed description of the bet
-- odds: The betting odds (American format)
+- odds: The betting odds in American format AS A SIGNED INTEGER LITERAL — e.g. -130 or 145 (NEVER write +145; JSON disallows leading +)
 - reasoning: Detailed 100-150 word analysis focusing on pitching matchups, team trends, and specific betting edge. Include specific statistical insights and why this pick offers value.
 - confidence: Number from 1-100
 - expectedValue: Estimated edge percentage (can be negative)
@@ -796,7 +803,7 @@ For each pick, provide:
 - gameId: the away@home code (e.g. "${isNHL ? 'BOS@TOR' : 'NYY@BOS'}")${hasParlay ? ' — for parlays use the first game\'s code' : ''}
 - pickType: ${pickTypeOptions}${parlayNote}
 - selection: the specific pick ${selectionExamples}
-- odds: the odds number (e.g. -130, +150)${hasParlay ? ' — for parlays, calculate the combined odds' : ''}
+- odds: the odds as a signed integer (e.g. -130 or 150 — never write +150, JSON disallows leading +)${hasParlay ? ' — for parlays, calculate the combined odds' : ''}
 - confidence: 1-100 how confident you are
 - rationale: 2-3 sentences in YOUR voice explaining why — MUST name specific players${hasParlay ? '. For parlays, explain why the legs are correlated.' : ''}
 - units: how many units to risk (0.5 to 3.0 based on confidence)
