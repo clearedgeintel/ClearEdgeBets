@@ -153,7 +153,7 @@ function guessService(url: string): string {
   if (url.includes('tank01-mlb')) return 'Tank01 MLB';
   if (url.includes('tank01')) return 'Tank01';
   if (url.includes('americanfootballapi')) return 'CFL API';
-  if (url.includes('major-league-baseball')) return 'Legacy MLB API';  // mlb-api.ts + enhanced-mlb-picks.ts
+  if (url.includes('major-league-baseball')) return 'Legacy MLB API';  // mlb-api.ts (candidate for migration to Tank01)
   if (url.includes('rapidapi.com')) return 'RapidAPI (other)';
   if (url.includes('espn.com')) return 'ESPN';
   if (url.includes('odds-api') || url.includes('the-odds-api')) return 'Odds API';
