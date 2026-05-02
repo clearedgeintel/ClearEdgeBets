@@ -619,28 +619,39 @@ class SchedulerService {
     }));
 
     let picks = 0;
+    const errors: string[] = [];
     for (const expert of getAllExperts()) {
-      const expertPicks = await genPicks({ expert, games: gameData, sport: 'mlb' });
-      for (const pick of expertPicks) {
-        await storage.createExpertPick({
-          expertId: expert.id,
-          gameId: pick.gameId,
-          gameDate: today,
-          pickType: pick.pickType,
-          selection: pick.selection,
-          odds: pick.odds,
-          confidence: pick.confidence,
-          rationale: pick.rationale,
-          units: String(pick.units || 1),
-          result: 'pending',
-          gradedAt: null,
-          sport: 'mlb',
-        });
-        picks++;
+      try {
+        const expertPicks = await genPicks({ expert, games: gameData, sport: 'mlb' });
+        for (const pick of expertPicks) {
+          await storage.createExpertPick({
+            expertId: expert.id,
+            gameId: pick.gameId,
+            gameDate: today,
+            pickType: pick.pickType,
+            selection: pick.selection,
+            odds: pick.odds,
+            confidence: pick.confidence,
+            rationale: pick.rationale,
+            units: String(pick.units || 1),
+            result: 'pending',
+            gradedAt: null,
+            sport: 'mlb',
+          });
+          picks++;
+        }
+      } catch (e) {
+        const msg = `${expert.id}: ${e instanceof Error ? e.message : String(e)}`;
+        errors.push(msg);
+        logger.error(`Expert picks (MLB) ${msg}`);
       }
     }
 
     if (picks > 0) logger.info(`Expert picks (MLB): ${picks} picks generated`);
+    // If every expert failed, propagate so the trigger endpoint surfaces the error.
+    if (picks === 0 && errors.length > 0) {
+      throw new Error(`All MLB experts failed: ${errors.join(' | ')}`);
+    }
     return picks;
   }
 
@@ -676,28 +687,38 @@ class SchedulerService {
     });
 
     let picks = 0;
+    const errors: string[] = [];
     for (const expert of getAllExperts()) {
-      const expertPicks = await genPicks({ expert, games: gameData, sport: 'nhl' });
-      for (const pick of expertPicks) {
-        await storage.createExpertPick({
-          expertId: expert.id,
-          gameId: pick.gameId,
-          gameDate: today,
-          pickType: pick.pickType === 'puckline' ? 'puckline' : pick.pickType,
-          selection: pick.selection,
-          odds: pick.odds,
-          confidence: pick.confidence,
-          rationale: pick.rationale,
-          units: String(pick.units || 1),
-          result: 'pending',
-          gradedAt: null,
-          sport: 'nhl',
-        });
-        picks++;
+      try {
+        const expertPicks = await genPicks({ expert, games: gameData, sport: 'nhl' });
+        for (const pick of expertPicks) {
+          await storage.createExpertPick({
+            expertId: expert.id,
+            gameId: pick.gameId,
+            gameDate: today,
+            pickType: pick.pickType === 'puckline' ? 'puckline' : pick.pickType,
+            selection: pick.selection,
+            odds: pick.odds,
+            confidence: pick.confidence,
+            rationale: pick.rationale,
+            units: String(pick.units || 1),
+            result: 'pending',
+            gradedAt: null,
+            sport: 'nhl',
+          });
+          picks++;
+        }
+      } catch (e) {
+        const msg = `${expert.id}: ${e instanceof Error ? e.message : String(e)}`;
+        errors.push(msg);
+        logger.error(`Expert picks (NHL) ${msg}`);
       }
     }
 
     if (picks > 0) logger.info(`Expert picks (NHL): ${picks} picks generated`);
+    if (picks === 0 && errors.length > 0) {
+      throw new Error(`All NHL experts failed: ${errors.join(' | ')}`);
+    }
     return picks;
   }
 

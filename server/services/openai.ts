@@ -295,8 +295,7 @@ export interface DailyPick {
 }
 
 export async function generateDailyPicks(games: DailyPicksInput[]): Promise<DailyPick[]> {
-  try {
-    const prompt = `You are a professional MLB betting analyst. Analyze today's ${games.length} games and provide exactly 3-5 best betting picks using this PRIORITY HIERARCHY:
+  const prompt = `You are a professional MLB betting analyst. Analyze today's ${games.length} games and provide exactly 3-5 best betting picks using this PRIORITY HIERARCHY:
 
 **PRIMARY ANALYSIS FACTORS (Weight: 70%):**
 1. Starting pitcher quality, recent form, and statistical trends
@@ -350,23 +349,20 @@ Focus on picks with genuine edge and value. Avoid public favorites unless there'
 
 **CRITICAL: Ensure all picks are UNIQUE combinations of gameId + pickType + selection. Do not repeat the same bet multiple times.**`;
 
-    const result = await chatJson<any>({
-      model: MODEL_HEAVY,
-      system: "You are an expert MLB betting analyst. Always respond with valid JSON containing an array of daily picks with detailed reasoning.",
-      prompt,
-      maxTokens: 4000,
-    });
+  // Errors propagate so the trigger endpoint surfaces them.
+  const result = await chatJson<any>({
+    model: MODEL_HEAVY,
+    system: "You are an expert MLB betting analyst. Always respond with valid JSON containing an array of daily picks with detailed reasoning.",
+    prompt,
+    maxTokens: 4000,
+  });
 
-    const picks = Array.isArray(result.picks) ? result.picks :
-                  Array.isArray(result.dailyPicks) ? result.dailyPicks :
-                  Array.isArray(result) ? result : [];
-    console.log(`Parsed ${picks.length} picks from Claude response`);
+  const picks = Array.isArray(result.picks) ? result.picks :
+                Array.isArray(result.dailyPicks) ? result.dailyPicks :
+                Array.isArray(result) ? result : [];
+  console.log(`Parsed ${picks.length} picks from Claude response`);
 
-    return picks;
-  } catch (error) {
-    console.error("Error generating daily picks:", error);
-    return [];
-  }
+  return picks;
 }
 
 export interface ConsensusAnalysis {
@@ -808,18 +804,15 @@ For each pick, provide:
 Return JSON: { "picks": [...] }
 You MUST return at least 3 picks. Do NOT return an empty array.`;
 
-  try {
-    const result = await chatJson<any>({
-      model: MODEL_HEAVY,
-      prompt,
-      maxTokens: 1800,
-      temperature: 0.85,
-    });
-    return (result.picks || []).slice(0, expert.maxPicksPerDay);
-  } catch (error) {
-    console.error(`Error generating picks for ${expert.name}:`, error);
-    return [];
-  }
+  // Errors propagate so the trigger endpoint surfaces them. The scheduler's
+  // generateMLBExpertPicks loop catches per-expert failures.
+  const result = await chatJson<any>({
+    model: MODEL_HEAVY,
+    prompt,
+    maxTokens: 1800,
+    temperature: 0.85,
+  });
+  return (result.picks || []).slice(0, expert.maxPicksPerDay);
 }
 
 // ── Sarcastic Game Review Generator ──────────────────────────────────
