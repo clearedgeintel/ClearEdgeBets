@@ -27,7 +27,7 @@ import { teamPowerScoringService } from "./services/team-power-scoring";
 import { schedulerService } from "./services/scheduler";
 import { getCached, setCache } from "./lib/cache";
 import { getParkFactor } from "./lib/park-factors";
-import { getAPICallLog, getAPICallStats } from "./lib/api-tracker";
+import { getAPICallLog, getAPICallStats, trackedFetch } from "./lib/api-tracker";
 import { fetchTank01Games, fetchTank01Odds, fetchTank01Player, fetchTank01Teams, resolvePitchers, parseMultiBookOdds, getConsensusOdds, getTeamFullName, getTeamVenue, fetchTank01RosterWithStats } from "./services/tank01-mlb";
 import { getBeatWriterForGame as getBeatWriterForGameFn } from "@shared/beat-writers";
 // Note: Auth will be handled by existing system
@@ -36,7 +36,11 @@ import Anthropic from "@anthropic-ai/sdk";
 import bcrypt from "bcrypt";
 import { STRIPE_PRODUCTS, getProductByTier, getTierByPriceId } from "./stripe-config";
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || '' });
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || '',
+  // Route SDK requests through trackedFetch so they appear in /api/admin/api-calls.
+  fetch: (url, init) => trackedFetch(url as any, { ...(init as any), _service: 'Anthropic' }),
+});
 
 // Self-fetch base — Railway sets PORT (not 5000); fall back for local dev.
 const SELF_BASE = `http://127.0.0.1:${process.env.PORT || '5000'}`;

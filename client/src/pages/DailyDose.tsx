@@ -164,13 +164,13 @@ export default function DailyDose() {
           <CardContent className="space-y-4">
             {!debugData && (
               <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded">
-                No debug data available. Generate a newsletter to see the OpenAI prompt and team power scores.
+                No debug data available. Generate a newsletter to see the Claude prompt and team power scores.
               </div>
             )}
             
             {debugData?.prompt && (
               <div className="space-y-2">
-                <h4 className="font-semibold">Prompt Sent to OpenAI:</h4>
+                <h4 className="font-semibold">Prompt Sent to Claude:</h4>
                 <div className="bg-slate-50 dark:bg-slate-900 border rounded-lg p-4 max-h-64 overflow-y-auto">
                   <pre className="text-sm text-slate-900 dark:text-slate-100 whitespace-pre-wrap">{debugData.prompt}</pre>
                 </div>

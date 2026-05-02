@@ -733,7 +733,11 @@ class SchedulerService {
       const expertName = expert?.name || pick.expertId;
 
       const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const { trackedFetch } = await import('../lib/api-tracker');
+      const client = new Anthropic({
+        apiKey: process.env.ANTHROPIC_API_KEY,
+        fetch: (url, init) => trackedFetch(url as any, { ...(init as any), _service: 'Anthropic' }),
+      });
 
       const resp = await client.messages.create({
         model: 'claude-haiku-4-5',

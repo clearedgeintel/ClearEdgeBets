@@ -3,9 +3,12 @@
 //   gpt-4o      → claude-sonnet-4-6
 //   gpt-4o-mini → claude-haiku-4-5
 import Anthropic from "@anthropic-ai/sdk";
+import { trackedFetch } from "../lib/api-tracker";
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || "",
+  // Route SDK requests through trackedFetch so they appear in /api/admin/api-calls.
+  fetch: (url, init) => trackedFetch(url as any, { ...(init as any), _service: 'Anthropic' }),
 });
 
 const MODEL_HEAVY = "claude-sonnet-4-6";   // gpt-4o equivalent

@@ -73,7 +73,11 @@ router.post('/api/admin/generate-trivia', async (req, res) => {
     ).join('\n');
 
     const Anthropic = (await import('@anthropic-ai/sdk')).default;
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || '' });
+    const { trackedFetch } = await import('../lib/api-tracker');
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY || '',
+      fetch: (url, init) => trackedFetch(url as any, { ...(init as any), _service: 'Anthropic' }),
+    });
 
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
