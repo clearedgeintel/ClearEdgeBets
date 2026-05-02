@@ -4593,6 +4593,42 @@ Format as JSON:
     }
   });
 
+  // Diagnostic: confirm what env vars the running container actually sees.
+  // Returns presence/length/prefix only — never the full secret value.
+  app.get("/api/admin/env-check", async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) return res.status(401).json({ error: "Not authenticated" });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
+
+      const summarize = (name: string) => {
+        const v = process.env[name];
+        return {
+          set: v !== undefined && v !== '',
+          length: v ? v.length : 0,
+          prefix: v ? v.slice(0, 7) : null,
+        };
+      };
+
+      // List every env var whose name contains 'ANTHROPIC' or 'CLAUDE' so name typos surface.
+      const relatedNames = Object.keys(process.env)
+        .filter(k => /ANTHROPIC|CLAUDE/i.test(k))
+        .sort();
+
+      res.json({
+        ANTHROPIC_API_KEY: summarize('ANTHROPIC_API_KEY'),
+        TANK01_API_KEY: summarize('TANK01_API_KEY'),
+        OPENAI_API_KEY: summarize('OPENAI_API_KEY'),
+        relatedEnvVarNames: relatedNames,
+        nodeEnv: process.env.NODE_ENV || null,
+        port: process.env.PORT || null,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/admin/trigger-task", async (req, res) => {
     try {
       const userId = req.session.userId;
