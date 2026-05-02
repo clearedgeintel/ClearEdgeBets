@@ -7804,78 +7804,103 @@ Format as JSON:
       );
       const rankedScores = teamPowerScoringService.getTeamPowerRankings(teamPowerScores);
       
-      // Get today's games using RapidAPI (same as n8n workflow)
-      const { rapidAPIMLBService } = await import('./services/rapidapi-mlb');
+      // Get today's games using Tank01 (Pinnacle endpoint deprecated; consensus odds across DraftKings/FanDuel/BetMGM/Caesars/Bet365 substitutes)
+      const { fetchTank01Games, fetchTank01Odds, fetchTank01Teams, parseMultiBookOdds, getConsensusOdds, getTeamFullName, getTeamVenue } = await import('./services/tank01-mlb');
       const { normalizeTeamCode } = await import('../shared/team-lookup');
       const today = new Date().toISOString().split('T')[0];
-      
-      console.log(`Fetching MLB data for ${today} using RapidAPI from n8n workflow...`);
-      
-      // Fetch MLB schedule and Pinnacle odds (matching n8n workflow)
-      const [mlbGames, pinnacleOdds] = await Promise.all([
-        rapidAPIMLBService.fetchMLBSchedule(today),
-        rapidAPIMLBService.fetchPinnacleOdds()
+
+      console.log(`Fetching MLB data for ${today} from Tank01...`);
+
+      const [mlbGames, oddsMap, allTeams] = await Promise.all([
+        fetchTank01Games(today),
+        fetchTank01Odds(today),
+        fetchTank01Teams(),
       ]);
-      
+
       if (mlbGames.length === 0) {
         return res.status(200).json({
           success: false,
           error: "No MLB games available today",
-          message: "Newsletter cannot be generated without real game data from RapidAPI",
-          metadata: {
-            date: today,
-            totalGames: 0,
-            topValueBets: 0,
-            generatedAt: new Date().toISOString()
-          }
+          message: "Newsletter cannot be generated without real game data",
+          metadata: { date: today, totalGames: 0, topValueBets: 0, generatedAt: new Date().toISOString() },
         });
       }
-      
-      // Calculate enhanced analytics (matching n8n workflow calculations)
-      const enhancedGamesData = rapidAPIMLBService.calculateEnhancedAnalytics(mlbGames, pinnacleOdds);
-      
-      console.log(`Enhanced analytics calculated for ${enhancedGamesData.length} games with Pinnacle odds`);
-      
+
+      // Compute season win pct from Tank01 standings
+      const winPctByCode: Record<string, number> = {};
+      allTeams.forEach(t => {
+        const w = parseInt(t.wins || '0');
+        const l = parseInt(t.loss || '0');
+        winPctByCode[t.teamAbv] = w + l > 0 ? w / (w + l) : 0.5;
+      });
+
+      // Build enhanced analytics from Tank01 consensus odds (replaces RapidAPI calculateEnhancedAnalytics)
+      const enhancedGamesData = mlbGames.flatMap(g => {
+        const odds = oddsMap[g.gameID];
+        const books = odds ? parseMultiBookOdds(odds) : [];
+        const consensus = books.length > 0 ? getConsensusOdds(books) : { moneyline: null };
+        if (!consensus.moneyline) return [];
+
+        const homeOdds = consensus.moneyline.home;
+        const awayOdds = consensus.moneyline.away;
+        const homeWinPct = winPctByCode[g.home] ?? 0.5;
+        const awayWinPct = winPctByCode[g.away] ?? 0.5;
+
+        const baseHomeImp = homeOdds > 0 ? 100 / (homeOdds + 100) : Math.abs(homeOdds) / (Math.abs(homeOdds) + 100);
+        const baseAwayImp = awayOdds > 0 ? 100 / (awayOdds + 100) : Math.abs(awayOdds) / (Math.abs(awayOdds) + 100);
+
+        // Model probability: implied + small adjustment for season strength
+        const homeProb = Math.max(0.15, Math.min(0.85, baseHomeImp + (homeWinPct - 0.5) * 0.2));
+        const awayProb = Math.max(0.15, Math.min(0.85, baseAwayImp + (awayWinPct - 0.5) * 0.2));
+
+        const homeEV = homeOdds > 0
+          ? (homeProb * homeOdds - (1 - homeProb) * 100) / 100
+          : (homeProb * 100 - (1 - homeProb) * Math.abs(homeOdds)) / 100;
+        const awayEV = awayOdds > 0
+          ? (awayProb * awayOdds - (1 - awayProb) * 100) / 100
+          : (awayProb * 100 - (1 - awayProb) * Math.abs(awayOdds)) / 100;
+
+        const homeKelly = homeEV > 0 ? homeEV / (homeOdds > 0 ? homeOdds / 100 : 100 / Math.abs(homeOdds)) : 0;
+        const awayKelly = awayEV > 0 ? awayEV / (awayOdds > 0 ? awayOdds / 100 : 100 / Math.abs(awayOdds)) : 0;
+
+        return [{
+          gameId: g.gameID,
+          homeTeam: getTeamFullName(g.home),
+          awayTeam: getTeamFullName(g.away),
+          homeTeamCode: g.home,
+          awayTeamCode: g.away,
+          gameTime: g.gameTime,
+          venue: getTeamVenue(g.home),
+          homeOdds, awayOdds, homeWinPct, awayWinPct,
+          homeProb, awayProb,
+          homeImp: baseHomeImp, awayImp: baseAwayImp,
+          homeEV, awayEV, homeKelly, awayKelly,
+          homeEdge: homeProb - baseHomeImp,
+          awayEdge: awayProb - baseAwayImp,
+        }];
+      });
+
+      console.log(`Enhanced analytics calculated for ${enhancedGamesData.length} games with consensus odds`);
+
       if (enhancedGamesData.length === 0) {
         return res.status(200).json({
           success: false,
           error: "No games with odds available",
-          message: "Newsletter requires games with Pinnacle odds data for analytics",
-          metadata: {
-            date: today,
-            totalGames: mlbGames.length,
-            topValueBets: 0,
-            generatedAt: new Date().toISOString()
-          }
+          message: "Newsletter requires games with consensus odds data for analytics",
+          metadata: { date: today, totalGames: mlbGames.length, topValueBets: 0, generatedAt: new Date().toISOString() },
         });
       }
-      
-      // Debug: Log team power scores for debugging
-      console.log('Available team power scores:', teamPowerScores.map(t => ({ 
-        team: t.team, 
-        teamCode: t.teamCode, 
-        powerScore: t.teamPowerScore 
-      })));
-      
-      // Enhance RapidAPI games with team power data and analytics
+
+      // Enhance with team power data
       const enhancedGames = enhancedGamesData.map(game => {
-        // Only normalize if team codes exist
-        const normalizedAwayCode = game.awayTeamCode ? normalizeTeamCode(game.awayTeamCode) : 'UNK';
-        const normalizedHomeCode = game.homeTeamCode ? normalizeTeamCode(game.homeTeamCode) : 'UNK';
-        
-        console.log(`Game: ${game.awayTeam} @ ${game.homeTeam}`);
-        console.log(`  Original codes: away=${game.awayTeamCode}, home=${game.homeTeamCode}`);
-        console.log(`  Normalized codes: away=${normalizedAwayCode}, home=${normalizedHomeCode}`);
-        
-        const awayPowerData = teamPowerScores.find(team => 
+        const normalizedAwayCode = normalizeTeamCode(game.awayTeamCode);
+        const normalizedHomeCode = normalizeTeamCode(game.homeTeamCode);
+        const awayPowerData = rankedScores.find(team =>
           team.teamCode && normalizeTeamCode(team.teamCode) === normalizedAwayCode
         );
-        const homePowerData = teamPowerScores.find(team => 
+        const homePowerData = rankedScores.find(team =>
           team.teamCode && normalizeTeamCode(team.teamCode) === normalizedHomeCode
         );
-        
-        console.log(`  Power data found: away=${!!awayPowerData}, home=${!!homePowerData}`);
-        
         return {
           ...game,
           awayPowerScore: awayPowerData?.teamPowerScore || 50,
@@ -7886,11 +7911,11 @@ Format as JSON:
           homePitchingScore: homePowerData?.pitchingScore || 25,
           awayRank: awayPowerData?.rank || 15,
           homeRank: homePowerData?.rank || 15,
-          powerDifference: Math.abs((homePowerData?.teamPowerScore || 50) - (awayPowerData?.teamPowerScore || 50))
+          powerDifference: Math.abs((homePowerData?.teamPowerScore || 50) - (awayPowerData?.teamPowerScore || 50)),
         };
       });
       
-      // Prepare data for Claude prompt using RapidAPI enhanced analytics
+      // Prepare data for Claude prompt using Tank01 enhanced analytics
       const gamesData = enhancedGames.map(game => ({
         homeTeam: game.homeTeam,
         awayTeam: game.awayTeam,
