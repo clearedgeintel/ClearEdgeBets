@@ -99,8 +99,24 @@ export default function EditorsDesk() {
     queryFn: () => fetch('/api/editorial/columns', { credentials: 'include' }).then(r => r.json()),
   });
 
+  // Wrap setSelectedGame so attaching a game also clamps writers to ≤1.
+  // 1 article per game — stops the credit burn from "Select All" + a game.
+  const selectGame = (gameID: string | null) => {
+    setSelectedGame(gameID);
+    if (gameID) {
+      setSelectedWriters(prev => prev.size <= 1 ? prev : new Set([Array.from(prev)[0]]));
+    }
+  };
+
+  // When a game is selected, picker is single-select (1 article per game).
+  // For generic topics, picker stays multi-select.
   const toggleWriter = (name: string) => {
     setSelectedWriters(prev => {
+      // Single-select mode when a game is attached: tapping toggles or replaces.
+      if (selectedGame) {
+        if (prev.has(name) && prev.size === 1) return new Set();
+        return new Set([name]);
+      }
       const next = new Set(prev);
       if (next.has(name)) next.delete(name);
       else next.add(name);
@@ -234,7 +250,7 @@ export default function EditorsDesk() {
                     )}
                     {game.status === 'unassigned' && (
                       <Button size="sm" variant="outline" className="h-6 text-[10px] border-amber-500/30 text-amber-400"
-                        onClick={() => { setSelectedGame(game.gameID); setTopic(`Recap of ${game.awayName} @ ${game.homeName}`); if (game.beatWriter) setSelectedWriters(new Set([game.beatWriter])); }}>
+                        onClick={() => { selectGame(game.gameID); setTopic(`Recap of ${game.awayName} @ ${game.homeName}`); if (game.beatWriter) setSelectedWriters(new Set([game.beatWriter])); }}>
                         Assign
                       </Button>
                     )}
@@ -318,7 +334,7 @@ export default function EditorsDesk() {
                       key={g.gameID}
                       size="sm"
                       variant={selectedGame === g.gameID ? "default" : "outline"}
-                      onClick={() => { setSelectedGame(g.gameID); if (!topic) setTopic(`Preview: ${g.awayName} @ ${g.homeName}`); if (g.beatWriter) setSelectedWriters(new Set([g.beatWriter])); }}
+                      onClick={() => { selectGame(g.gameID); if (!topic) setTopic(`Preview: ${g.awayName} @ ${g.homeName}`); if (g.beatWriter) setSelectedWriters(new Set([g.beatWriter])); }}
                       className="flex-shrink-0 text-xs"
                     >
                       <img src={teamLogo(g.away)} alt="" className="h-3.5 w-3.5 mr-1" />
@@ -338,7 +354,7 @@ export default function EditorsDesk() {
                 <Button
                   size="sm"
                   variant={selectedGame === null ? "default" : "outline"}
-                  onClick={() => setSelectedGame(null)}
+                  onClick={() => selectGame(null)}
                   className="flex-shrink-0 text-xs"
                 >
                   No game
@@ -348,7 +364,7 @@ export default function EditorsDesk() {
                   key={g.gameID}
                   size="sm"
                   variant={selectedGame === g.gameID ? "default" : "outline"}
-                  onClick={() => setSelectedGame(g.gameID)}
+                  onClick={() => selectGame(g.gameID)}
                   className="flex-shrink-0 text-xs"
                 >
                   <img src={teamLogo(g.away)} alt="" className="h-3.5 w-3.5 mr-1" />
@@ -431,10 +447,12 @@ export default function EditorsDesk() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
-                3. Assign writers ({selectedWriters.size} selected)
+                3. Assign writer{selectedGame ? '' : 's'} ({selectedWriters.size} selected){selectedGame ? ' — 1 per game' : ''}
               </label>
               <div className="flex gap-2">
-                <Button size="sm" variant="ghost" className="text-xs h-6" onClick={selectAllWriters}>All</Button>
+                {!selectedGame && (
+                  <Button size="sm" variant="ghost" className="text-xs h-6" onClick={selectAllWriters}>All</Button>
+                )}
                 <Button size="sm" variant="ghost" className="text-xs h-6" onClick={clearWriters}>None</Button>
                 <Button size="sm" variant="ghost" className="text-xs h-6" onClick={() => setShowWriterPicker(!showWriterPicker)}>
                   {showWriterPicker ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}

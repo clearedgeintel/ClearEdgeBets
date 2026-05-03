@@ -1399,6 +1399,31 @@ Return JSON:
       const { getBeatWriter } = await import('@shared/beat-writers');
       const { generateWriterColumn } = await import('./services/openai');
 
+      // ── 1-article-per-game guard ──
+      // Game-attached editorial assignments are capped to a single writer to
+      // control AI credit spend. If a column already exists for this gameID,
+      // return it instead of generating another. Generic (no gameID) topics
+      // still allow multiple takes.
+      let effectiveWriterNames: string[] = writerNames;
+      if (gameID) {
+        const { editorialColumns } = await import('@shared/schema');
+        const { desc: descOrder } = await import('drizzle-orm');
+        const existing = await db.select().from(editorialColumns)
+          .where(eq(editorialColumns.gameId, gameID))
+          .orderBy(descOrder(editorialColumns.createdAt))
+          .limit(5);
+        if (existing.length > 0) {
+          return res.json({
+            assignmentId: existing[0].assignmentId,
+            topic: existing[0].topic,
+            columns: existing,
+            alreadyExisted: true,
+            message: `Game ${gameID} already has ${existing.length} column(s); returning existing.`,
+          });
+        }
+        effectiveWriterNames = writerNames.slice(0, 1);
+      }
+
       // If a gameID is provided, fetch the box score for context
       let context = '';
       if (gameID) {
@@ -1437,7 +1462,7 @@ Return JSON:
       const results: any[] = [];
 
       // Generate columns sequentially (to avoid AI rate limits)
-      for (const writerName of writerNames) {
+      for (const writerName of effectiveWriterNames) {
         const writer = getBeatWriter(writerName);
         if (!writer) continue;
 
