@@ -48,8 +48,24 @@ export default function Home() {
   const safeBlogReviews = Array.isArray(blogReviews) ? blogReviews : [];
   const safeExpertPicks = Array.isArray(expertPicks) ? expertPicks : [];
 
-  const featured = safeBlogReviews[0];
-  const moreReviews = safeBlogReviews.slice(1, 4);
+  // Dedupe articles by matchup so a single game doesn't take over the front page.
+  // Reviews come back newest-first; keep the first sighting of each unique
+  // (sorted team-pair + gameDate) tuple.
+  const dedupedReviews = (() => {
+    const seen = new Set<string>();
+    const out: BlogReview[] = [];
+    for (const r of safeBlogReviews) {
+      const matchup = [r.awayTeam || '', r.homeTeam || ''].sort().join('|');
+      const key = `${matchup}@${r.gameDate || ''}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(r);
+    }
+    return out;
+  })();
+
+  const featured = dedupedReviews[0];
+  const moreReviews = dedupedReviews.slice(1, 4);
   const yesterdayGamesList = Object.values(yesterdayScores || {});
 
   // Merge AI picks + expert picks into "Today's Edge"

@@ -90,6 +90,22 @@ export default function AdminOperations() {
     },
   });
 
+  const dedupeBlogReviewsMutation = useMutation({
+    mutationFn: async () => {
+      const resp = await fetch('/api/admin/blog-reviews/dedupe', {
+        method: 'POST', credentials: 'include',
+      });
+      if (!resp.ok) throw new Error((await resp.json()).error || 'Failed');
+      return resp.json() as Promise<{ deleted: number; kept: number; message: string }>;
+    },
+    onSuccess: (data) => {
+      toast({ title: 'Dedupe complete', description: data.message });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Dedupe failed', description: err.message, variant: 'destructive' });
+    },
+  });
+
   // Merge live status with our task registry
   const getTaskStatus = (name: string) => liveTasks.find(t => t.name === name);
 
@@ -261,7 +277,7 @@ export default function AdminOperations() {
             Danger Zone
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4 pt-2">
+        <CardContent className="p-4 pt-2 space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-sm font-medium text-foreground">Reset all expert records</div>
@@ -284,6 +300,32 @@ export default function AdminOperations() {
                 <><RefreshCw className="h-3 w-3 mr-1 animate-spin" />Resetting…</>
               ) : (
                 <><Trash2 className="h-3 w-3 mr-1" />Reset Records</>
+              )}
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between gap-3 pt-3 border-t border-red-500/20">
+            <div>
+              <div className="text-sm font-medium text-foreground">Dedupe blog reviews</div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                For any matchup-day with multiple articles (legacy from before the 1-per-game guard), keeps the most recent and deletes the rest. Cleans up the home page article rail.
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="h-8 text-xs flex-shrink-0"
+              disabled={dedupeBlogReviewsMutation.isPending}
+              onClick={() => {
+                if (confirm('Delete duplicate blog reviews? Keeps the newest of each matchup-day.')) {
+                  dedupeBlogReviewsMutation.mutate();
+                }
+              }}
+            >
+              {dedupeBlogReviewsMutation.isPending ? (
+                <><RefreshCw className="h-3 w-3 mr-1 animate-spin" />Deduping…</>
+              ) : (
+                <><Trash2 className="h-3 w-3 mr-1" />Dedupe Reviews</>
               )}
             </Button>
           </div>

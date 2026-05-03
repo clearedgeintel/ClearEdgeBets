@@ -4620,6 +4620,48 @@ Format as JSON:
     }
   });
 
+  // Dedupe blog reviews — for any gameId with multiple rows (legacy from before
+  // the 1-article-per-game guard), keep the most recent and delete the rest.
+  // Also dedupes by matchup+gameDate (e.g. PHI@CAR series with multiple writers).
+  app.post("/api/admin/blog-reviews/dedupe", async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) return res.status(401).json({ error: "Not authenticated" });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
+
+      const { blogReviews } = await import('@shared/schema');
+      const { desc: descOrder, inArray } = await import('drizzle-orm');
+      const all = await db.select().from(blogReviews).orderBy(descOrder(blogReviews.createdAt));
+
+      const seen = new Set<string>();
+      const idsToDelete: number[] = [];
+      for (const r of all) {
+        const matchup = [r.awayTeam || '', r.homeTeam || ''].sort().join('|');
+        const key = `${matchup}@${r.gameDate || ''}`;
+        if (seen.has(key)) {
+          idsToDelete.push(r.id);
+        } else {
+          seen.add(key);
+        }
+      }
+
+      if (idsToDelete.length === 0) {
+        return res.json({ deleted: 0, kept: all.length, message: 'No duplicates found.' });
+      }
+
+      await db.delete(blogReviews).where(inArray(blogReviews.id, idsToDelete));
+      res.json({
+        deleted: idsToDelete.length,
+        kept: all.length - idsToDelete.length,
+        message: `Deleted ${idsToDelete.length} duplicate review(s); kept ${all.length - idsToDelete.length} unique matchup-day(s).`,
+      });
+    } catch (error: any) {
+      console.error('Failed to dedupe blog reviews:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Reset all expert pick history — wipes wins/losses/pushes/pending across every expert.
   // Records on /experts page are computed by COUNT over this table, so deleting all rows
   // resets every displayed record to 0-0-0-0. Destructive and not reversible.
