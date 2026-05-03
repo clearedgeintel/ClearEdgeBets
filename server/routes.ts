@@ -4595,6 +4595,26 @@ Format as JSON:
     }
   });
 
+  // Reset all expert pick history — wipes wins/losses/pushes/pending across every expert.
+  // Records on /experts page are computed by COUNT over this table, so deleting all rows
+  // resets every displayed record to 0-0-0-0. Destructive and not reversible.
+  app.post("/api/admin/expert-records/reset", async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) return res.status(401).json({ error: "Not authenticated" });
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ error: "Admin access required" });
+
+      const { expertPicks } = await import('@shared/schema');
+      const { db } = await import('./db');
+      const deleted = await db.delete(expertPicks).returning({ id: expertPicks.id });
+      res.json({ deleted: deleted.length, message: `Deleted ${deleted.length} expert pick(s). All expert records reset to 0.` });
+    } catch (error: any) {
+      console.error('Failed to reset expert records:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Diagnostic: confirm what env vars the running container actually sees.
   // Returns presence/length/prefix only — never the full secret value.
   app.get("/api/admin/env-check", async (req, res) => {
