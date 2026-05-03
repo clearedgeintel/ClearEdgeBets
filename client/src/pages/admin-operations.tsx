@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import {
   Play, RefreshCw, Clock, CheckCircle, Activity, TrendingUp,
-  Zap, BarChart3, CalendarCheck, AlertTriangle, Target, Newspaper, Trophy,
+  Zap, BarChart3, CalendarCheck, AlertTriangle, Target, Newspaper, Trophy, Trash2,
 } from "lucide-react";
 
 interface ScheduledTask {
@@ -71,6 +71,22 @@ export default function AdminOperations() {
     onError: (err: any) => {
       toast({ title: 'Task failed', description: err.message, variant: 'destructive' });
       setTriggeringTask(null);
+    },
+  });
+
+  const resetExpertRecordsMutation = useMutation({
+    mutationFn: async () => {
+      const resp = await fetch('/api/admin/expert-records/reset', {
+        method: 'POST', credentials: 'include',
+      });
+      if (!resp.ok) throw new Error((await resp.json()).error || 'Failed');
+      return resp.json() as Promise<{ deleted: number; message: string }>;
+    },
+    onSuccess: (data) => {
+      toast({ title: 'Records reset', description: data.message });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Reset failed', description: err.message, variant: 'destructive' });
     },
   });
 
@@ -221,18 +237,55 @@ export default function AdminOperations() {
       </Card>
 
       {/* Quick Reference */}
-      <Card className="border-border/30 bg-zinc-900/30">
+      <Card className="border-border/30 bg-zinc-900/30 mb-4">
         <CardContent className="p-4">
           <h4 className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-2">Daily Timeline</h4>
           <div className="text-xs text-zinc-500 space-y-1 font-mono">
-            <div><span className="text-zinc-400">08:00</span> Daily AI picks generated</div>
-            <div><span className="text-zinc-400">08:30</span> Expert panel analyzes slate (5 experts × 2-3 picks each)</div>
+            <div><span className="text-zinc-400">08:00</span> Expert panel analyzes slate (5 experts × up to 3 picks each, ≥60 conf)</div>
             <div><span className="text-zinc-400">09:00</span> AI daily ticket published</div>
             <div><span className="text-zinc-400">09:00</span> Weekly summary (Mondays only)</div>
+            <div><span className="text-zinc-400">09:15</span> Daily newsletter sent</div>
             <div className="border-t border-border/20 pt-1 mt-1">
               <span className="text-zinc-400">:00 :15 :30 :45</span> Settle predictions + grade expert picks + auto Morning Roast
             </div>
             <div><span className="text-zinc-400">:00 :30</span> Odds snapshot for line movement</div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Danger Zone */}
+      <Card className="border-red-500/30 bg-red-500/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2 text-red-400">
+            <AlertTriangle className="h-4 w-4" />
+            Danger Zone
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-2">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-medium text-foreground">Reset all expert records</div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                Deletes every row from <code className="text-zinc-400">expert_picks</code>. All wins/losses/pushes/pending counters on the Experts page reset to 0. Not reversible. Generation isn't affected (Claude doesn't use prior picks as context).
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="h-8 text-xs flex-shrink-0"
+              disabled={resetExpertRecordsMutation.isPending}
+              onClick={() => {
+                if (confirm('Permanently delete ALL expert pick history? This cannot be undone.')) {
+                  resetExpertRecordsMutation.mutate();
+                }
+              }}
+            >
+              {resetExpertRecordsMutation.isPending ? (
+                <><RefreshCw className="h-3 w-3 mr-1 animate-spin" />Resetting…</>
+              ) : (
+                <><Trash2 className="h-3 w-3 mr-1" />Reset Records</>
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>
