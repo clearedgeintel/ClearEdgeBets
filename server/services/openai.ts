@@ -789,7 +789,14 @@ export async function generateExpertPicks(input: ExpertPickInput): Promise<Array
 
   const prompt = `${expert.voiceDirective}
 ${newsBlock}
-You are analyzing today's ${sportLabel} slate. You MUST pick at least 3 games, up to ${expert.maxPicksPerDay} maximum. Do NOT pass on the slate — find at least 3 edges.
+You are analyzing today's ${sportLabel} slate. Return only HIGH-QUALITY picks where you genuinely have an edge — up to ${expert.maxPicksPerDay} maximum, ZERO is acceptable on a thin slate.
+
+**Confidence rules — strictly enforced:**
+- Only return picks with confidence >= 60.
+- 70+ is the high-confidence watermark; lean toward picks at this level.
+- 60–69 is allowed but treat as "with caution" — only include when the edge is real but the matchup has notable uncertainty.
+- Never invent confidence. If you can't honestly justify >= 60, don't pick the game.
+- Returning [] is acceptable and preferred over reaching for picks you don't believe in.
 
 IMPORTANT: Reference specific player names and their stats in your rationale. Mention starting pitchers by name, call out key hitters, and cite injury impacts. Generic team-level analysis is not acceptable — your readers expect named players.
 
@@ -804,12 +811,11 @@ For each pick, provide:
 - pickType: ${pickTypeOptions}${parlayNote}
 - selection: the specific pick ${selectionExamples}
 - odds: the odds as a signed integer (e.g. -130 or 150 — never write +150, JSON disallows leading +)${hasParlay ? ' — for parlays, calculate the combined odds' : ''}
-- confidence: 1-100 how confident you are
+- confidence: 1-100 (must be >= 60)
 - rationale: 2-3 sentences in YOUR voice explaining why — MUST name specific players${hasParlay ? '. For parlays, explain why the legs are correlated.' : ''}
 - units: how many units to risk (0.5 to 3.0 based on confidence)
 
-Return JSON: { "picks": [...] }
-You MUST return at least 3 picks. Do NOT return an empty array.`;
+Return JSON: { "picks": [...] } — empty array is fine if no game clears the bar.`;
 
   // Errors propagate so the trigger endpoint surfaces them. The scheduler's
   // generateMLBExpertPicks loop catches per-expert failures.

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronUp, Brain, User, Target, TrendingUp, DollarSign, Wind, Thermometer, CloudRain } from "lucide-react";
+import { ChevronDown, ChevronUp, Brain, User, Target, Wind, Thermometer, CloudRain } from "lucide-react";
 import { ExpertAvatar } from "./expert-avatar";
 import { useBettingSlip } from "@/contexts/betting-slip-context";
 import { LiveScore } from "@/components/live-score";
@@ -277,22 +277,6 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
     } catch { return null; }
   })();
 
-  // Fetch all daily picks, AI suggested bets, and game evaluations
-  const { data: allAIPicks = [] } = useQuery<any[]>({
-    queryKey: ['/api/daily-picks']
-  });
-
-
-  // No expert picks API - removed to maintain authentic data only
-
-  // Get AI pick that matches this specific game 
-  const aiPick = allAIPicks.find(pick => {
-    if (!pick.gameId) return false;
-    
-    // Exact gameId match - picks now use same format as games: "2025-07-21_BAL @ CLE"
-    return pick.gameId === game.gameId;
-  }) || null;
-
 
   const getOddsByMarket = (market: string) => {
     return game.odds.find(o => o.market === market);
@@ -305,23 +289,6 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
   const formatOdds = (odds: number) => {
     return odds > 0 ? `+${odds}` : `${odds}`;
   };
-
-  const getPickIcon = (pickType: string) => {
-    switch (pickType.toLowerCase()) {
-      case 'moneyline':
-        return <Target className="h-4 w-4" />;
-      case 'spread':
-      case 'runline':
-        return <TrendingUp className="h-4 w-4" />;
-      case 'total':
-      case 'over':
-      case 'under':
-        return <DollarSign className="h-4 w-4" />;
-      default:
-        return <Target className="h-4 w-4" />;
-    }
-  };
-
 
   return (
     <Card className="w-full card-glow border-border/50 bg-card">
@@ -599,32 +566,6 @@ export default function EnhancedGameCard({ game }: EnhancedGameCardProps) {
               </div>
             )}
 
-            {/* Pick Suggestions */}
-            <div className="space-y-4">
-              {/* AI Pick */}
-              {aiPick && (
-                <div className="p-4 bg-purple-500/5 border border-purple-500/20 rounded-lg">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-2">
-                      <Brain className="h-5 w-5 text-purple-400" />
-                      <h5 className="text-sm font-semibold text-foreground">AI Suggestion</h5>
-                      <Badge className="bg-purple-500/15 text-purple-400 border border-purple-500/20 font-medium">
-                        {aiPick.confidence}%
-                      </Badge>
-                    </div>
-                    <Badge className="bg-zinc-800 text-zinc-300 tabular-nums">{aiPick.odds || "N/A"}</Badge>
-                  </div>
-                  <div className="flex items-center space-x-2 mb-3">
-                    <div className="text-purple-400">{getPickIcon(aiPick.pickType)}</div>
-                    <span className="text-sm font-semibold text-foreground">{aiPick.selection}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {aiPick.reasoning}
-                  </p>
-                </div>
-              )}
-
-            </div>
       </CardContent>
       )}
     </Card>

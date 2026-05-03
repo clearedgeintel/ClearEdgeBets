@@ -24,13 +24,11 @@ class SchedulerService {
   }
 
   private initializeTasks() {
-    // Daily picks generation at 8 AM Central Time (before AI tickets)
-    // Ensures fresh picks are available when users check the site
+    // Expert panel picks at 8:00 AM Central Time. This is the only daily
+    // picks pipeline now — generic /api/daily-picks generation was retired
+    // in favor of attributed expert picks with a confidence floor.
     // timezone: 'America/Chicago' is set in addTask, so hours are Central Time
-    this.addTask('daily-picks-generation', '0 0 8 * * *', this.generateDailyPicks.bind(this));
-
-    // Expert panel picks at 8:30 AM Central Time (after daily picks, before AI ticket)
-    this.addTask('expert-picks-generation', '0 30 8 * * *', this.generateExpertPicks.bind(this));
+    this.addTask('expert-picks-generation', '0 0 8 * * *', this.generateExpertPicks.bind(this));
 
     // Daily AI ticket submission at 9 AM Central Time
     this.addTask('daily-ai-ticket', '0 0 9 * * *', this.generateDailyAITicket.bind(this));
@@ -54,8 +52,8 @@ class SchedulerService {
     // Auto-grade expert picks every 30 minutes
     this.addTask('expert-pick-grading', '0 */30 * * * *', this.gradeExpertPicks.bind(this));
 
-    console.log('✓ Scheduler service initialized with automated daily picks, AI tickets, and bet settlement');
-    console.log('  - Daily picks: 8:00 AM Central Time');
+    console.log('✓ Scheduler service initialized with automated expert picks, AI tickets, and bet settlement');
+    console.log('  - Expert picks: 8:00 AM Central Time');
     console.log('  - Daily tickets: 9:00 AM Central Time');
     console.log('  - Weekly summaries: Mondays at 9:00 AM Central Time');
     console.log('  - Automatic bet settlement: Every 15 minutes');
@@ -622,8 +620,13 @@ class SchedulerService {
     const errors: string[] = [];
     for (const expert of getAllExperts()) {
       try {
-        const expertPicks = await genPicks({ expert, games: gameData, sport: 'mlb' });
-        for (const pick of expertPicks) {
+        const raw = await genPicks({ expert, games: gameData, sport: 'mlb' });
+        // Quality bar: drop anything under 60 confidence; prefer highest first; cap at maxPicksPerDay.
+        const filtered = raw
+          .filter(p => (p.confidence ?? 0) >= 60)
+          .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))
+          .slice(0, expert.maxPicksPerDay);
+        for (const pick of filtered) {
           await storage.createExpertPick({
             expertId: expert.id,
             gameId: pick.gameId,
@@ -690,8 +693,12 @@ class SchedulerService {
     const errors: string[] = [];
     for (const expert of getAllExperts()) {
       try {
-        const expertPicks = await genPicks({ expert, games: gameData, sport: 'nhl' });
-        for (const pick of expertPicks) {
+        const raw = await genPicks({ expert, games: gameData, sport: 'nhl' });
+        const filtered = raw
+          .filter(p => (p.confidence ?? 0) >= 60)
+          .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))
+          .slice(0, expert.maxPicksPerDay);
+        for (const pick of filtered) {
           await storage.createExpertPick({
             expertId: expert.id,
             gameId: pick.gameId,

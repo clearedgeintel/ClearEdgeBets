@@ -12,7 +12,6 @@ import Layout from "@/components/layout";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import TodaysGames from "@/pages/todays-games";
-import DailyPicks from "@/pages/daily-picks";
 import AuthPage from "@/pages/auth";
 
 // Non-critical — lazy loaded
@@ -121,7 +120,6 @@ function Router() {
           <Route path="/nba/games">{() => <ProtectedRoute component={NBAGames} />}</Route>
           <Route path="/feed" component={FeedPage} />
           <Route path="/my-bets">{() => <ProtectedRoute component={MyBets} />}</Route>
-          <Route path="/daily-picks">{() => <ProtectedRoute component={DailyPicks} />}</Route>
           <Route path="/team/:teamAbv">{() => <ProtectedRoute component={TeamDetail} />}</Route>
           <Route path="/team-power-scores">{() => <ProtectedRoute component={TeamPowerScores} />}</Route>
           <Route path="/player-rankings">{() => <ProtectedRoute component={PlayerRankings} />}</Route>

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import {
-  Play, RefreshCw, Clock, CheckCircle, Activity, Brain, TrendingUp,
+  Play, RefreshCw, Clock, CheckCircle, Activity, TrendingUp,
   Zap, BarChart3, CalendarCheck, AlertTriangle, Target, Newspaper, Trophy,
 } from "lucide-react";
 
@@ -26,8 +26,7 @@ interface APIStats {
 
 // Complete task registry — matches scheduler + trigger endpoint
 const ALL_TASKS = [
-  { name: 'daily-picks-generation', triggerKey: 'daily-picks', label: 'Daily Picks', description: 'AI generates game predictions', schedule: '8:00 AM CT', icon: Brain, group: 'morning' },
-  { name: 'expert-picks-generation', triggerKey: 'expert-picks', label: 'Expert Panel Picks', description: '5 experts analyze the slate', schedule: '8:30 AM CT', icon: Target, group: 'morning' },
+  { name: 'expert-picks-generation', triggerKey: 'expert-picks', label: 'Expert Panel Picks', description: '5 experts analyze the slate (≥60 conf, max 3/expert)', schedule: '8:00 AM CT', icon: Target, group: 'morning' },
   { name: 'daily-ai-ticket', triggerKey: 'daily-ticket', label: 'AI Daily Ticket', description: 'Market insights analysis', schedule: '9:00 AM CT', icon: Zap, group: 'morning' },
   { name: 'daily-newsletter', triggerKey: 'newsletter', label: 'Daily Newsletter', description: 'Generate + send to subscribers', schedule: '9:15 AM CT', icon: Newspaper, group: 'morning' },
   { name: 'weekly-summary', triggerKey: 'weekly-summary', label: 'Weekly Summary', description: 'Performance report', schedule: 'Mon 9:00 AM CT', icon: BarChart3, group: 'morning' },

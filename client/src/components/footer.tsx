@@ -31,11 +31,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/daily-picks" className="text-sm text-muted-foreground hover:text-primary">
-                  Daily Picks
-                </Link>
-              </li>
-              <li>
                 <Link href="/daily-digest" className="text-sm text-muted-foreground hover:text-primary">
                   Daily Digest
                 </Link>
