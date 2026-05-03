@@ -845,7 +845,7 @@ export interface GameReviewInput {
   lineScore: any;
   decisions: any[];
   playerHighlights: string;
-  sport?: 'mlb' | 'nhl';
+  sport?: 'mlb' | 'nhl' | 'nba';
 }
 
 export interface GameReviewResult {
@@ -859,11 +859,16 @@ export interface GameReviewResult {
 export async function generateSarcasticGameReview(input: GameReviewInput): Promise<GameReviewResult> {
   const sport = input.sport || 'mlb';
   const isNHL = sport === 'nhl';
-  const blowoutThreshold = isNHL ? 4 : 6;
+  const isNBA = sport === 'nba';
+  const isMLB = sport === 'mlb';
+  // Blowout threshold tuned per sport: NHL 4-goal gap, NBA 20-pt gap, MLB 6-run gap.
+  const blowoutThreshold = isNHL ? 4 : isNBA ? 20 : 6;
   const blowout = Math.abs(input.awayScore - input.homeScore) >= blowoutThreshold;
-  const shutout = input.awayScore === 0 || input.homeScore === 0;
+  const shutout = isMLB && (input.awayScore === 0 || input.homeScore === 0);
   const extras = isNHL
     ? !!(input.lineScore?.overtime || input.lineScore?.shootout)
+    : isNBA
+    ? !!(input.lineScore?.overtime || (input.lineScore?.away?.scoresByQuarter && Object.keys(input.lineScore.away.scoresByQuarter).length > 4))
     : input.lineScore?.away?.scoresByInning && Object.keys(input.lineScore.away.scoresByInning).length > 9;
   const winner = input.awayScore > input.homeScore ? input.awayTeam : input.homeTeam;
   const loser = input.awayScore > input.homeScore ? input.homeTeam : input.awayTeam;
@@ -894,25 +899,37 @@ ${writer.favoriteTeam ? `**Secret bias:** You have a soft spot for the ${writer.
 Stay in character as ${writer.name} throughout. This is YOUR column, YOUR voice. The reader should feel like they know you personally.
 ${newsBlock}`;
 
-  const sportLabel = isNHL ? 'NHL' : 'MLB';
-  const extrasLabel = isNHL ? (input.lineScore?.shootout ? 'SHOOTOUT' : 'OVERTIME') : 'EXTRA INNINGS';
-  const periodLabel = isNHL ? 'periods' : 'innings';
+  const sportLabel = isNHL ? 'NHL' : isNBA ? 'NBA' : 'MLB';
+  const extrasLabel = isNHL
+    ? (input.lineScore?.shootout ? 'SHOOTOUT' : 'OVERTIME')
+    : isNBA ? 'OVERTIME'
+    : 'EXTRA INNINGS';
   const sportSpecificReqs = isNHL
     ? `3. Reference specific stats, periods, goals, assists, saves, and player performances from the data above`
+    : isNBA
+    ? `3. Reference specific stats, quarters, points, rebounds, assists, and player performances from the data above`
     : `3. Reference specific stats, innings, and player performances from the data above`;
+  const exampleStat = isNHL
+    ? '"McDavid had 2G, 3A and was +3 on the night"'
+    : isNBA
+    ? '"Doncic dropped 38 points with 9 rebounds and 11 assists"'
+    : '"Judge went 3-for-4 with 2 HR and 5 RBI"';
+  const lineScoreLabel = isNHL ? 'Period' : isNBA ? 'Quarter' : 'Line';
+  const venueRef = isNHL || isNBA ? 'arena' : 'weather, venue,';
+  const showWeatherWind = isMLB;
 
   const prompt = `${personalityPrompt}
 
 Write your game review for this ${sportLabel} game:
 
 **${input.awayTeam} ${input.awayScore} @ ${input.homeTeam} ${input.homeScore}**
-Venue: ${input.venue} | Weather: ${input.weather}${!isNHL ? ` | Wind: ${input.wind}` : ''} | Attendance: ${input.attendance}
+Venue: ${input.venue}${showWeatherWind ? ` | Weather: ${input.weather} | Wind: ${input.wind}` : ''} | Attendance: ${input.attendance}
 ${blowout ? 'BLOWOUT ALERT' : ''}${shutout ? 'SHUTOUT' : ''}${extras ? extrasLabel : ''}
 
-**${isNHL ? 'Period' : 'Line'} Score:**
+**${lineScoreLabel} Score:**
 ${JSON.stringify(input.lineScore, null, 2)}
 
-${!isNHL ? `**Decisions:** ${JSON.stringify(input.decisions)}` : ''}
+${isMLB ? `**Decisions:** ${JSON.stringify(input.decisions)}` : ''}
 
 **Key Performances:**
 ${input.playerHighlights}
@@ -921,12 +938,12 @@ REQUIREMENTS:
 1. Write a clickbait-worthy headline in YOUR voice (sarcastic, funny, max 15 words)
 2. Write a 4-6 paragraph review in markdown format — in character as ${writer.name}
 ${sportSpecificReqs}
-4. **CRITICAL: You MUST name at least 3 specific players from the Key Performances above.** Quote their actual stat lines (e.g. "Judge went 3-for-4 with 2 HR and 5 RBI"). Do NOT write generic recaps that could apply to any game.
-5. **If a BIG INNING, COMEBACK, or WALK-OFF tag is in the Key Performances section, build the narrative around it** — this is the story
+4. **CRITICAL: You MUST name at least 3 specific players from the Key Performances above.** Quote their actual stat lines (e.g. ${exampleStat}). Do NOT write generic recaps that could apply to any game.
+5. **If a BIG ${isNBA ? 'RUN' : 'INNING'}, COMEBACK, or ${isNBA ? 'BUZZER-BEATER' : 'WALK-OFF'} tag is in the Key Performances section, build the narrative around it** — this is the story
 6. **If an ESPN HEADLINE is provided, use it as inspiration for your angle** — but rewrite it in your voice
 7. Roast the losing team mercilessly but with love
 8. Give backhanded compliments to the winning team
-9. Make at least one reference to the ${isNHL ? 'arena' : 'weather, venue,'} or attendance
+9. Make at least one reference to the ${venueRef} or attendance
 10. Include one ridiculous metaphor or analogy that fits YOUR personality
 11. End with a "**Final Verdict:**" one-liner in YOUR signature style
 12. Tone: match your personality (${writer.mood}) — readers should learn what happened while laughing

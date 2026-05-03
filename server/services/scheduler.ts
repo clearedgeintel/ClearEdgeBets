@@ -935,11 +935,15 @@ Write ONE sentence (max 20 words) explaining why this pick ${result === 'win' ? 
     try {
       let totalGenerated = 0;
 
-      // Generate MLB recaps
-      totalGenerated += await this.generateMLBMorningRoast();
+      // Each sport runs independently — one sport failing doesn't kill the others.
+      try { totalGenerated += await this.generateMLBMorningRoast(); }
+      catch (e) { logger.error('Auto Morning Roast (MLB) failed: ' + e); }
 
-      // Generate NHL recaps
-      totalGenerated += await this.generateNHLMorningRoast();
+      try { totalGenerated += await this.generateNHLMorningRoast(); }
+      catch (e) { logger.error('Auto Morning Roast (NHL) failed: ' + e); }
+
+      try { totalGenerated += await this.generateNBAMorningRoast(); }
+      catch (e) { logger.error('Auto Morning Roast (NBA) failed: ' + e); }
 
       if (totalGenerated > 0) logger.info(`Auto Morning Roast: ${totalGenerated} total new recaps published`);
     } catch (error) {
@@ -1268,6 +1272,133 @@ Write ONE sentence (max 20 words) explaining why this pick ${result === 'win' ? 
         logger.info(`Auto Morning Roast (NHL): ${writer.name} filed recap for ${awayCode}@${homeCode} (${game.awayScore}-${game.homeScore})`);
       } catch (err) {
         logger.error(`Auto Morning Roast (NHL): failed for ${game.gameId}: ${err}`);
+      }
+    }
+
+    return generated;
+  }
+
+  /** Generate Morning Roast recaps for completed NBA games */
+  private async generateNBAMorningRoast(): Promise<number> {
+    const { fetchNBAScoreboard, fetchNBABoxScore } = await import('../sports/nba/api-client');
+    const { getNBATeamLogo } = await import('../sports/nba/teams');
+    const { getRandomBeatWriter } = await import('@shared/beat-writers');
+    const { generateSarcasticGameReview } = await import('./openai');
+
+    const today = new Date().toISOString().split('T')[0];
+    const d = new Date(); d.setDate(d.getDate() - 1);
+    const yesterday = d.toISOString().split('T')[0];
+
+    const [todayReviews, yesterdayReviews] = await Promise.all([
+      storage.getBlogReviewsByDate(today),
+      storage.getBlogReviewsByDate(yesterday),
+    ]);
+    const reviewedGameIds = new Set([...todayReviews, ...yesterdayReviews].map(r => r.gameId));
+
+    const [todayScores, yesterdayScores] = await Promise.all([
+      fetchNBAScoreboard(today),
+      fetchNBAScoreboard(yesterday),
+    ]);
+
+    const allCompleted = [...todayScores, ...yesterdayScores]
+      .filter(g => g.status === 'final' && !reviewedGameIds.has(g.gameId));
+
+    if (allCompleted.length === 0) return 0;
+
+    logger.info(`Auto Morning Roast (NBA): ${allCompleted.length} completed games need reviews`);
+
+    let generated = 0;
+    for (const game of allCompleted) {
+      try {
+        const boxData = await fetchNBABoxScore(game.gameId);
+        const awayCode = game.awayTeamCode || '';
+        const homeCode = game.homeTeamCode || '';
+        const gameDate = game.gameId.split('_')[0] || today;
+
+        // Build NBA player highlights from box score — top scorers ranked by
+        // combined PRA (points + rebounds + assists), with stat-line detail.
+        const highlights: string[] = [];
+        if (boxData) {
+          const playerStats = boxData.playerStats || boxData.body?.playerStats || {};
+          const players = Object.values(playerStats) as any[];
+
+          const ranked = players
+            .filter((p: any) => parseInt(p.pts || p.points || '0') > 0)
+            .map((p: any) => {
+              const pts = parseInt(p.pts || p.points || '0');
+              const reb = parseInt(p.reb || p.rebounds || p.totReb || '0');
+              const ast = parseInt(p.ast || p.assists || '0');
+              return { p, pts, reb, ast, pra: pts + reb + ast };
+            })
+            .sort((a, b) => b.pra - a.pra)
+            .slice(0, 6);
+
+          for (const { p, pts, reb, ast } of ranked) {
+            const name = p.longName || p.playerName || `#${p.playerID || ''}`;
+            const stl = parseInt(p.stl || p.steals || '0');
+            const blk = parseInt(p.blk || p.blocks || '0');
+            const tpm = parseInt(p.tptfgm || p.threePointersMade || '0');
+            const parts = [`${pts} PTS`, `${reb} REB`, `${ast} AST`];
+            if (stl > 0) parts.push(`${stl} STL`);
+            if (blk > 0) parts.push(`${blk} BLK`);
+            if (tpm >= 4) parts.push(`${tpm} 3PM`);
+            // Triple-double tag is the NBA "walk-off" — flag it for the review prompt.
+            const tripleDouble = pts >= 10 && reb >= 10 && ast >= 10;
+            highlights.push(`${name} (${p.team || ''}): ${parts.join(', ')}${tripleDouble ? ' [TRIPLE-DOUBLE]' : ''}`);
+          }
+        }
+
+        const writer = getRandomBeatWriter();
+
+        const review = await generateSarcasticGameReview({
+          gameId: game.gameId,
+          awayTeam: game.awayTeam,
+          homeTeam: game.homeTeam,
+          awayScore: game.awayScore || 0,
+          homeScore: game.homeScore || 0,
+          venue: boxData?.arena || boxData?.body?.arena || '',
+          weather: '',
+          attendance: boxData?.attendance || boxData?.body?.attendance || '',
+          wind: '',
+          lineScore: game.metadata?.lineScore || {},
+          decisions: [],
+          playerHighlights: highlights.length > 0 ? highlights.join('\n') : 'No detailed stats available',
+          sport: 'nba',
+        });
+
+        // ESPN NBA hero image (best-effort)
+        let heroImage: string | undefined;
+        try {
+          const espnResp = await fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${gameDate.replace(/-/g, '')}`);
+          if (espnResp.ok) {
+            const espnData = await espnResp.json() as any;
+            const match = espnData.events?.find((ev: any) =>
+              ev.competitions?.[0]?.competitors?.find((c: any) => c.homeAway === 'away' && c.team?.abbreviation === awayCode)
+            );
+            heroImage = match?.competitions?.[0]?.headlines?.[0]?.video?.[0]?.thumbnail;
+          }
+        } catch {}
+
+        const slug = `nba-${gameDate.replace(/-/g, '')}-${awayCode.toLowerCase()}-vs-${homeCode.toLowerCase()}-${Date.now()}`;
+
+        await storage.createBlogReview({
+          gameId: game.gameId, gameDate,
+          awayTeam: game.awayTeam, homeTeam: game.homeTeam,
+          awayScore: game.awayScore || 0, homeScore: game.homeScore || 0,
+          title: review.title, content: review.content, slug,
+          author: writer.name, authorMood: writer.mood,
+          venue: boxData?.arena || boxData?.body?.arena || '',
+          weather: '', attendance: boxData?.attendance || boxData?.body?.attendance || '',
+          heroImage,
+          awayLogo: getNBATeamLogo(awayCode),
+          homeLogo: getNBATeamLogo(homeCode),
+          espnRecap: undefined, boxScoreData: boxData, sport: 'nba',
+        });
+
+        generated++;
+        logger.info(`Auto Morning Roast (NBA): ${writer.name} filed recap for ${awayCode}@${homeCode} (${game.awayScore}-${game.homeScore})`);
+      } catch (err) {
+        logger.error(`Auto Morning Roast (NBA): failed for ${game.gameId}: ${err}`);
       }
     }
 
