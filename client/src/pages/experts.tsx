@@ -105,9 +105,9 @@ export default function Experts() {
         try {
           const resp = await fetch(`/api/expert-picks/expert/${id}`);
           const picks: ExpertPick[] = await resp.json();
-          // Get last 20 graded picks (not pending, not today)
+          // Get last 20 graded picks (only known-good results, not today)
           results[id] = picks
-            .filter(p => p.result !== 'pending' && p.gameDate !== today)
+            .filter(p => (p.result === 'win' || p.result === 'loss' || p.result === 'push') && p.gameDate !== today)
             .sort((a, b) => new Date(b.gameDate).getTime() - new Date(a.gameDate).getTime())
             .slice(0, 20);
         } catch { results[id] = []; }
@@ -398,7 +398,7 @@ export default function Experts() {
                           {history.slice(0, 15).map((pick, i) => (
                             <div
                               key={pick.id}
-                              title={`${pick.selection} — ${pick.result.toUpperCase()} (${pick.gameDate})`}
+                              title={`${pick.selection} — ${(pick.result || 'pending').toUpperCase()} (${pick.gameDate})`}
                               className={`h-5 flex-1 rounded-sm ${
                                 pick.result === 'win' ? 'bg-emerald-500/60' :
                                 pick.result === 'loss' ? 'bg-red-500/60' :
@@ -423,8 +423,8 @@ export default function Experts() {
                                     <span className="text-[10px] text-zinc-500 tabular-nums">
                                       {pick.odds > 0 ? '+' : ''}{pick.odds}
                                     </span>
-                                    <Badge className={`text-[9px] border ${resultColors[pick.result]}`}>
-                                      {pick.result.toUpperCase()}
+                                    <Badge className={`text-[9px] border ${resultColors[pick.result || 'pending']}`}>
+                                      {(pick.result || 'pending').toUpperCase()}
                                     </Badge>
                                   </div>
                                 </div>
